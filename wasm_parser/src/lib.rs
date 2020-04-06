@@ -78,6 +78,8 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 
     println!("SECTION {:?} {:?}", n, size);
 
+    debug!("{:?}", i);
+
     let (i, m) = match n[0] {
         0 => parse_custom_section(i, size)?,
         1 => parse_type_section(i, size)?,
@@ -104,18 +106,6 @@ fn take_until_magic_number(i: &[u8]) -> IResult<&[u8], &[u8]> {
 fn take_version_number(i: &[u8]) -> IResult<&[u8], &[u8]> {
     take(4u8)(i)
 }
-
-/*
-fn take_vec(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    use byteorder::{LittleEndian, ReadBytesExt};
-
-    //let (i, mut n) = take(1u32)(i)?;
-
-    //let k = read_u32_leb128(n).0;
-
-    take(k)(i)
-}
-*/
 
 fn parse_custom_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse custom section");
@@ -182,11 +172,8 @@ fn parse_table_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
 
 fn parse_memory_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse memory function");
-    //let (i, vec) = take_vec(i)?;
     let (i, times) = take_leb_u32(i)?;
-
     let (i, mem) = count(take_memtype, times.get_usize())(i)?;
-    //let (i, mem) = many0(take_memtype)(vec)?;
 
     Ok((i, Section::Memory { entries: mem }))
 }
@@ -204,10 +191,8 @@ fn parse_global_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
 
 fn parse_export_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse export function");
-    //let (i, vec) = take_vec(i)?;
     let (i, times) = take_leb_u32(i)?;
 
-    //let (i, exports) = many0(take_export)(vec)?;
     let (i, exports) = count(take_export, times.get_usize())(i)?;
 
     Ok((i, Section::Export { entries: exports }))
@@ -301,13 +286,20 @@ fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
 }
 
 fn take_export(i: &[u8]) -> IResult<&[u8], ExportEntry> {
+    debug!("take_export");
+
     let (i, name) = take_name(i)?;
+
+    debug!("name {:?}", name);
+
     let (i, desc) = take_desc(i)?;
+
+    debug!("desc {:?}", desc);
 
     Ok((
         i,
         ExportEntry {
-            name: name.to_string(),
+            name: name,
             kind: desc,
         },
     ))
@@ -410,26 +402,23 @@ fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
 fn take_limits(i: &[u8]) -> IResult<&[u8], Limits> {
     let (i, n) = take(1u8)(i)?;
 
-    Ok((
-        i,
-        match n[0] {
-            0x00 => {
-                let (i, n) = take_leb_u32(i)?;
-                println!("n {:?}", n);
+    Ok(match n[0] {
+        0x00 => {
+            let (i, n) = take_leb_u32(i)?;
+            println!("n {:?}", n);
 
-                Limits::zero(n)
-            }
-            0x01 => {
-                let (i, n) = take_leb_u32(i)?;
-                let (i, m) = take_leb_u32(i)?;
-                println!("n {:?}", n);
-                println!("m {:?}", m);
+            (i, Limits::zero(n))
+        }
+        0x01 => {
+            let (i, n) = take_leb_u32(i)?;
+            let (i, m) = take_leb_u32(i)?;
+            println!("n {:?}", n);
+            println!("m {:?}", m);
 
-                Limits::one(n, m)
-            }
-            _ => panic!("Limit has wrong tag"),
-        },
-    ))
+            (i, Limits::one(n, m))
+        }
+        _ => panic!("Limit has wrong tag"),
+    })
 }
 
 fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
@@ -446,7 +435,6 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
 
     debug!("t1 {:?}", t1);
     debug!("t2 {:?}", t2);
-
 
     let parameters: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
     let return_types: Vec<_> = t2.into_iter().map(|w| w[0].into()).collect();
@@ -495,22 +483,14 @@ fn take_f64(i: &[u8]) -> IResult<&[u8], f64> {
     Ok((i, LittleEndian::read_f64(bytes)))
 }
 
-fn take_name(i: &[u8]) -> IResult<&[u8], &str> {
+fn take_name(i: &[u8]) -> IResult<&[u8], String> {
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take(1u8), times.get_usize())(i)?;
 
-    Ok((i, std::str::from_utf8(vec[0]).unwrap()))
+    let vec2 : Vec<_> = vec.into_iter().map(|w| w[0]).collect();
+
+    Ok((i, String::from_utf8(vec2).unwrap()))
 }
-
-/*
-fn take_leb_u32(i: &[u8]) -> IResult<&[u8], VarUInt32> {
-    let (i, bytes) = take(4u8)(i)?;
-
-    let leb = read_u32_leb128(bytes);
-
-    Ok((i, VarUInt32(leb.0)))
-}
-*/
 
 fn take_leb_u32(i: &[u8]) -> IResult<&[u8], VarUInt32> {
     let (_, bytes) = take(4u8)(i)?;
