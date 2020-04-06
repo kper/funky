@@ -20,6 +20,10 @@ impl VarUInt32 {
 
         rdr.read_u32::<LittleEndian>().unwrap()
     }
+
+    pub fn get_usize(&self) -> usize {
+        self.0 as usize
+    }
 }
 
 type varuint32 = VarUInt32;
@@ -65,12 +69,14 @@ pub struct FuncType {
     pub return_types: Vec<ValueType>,
 }
 
+#[derive(Debug)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
     pub name: String, //utf8 string
     pub desc: ExternalKindType,
 }
 
+#[derive(Debug)]
 pub enum ExternalKindType {
     Function { ty: varuint32 },
     Table { ty: TableType },
@@ -78,6 +84,7 @@ pub enum ExternalKindType {
     Global { ty: GlobalType },
 }
 
+#[derive(Debug)]
 pub enum Section {
     Custom {
         name: String,
@@ -146,29 +153,34 @@ pub enum Mu {
     _var,
 }
 
+#[derive(Debug)]
 pub struct GlobalVariable {
     pub ty: GlobalType,
     pub init: InitExpr,
 }
 
+#[derive(Debug)]
 pub struct ExportEntry {
     pub name: String, //utf8 string
     pub kind: ExternalKindType,
     //index: varuint32,
 }
 
+#[derive(Debug)]
 pub struct ElementSegment {
     pub index: varuint32,
     pub offset: InitExpr,
     pub elems: Vec<varuint32>,
 }
 
+#[derive(Debug)]
 pub struct DataSegment {
     pub index: varuint32,
     pub offset: InitExpr,
     pub data: Vec<u8>,
 }
 
+#[derive(Debug)]
 pub struct FunctionBody {
     body_size: varuint32,
     local_count: varuint32,
@@ -177,6 +189,7 @@ pub struct FunctionBody {
     end: u8, //0x0b
 }
 
+#[derive(Debug)]
 pub struct LocalEntry {
     count: varuint32,
     ty: ValueType,
@@ -188,11 +201,6 @@ pub enum Limits {
     one(varuint32, varuint32),
 }
 
-pub struct VecTy<T> {
-    n: varuint32,
-    x: Vec<T>,
-}
-
 /*
 pub struct FuncType<T, W> {
     t1: VecTy<T>,
@@ -202,6 +210,7 @@ pub struct FuncType<T, W> {
 }
 */
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct InitExpr;
 
 impl std::convert::From<u8> for SectionType {
