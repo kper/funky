@@ -433,16 +433,26 @@ fn take_limits(i: &[u8]) -> IResult<&[u8], Limits> {
 }
 
 fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
+    debug!("take_functype");
+
     let (i, offset) = take(1u8)(i)?; //0x60
 
     assert_eq!(offset[0], 0x60);
 
     let (i, times) = take_leb_u32(i)?;
     let (i, mut t1) = count(take(1u8), times.get_usize())(i)?;
+    let (i, times) = take_leb_u32(i)?;
     let (i, mut t2) = count(take(1u8), times.get_usize())(i)?;
 
-    let parameters: Vec<ValueType> = t1.into_iter().map(|w| w[0].into()).collect();
-    let return_types: Vec<ValueType> = t2.into_iter().map(|w| w[0].into()).collect();
+    debug!("t1 {:?}", t1);
+    debug!("t2 {:?}", t2);
+
+
+    let parameters: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
+    let return_types: Vec<_> = t2.into_iter().map(|w| w[0].into()).collect();
+
+    debug!("parameters {:?}", parameters);
+    debug!("returns {:?}", return_types);
 
     Ok((
         i,
