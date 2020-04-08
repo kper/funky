@@ -72,7 +72,6 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 
     let (i, n) = take(1u8)(i)?;
     let (i, size) = take_leb_u32(i)?;
-    //let (i, _) = take(position)(i)?;
 
     println!("SECTION {:?} {:?}", n, size);
 
@@ -98,10 +97,12 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 }
 
 fn take_until_magic_number(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    debug!("take_until_magic_number");
     take(4u8)(i)
 }
 
 fn take_version_number(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    debug!("take_version_number");
     take(4u8)(i)
 }
 
@@ -110,8 +111,6 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     let (k, name) = take_name(i)?;
 
     let str_len = i.len() - k.len();
-
-    //let len = LittleEndian::read_u32(len);
 
     let (i, _) = take(size as usize - str_len)(k)?; //consume empty bytes
 
@@ -126,16 +125,8 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 fn parse_type_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse type section");
 
-    debug!("before {:?}", i);
-
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take_functype, times as usize)(i)?;
-
-    debug!("after {:?}", i);
-
-    println!("{:?}", vec);
-
-    //let (i, entries) = many0(take_functype)(vec)?;
 
     Ok((i, Section::Type { entries: vec }))
 }
@@ -145,8 +136,6 @@ fn parse_import_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, import) = count(take_import, times as usize)(i)?;
 
-    //let (i, import) = many0(take_import)(imports)?;
-
     Ok((i, Section::Import { entries: import }))
 }
 
@@ -154,8 +143,6 @@ fn parse_function_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse function section");
     let (i, times) = take_leb_u32(i)?;
     let (i, functions) = count(take_leb_u32, times as usize)(i)?;
-
-    //let (i, functions) = many0(take_leb_u32)(functions_v)?;
 
     Ok((i, Section::Function { types: functions }))
 }
@@ -165,16 +152,12 @@ fn parse_table_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, tables) = count(take_tabletype, times as usize)(i)?;
 
-    //let (i, tables) = many0(take_tabletype)(vec)?;
-
     Ok((i, Section::Table { entries: tables }))
 }
 
 fn parse_memory_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse memory function");
     let (i, times) = take_leb_u32(i)?;
-    debug!("times {:?}", times);
-    debug!("i {:?}", i);
     let (i, mem) = count(take_memtype, times as usize)(i)?;
 
     Ok((i, Section::Memory { entries: mem }))
@@ -182,11 +165,8 @@ fn parse_memory_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 
 fn parse_global_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse global function");
-    //let (i, vec) = take_vec(i)?;
     let (i, times) = take_leb_u32(i)?;
-
     let (i, globals) = count(take_global, times as usize)(i)?;
-    //let (i, tables) = many0(take_tabletype)(vec)?;
 
     Ok((i, Section::Global { globals: globals }))
 }
@@ -194,8 +174,6 @@ fn parse_global_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 fn parse_export_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse export function");
     let (i, times) = take_leb_u32(i)?;
-    debug!("times {:?}", times);
-
     let (i, exports) = count(take_export, times as usize)(i)?;
 
     Ok((i, Section::Export { entries: exports }))
@@ -209,18 +187,15 @@ fn parse_start_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 }
 
 fn parse_element_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
-    //let (i, vec) = take_vec(i)?;
+    debug!("parse_element_section");
     let (i, times) = take_leb_u32(i)?;
-
-    //let (i, elements) = many0(take_elem)(i)?;
     let (i, elements) = count(take_elem, times as usize)(i)?;
 
     Ok((i, Section::Element { entries: elements }))
 }
 
 fn parse_data_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
-    //let (i, vec) = take_vec(i)?;
-    //let (i, k) = many0(take_data)(vec)?;
+    debug!("parse_data_section");
     let (i, times) = take_leb_u32(i)?;
     let (i, k) = count(take_data, times as usize)(i)?;
 
@@ -228,6 +203,7 @@ fn parse_data_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 }
 
 fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+    debug!("parse_code_section");
     let (i, _code) = take(size)(i)?;
 
     Ok((
@@ -239,12 +215,13 @@ fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 }
 
 fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
+    debug!("take_data");
+
     let (i, mem_idx) = take_leb_u32(i)?;
     let (i, e) = take_expr(i)?;
 
     let (i, times) = take_leb_u32(i)?;
     let (i, b) = count(take(1u8), times as usize)(i)?;
-    //let (i, b) = take_vec(i)?;
 
     Ok((
         i,
@@ -257,11 +234,11 @@ fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
 }
 
 fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
+    debug!("take_elem");
+
     let (i, table_idx) = take_leb_u32(i)?;
     let (i, e) = take_expr(i)?;
-
     let (i, times) = take_leb_u32(i)?;
-
     let (i, y_vec) = count(take_leb_u32, times as usize)(i)?;
 
     Ok((
@@ -278,14 +255,7 @@ fn take_export(i: &[u8]) -> IResult<&[u8], ExportEntry> {
     debug!("take_export");
 
     let (i, name) = take_name(i)?;
-
-    debug!("name {:?}", name);
-    debug!("i {:?}", i);
-
     let (i, desc) = take_desc(i)?;
-
-    debug!("desc {:?}", desc);
-    debug!("i {:?}", i);
 
     Ok((
         i,
@@ -308,6 +278,8 @@ fn take_expr(i: &[u8]) -> IResult<&[u8], InitExpr> {
 }
 
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
+    debug!("take_import");
+
     let (i, mod_name) = take_name(i)?;
     let (i, name) = take_name(i)?;
     let (i, desc) = take_desc(i)?;
@@ -323,6 +295,8 @@ fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
 }
 
 fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
+    debug!("take_desc");
+
     let (i, b) = take(1u8)(i)?;
 
     let (i, desc) = match b[0] {
@@ -349,18 +323,16 @@ fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
 }
 
 fn take_memtype(i: &[u8]) -> IResult<&[u8], MemoryType> {
+    debug!("take_memtype");
     let (i, l) = take_limits(i)?;
-
-    debug!("limits {:?}", l);
 
     Ok((i, MemoryType { limits: l }))
 }
 
 fn take_tabletype(i: &[u8]) -> IResult<&[u8], TableType> {
+    debug!("take_tabletype");
     let (i, element_type) = take(1u8)(i)?;
-
     assert_eq!(0x70, element_type[0]);
-
     let (i, limits) = take_limits(i)?;
 
     Ok((
@@ -373,8 +345,8 @@ fn take_tabletype(i: &[u8]) -> IResult<&[u8], TableType> {
 }
 
 fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
+    debug!("take_globaltype");
     let (i, val) = take_valtype(i)?;
-
     let (i, b) = take_byte(i, 1)?;
 
     let mu = match b[0] {
@@ -393,6 +365,7 @@ fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
 }
 
 fn take_limits(i: &[u8]) -> IResult<&[u8], Limits> {
+    debug!("take_limits");
     let (i, n) = take(1u8)(i)?;
 
     Ok(match n[0] {
@@ -426,14 +399,8 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
     let (i, times) = take_leb_u32(i)?;
     let (i, mut t2) = count(take(1u8), times as usize)(i)?;
 
-    debug!("t1 {:?}", t1);
-    debug!("t2 {:?}", t2);
-
     let parameters: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
     let return_types: Vec<_> = t2.into_iter().map(|w| w[0].into()).collect();
-
-    debug!("parameters {:?}", parameters);
-    debug!("returns {:?}", return_types);
 
     Ok((
         i,
@@ -445,38 +412,45 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
 }
 
 fn take_valtype(i: &[u8]) -> IResult<&[u8], ValueType> {
+    debug!("take_valtype");
     let (i, mut n) = take(1u8)(i)?;
 
     Ok((i, n[0].into()))
 }
 
 fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
+    debug!("take_blocktype");
     let (i, mut n) = take(1u8)(i)?;
 
     Ok((i, n[0].into()))
 }
 
 fn take_size(i: &[u8]) -> IResult<&[u8], &[u8]> {
+    debug!("take_size");
     take(4u8)(i)
 }
 
 fn take_byte(i: &[u8], len: u32) -> IResult<&[u8], &[u8]> {
+    debug!("take_byte");
     take(len as usize)(i)
 }
 
 fn take_f32(i: &[u8]) -> IResult<&[u8], f32> {
+    debug!("take_f32");
     let (i, bytes) = take(4u8)(i)?;
 
     Ok((i, LittleEndian::read_f32(bytes)))
 }
 
 fn take_f64(i: &[u8]) -> IResult<&[u8], f64> {
+    debug!("take_f64");
     let (i, bytes) = take(8u8)(i)?;
 
     Ok((i, LittleEndian::read_f64(bytes)))
 }
 
 fn take_name(i: &[u8]) -> IResult<&[u8], String> {
+    debug!("take_name");
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take(1u8), times as usize)(i)?;
 
@@ -486,20 +460,18 @@ fn take_name(i: &[u8]) -> IResult<&[u8], String> {
 }
 
 fn take_leb_u32(i: &[u8]) -> IResult<&[u8], u32> {
+    debug!("take_leb_u32");
     let (_, bytes) = take(4u8)(i)?;
-
     let leb = read_u32_leb128(bytes);
-
-    let (i, _) = take(leb.1)(i)?;
+    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
     Ok((i, leb.0))
 }
 
 fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
+    debug!("take_leb_u8");
     let (_, bytes) = take(1u8)(i)?;
-
     let leb = read_u8_leb128(bytes);
-
     let (i, _) = take(leb.1)(i)?;
 
     Ok((i, leb.0))
