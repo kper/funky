@@ -1,7 +1,3 @@
-use std::io::Cursor;
-use byteorder::{LittleEndian, ReadBytesExt};
-use crate::leb128::*;
-
 pub enum SectionType {
     Type,
     Import,
@@ -27,8 +23,8 @@ pub enum ValueType {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum BlockType {
-    empty,
-    value_type(ValueType),
+    Empty,
+    ValueType(ValueType),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -120,8 +116,8 @@ pub struct GlobalType {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Mu {
-    _const,
-    _var,
+    Const,
+    Var,
 }
 
 #[derive(Debug)]
@@ -168,8 +164,8 @@ pub struct LocalEntry {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Limits {
-    zero(u32),
-    one(u32, u32),
+    Zero(u32),
+    One(u32, u32),
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -210,8 +206,8 @@ impl std::convert::From<u8> for ValueType {
 impl std::convert::From<u8> for BlockType {
     fn from(item: u8) -> Self {
         match item {
-            0x40 => Self::empty,
-            (v) => Self::value_type(v.into()),
+            0x40 => Self::Empty,
+            v => Self::ValueType(v.into()),
         }
     }
 }
@@ -219,8 +215,8 @@ impl std::convert::From<u8> for BlockType {
 impl std::convert::From<u8> for Mu {
     fn from(item: u8) -> Self {
         match item {
-            0x00 => Self::_const,
-            0x01 => Self::_var,
+            0x00 => Self::Const,
+            0x01 => Self::Var,
             _ => panic!("Mu failed"),
         }
     }

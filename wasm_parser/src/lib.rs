@@ -1,9 +1,8 @@
 #![feature(vec_drain_as_slice)]
 
-#[macro_use]
 extern crate log;
 
-use log::{debug, info, warn};
+use log::{debug};
 
 mod core;
 mod leb128;
@@ -11,14 +10,10 @@ mod leb128;
 use self::core::*;
 use self::leb128::*;
 
-use nom::bytes::complete::{take, take_until};
-use nom::combinator::{complete, opt};
-use nom::multi::{count, length_data, many0};
-use nom::number::complete::be_u16;
-use nom::number::complete::be_u32;
-use nom::preceded;
+use nom::bytes::complete::{take};
+use nom::combinator::{complete};
+use nom::multi::{count, many0};
 use nom::IResult;
-use nom::{alt, eof, named};
 
 use byteorder::{ByteOrder, LittleEndian};
 
@@ -44,21 +39,20 @@ macro_rules! read_wasm {
     }};
 }
 
-pub fn parse(mut content: Vec<u8>) {
+pub fn parse(content: Vec<u8>) {
     let slice = content.as_slice();
 
     println!("{:?}", parse_module(slice).unwrap());
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
-    use nom::sequence::preceded;
     debug!("START {:?}", i);
 
     let (i, magic) = take_until_magic_number(i)?;
 
     assert_eq!(MAGIC_NUMBER, magic);
 
-    let (i, version) = take_version_number(i)?;
+    let (i, _version) = take_version_number(i)?;
 
     let s = complete(many0(parse_section));
 
@@ -122,7 +116,7 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     ))
 }
 
-fn parse_type_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_type_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse type section");
 
     let (i, times) = take_leb_u32(i)?;
@@ -131,7 +125,7 @@ fn parse_type_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Type { entries: vec }))
 }
 
-fn parse_import_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_import_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse import section");
     let (i, times) = take_leb_u32(i)?;
     let (i, import) = count(take_import, times as usize)(i)?;
@@ -139,7 +133,7 @@ fn parse_import_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Import { entries: import }))
 }
 
-fn parse_function_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_function_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse function section");
     let (i, times) = take_leb_u32(i)?;
     let (i, functions) = count(take_leb_u32, times as usize)(i)?;
@@ -147,7 +141,7 @@ fn parse_function_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Function { types: functions }))
 }
 
-fn parse_table_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_table_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse table function");
     let (i, times) = take_leb_u32(i)?;
     let (i, tables) = count(take_tabletype, times as usize)(i)?;
@@ -155,7 +149,7 @@ fn parse_table_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Table { entries: tables }))
 }
 
-fn parse_memory_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_memory_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse memory function");
     let (i, times) = take_leb_u32(i)?;
     let (i, mem) = count(take_memtype, times as usize)(i)?;
@@ -163,7 +157,7 @@ fn parse_memory_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Memory { entries: mem }))
 }
 
-fn parse_global_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_global_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse global function");
     let (i, times) = take_leb_u32(i)?;
     let (i, globals) = count(take_global, times as usize)(i)?;
@@ -171,7 +165,7 @@ fn parse_global_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Global { globals: globals }))
 }
 
-fn parse_export_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_export_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse export function");
     let (i, times) = take_leb_u32(i)?;
     let (i, exports) = count(take_export, times as usize)(i)?;
@@ -179,14 +173,14 @@ fn parse_export_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Export { entries: exports }))
 }
 
-fn parse_start_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_start_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse start function");
     let (i, func_idx) = take_leb_u32(i)?;
 
     Ok((i, Section::Start { index: func_idx }))
 }
 
-fn parse_element_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_element_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse_element_section");
     let (i, times) = take_leb_u32(i)?;
     let (i, elements) = count(take_elem, times as usize)(i)?;
@@ -194,7 +188,7 @@ fn parse_element_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Element { entries: elements }))
 }
 
-fn parse_data_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse_data_section");
     let (i, times) = take_leb_u32(i)?;
     let (i, k) = count(take_data, times as usize)(i)?;
@@ -350,8 +344,8 @@ fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
     let (i, b) = take_byte(i, 1)?;
 
     let mu = match b[0] {
-        0x00 => Mu::_const,
-        0x01 => Mu::_var,
+        0x00 => Mu::Const,
+        0x01 => Mu::Var,
         _ => panic!("wrong mu"),
     };
 
@@ -371,17 +365,14 @@ fn take_limits(i: &[u8]) -> IResult<&[u8], Limits> {
     Ok(match n[0] {
         0x00 => {
             let (i, n) = take_leb_u32(i)?;
-            println!("n {:?}", n);
 
-            (i, Limits::zero(n))
+            (i, Limits::Zero(n))
         }
         0x01 => {
             let (i, n) = take_leb_u32(i)?;
             let (i, m) = take_leb_u32(i)?;
-            println!("n {:?}", n);
-            println!("m {:?}", m);
 
-            (i, Limits::one(n, m))
+            (i, Limits::One(n, m))
         }
         _ => panic!("Limit has wrong tag"),
     })
@@ -395,9 +386,9 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
     assert_eq!(offset[0], 0x60);
 
     let (i, times) = take_leb_u32(i)?;
-    let (i, mut t1) = count(take(1u8), times as usize)(i)?;
+    let (i, t1) = count(take(1u8), times as usize)(i)?;
     let (i, times) = take_leb_u32(i)?;
-    let (i, mut t2) = count(take(1u8), times as usize)(i)?;
+    let (i, t2) = count(take(1u8), times as usize)(i)?;
 
     let parameters: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
     let return_types: Vec<_> = t2.into_iter().map(|w| w[0].into()).collect();
@@ -413,21 +404,16 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
 
 fn take_valtype(i: &[u8]) -> IResult<&[u8], ValueType> {
     debug!("take_valtype");
-    let (i, mut n) = take(1u8)(i)?;
+    let (i, n) = take(1u8)(i)?;
 
     Ok((i, n[0].into()))
 }
 
 fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
     debug!("take_blocktype");
-    let (i, mut n) = take(1u8)(i)?;
+    let (i, n) = take(1u8)(i)?;
 
     Ok((i, n[0].into()))
-}
-
-fn take_size(i: &[u8]) -> IResult<&[u8], &[u8]> {
-    debug!("take_size");
-    take(4u8)(i)
 }
 
 fn take_byte(i: &[u8], len: u32) -> IResult<&[u8], &[u8]> {

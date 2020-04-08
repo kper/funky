@@ -1,6 +1,7 @@
 macro_rules! impl_read_unsigned_leb128 {
     ($fn_name:ident, $int_ty:ident) => {
         #[inline]
+        #[allow(dead_code)]
         pub fn $fn_name(slice: &[u8]) -> ($int_ty, usize) {
             let mut result = 0;
             let mut shift = 0;
@@ -23,6 +24,7 @@ macro_rules! impl_read_unsigned_leb128 {
 macro_rules! impl_write_unsigned_leb128 {
     ($fn_name:ident, $int_ty:ident) => {
         #[inline]
+        #[allow(dead_code)]
         pub fn $fn_name(out: &mut Vec<u8>, mut value: $int_ty) {
             loop {
                 if value < 0x80 {

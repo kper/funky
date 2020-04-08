@@ -2,7 +2,7 @@ extern crate wasm_parser;
 
 use wasm_parser::{parse, read_wasm};
 
-use std::env;
+//use std::env;
 
 fn main() {
     env_logger::init();
