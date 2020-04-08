@@ -165,8 +165,230 @@ pub enum Limits {
     One(u32, u32),
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Expr;
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum Expr {
+    Ctrl(CtrlInstructions),
+    Param(ParamInstructions),
+    Var(VarInstructions),
+    Mem(MemoryInstructions),
+    Num(NumericInstructions),
+}
+
+pub type LabelIdx = u32;
+pub type FuncIdx = u32;
+pub type LocalIdx = u32;
+
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum CtrlInstructions {
+    OP_UNREACHABLE,
+    OP_NOP,
+    OP_BLOCK(BlockType, Box<Expr>),
+    OP_LOOP(BlockType, Box<Expr>),
+    OP_IF(BlockType, Box<Expr>),
+    OP_IF_AND_ELSE(BlockType, Box<Expr>, Box<Expr>),
+    OP_BR(LabelIdx), //label_id
+    OP_BR_IF(LabelIdx), //label_id
+    OP_BR_TABLE(Vec<LabelIdx>, LabelIdx),
+    OP_RETURN,
+    OP_CALL(FuncIdx),
+    OP_CALL_INDIRECT(FuncIdx),
+}
+
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum ParamInstructions{
+    OP_DROP,
+    OP_SELECT,
+}
+
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum VarInstructions {
+    OP_LOCAL_GET(LocalIdx),
+    OP_LOCAL_SET(LocalIdx),
+    OP_LOCAL_TEE(LocalIdx),
+    OP_GLOBAL_GET(LocalIdx),
+    OP_GLOBAL_SET(LocalIdx),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MemArg {
+    pub align: u32,
+    pub offset: u32,
+}
+
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum MemoryInstructions {
+    OP_I32_LOAD(MemArg),
+    OP_I64_LOAD(MemArg),
+    OP_F32_LOAD(MemArg),
+    OP_F64_LOAD(MemArg),
+    OP_I32_LOAD_8_s(MemArg),
+    OP_I32_LOAD_8_u(MemArg),
+    OP_I32_LOAD_16_s(MemArg),
+    OP_I32_LOAD_16_u(MemArg),
+    OP_I64_LOAD_8_s(MemArg),
+    OP_I64_LOAD_8_u(MemArg),
+    OP_I64_LOAD_16_s(MemArg),
+    OP_I64_LOAD_16_u(MemArg),
+    OP_I64_LOAD_32_u(MemArg),
+    OP_I64_LOAD_32_s(MemArg),
+    OP_I32_STORE(MemArg),
+    OP_I64_STORE(MemArg),
+    OP_F32_STORE(MemArg),
+    OP_F64_STORE(MemArg),
+    OP_I32_STORE_8(MemArg),
+    OP_I32_STORE_16(MemArg),
+    OP_I64_STORE_8(MemArg),
+    OP_I64_STORE_16(MemArg),
+    OP_I64_STORE_32(MemArg),
+    OP_MEMORY_SIZE,
+    OP_MEMORY_GROW,
+}
+
+#[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum NumericInstructions {
+    OP_I32_CONST(i32),
+    OP_I64_CONST(i64),
+    OP_F32_CONST(f32),
+    OP_F64_CONST(f64),
+
+    OP_I32_EQZ,
+    OP_I32_EQ,
+    OP_I32_NE,
+    OP_I32_LT_S,
+    OP_I32_LT_U,
+    OP_I32_GT_S,
+    OP_I32_GT_U,
+    OP_I32_LE_S,
+    OP_I32_LE_U,
+    OP_I32_GE_S,
+    OP_I32_GE_U,
+
+    OP_I64_EQZ,
+    OP_I64_EQ,
+    OP_I64_NE,
+    OP_I64_LT_S,
+    OP_I64_LT_U,
+    OP_I64_GT_S,
+    OP_I64_GT_U,
+    OP_I64_LE_S,
+    OP_I64_LE_U,
+    OP_I64_GE_S,
+    OP_I64_GE_U,
+
+    OP_F32_EQ,
+    OP_F32_NE,
+    OP_F32_LT,
+    OP_F32_GT,
+    OP_F32_LE,
+    OP_F32_GE,
+
+    OP_F64_EQ,
+    OP_F64_NE,
+    OP_F64_LT,
+    OP_F64_GT,
+    OP_F64_LE,
+    OP_F64_GE,
+
+    OP_I32_CLZ,
+    OP_I32_CTZ,
+    OP_I32_POPCNT,
+    OP_I32_ADD,
+    OP_I32_SUB,
+    OP_I32_MUL,
+    OP_I32_DIV_S,
+    OP_I32_DIV_U,
+    OP_I32_REM_S,
+    OP_I32_REM_U,
+    OP_I32_AND,
+    OP_I32_OR,
+    OP_I32_XOR,
+    OP_I32_SHL,
+    OP_I32_SHL_S,
+    OP_I32_SHL_U,
+    OP_I32_ROTL,
+    OP_I32_ROTR,
+
+    OP_I64_CLZ,
+    OP_I64_CTZ,
+    OP_I64_POPCNT,
+    OP_I64_ADD,
+    OP_I64_SUB,
+    OP_I64_MUL,
+    OP_I64_DIV_S,
+    OP_I64_DIV_U,
+    OP_I64_REM_S,
+    OP_I64_REM_U,
+    OP_I64_AND,
+    OP_I64_OR,
+    OP_I64_XOR,
+    OP_I64_SHL,
+    OP_I64_SHL_S,
+    OP_I64_SHL_U,
+    OP_I64_ROTL,
+    OP_I64_ROTR,
+
+    OP_F32_ABS,
+    OP_F32_NEG,
+    OP_F32_CEIL,
+    OP_F32_FLOOR,
+    OP_F32_TRUNC,
+    OP_F32_NEAREST,
+    OP_F32_SQRT,
+    OP_F32_ADD,
+    OP_F32_SUB,
+    OP_F32_MUL,
+    OP_F32_DIV,
+    OP_F32_MIN,
+    OP_F32_MAX,
+    OP_F32_COPYSIGN,
+
+    OP_F64_ABS,
+    OP_F64_NEG,
+    OP_F64_CEIL,
+    OP_F64_FLOOR,
+    OP_F64_TRUNC,
+    OP_F64_NEAREST,
+    OP_F64_SQRT,
+    OP_F64_ADD,
+    OP_F64_SUB,
+    OP_F64_MUL,
+    OP_F64_DIV,
+    OP_F64_MIN,
+    OP_F64_MAX,
+    OP_F64_COPYSIGN,
+
+    OP_I32_WRAP_I64,
+    OP_I32_TRUNC_F32_S,
+    OP_I32_TRUNC_F32_U,
+    OP_I32_TRUNC_F64_S,
+    OP_I32_TRUNC_F64_U,
+    OP_I64_EXTEND_I32_U,
+    OP_I64_EXTEND_I32_S,
+    OP_I64_TRUNC_F32_S,
+    OP_I64_TRUNC_F32_U,
+    OP_I64_TRUNC_F64_S,
+    OP_I64_TRUNC_F64_U,
+    OP_F32_CONVERT_I32_S,
+    OP_F32_CONVERT_I32_U,
+    OP_F32_CONVERT_I64_S,
+    OP_F32_CONVERT_I64_U,
+    OP_F32_DEMOTE_F64,
+    OP_I64_CONVERT_I32_S,
+    OP_I64_CONVERT_I32_U,
+    OP_I64_CONVERT_I64_S,
+    OP_I64_CONVERT_I64_U,
+    OP_I64_PROMOTE_F32,
+    OP_I32_REINTERPRET_F32,
+    OP_I32_REINTERPRET_F64,
+    OP_F32_REINTERPRET_I32,
+    OP_F64_REINTERPRET_I64,
+}
 
 
 impl std::convert::From<u8> for SectionType {
