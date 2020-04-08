@@ -12,6 +12,7 @@ pub struct VarUInt8(pub u8);
 pub struct VarUInt32(pub u32);
 
 impl VarUInt32 {
+    /* WRONG
     pub fn get_u32(&self) -> u32 {
         let mut v : Vec<u8> = Vec::new();
         write_u32_leb128(&mut v, self.0);
@@ -20,6 +21,7 @@ impl VarUInt32 {
 
         rdr.read_u32::<LittleEndian>().unwrap()
     }
+    */
 
     pub fn get_usize(&self) -> usize {
         self.0 as usize
@@ -79,9 +81,9 @@ pub struct ImportEntry {
 #[derive(Debug)]
 pub enum ExternalKindType {
     Function { ty: varuint32 },
-    Table { ty: TableType },
-    Memory { ty: MemoryType },
-    Global { ty: GlobalType },
+    Table { ty: varuint32 },
+    Memory { ty: varuint32 },
+    Global { ty: varuint32 },
 }
 
 #[derive(Debug)]

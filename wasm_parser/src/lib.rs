@@ -109,11 +109,13 @@ fn take_version_number(i: &[u8]) -> IResult<&[u8], &[u8]> {
 
 fn parse_custom_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse custom section");
-    let (len, name) = take_name(i)?;
+    let (k, name) = take_name(i)?;
 
-    let len = LittleEndian::read_u32(len);
+    let str_len = i.len() - k.len();
 
-    let (i, _) = take(size.get_u32() - len)(i)?; //consume empty bytes
+    //let len = LittleEndian::read_u32(len);
+
+    let (i, _) = take(size.get_usize() as u32 - str_len as u32)(k)?; //consume empty bytes
 
     Ok((
         i,
@@ -173,6 +175,8 @@ fn parse_table_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
 fn parse_memory_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse memory function");
     let (i, times) = take_leb_u32(i)?;
+    debug!("times {:?}", times);
+    debug!("i {:?}", i);
     let (i, mem) = count(take_memtype, times.get_usize())(i)?;
 
     Ok((i, Section::Memory { entries: mem }))
@@ -192,6 +196,7 @@ fn parse_global_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
 fn parse_export_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
     debug!("parse export function");
     let (i, times) = take_leb_u32(i)?;
+    debug!("times {:?}", times);
 
     let (i, exports) = count(take_export, times.get_usize())(i)?;
 
@@ -225,10 +230,10 @@ fn parse_data_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
 }
 
 fn parse_code_section(i: &[u8], size: VarUInt32) -> IResult<&[u8], Section> {
-    let len = size.get_u32();
+    let len = size.get_usize();
 
     //TODO
-    let (i, _) = take(len)(i)?;
+    let (i, _) = take(len as u32)(i)?;
 
     Ok((
         i,
@@ -291,10 +296,12 @@ fn take_export(i: &[u8]) -> IResult<&[u8], ExportEntry> {
     let (i, name) = take_name(i)?;
 
     debug!("name {:?}", name);
+    debug!("i {:?}", i);
 
     let (i, desc) = take_desc(i)?;
 
     debug!("desc {:?}", desc);
+    debug!("i {:?}", i);
 
     Ok((
         i,
@@ -340,15 +347,15 @@ fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
             (i, ExternalKindType::Function { ty: t })
         }
         0x01 => {
-            let (i, t) = take_tabletype(&i)?;
+            let (i, t) = take_leb_u32(&i)?;
             (i, ExternalKindType::Table { ty: t })
         }
         0x02 => {
-            let (i, t) = take_memtype(&i)?;
+            let (i, t) = take_leb_u32(&i)?;
             (i, ExternalKindType::Memory { ty: t })
         }
         0x03 => {
-            let (i, t) = take_globaltype(&i)?;
+            let (i, t) = take_leb_u32(&i)?;
             (i, ExternalKindType::Global { ty: t })
         }
         _ => panic!("desc failed"),
@@ -359,6 +366,8 @@ fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
 
 fn take_memtype(i: &[u8]) -> IResult<&[u8], MemoryType> {
     let (i, l) = take_limits(i)?;
+
+    debug!("limits {:?}", l);
 
     Ok((i, MemoryType { limits: l }))
 }
@@ -487,7 +496,7 @@ fn take_name(i: &[u8]) -> IResult<&[u8], String> {
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take(1u8), times.get_usize())(i)?;
 
-    let vec2 : Vec<_> = vec.into_iter().map(|w| w[0]).collect();
+    let vec2: Vec<_> = vec.into_iter().map(|w| w[0]).collect();
 
     Ok((i, String::from_utf8(vec2).unwrap()))
 }
