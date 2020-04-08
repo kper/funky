@@ -198,14 +198,52 @@ fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
 
 fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse_code_section");
-    let (i, _code) = take(size)(i)?;
+    //let (i, _code) = take(size)(i)?;
+    
+    let (i, times) = take_leb_u32(i)?;
+    let (i, codes) = count(take_code, times as usize)(i)?;
 
     Ok((
         i,
-        Section::Custom {
-            name: "code".to_string(),
+        Section::Code {
+            entries: codes,
         },
     ))
+}
+
+fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
+    debug!("parse_code");
+
+    let (i, times) = take_leb_u32(i)?;
+    let (i, k) = take_func(i)?;
+
+    Ok((i, k))
+}
+
+fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
+    debug!("take_func");
+    
+    let (i, times) = take_leb_u32(i)?;
+    let (i, locals) = count(take_local, times as usize)(i)?;
+
+    let (i, expr) = take_expr(i)?;
+
+    Ok((i, FunctionBody {
+        locals: locals,
+        code: expr,        
+    }))
+}
+
+fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
+    debug!("take_local");
+
+    let (i, n) = take_leb_u32(i)?;
+    let (i, t) = take_valtype(i)?;
+
+    Ok((i, LocalEntry {
+        count: n,
+        ty: t,
+    }))
 }
 
 fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
@@ -267,7 +305,7 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
     Ok((i, GlobalVariable { ty, init: e }))
 }
 
-fn take_expr(i: &[u8]) -> IResult<&[u8], InitExpr> {
+fn take_expr(i: &[u8]) -> IResult<&[u8], Expr> {
     unimplemented!("todo")
 }
 

@@ -85,7 +85,7 @@ pub enum Section {
         entries: Vec<ElementSegment>,
     },
     Code {
-        bodies: Vec<FunctionBody>,
+        entries: Vec<FunctionBody>,
     },
     Data {
         entries: Vec<DataSegment>,
@@ -123,7 +123,7 @@ pub enum Mu {
 #[derive(Debug)]
 pub struct GlobalVariable {
     pub ty: GlobalType,
-    pub init: InitExpr,
+    pub init: Expr,
 }
 
 #[derive(Debug)]
@@ -136,30 +136,27 @@ pub struct ExportEntry {
 #[derive(Debug)]
 pub struct ElementSegment {
     pub index: u32,
-    pub offset: InitExpr,
+    pub offset: Expr,
     pub elems: Vec<u32>,
 }
 
 #[derive(Debug)]
 pub struct DataSegment {
     pub index: u32,
-    pub offset: InitExpr,
+    pub offset: Expr,
     pub data: Vec<u8>,
 }
 
 #[derive(Debug)]
 pub struct FunctionBody {
-    body_size: u32,
-    local_count: u32,
-    locals: Vec<LocalEntry>,
-    code: Vec<u8>,
-    end: u8, //0x0b
+    pub locals: Vec<LocalEntry>,
+    pub code: Expr,
 }
 
 #[derive(Debug)]
 pub struct LocalEntry {
-    count: u32,
-    ty: ValueType,
+    pub count: u32,
+    pub ty: ValueType,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -169,7 +166,8 @@ pub enum Limits {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct InitExpr;
+pub struct Expr;
+
 
 impl std::convert::From<u8> for SectionType {
     fn from(item: u8) -> Self {
