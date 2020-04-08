@@ -2,22 +2,24 @@
 
 extern crate log;
 
-use log::{debug};
+use log::debug;
 
 mod core;
+mod instructions;
 mod leb128;
 
 use self::core::*;
 use self::leb128::*;
 
-use nom::bytes::complete::{take};
-use nom::combinator::{complete};
+use nom::bytes::complete::take;
+use nom::combinator::complete;
 use nom::multi::{count, many0};
 use nom::IResult;
 
 use byteorder::{ByteOrder, LittleEndian};
 
 pub const MAGIC_NUMBER: &'static [u8] = &[0, 97, 115, 109];
+const END_INSTR : &[u8] = &[0x0B];
 
 #[derive(Debug)]
 struct Module {
@@ -199,16 +201,11 @@ fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
 fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse_code_section");
     //let (i, _code) = take(size)(i)?;
-    
+
     let (i, times) = take_leb_u32(i)?;
     let (i, codes) = count(take_code, times as usize)(i)?;
 
-    Ok((
-        i,
-        Section::Code {
-            entries: codes,
-        },
-    ))
+    Ok((i, Section::Code { entries: codes }))
 }
 
 fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
@@ -222,16 +219,19 @@ fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
 
 fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
     debug!("take_func");
-    
+
     let (i, times) = take_leb_u32(i)?;
     let (i, locals) = count(take_local, times as usize)(i)?;
 
     let (i, expr) = take_expr(i)?;
 
-    Ok((i, FunctionBody {
-        locals: locals,
-        code: expr,        
-    }))
+    Ok((
+        i,
+        FunctionBody {
+            locals: locals,
+            code: expr,
+        },
+    ))
 }
 
 fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
@@ -240,10 +240,7 @@ fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
     let (i, n) = take_leb_u32(i)?;
     let (i, t) = take_valtype(i)?;
 
-    Ok((i, LocalEntry {
-        count: n,
-        ty: t,
-    }))
+    Ok((i, LocalEntry { count: n, ty: t }))
 }
 
 fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
@@ -306,7 +303,12 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
 }
 
 fn take_expr(i: &[u8]) -> IResult<&[u8], Expr> {
-    unimplemented!("todo")
+    let (i, ii) = instructions::parse_instr(i)?;
+    let (i, e) = take(1u8)(i)?; //0x0B
+
+    assert_eq!(e, END_INSTR);
+
+    Ok((i, ii))
 }
 
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
@@ -483,7 +485,7 @@ fn take_name(i: &[u8]) -> IResult<&[u8], String> {
     Ok((i, String::from_utf8(vec2).unwrap()))
 }
 
-fn take_leb_u32(i: &[u8]) -> IResult<&[u8], u32> {
+pub(crate) fn take_leb_u32(i: &[u8]) -> IResult<&[u8], u32> {
     debug!("take_leb_u32");
     let (_, bytes) = take(4u8)(i)?;
     let leb = read_u32_leb128(bytes);
