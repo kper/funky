@@ -2,37 +2,6 @@ use std::io::Cursor;
 use byteorder::{LittleEndian, ReadBytesExt};
 use crate::leb128::*;
 
-#[derive(Debug, Clone)]
-pub struct VarUInt1(pub u8);
-#[derive(Debug, Clone)]
-pub struct VarInt7(pub u8);
-#[derive(Debug, Clone)]
-pub struct VarUInt8(pub u8);
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VarUInt32(pub u32);
-
-impl VarUInt32 {
-    /* WRONG
-    pub fn get_u32(&self) -> u32 {
-        let mut v : Vec<u8> = Vec::new();
-        write_u32_leb128(&mut v, self.0);
-
-        let mut rdr = Cursor::new(v);
-
-        rdr.read_u32::<LittleEndian>().unwrap()
-    }
-    */
-
-    pub fn get_usize(&self) -> usize {
-        self.0 as usize
-    }
-}
-
-type varuint32 = VarUInt32;
-type varint7 = VarInt7;
-type varuint1 = VarUInt1;
-type varuint8 = VarUInt8;
-
 pub enum SectionType {
     Type,
     Import,
@@ -80,10 +49,10 @@ pub struct ImportEntry {
 
 #[derive(Debug)]
 pub enum ExternalKindType {
-    Function { ty: varuint32 },
-    Table { ty: varuint32 },
-    Memory { ty: varuint32 },
-    Global { ty: varuint32 },
+    Function { ty: u32 },
+    Table { ty: u32 },
+    Memory { ty: u32 },
+    Global { ty: u32 },
 }
 
 #[derive(Debug)]
@@ -99,7 +68,7 @@ pub enum Section {
         entries: Vec<ImportEntry>,
     },
     Function {
-        types: Vec<varuint32>,
+        types: Vec<u32>,
     },
     Table {
         entries: Vec<TableType>,
@@ -114,7 +83,7 @@ pub enum Section {
         entries: Vec<ExportEntry>,
     },
     Start {
-        index: varuint32,
+        index: u32,
     },
     Element {
         entries: Vec<ElementSegment>,
@@ -126,8 +95,8 @@ pub enum Section {
         entries: Vec<DataSegment>,
     },
     Name {
-        name_type: varint7,
-        name_payload_len: varuint32,
+        name_type: u8,
+        name_payload_len: u32,
         name_payload_data: Vec<u8>,
     },
 }
@@ -170,22 +139,22 @@ pub struct ExportEntry {
 
 #[derive(Debug)]
 pub struct ElementSegment {
-    pub index: varuint32,
+    pub index: u32,
     pub offset: InitExpr,
-    pub elems: Vec<varuint32>,
+    pub elems: Vec<u32>,
 }
 
 #[derive(Debug)]
 pub struct DataSegment {
-    pub index: varuint32,
+    pub index: u32,
     pub offset: InitExpr,
     pub data: Vec<u8>,
 }
 
 #[derive(Debug)]
 pub struct FunctionBody {
-    body_size: varuint32,
-    local_count: varuint32,
+    body_size: u32,
+    local_count: u32,
     locals: Vec<LocalEntry>,
     code: Vec<u8>,
     end: u8, //0x0b
@@ -193,24 +162,15 @@ pub struct FunctionBody {
 
 #[derive(Debug)]
 pub struct LocalEntry {
-    count: varuint32,
+    count: u32,
     ty: ValueType,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Limits {
-    zero(varuint32),
-    one(varuint32, varuint32),
+    zero(u32),
+    one(u32, u32),
 }
-
-/*
-pub struct FuncType<T, W> {
-    t1: VecTy<T>,
-    t1_ty: ValueType,
-    t2: VecTy<W>,
-    t2_ty: ValueType,
-}
-*/
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct InitExpr;
