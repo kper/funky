@@ -42,7 +42,7 @@ macro_rules! read_wasm {
 pub fn parse(content: Vec<u8>) {
     let slice = content.as_slice();
 
-    println!("{:?}", parse_module(slice).unwrap());
+    println!("{:#?}", parse_module(slice).unwrap());
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
