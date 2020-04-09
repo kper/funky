@@ -187,10 +187,10 @@ pub type LocalIdx = u32;
 pub enum CtrlInstructions {
     OP_UNREACHABLE,
     OP_NOP,
-    OP_BLOCK(BlockType, Box<Instruction>),
-    OP_LOOP(BlockType, Box<Instruction>), //TODO Add vec
-    OP_IF(BlockType, Box<Instruction>),
-    OP_IF_AND_ELSE(BlockType, Box<Instruction>, Box<Instruction>),
+    OP_BLOCK(BlockType, Box<Vec<Instruction>>),
+    OP_LOOP(BlockType, Box<Vec<Instruction>>),
+    OP_IF(BlockType, Box<Vec<Instruction>>),
+    OP_IF_AND_ELSE(BlockType, Box<Vec<Instruction>>, Box<Vec<Instruction>>),
     OP_BR(LabelIdx), //label_id
     OP_BR_IF(LabelIdx), //label_id
     OP_BR_TABLE(Vec<LabelIdx>, LabelIdx),

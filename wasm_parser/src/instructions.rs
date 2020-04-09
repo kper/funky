@@ -4,7 +4,7 @@ use nom::multi::count;
 use nom::IResult;
 
 use crate::core::*;
-use crate::{take_blocktype, take_f32, take_f64};
+use crate::{take_blocktype, take_f32, take_f64, take_expr};
 
 const END_INSTR: &[u8] = &[0x0B];
 
@@ -386,12 +386,15 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
 fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, block_ty) = take_blocktype(i)?;
 
-    let (i, ii) = parse_instr(i)?;
-    let (i, b) = take(1u8)(i)?; //0x0B
+   // let (i, ii) = parse_instr(i)?;
+    
+    let (i, instructions) = take_expr(i)?;
 
+    let (i, b) = take(1u8)(i)?; //0x0B
     assert_eq!(b, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, Box::new(ii)));
+
+    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, Box::new(instructions)));
 
     Ok((i, block))
 }
@@ -399,12 +402,15 @@ fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
 fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, block_ty) = take_blocktype(i)?;
 
-    let (i, ii) = parse_instr(i)?;
+    //let (i, ii) = parse_instr(i)?;
+    
+    let (i, instructions) = take_expr(i)?;
     let (i, b) = take(1u8)(i)?; //0x0B
 
     assert_eq!(b, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, Box::new(ii)));
+
+    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, Box::new(instructions)));
 
     Ok((i, block))
 }

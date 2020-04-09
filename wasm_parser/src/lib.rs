@@ -231,7 +231,7 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
         i,
         FunctionBody {
             locals: locals,
-            code: expr,
+            code: Expr(expr),
         },
     ))
 }
@@ -258,7 +258,7 @@ fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
         i,
         DataSegment {
             index: mem_idx,
-            offset: e,
+            offset: Expr(e),
             data: b.into_iter().map(|w| w[0]).collect(),
         },
     ))
@@ -276,7 +276,7 @@ fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
         i,
         ElementSegment {
             index: table_idx,
-            offset: e,
+            offset: Expr(e),
             elems: y_vec,
         },
     ))
@@ -301,10 +301,10 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
     let (i, ty) = take_globaltype(i)?;
     let (i, e) = take_expr(i)?;
 
-    Ok((i, GlobalVariable { ty, init: e }))
+    Ok((i, GlobalVariable { ty, init: Expr(e) }))
 }
 
-fn take_expr(i: &[u8]) -> IResult<&[u8], Expr> {
+pub(crate) fn take_expr(i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
     debug!("take expr");
 
     let mut instructions = Vec::new();
@@ -325,7 +325,7 @@ fn take_expr(i: &[u8]) -> IResult<&[u8], Expr> {
     let (input, e) = take(1u8)(input)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    Ok((input, Expr(instructions)))
+    Ok((input, instructions))
 }
 
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
