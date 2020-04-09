@@ -49,3 +49,29 @@ impl_write_unsigned_leb128!(write_u8_leb128, u8);
 impl_write_unsigned_leb128!(write_u16_leb128, u16);
 impl_write_unsigned_leb128!(write_u32_leb128, u32);
 impl_write_unsigned_leb128!(write_u64_leb128, u64);
+
+/*
+pub fn read_signed_i32_leb128(data: &[u8], start_position: usize) -> (i32, usize) {
+    let mut result = 0;
+    let mut shift = 0;
+    let mut position = start_position;
+    let mut byte;
+
+    loop {
+        byte = data[position];
+        position += 1;
+        result |= i128::from(byte & 0x7F) << shift;
+        shift += 7;
+
+        if (byte & 0x80) == 0 {
+            break;
+        }
+    }
+
+    if (shift < 64) && ((byte & 0x40) != 0) {
+        // sign extend
+        result |= -(1 << shift);
+    }
+
+    (result, position - start_position)
+}*/

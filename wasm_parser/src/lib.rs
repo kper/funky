@@ -201,7 +201,6 @@ fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
 
 fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     debug!("parse_code_section");
-    //let (i, _code) = take(size)(i)?;
 
     let (i, times) = take_leb_u32(i)?;
     let (i, codes) = count(take_code, times as usize)(i)?;
@@ -212,7 +211,7 @@ fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
     debug!("parse_code");
 
-    let (i, times) = take_leb_u32(i)?;
+    let (i, size) = take_leb_u32(i)?;
     let (i, k) = take_func(i)?;
 
     Ok((i, k))
@@ -223,6 +222,8 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
 
     let (i, times) = take_leb_u32(i)?;
     let (i, locals) = count(take_local, times as usize)(i)?;
+
+    debug!("locals {:?}", locals);
 
     let (i, expr) = take_expr(i)?;
 
@@ -304,12 +305,27 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
 }
 
 fn take_expr(i: &[u8]) -> IResult<&[u8], Expr> {
-    let (i, ii) = instructions::parse_instr(i)?;
-    let (i, e) = take(1u8)(i)?; //0x0B
+    debug!("take expr");
 
+    let mut instructions = Vec::new();
+    let (u, mut e) = take(1u8)(i)?; //0x0B - wuarscht
+
+    let mut input = i;
+
+    while e != END_INSTR {
+        let (w, ii) = instructions::parse_instr(input)?;
+        debug!("w {:?}", w);
+        input = w;
+        instructions.push(ii);
+        let (u, k) = take(1u8)(w)?; //0x0B
+        e = k;
+    }
+    debug!("instructions {:?}", instructions);
+
+    let (input, e) = take(1u8)(input)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    Ok((i, ii))
+    Ok((input, Expr(instructions)))
 }
 
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
@@ -462,14 +478,14 @@ fn take_byte(i: &[u8], len: u32) -> IResult<&[u8], &[u8]> {
     take(len as usize)(i)
 }
 
-fn take_f32(i: &[u8]) -> IResult<&[u8], f32> {
+pub(crate) fn take_f32(i: &[u8]) -> IResult<&[u8], f32> {
     debug!("take_f32");
     let (i, bytes) = take(4u8)(i)?;
 
     Ok((i, LittleEndian::read_f32(bytes)))
 }
 
-fn take_f64(i: &[u8]) -> IResult<&[u8], f64> {
+pub(crate) fn take_f64(i: &[u8]) -> IResult<&[u8], f64> {
     debug!("take_f64");
     let (i, bytes) = take(8u8)(i)?;
 

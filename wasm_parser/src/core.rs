@@ -166,8 +166,11 @@ pub enum Limits {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Expr(pub Vec<Instruction>);
+
+#[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]
-pub enum Expr {
+pub enum Instruction {
     Ctrl(CtrlInstructions),
     Param(ParamInstructions),
     Var(VarInstructions),
@@ -184,10 +187,10 @@ pub type LocalIdx = u32;
 pub enum CtrlInstructions {
     OP_UNREACHABLE,
     OP_NOP,
-    OP_BLOCK(BlockType, Box<Expr>),
-    OP_LOOP(BlockType, Box<Expr>),
-    OP_IF(BlockType, Box<Expr>),
-    OP_IF_AND_ELSE(BlockType, Box<Expr>, Box<Expr>),
+    OP_BLOCK(BlockType, Box<Instruction>),
+    OP_LOOP(BlockType, Box<Instruction>), //TODO Add vec
+    OP_IF(BlockType, Box<Instruction>),
+    OP_IF_AND_ELSE(BlockType, Box<Instruction>, Box<Instruction>),
     OP_BR(LabelIdx), //label_id
     OP_BR_IF(LabelIdx), //label_id
     OP_BR_TABLE(Vec<LabelIdx>, LabelIdx),
@@ -309,8 +312,8 @@ pub enum NumericInstructions {
     OP_I32_OR,
     OP_I32_XOR,
     OP_I32_SHL,
-    OP_I32_SHL_S,
-    OP_I32_SHL_U,
+    OP_I32_SHR_S,
+    OP_I32_SHR_U,
     OP_I32_ROTL,
     OP_I32_ROTR,
 
@@ -328,8 +331,8 @@ pub enum NumericInstructions {
     OP_I64_OR,
     OP_I64_XOR,
     OP_I64_SHL,
-    OP_I64_SHL_S,
-    OP_I64_SHL_U,
+    OP_I64_SHR_S,
+    OP_I64_SHR_U,
     OP_I64_ROTL,
     OP_I64_ROTR,
 
@@ -379,13 +382,13 @@ pub enum NumericInstructions {
     OP_F32_CONVERT_I64_S,
     OP_F32_CONVERT_I64_U,
     OP_F32_DEMOTE_F64,
-    OP_I64_CONVERT_I32_S,
-    OP_I64_CONVERT_I32_U,
-    OP_I64_CONVERT_I64_S,
-    OP_I64_CONVERT_I64_U,
-    OP_I64_PROMOTE_F32,
+    OP_F64_CONVERT_I32_S,
+    OP_F64_CONVERT_I32_U,
+    OP_F64_CONVERT_I64_S,
+    OP_F64_CONVERT_I64_U,
+    OP_F64_PROMOTE_F32,
     OP_I32_REINTERPRET_F32,
-    OP_I32_REINTERPRET_F64,
+    OP_I64_REINTERPRET_F64,
     OP_F32_REINTERPRET_I32,
     OP_F64_REINTERPRET_I64,
 }
