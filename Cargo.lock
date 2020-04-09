@@ -67,6 +67,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "funky"
+version = "0.1.0"
+dependencies = [
+ "wasm-parser",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -338,10 +345,6 @@ dependencies = [
  "log",
  "nom",
 ]
-
-[[package]]
-name = "wasm_parser"
-version = "0.1.0"
 
 [[package]]
 name = "wee_alloc"

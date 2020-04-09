@@ -6,6 +6,7 @@ use log::debug;
 
 mod core;
 mod instructions;
+pub mod isa;
 mod leb128;
 
 use self::core::*;
@@ -19,7 +20,7 @@ use nom::IResult;
 use byteorder::{ByteOrder, LittleEndian};
 
 pub const MAGIC_NUMBER: &'static [u8] = &[0, 97, 115, 109];
-const END_INSTR : &[u8] = &[0x0B];
+const END_INSTR: &[u8] = &[0x0B];
 
 #[derive(Debug)]
 struct Module {

@@ -1,5 +1,5 @@
 [package]
-name = "wasm_parser"
+name = "funky"
 version = "0.1.0"
 authors = ["Kevin Per <kevin.per@protonmail.com>"]
 edition = "2018"
@@ -13,3 +13,4 @@ members = [
 ]
 
 [dependencies]
+wasm-parser = { path = "./wasm_parser" }
