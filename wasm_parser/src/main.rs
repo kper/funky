@@ -9,6 +9,7 @@ fn main() {
 
     let reader = read_wasm!("./test_files/simple_bg.wasm");
     //let reader = read_wasm!("./test_files/empty.wasm");
-    
-    parse(reader);
+
+    let module = parse(reader);
+    println!("{:#?}", module);
 }

@@ -42,14 +42,15 @@ macro_rules! read_wasm {
     }};
 }
 
-pub fn parse(content: Vec<u8>) -> Result<Module, ErrorKind> {
+pub fn parse(content: Vec<u8>) -> Result<Module, ()> {
     let slice = content.as_slice();
 
     debug!("{:#?}", parse_module(slice).unwrap());
-    let sections = parse_module(slice).unwrap().1;
-    Ok(Module {
-        sections: Vec::new(),
-    })
+    let sections = match parse_module(slice) {
+        Ok((_, s)) => s,
+        Err(x) => return Err(()), // TODO: improve this error handling
+    };
+    Ok(Module { sections: sections })
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
