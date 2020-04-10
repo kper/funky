@@ -1,9 +1,12 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
-use wasm_parser::isa::Instruction::*;
+use std::ops::{Add, Mul};
+use wasm_parser::core::CtrlInstructions::*;
+use wasm_parser::core::Instruction::*;
+use wasm_parser::core::NumericInstructions::*;
 
 use std::collections::HashMap;
-use wasm_parser::isa::Instruction;
+use wasm_parser::core::Instruction;
 
 #[derive(Debug)]
 struct Engine {
@@ -18,6 +21,31 @@ pub enum Value {
     I64(i64),
     F32(f32),
     F64(f64),
+}
+
+impl Add for Value {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 + v2),
+            (I64(v1), I64(v2)) => I64(v1 + v2),
+            (F32(v1), F32(v2)) => F32(v1 + v2),
+            (F64(v1), F64(v2)) => F64(v1 + v2),
+            _ => panic!("Type missmatch during addition"),
+        }
+    }
+}
+impl Mul for Value {
+    type Output = Self;
+    fn mul(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 * v2),
+            (I64(v1), I64(v2)) => I64(v1 * v2),
+            (F32(v1), F32(v2)) => F32(v1 * v2),
+            (F64(v1), F64(v2)) => F64(v1 * v2),
+            _ => panic!("Type missmatch during addition"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -35,19 +63,10 @@ pub enum Variable {
     F64M(f64),
 }
 
-#[derive(Debug)]
-enum Trap {}
-
-#[derive(Debug)]
-enum Result {
-    None,
-    Value(Value),
-    Trap(Trap),
-}
-
 #[derive(Debug, PartialEq)]
 enum StackContent {
     Value(Value),
+    Frame,
 }
 
 #[derive(Debug)]
@@ -63,13 +82,13 @@ struct Store {
 }
 
 macro_rules! fetch_binop {
-    ($stack: expr, $v_ty: ident, $n_ty: ident) => {{
-        let v1: $n_ty = match $stack.pop().unwrap() {
-            Value($v_ty(v)) => v.into(),
+    ($stack: expr) => {{
+        let v1 = match $stack.pop().unwrap() {
+            Value(v) => v,
             x => panic!("Top of stack was not of type $v_ty: {:?}", x),
         };
-        let v2: $n_ty = match $stack.pop().unwrap() {
-            Value($v_ty(v)) => v.into(),
+        let v2 = match $stack.pop().unwrap() {
+            Value(v) => v,
             x => panic!("Top of stack was not of type $v_ty: {:?}", x),
         };
         (v1, v2)
@@ -81,25 +100,17 @@ impl Engine {
         let mut ip = addr;
         loop {
             match &self.module.source[ip] {
-                I32Const(v) => self.store.stack.push(Value(I32(*v))),
-                I64Const(v) => self.store.stack.push(Value(I64(*v))),
-                I32Add => {
-                    let (v1, v2) = fetch_binop!(self.store.stack, I32, i32);
-                    self.store.stack.push(Value(I32(v1 + v2)))
+                Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
+                Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
+                Num(OP_I32_ADD) | Num(OP_I64_ADD) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 + v2))
                 }
-                I64Add => {
-                    let (v1, v2) = fetch_binop!(self.store.stack, I64, i64);
-                    self.store.stack.push(Value(I64(v1 + v2)))
+                Num(OP_I32_MUL) | Num(OP_I64_MUL) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 * v2))
                 }
-                I32Mul => {
-                    let (v1, v2) = fetch_binop!(self.store.stack, I32, i32);
-                    self.store.stack.push(Value(I32(v1 * v2)))
-                }
-                I64Mul => {
-                    let (v1, v2) = fetch_binop!(self.store.stack, I64, i64);
-                    self.store.stack.push(Value(I64(v1 * v2)))
-                }
-                End => return,
+                Ctrl(OP_END) => return,
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
@@ -116,7 +127,12 @@ mod tests {
         let mut e = Engine {
             started: true,
             module: ModuleInstance {
-                source: vec![I32Const(42), I32Const(42), I32Add, End],
+                source: vec![
+                    Num(OP_I32_CONST(42)),
+                    Num(OP_I32_CONST(42)),
+                    Num(OP_I32_ADD),
+                    Ctrl(OP_END),
+                ],
             },
             store: Store {
                 stack: Vec::new(),
@@ -126,7 +142,14 @@ mod tests {
         };
         e.run_function(0);
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
-        e.module.source = vec![I64Const(32), I64Const(32), I64Add, I64Const(2), I64Mul, End];
+        e.module.source = vec![
+            Num(OP_I64_CONST(32)),
+            Num(OP_I64_CONST(32)),
+            Num(OP_I64_ADD),
+            Num(OP_I64_CONST(2)),
+            Num(OP_I64_MUL),
+            Ctrl(OP_END),
+        ];
         e.store.stack = Vec::new();
         e.run_function(0);
         assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());

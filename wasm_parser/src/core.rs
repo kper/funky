@@ -39,7 +39,7 @@ pub struct FuncType {
 #[derive(Debug)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
-    pub name: String, //utf8 string
+    pub name: String,        //utf8 string
     pub desc: ExternalKindType,
 }
 
@@ -191,17 +191,18 @@ pub enum CtrlInstructions {
     OP_LOOP(BlockType, Box<Vec<Instruction>>),
     OP_IF(BlockType, Box<Vec<Instruction>>),
     OP_IF_AND_ELSE(BlockType, Box<Vec<Instruction>>, Box<Vec<Instruction>>),
-    OP_BR(LabelIdx), //label_id
+    OP_BR(LabelIdx),    //label_id
     OP_BR_IF(LabelIdx), //label_id
     OP_BR_TABLE(Vec<LabelIdx>, LabelIdx),
     OP_RETURN,
     OP_CALL(FuncIdx),
     OP_CALL_INDIRECT(FuncIdx),
+    OP_END,
 }
 
 #[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]
-pub enum ParamInstructions{
+pub enum ParamInstructions {
     OP_DROP,
     OP_SELECT,
 }
@@ -392,7 +393,6 @@ pub enum NumericInstructions {
     OP_F32_REINTERPRET_I32,
     OP_F64_REINTERPRET_I64,
 }
-
 
 impl std::convert::From<u8> for SectionType {
     fn from(item: u8) -> Self {

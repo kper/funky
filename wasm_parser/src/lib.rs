@@ -4,9 +4,8 @@ extern crate log;
 
 use log::debug;
 
-mod core;
+pub mod core;
 mod instructions;
-pub mod isa;
 mod leb128;
 
 use self::core::*;
