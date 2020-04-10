@@ -14,3 +14,5 @@ members = [
 
 [dependencies]
 wasm-parser = { path = "./wasm_parser" }
+env_logger = "0.7"
+log = "*"
