@@ -5,17 +5,18 @@ use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::FunctionBody;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
-use wasm_parser::core::ValueType;
+use wasm_parser::core::Section;
 use wasm_parser::core::VarInstructions::*;
+use wasm_parser::Module;
 
 use std::collections::HashMap;
 use wasm_parser::core::Instruction;
 
 #[derive(Debug)]
-struct Engine {
-    module: ModuleInstance,
-    store: Store,
-    started: bool,
+pub struct Engine {
+    pub module: ModuleInstance,
+    pub store: Store,
+    pub started: bool,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -58,7 +59,7 @@ pub struct Variable {
 }
 
 #[derive(Debug, PartialEq)]
-enum StackContent {
+pub enum StackContent {
     Value(Value),
     Frame(Frame),
 }
@@ -69,13 +70,16 @@ struct Frame {
 }
 
 #[derive(Debug)]
-struct ModuleInstance {}
+pub struct ModuleInstance {
+    start: u32,
+    code: Vec<FunctionBody>,
+}
 
 #[derive(Debug)]
-struct Store {
-    globals: Vec<Variable>,
-    memory: Vec<u8>,
-    stack: Vec<StackContent>,
+pub struct Store {
+    pub globals: Vec<Variable>,
+    pub memory: Vec<u8>,
+    pub stack: Vec<StackContent>,
 }
 
 macro_rules! fetch_binop {
@@ -92,8 +96,40 @@ macro_rules! fetch_binop {
     }};
 }
 
+impl ModuleInstance {
+    pub fn new(m: Module) -> Self {
+        let mut mi = ModuleInstance {
+            start: 0,
+            code: Vec::new(),
+        };
+        for section in m.sections {
+            match section {
+                Section::Code { entries: x } => mi.code = x,
+                _ => {}
+            }
+        }
+        mi
+    }
+}
+
 impl Engine {
-    pub fn run_function(&mut self, f: FunctionBody) {
+    pub fn new(mi: ModuleInstance) -> Self {
+        Engine {
+            module: mi,
+            started: false,
+            store: Store {
+                stack: Vec::new(),
+                globals: Vec::new(),
+                memory: Vec::new(),
+            },
+        }
+    }
+    pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
+        self.store.stack.push(Frame(Frame { locals: args }));
+        self.run_function(idx);
+    }
+    fn run_function(&mut self, idx: u32) {
+        let f = &self.module.code[idx as usize];
         let mut fr = match self.store.stack.pop() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
@@ -156,7 +192,10 @@ mod tests {
     fn empty_engine() -> Engine {
         Engine {
             started: true,
-            module: ModuleInstance {},
+            module: ModuleInstance {
+                start: 0,
+                code: Vec::new(),
+            },
             store: Store {
                 stack: vec![Frame(Frame { locals: Vec::new() })],
                 globals: Vec::new(),
@@ -168,17 +207,18 @@ mod tests {
     #[test]
     fn test_run_function() {
         let mut e = empty_engine();
-        e.run_function(FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(42)),
                 Num(OP_I32_CONST(42)),
                 Num(OP_I32_ADD),
             ],
-        });
+        }];
+        e.run_function(0);
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
         e.store.stack = vec![Frame(Frame { locals: Vec::new() })];
-        e.run_function(FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I64_CONST(32)),
@@ -187,7 +227,8 @@ mod tests {
                 Num(OP_I64_CONST(2)),
                 Num(OP_I64_MUL),
             ],
-        });
+        }];
+        e.run_function(0);
         assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
     }
 
@@ -197,10 +238,11 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             locals: vec![I32(1), I32(4)],
         })];
-        e.run_function(FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
-        });
+        }];
+        e.run_function(0);
         assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
     }
 
@@ -210,7 +252,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             locals: vec![I32(1), I32(4)],
         })];
-        e.run_function(FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_LOCAL_GET(0)),
@@ -221,7 +263,8 @@ mod tests {
                 Var(OP_LOCAL_GET(0)),
                 Num(OP_I32_ADD),
             ],
-        });
+        }];
+        e.run_function(0);
         assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
     }
 
@@ -232,7 +275,7 @@ mod tests {
             mutable: true,
             val: I32(69),
         }];
-        e.run_function(FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_GLOBAL_GET(0)),
@@ -240,7 +283,8 @@ mod tests {
                 Num(OP_I32_ADD),
                 Var(OP_GLOBAL_SET(0)),
             ],
-        });
+        }];
+        e.run_function(0);
         assert_eq!(I32(420), e.store.globals[0].val);
     }
 }

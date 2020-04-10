@@ -24,7 +24,7 @@ const END_INSTR: &[u8] = &[0x0B];
 
 #[derive(Debug)]
 pub struct Module {
-    sections: Vec<Section>,
+    pub sections: Vec<Section>,
 }
 
 #[macro_export]
