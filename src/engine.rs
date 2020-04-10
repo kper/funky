@@ -101,10 +101,10 @@ impl Engine {
         };
         let mut ip = 0;
         loop {
-            if ip >= f.code.0.len() {
+            if ip >= f.code.len() {
                 return;
             }
-            match &f.code.0[ip] {
+            match &f.code[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => fr.locals[*idx as usize] = v,
@@ -152,7 +152,6 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use wasm_parser::core::Expr;
 
     fn empty_engine() -> Engine {
         Engine {
@@ -171,23 +170,23 @@ mod tests {
         let mut e = empty_engine();
         e.run_function(FunctionBody {
             locals: vec![],
-            code: Expr(vec![
+            code: vec![
                 Num(OP_I32_CONST(42)),
                 Num(OP_I32_CONST(42)),
                 Num(OP_I32_ADD),
-            ]),
+            ],
         });
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
         e.store.stack = vec![Frame(Frame { locals: Vec::new() })];
         e.run_function(FunctionBody {
             locals: vec![],
-            code: Expr(vec![
+            code: vec![
                 Num(OP_I64_CONST(32)),
                 Num(OP_I64_CONST(32)),
                 Num(OP_I64_ADD),
                 Num(OP_I64_CONST(2)),
                 Num(OP_I64_MUL),
-            ]),
+            ],
         });
         assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
     }
@@ -200,11 +199,7 @@ mod tests {
         })];
         e.run_function(FunctionBody {
             locals: vec![],
-            code: Expr(vec![
-                Var(OP_LOCAL_GET(0)),
-                Var(OP_LOCAL_GET(1)),
-                Num(OP_I32_ADD),
-            ]),
+            code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         });
         assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
     }
@@ -217,7 +212,7 @@ mod tests {
         })];
         e.run_function(FunctionBody {
             locals: vec![],
-            code: Expr(vec![
+            code: vec![
                 Var(OP_LOCAL_GET(0)),
                 Var(OP_LOCAL_GET(1)),
                 Num(OP_I32_ADD),
@@ -225,7 +220,7 @@ mod tests {
                 Num(OP_I32_CONST(32)),
                 Var(OP_LOCAL_GET(0)),
                 Num(OP_I32_ADD),
-            ]),
+            ],
         });
         assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
     }
@@ -239,12 +234,12 @@ mod tests {
         }];
         e.run_function(FunctionBody {
             locals: vec![],
-            code: Expr(vec![
+            code: vec![
                 Var(OP_GLOBAL_GET(0)),
                 Num(OP_I32_CONST(351)),
                 Num(OP_I32_ADD),
                 Var(OP_GLOBAL_SET(0)),
-            ]),
+            ],
         });
         assert_eq!(I32(420), e.store.globals[0].val);
     }

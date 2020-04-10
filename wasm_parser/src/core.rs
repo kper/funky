@@ -165,8 +165,7 @@ pub enum Limits {
     One(u32, u32),
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Expr(pub Vec<Instruction>);
+type Expr = Vec<Instruction>;
 
 #[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]

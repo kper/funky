@@ -3,6 +3,7 @@
 extern crate log;
 
 use log::debug;
+use nom::error::ErrorKind;
 
 pub mod core;
 mod instructions;
@@ -22,7 +23,7 @@ pub const MAGIC_NUMBER: &'static [u8] = &[0, 97, 115, 109];
 const END_INSTR: &[u8] = &[0x0B];
 
 #[derive(Debug)]
-struct Module {
+pub struct Module {
     sections: Vec<Section>,
 }
 
@@ -41,10 +42,14 @@ macro_rules! read_wasm {
     }};
 }
 
-pub fn parse(content: Vec<u8>) {
+pub fn parse(content: Vec<u8>) -> Result<Module, ErrorKind> {
     let slice = content.as_slice();
 
-    println!("{:#?}", parse_module(slice).unwrap());
+    debug!("{:#?}", parse_module(slice).unwrap());
+    let sections = parse_module(slice).unwrap().1;
+    Ok(Module {
+        sections: Vec::new(),
+    })
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
@@ -69,7 +74,7 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
     let (i, n) = take(1u8)(i)?;
     let (i, size) = take_leb_u32(i)?;
 
-    println!("SECTION {:?} {:?}", n, size);
+    debug!("SECTION {:?} {:?}", n, size);
 
     debug!("{:?}", i);
 
@@ -230,7 +235,7 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
         i,
         FunctionBody {
             locals: locals,
-            code: Expr(expr),
+            code: expr,
         },
     ))
 }
@@ -257,7 +262,7 @@ fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
         i,
         DataSegment {
             index: mem_idx,
-            offset: Expr(e),
+            offset: e,
             data: b.into_iter().map(|w| w[0]).collect(),
         },
     ))
@@ -275,7 +280,7 @@ fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
         i,
         ElementSegment {
             index: table_idx,
-            offset: Expr(e),
+            offset: e,
             elems: y_vec,
         },
     ))
@@ -300,7 +305,7 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
     let (i, ty) = take_globaltype(i)?;
     let (i, e) = take_expr(i)?;
 
-    Ok((i, GlobalVariable { ty, init: Expr(e) }))
+    Ok((i, GlobalVariable { ty, init: e }))
 }
 
 pub(crate) fn take_expr(i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
@@ -611,7 +616,7 @@ mod tests {
 
         payload.extend(w);
 
-        assert_eq!(Limits::zero(VarUInt32(4)), take_limits(&payload).unwrap().1);
+        assert_eq!(Limits::Zero(4), take_limits(&payload).unwrap().1);
     }
 
     #[test]
@@ -641,10 +646,7 @@ mod tests {
         payload.extend(w);
         payload.extend(w2);
 
-        assert_eq!(
-            Limits::one(VarUInt32(4), VarUInt32(8)),
-            take_limits(&payload).unwrap().1
-        );
+        assert_eq!(Limits::One(4, 8), take_limits(&payload).unwrap().1);
     }
 
     #[test]
@@ -677,7 +679,7 @@ mod tests {
         let mut payload = vec![0x40 as u8];
 
         assert_eq!(
-            BlockType::empty,
+            BlockType::Empty,
             take_blocktype(payload.as_slice()).unwrap().1
         );
     }
@@ -687,7 +689,7 @@ mod tests {
         let mut payload = vec![0x7F as u8];
 
         assert_eq!(
-            BlockType::value_type(ValueType::I32),
+            BlockType::ValueType(ValueType::I32),
             take_blocktype(payload.as_slice()).unwrap().1
         );
     }
@@ -698,7 +700,7 @@ mod tests {
 
         let g = GlobalType {
             value_type: ValueType::I32,
-            mu: Mu::_const,
+            mu: Mu::Const,
         };
 
         assert_eq!(g, take_globaltype(payload.as_slice()).unwrap().1);
@@ -710,7 +712,7 @@ mod tests {
 
         let g = GlobalType {
             value_type: ValueType::I32,
-            mu: Mu::_var,
+            mu: Mu::Var,
         };
 
         assert_eq!(g, take_globaltype(payload.as_slice()).unwrap().1);
@@ -736,7 +738,7 @@ mod tests {
 
         let t = TableType {
             element_type: 0x70,
-            limits: Limits::zero(VarUInt32(4)),
+            limits: Limits::Zero(4),
         };
 
         assert_eq!(t, take_tabletype(payload.as_slice()).unwrap().1);
