@@ -50,6 +50,92 @@ impl_write_unsigned_leb128!(write_u16_leb128, u16);
 impl_write_unsigned_leb128!(write_u32_leb128, u32);
 impl_write_unsigned_leb128!(write_u64_leb128, u64);
 
+pub const CONTINUATION_BIT: u8 = 1 << 7;
+pub const SIGN_BIT: u8 = 1 << 6;
+
+#[inline]
+fn low_bits_of_byte(byte: u8) -> u8 {
+    byte & !CONTINUATION_BIT
+}
+
+pub fn read_i32_leb128(input: &[u8]) -> (i32, usize) {
+    let mut result = 0;
+    let mut shift = 0;
+    let size = 32;
+    let mut byte;
+    let mut bytes_read = 0;
+    let mut counter = 0;
+
+    loop {
+        if counter >= input.len() {
+            panic!("not enough data");
+        }
+
+        byte = input[counter];
+        bytes_read += 1;
+        if shift == 31 && byte != 0x00 && byte != 0x7f {
+            panic!("Overflow");
+        }
+
+        let low_bits = low_bits_of_byte(byte) as i32;
+        result |= low_bits << shift;
+        shift += 7;
+
+        if byte & CONTINUATION_BIT == 0 {
+            break;
+        }
+
+        counter += 1;
+    }
+
+    if shift < size && (SIGN_BIT & byte) == SIGN_BIT {
+        // Sign extend the result.
+        result |= !0 << shift;
+    }
+
+
+    (result, bytes_read)
+}
+
+pub fn read_i64_leb128(input: &[u8]) -> (i64, usize) {
+    let mut result = 0;
+    let mut shift = 0;
+    let size = 64;
+    let mut byte;
+    let mut bytes_read = 0;
+    let mut counter = 0;
+
+    loop {
+        if counter >= input.len() {
+            panic!("not enough data");
+        }
+
+        byte = input[counter];
+        bytes_read += 1;
+        if shift == 63 && byte != 0x00 && byte != 0x7f {
+            panic!("Overflow");
+        }
+
+        let low_bits = low_bits_of_byte(byte) as i64;
+        result |= low_bits << shift;
+        shift += 7;
+
+        if byte & CONTINUATION_BIT == 0 {
+            break;
+        }
+
+        counter += 1;
+    }
+
+    if shift < size && (SIGN_BIT & byte) == SIGN_BIT {
+        // Sign extend the result.
+        result |= !0 << shift;
+    }
+
+
+    (result, bytes_read)
+}
+
 /*
 pub fn read_signed_i32_leb128(data: &[u8], start_position: usize) -> (i32, usize) {
     let mut result = 0;

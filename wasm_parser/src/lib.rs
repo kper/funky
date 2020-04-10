@@ -510,6 +510,24 @@ pub(crate) fn take_leb_u32(i: &[u8]) -> IResult<&[u8], u32> {
     Ok((i, leb.0))
 }
 
+pub(crate) fn take_leb_i32(i: &[u8]) -> IResult<&[u8], i32> {
+    debug!("take_leb_i32");
+    let (_, bytes) = take(4u8)(i)?;
+    let leb = read_i32_leb128(bytes);
+    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+    Ok((i, leb.0))
+}
+
+pub(crate) fn take_leb_i64(i: &[u8]) -> IResult<&[u8], i64> {
+    debug!("take_leb_i64");
+    let (_, bytes) = take(8u8)(i)?;
+    let leb = read_i64_leb128(bytes);
+    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+    Ok((i, leb.0))
+}
+
 fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
     debug!("take_leb_u8");
     let (_, bytes) = take(1u8)(i)?;
