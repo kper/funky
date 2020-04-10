@@ -313,7 +313,6 @@ pub(crate) fn take_expr(i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
 
     while e != END_INSTR {
         let (w, ii) = instructions::parse_instr(input)?;
-        debug!("w {:?}", w);
         input = w;
         instructions.push(ii);
         let (u, k) = take(1u8)(w)?; //0x0B

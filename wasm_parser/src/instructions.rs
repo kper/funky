@@ -7,6 +7,7 @@ use crate::core::*;
 use crate::{take_blocktype, take_expr, take_f32, take_f64, take_leb_i32, take_leb_i64};
 
 const END_INSTR: &[u8] = &[0x0B];
+const END_IF_BLOCK: &[u8] = &[0x05];
 
 macro_rules! take_leb_u32_to_expr {
     ($i:expr, $expr:expr) => {{
@@ -422,7 +423,54 @@ fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
 }
 
 fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
-    panic!("NOT IMPLEMENTED BECAUSE OVERLOADING")
+    debug!("take_conditional");
+
+    let (i, blockty) = take_blocktype(i)?;
+
+    let mut instructions = Vec::new();
+    let mut else_instructions = Vec::new();
+    let (u, mut e) = take(1u8)(i)?; //0x0B - wuarscht
+
+    let mut input = i;
+
+    while e != END_INSTR && e != END_IF_BLOCK {
+        let (w, ii) = parse_instr(input)?;
+        input = w;
+        instructions.push(ii);
+        let (u, k) = take(1u8)(w)?; //0x0B or 0x05
+        e = k;
+    }
+
+    if e == END_IF_BLOCK {
+        let (k, x) = take(1u8)(input)?; //0x05
+        input = k;
+        assert_eq!(x, END_IF_BLOCK);
+
+        //THIS IS THE ELSE BLOCK
+        while e != END_INSTR {
+            let (w, ii) = parse_instr(input)?;
+            input = w;
+            else_instructions.push(ii);
+            let (u, k) = take(1u8)(w)?; //0x0B
+            e = k;
+        }
+
+        let (input, e) = take(1u8)(input)?; //0x0B
+
+        return Ok((
+            input,
+            Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
+                blockty,
+                Box::new(instructions),
+                Box::new(else_instructions),
+            )),
+        ));
+    }
+
+    Ok((
+        input,
+        Instruction::Ctrl(CtrlInstructions::OP_IF(blockty, Box::new(instructions))),
+    ))
 }
 
 fn take_br(i: &[u8]) -> IResult<&[u8], Instruction> {
