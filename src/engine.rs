@@ -52,18 +52,9 @@ impl Mul for Value {
 }
 
 #[derive(Debug)]
-pub enum Variable {
-    I32(i32),
-    I32M(i32),
-
-    I64(i64),
-    I64M(i64),
-
-    F32(f32),
-    F32M(f32),
-
-    F64(f64),
-    F64M(f64),
+pub struct Variable {
+    mutable: bool,
+    val: Value,
 }
 
 #[derive(Debug, PartialEq)]
@@ -82,7 +73,7 @@ struct ModuleInstance {}
 
 #[derive(Debug)]
 struct Store {
-    globals: HashMap<u32, Variable>,
+    globals: Vec<Variable>,
     memory: Vec<u8>,
     stack: Vec<StackContent>,
 }
@@ -103,7 +94,7 @@ macro_rules! fetch_binop {
 
 impl Engine {
     pub fn run_function(&mut self, f: FunctionBody) {
-        let fr = match self.store.stack.pop() {
+        let mut fr = match self.store.stack.pop() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
             None => panic!("Empty stack on function call"),
@@ -115,6 +106,30 @@ impl Engine {
             }
             match &f.code.0[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
+                Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
+                    Some(Value(v)) => fr.locals[*idx as usize] = v,
+                    Some(x) => panic!("Expected value but found {:?}", x),
+                    None => panic!("Empty stack during local.set"),
+                },
+                Var(OP_LOCAL_TEE(idx)) => match self.store.stack.last() {
+                    Some(Value(v)) => fr.locals[*idx as usize] = *v,
+                    Some(x) => panic!("Expected value but found {:?}", x),
+                    None => panic!("Empty stack during local.set"),
+                },
+                Var(OP_GLOBAL_GET(idx)) => self
+                    .store
+                    .stack
+                    .push(Value(self.store.globals[*idx as usize].val)),
+                Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
+                    Some(Value(v)) => {
+                        if !self.store.globals[*idx as usize].mutable {
+                            panic!("Attempting to modify a immutable global")
+                        }
+                        self.store.globals[*idx as usize].val = v
+                    }
+                    Some(x) => panic!("Expected value but found {:?}", x),
+                    None => panic!("Empty stack during local.set"),
+                },
                 Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
                 Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) => {
@@ -125,6 +140,7 @@ impl Engine {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
+                Ctrl(OP_NOP) => {}
                 Ctrl(OP_END) => return,
                 x => panic!("Instruction {:?} not implemented", x),
             }
@@ -144,7 +160,7 @@ mod tests {
             module: ModuleInstance {},
             store: Store {
                 stack: vec![Frame(Frame { locals: Vec::new() })],
-                globals: HashMap::new(),
+                globals: Vec::new(),
                 memory: Vec::new(),
             },
         }
@@ -191,5 +207,45 @@ mod tests {
             ]),
         });
         assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_local_set() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            locals: vec![I32(1), I32(4)],
+        })];
+        e.run_function(FunctionBody {
+            locals: vec![],
+            code: Expr(vec![
+                Var(OP_LOCAL_GET(0)),
+                Var(OP_LOCAL_GET(1)),
+                Num(OP_I32_ADD),
+                Var(OP_LOCAL_SET(0)),
+                Num(OP_I32_CONST(32)),
+                Var(OP_LOCAL_GET(0)),
+                Num(OP_I32_ADD),
+            ]),
+        });
+        assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_globals() {
+        let mut e = empty_engine();
+        e.store.globals = vec![Variable {
+            mutable: true,
+            val: I32(69),
+        }];
+        e.run_function(FunctionBody {
+            locals: vec![],
+            code: Expr(vec![
+                Var(OP_GLOBAL_GET(0)),
+                Num(OP_I32_CONST(351)),
+                Num(OP_I32_ADD),
+                Var(OP_GLOBAL_SET(0)),
+            ]),
+        });
+        assert_eq!(I32(420), e.store.globals[0].val);
     }
 }
