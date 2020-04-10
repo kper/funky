@@ -2,8 +2,11 @@ use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::ops::{Add, Mul};
 use wasm_parser::core::CtrlInstructions::*;
+use wasm_parser::core::FunctionBody;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
+use wasm_parser::core::ValueType;
+use wasm_parser::core::VarInstructions::*;
 
 use std::collections::HashMap;
 use wasm_parser::core::Instruction;
@@ -15,7 +18,7 @@ struct Engine {
     started: bool,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Value {
     I32(i32),
     I64(i64),
@@ -66,13 +69,16 @@ pub enum Variable {
 #[derive(Debug, PartialEq)]
 enum StackContent {
     Value(Value),
-    Frame,
+    Frame(Frame),
+}
+
+#[derive(Debug, PartialEq)]
+struct Frame {
+    locals: Vec<Value>,
 }
 
 #[derive(Debug)]
-struct ModuleInstance {
-    source: Vec<Instruction>,
-}
+struct ModuleInstance {}
 
 #[derive(Debug)]
 struct Store {
@@ -96,10 +102,19 @@ macro_rules! fetch_binop {
 }
 
 impl Engine {
-    pub fn run_function(&mut self, addr: usize) {
-        let mut ip = addr;
+    pub fn run_function(&mut self, f: FunctionBody) {
+        let fr = match self.store.stack.pop() {
+            Some(Frame(fr)) => fr,
+            Some(x) => panic!("Expected frame but found {:?}", x),
+            None => panic!("Empty stack on function call"),
+        };
+        let mut ip = 0;
         loop {
-            match &self.module.source[ip] {
+            if ip >= f.code.0.len() {
+                return;
+            }
+            match &f.code.0[ip] {
+                Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
                 Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) => {
@@ -121,37 +136,60 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasm_parser::core::Expr;
 
-    #[test]
-    fn test_run_function() {
-        let mut e = Engine {
+    fn empty_engine() -> Engine {
+        Engine {
             started: true,
-            module: ModuleInstance {
-                source: vec![
-                    Num(OP_I32_CONST(42)),
-                    Num(OP_I32_CONST(42)),
-                    Num(OP_I32_ADD),
-                    Ctrl(OP_END),
-                ],
-            },
+            module: ModuleInstance {},
             store: Store {
-                stack: Vec::new(),
+                stack: vec![Frame(Frame { locals: Vec::new() })],
                 globals: HashMap::new(),
                 memory: Vec::new(),
             },
-        };
-        e.run_function(0);
+        }
+    }
+
+    #[test]
+    fn test_run_function() {
+        let mut e = empty_engine();
+        e.run_function(FunctionBody {
+            locals: vec![],
+            code: Expr(vec![
+                Num(OP_I32_CONST(42)),
+                Num(OP_I32_CONST(42)),
+                Num(OP_I32_ADD),
+            ]),
+        });
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
-        e.module.source = vec![
-            Num(OP_I64_CONST(32)),
-            Num(OP_I64_CONST(32)),
-            Num(OP_I64_ADD),
-            Num(OP_I64_CONST(2)),
-            Num(OP_I64_MUL),
-            Ctrl(OP_END),
-        ];
-        e.store.stack = Vec::new();
-        e.run_function(0);
+        e.store.stack = vec![Frame(Frame { locals: Vec::new() })];
+        e.run_function(FunctionBody {
+            locals: vec![],
+            code: Expr(vec![
+                Num(OP_I64_CONST(32)),
+                Num(OP_I64_CONST(32)),
+                Num(OP_I64_ADD),
+                Num(OP_I64_CONST(2)),
+                Num(OP_I64_MUL),
+            ]),
+        });
         assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_with_params() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            locals: vec![I32(1), I32(4)],
+        })];
+        e.run_function(FunctionBody {
+            locals: vec![],
+            code: Expr(vec![
+                Var(OP_LOCAL_GET(0)),
+                Var(OP_LOCAL_GET(1)),
+                Num(OP_I32_ADD),
+            ]),
+        });
+        assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
     }
 }
