@@ -23,7 +23,7 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("parse_instr");
     debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
-    debug!("HEAD {:?}", instr);
+    debug!("HEAD {:x?}", instr);
     debug!("i {:x?}", i);
 
     let (i, expr) = match instr[0] {

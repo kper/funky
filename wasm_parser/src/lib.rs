@@ -12,12 +12,11 @@ mod leb128;
 use self::core::*;
 use self::leb128::*;
 
+use byteorder::{ByteOrder, LittleEndian};
 use nom::bytes::complete::take;
 use nom::combinator::complete;
 use nom::multi::{count, many0};
 use nom::IResult;
-
-use byteorder::{ByteOrder, LittleEndian};
 
 pub const MAGIC_NUMBER: &'static [u8] = &[0, 97, 115, 109];
 const END_INSTR: &[u8] = &[0x0B];
@@ -522,40 +521,78 @@ fn take_name(i: &[u8]) -> IResult<&[u8], String> {
 
 pub(crate) fn take_leb_u32(i: &[u8]) -> IResult<&[u8], u32> {
     debug!("take_leb_u32");
-    let (_, bytes) = take(4u8)(i)?;
-    let leb = read_u32_leb128(bytes);
-    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+    if i.len() >= 4 {
+        let (_, bytes) = take(4u8)(i)?;
+        let leb = read_u32_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
-    Ok((i, leb.0))
+        Ok((i, leb.0))
+    }
+    else {
+        let (_, bytes) = take(i.len())(i)?;
+        let leb = read_u32_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+        Ok((i, leb.0))
+    }
 }
 
 pub(crate) fn take_leb_i32(i: &[u8]) -> IResult<&[u8], i32> {
     debug!("take_leb_i32");
-    let (_, bytes) = take(4u8)(i)?;
-    let leb = read_i32_leb128(bytes);
-    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+    if i.len() >= 4 {
+        let (_, bytes) = take(4u8)(i)?;
+        let leb = read_i32_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
-    Ok((i, leb.0))
+        Ok((i, leb.0))
+    }
+    else {
+        let (_, bytes) = take(i.len())(i)?;
+        let leb = read_i32_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+        Ok((i, leb.0))
+
+    }
 }
 
 pub(crate) fn take_leb_i64(i: &[u8]) -> IResult<&[u8], i64> {
     debug!("take_leb_i64");
-    let (_, bytes) = take(8u8)(i)?;
-    let leb = read_i64_leb128(bytes);
-    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+    if i.len() >= 8 {
+        let (_, bytes) = take(8u8)(i)?;
+        let leb = read_i64_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
-    Ok((i, leb.0))
+        Ok((i, leb.0))
+    } else {
+        let (_, bytes) = take(i.len())(i)?;
+        let leb = read_i64_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+        Ok((i, leb.0))
+    }
 }
 
 pub(crate) fn take_leb_i33(i: &[u8]) -> IResult<&[u8], i64> {
     debug!("take_leb_i33");
-    let (_, bytes) = take(5u8)(i)?;
-    let leb = read_i33_leb128(bytes);
-    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+    if i.len() >= 5 {
+        let (_, bytes) = take(5u8)(i)?;
+        let leb = read_i33_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
-    Ok((i, leb.0))
+        Ok((i, leb.0))
+    }
+    else {
+        let (_, bytes) = take(i.len())(i)?;
+        let leb = read_i33_leb128(bytes);
+        let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+        Ok((i, leb.0))
+
+    }
 }
 
+/*
 fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
     debug!("take_leb_u8");
     let (_, bytes) = take(1u8)(i)?;
@@ -564,6 +601,7 @@ fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
 
     Ok((i, leb.0))
 }
+*/
 
 #[cfg(test)]
 mod tests {
@@ -577,6 +615,52 @@ mod tests {
             assert_snapshot!($fs_name, format!("{:#?}", ast));
         };
     }
+
+    #[test]
+    fn test_take_leb_i32() {
+        let bytes = [0x7f, 0, 0, 0];
+
+        let (_, n) = take_leb_i32(&bytes).unwrap();
+
+        assert_eq!(n, -1);
+    }
+
+    #[test]
+    fn test_take_leb_i33() {
+        let bytes = [0x7f, 0, 0, 0];
+
+        let (_, n) = take_leb_i33(&bytes).unwrap();
+
+        assert_eq!(n, -1);
+    }
+
+    #[test]
+    fn test_take_leb_i64() {
+        let bytes = [0x7f, 0, 0, 0];
+
+        let (_, n) = take_leb_i64(&bytes).unwrap();
+
+        assert_eq!(n, -1);
+    }
+
+    #[test]
+    fn test_take_leb_i64_2() {
+        let bytes = [0x3c, 0, 0, 0];
+
+        let (_, n) = take_leb_i64(&bytes).unwrap();
+
+        assert_eq!(n, 0x3c);
+    }
+
+    #[test]
+    fn test_take_leb_i64_3() {
+        let bytes = [0x80, 0x7f];
+
+        let (_, n) = take_leb_i64(&bytes).unwrap();
+
+        assert_eq!(n, -128);
+    }
+
 
     #[test]
     fn test_empty_wasm() {
