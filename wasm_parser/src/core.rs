@@ -416,6 +416,9 @@ impl std::convert::From<u8> for SectionType {
 
 impl std::convert::From<u8> for ValueType {
     fn from(item: u8) -> Self {
+        use log::debug;
+        
+        debug!("convert value type {:X}", item);
         match item {
             0x7F => Self::I32,
             0x7E => Self::I64,

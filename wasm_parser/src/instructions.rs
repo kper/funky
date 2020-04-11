@@ -23,8 +23,8 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("parse_instr");
     debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
-    debug!("instr {:?}", instr);
-    debug!("i {:?}", i);
+    debug!("HEAD {:?}", instr);
+    debug!("i {:x?}", i);
 
     let (i, expr) = match instr[0] {
         0x00 => (i, Instruction::Ctrl(CtrlInstructions::OP_UNREACHABLE)),
@@ -391,20 +391,33 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
         _ => panic!("unknown instruction"),
     };
 
-    debug!("k {:?}", i);
+    debug!("instr {:?}", expr);
 
     Ok((i, expr))
 }
 
 fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
-    let (i, block_ty) = take_blocktype(i)?;
+    let (mut i, block_ty) = take_blocktype(i)?;
 
-    // let (i, ii) = parse_instr(i)?;
+    //let (i, instructions) = take_expr(i)?;
+    let mut instructions = Vec::new();
 
-    let (i, instructions) = take_expr(i)?;
+    loop {
+        let (_, k) = take(1u8)(i)?; //0x0B
 
-    let (i, b) = take(1u8)(i)?; //0x0B
-    assert_eq!(b, END_INSTR);
+        if k == END_INSTR {
+            break;
+        }
+
+        let (w, ii) = parse_instr(i)?;
+        i = w;
+        instructions.push(ii);
+    }
+
+    debug!("instructions {:#?}", instructions);
+
+    let (i, e) = take(1u8)(i)?; //0x0B
+    assert_eq!(e, END_INSTR);
 
     let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, Box::new(instructions)));
 
@@ -412,14 +425,26 @@ fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
 }
 
 fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
-    let (i, block_ty) = take_blocktype(i)?;
+    let (mut i, block_ty) = take_blocktype(i)?;
 
-    //let (i, ii) = parse_instr(i)?;
+    let mut instructions = Vec::new();
 
-    let (i, instructions) = take_expr(i)?;
-    let (i, b) = take(1u8)(i)?; //0x0B
+    loop {
+        let (_, k) = take(1u8)(i)?; //0x0B
 
-    assert_eq!(b, END_INSTR);
+        if k == END_INSTR {
+            break;
+        }
+
+        let (w, ii) = parse_instr(i)?;
+        i = w;
+        instructions.push(ii);
+    }
+
+    debug!("instructions {:#?}", instructions);
+
+    let (i, e) = take(1u8)(i)?; //0x0B
+    assert_eq!(e, END_INSTR);
 
     let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, Box::new(instructions)));
 
@@ -429,40 +454,48 @@ fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
 fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("take_conditional");
 
-    let (i, blockty) = take_blocktype(i)?;
+    //unreachable!("not correctly implemented!");
+
+    let (mut i, blockty) = take_blocktype(i)?;
 
     let mut instructions = Vec::new();
     let mut else_instructions = Vec::new();
-    let (u, mut e) = take(1u8)(i)?; //0x0B - wuarscht
 
-    let mut input = i;
+    loop {
+        let (_, k) = take(1u8)(i)?; //0x0B or 0x05
 
-    while e != END_INSTR && e != END_IF_BLOCK {
-        let (w, ii) = parse_instr(input)?;
-        input = w;
+        if k == END_IF_BLOCK || k == END_INSTR {
+            break;
+        }
+
+        let (w, ii) = parse_instr(i)?;
+        i = w;
         instructions.push(ii);
-        let (u, k) = take(1u8)(w)?; //0x0B or 0x05
-        e = k;
     }
 
-    if e == END_IF_BLOCK {
-        let (k, x) = take(1u8)(input)?; //0x05
-        input = k;
+    let (i, k) = take(1u8)(i)?; //0x0B or 0x05
+
+    if k == END_IF_BLOCK {
+        let (mut i, x) = take(1u8)(i)?; //0x05
         assert_eq!(x, END_IF_BLOCK);
 
         //THIS IS THE ELSE BLOCK
-        while e != END_INSTR {
-            let (w, ii) = parse_instr(input)?;
-            input = w;
+        loop {
+            let (_, k) = take(1u8)(i)?; //0x0B
+
+            if k == END_INSTR {
+                break;
+            }
+
+            let (w, ii) = parse_instr(i)?;
+            i = w;
             else_instructions.push(ii);
-            let (u, k) = take(1u8)(w)?; //0x0B
-            e = k;
         }
 
-        let (input, e) = take(1u8)(input)?; //0x0B
+        let (i, e) = take(1u8)(i)?; //0x0B
 
         return Ok((
-            input,
+            i,
             Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 blockty,
                 Box::new(instructions),
@@ -472,7 +505,7 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
     }
 
     Ok((
-        input,
+        i,
         Instruction::Ctrl(CtrlInstructions::OP_IF(blockty, Box::new(instructions))),
     ))
 }
@@ -534,4 +567,128 @@ fn take_memarg(i: &[u8]) -> IResult<&[u8], MemArg> {
             offset: o,
         },
     ))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_instruction_block() {
+        env_logger::init();
+
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_block(&payload).unwrap();
+        assert!(instructions.0 != [11]);
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                BlockType::Empty,
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                ])
+            ))
+        );
+    }
+
+    #[test]
+    fn test_instruction_block_nested_2() {
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_block(&payload).unwrap();
+        assert!(instructions.0 != [11]);
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                BlockType::Empty,
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                        BlockType::Empty,
+                        Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP),])
+                    )),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                ])
+            ))
+        );
+    }
+
+    #[test]
+    fn test_instruction_block_nested_3() {
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x0B); //end
+        payload.push(0x0B); //end
+        payload.push(0x0B); //end
+
+        let instructions = take_block(&payload).unwrap();
+        assert!(instructions.0 != [11]);
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                BlockType::Empty,
+                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                    BlockType::Empty,
+                    Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                        BlockType::Empty,
+                        Box::new(vec![])
+                    ))])
+                )),])
+            ))
+        );
+    }
+
+    #[test]
+    fn test_instruction_if() {
+        //env_logger::init();
+
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_conditional(&payload).unwrap();
+
+        //debug!("{:?}", instructions);
+        assert!(instructions.0 != [11]);
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_IF(
+                BlockType::Empty,
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                ])
+            ))
+        );
+    }
 }

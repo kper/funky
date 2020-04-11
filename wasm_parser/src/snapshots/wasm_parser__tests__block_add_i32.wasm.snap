@@ -22,5 +22,36 @@ Module {
                 0,
             ],
         },
+        Code {
+            entries: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_BLOCK(
+                                ValueType(
+                                    I32,
+                                ),
+                                [
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    ),
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            1,
+                                        ),
+                                    ),
+                                    Num(
+                                        OP_I32_ADD,
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                },
+            ],
+        },
     ],
 }

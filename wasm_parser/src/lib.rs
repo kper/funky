@@ -77,7 +77,7 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 
     debug!("SECTION {:?} {:?}", n, size);
 
-    debug!("{:?}", i);
+    debug!("{:x?}", i);
 
     let (i, m) = match n[0] {
         0 => parse_custom_section(i, size)?,
@@ -245,6 +245,8 @@ fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
     debug!("take_local");
 
     let (i, n) = take_leb_u32(i)?;
+    debug!("local n {:?}", n);
+    debug!("local i {:?}", i);
     let (i, t) = take_valtype(i)?;
 
     Ok((i, LocalEntry { count: n, ty: t }))
@@ -309,27 +311,28 @@ fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
     Ok((i, GlobalVariable { ty, init: e }))
 }
 
-pub(crate) fn take_expr(i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
+pub(crate) fn take_expr(mut i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
     debug!("take expr");
 
     let mut instructions = Vec::new();
-    let (u, mut e) = take(1u8)(i)?; //0x0B - wuarscht
 
-    let mut input = i;
-
-    while e != END_INSTR {
-        let (w, ii) = instructions::parse_instr(input)?;
-        input = w;
+    loop {
+        let (w, ii) = instructions::parse_instr(i)?;
         instructions.push(ii);
-        let (u, k) = take(1u8)(w)?; //0x0B
-        e = k;
-    }
-    debug!("instructions {:?}", instructions);
+        i = w;
+        let (_, k) = take(1u8)(w)?; //0x0B
 
-    let (input, e) = take(1u8)(input)?; //0x0B
+        if k == END_INSTR {
+            break;
+        }
+    }
+
+    debug!("instructions {:#?}", instructions);
+
+    let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    Ok((input, instructions))
+    Ok((i, instructions))
 }
 
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
@@ -473,6 +476,7 @@ fn take_valtype(i: &[u8]) -> IResult<&[u8], ValueType> {
 fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
     debug!("take_blocktype");
     let (u, n) = take(1u8)(i)?;
+    debug!("n {:?}", n);
 
     let (i, bty) = match n[0] {
         0x40 => (u, BlockType::Empty),
@@ -637,5 +641,20 @@ mod tests {
     #[test]
     fn test_block_add_i32() {
         test_file!("block_add_i32.wasm");
+    }
+
+    #[test]
+    fn test_loop_mult() {
+        test_file!("loop_mult.wasm");
+    }
+
+    #[test]
+    fn test_unreachable() {
+        test_file!("unreachable.wasm");
+    }
+
+    #[test]
+    fn test_if_loop() {
+        test_file!("if_loop.wasm");
     }
 }

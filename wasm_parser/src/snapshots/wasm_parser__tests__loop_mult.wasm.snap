@@ -1,0 +1,228 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Type {
+            entries: [
+                FuncType {
+                    param_types: [
+                        I32,
+                        I32,
+                        I32,
+                        I32,
+                        I32,
+                    ],
+                    return_types: [],
+                },
+                FuncType {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+        },
+        Function {
+            types: [
+                0,
+                1,
+            ],
+        },
+        Memory {
+            entries: [
+                MemoryType {
+                    limits: Zero(
+                        17,
+                    ),
+                },
+            ],
+        },
+        Export {
+            entries: [
+                ExportEntry {
+                    name: "memory",
+                    kind: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "block",
+                    kind: Function {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "my_loop",
+                    kind: Function {
+                        ty: 1,
+                    },
+                },
+            ],
+        },
+        Code {
+            entries: [
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                3,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EXTEND_I32_U,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                4,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EXTEND_I32_U,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                32,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_SHL,
+                        ),
+                        Num(
+                            OP_I64_OR,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EXTEND_I32_U,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                2,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EXTEND_I32_U,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                32,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_SHL,
+                        ),
+                        Num(
+                            OP_I64_OR,
+                        ),
+                        Num(
+                            OP_I64_ADD,
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                5,
+                            ),
+                        ),
+                        Mem(
+                            OP_I64_STORE_32(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                5,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                32,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_SHR_U,
+                        ),
+                        Mem(
+                            OP_I64_STORE_32(
+                                MemArg {
+                                    align: 2,
+                                    offset: 4,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQZ,
+                        ),
+                        Ctrl(
+                            OP_IF(
+                                Empty,
+                                [
+                                    Num(
+                                        OP_I32_CONST(
+                                            0,
+                                        ),
+                                    ),
+                                    Ctrl(
+                                        OP_RETURN,
+                                    ),
+                                ],
+                            ),
+                        ),
+                        Ctrl(
+                            OP_LOOP(
+                                Empty,
+                                [
+                                    Ctrl(
+                                        OP_BR(
+                                            0,
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                        Ctrl(
+                            OP_UNREACHABLE,
+                        ),
+                    ],
+                },
+            ],
+        },
+        Custom {
+            name: "producers",
+        },
+    ],
+}

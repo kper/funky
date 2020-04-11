@@ -1,0 +1,65 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Type {
+            entries: [
+                FuncType {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+        },
+        Function {
+            types: [
+                0,
+            ],
+        },
+        Memory {
+            entries: [
+                MemoryType {
+                    limits: Zero(
+                        17,
+                    ),
+                },
+            ],
+        },
+        Export {
+            entries: [
+                ExportEntry {
+                    name: "memory",
+                    kind: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "my_loop",
+                    kind: Function {
+                        ty: 0,
+                    },
+                },
+            ],
+        },
+        Code {
+            entries: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_UNREACHABLE,
+                        ),
+                    ],
+                },
+            ],
+        },
+        Custom {
+            name: "producers",
+        },
+    ],
+}

@@ -1,0 +1,23 @@
+(module
+  (type (;0;) (func (param i32) (result i32)))
+  (func (;0;) (type 0) (param i32) (result i32)
+    (local i32)
+    local.get 0
+    local.get 0
+    i32.mul
+    i32.const 0
+    local.get 0
+    select
+    local.get 0
+    if  ;; label = @1
+      loop  ;; label = @2
+        local.get 0
+        i32.const -1
+        i32.add
+        local.tee 0
+        br_if 0 (;@2;)
+      end
+    end)
+  (memory (;0;) 17)
+  (export "memory" (memory 0))
+  (export "my_loop" (func 0)))
