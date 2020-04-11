@@ -692,15 +692,15 @@ mod test {
         );
     }
 
-    /*
     #[test]
-    fn test_instruction_if() {
+    fn test_instruction_if_conditionals() {
         //env_logger::init();
 
         let mut payload = Vec::new();
         //payload.push(0x02); // block
         payload.push(0x40); // empty
         payload.push(0x01); //nop
+        payload.push(0x05); //else
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
@@ -711,14 +711,11 @@ mod test {
 
         assert_eq!(
             instructions.1,
-            Instruction::Ctrl(CtrlInstructions::OP_IF(
+            Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 BlockType::Empty,
-                Box::new(vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ])
+                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)]),
+                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)])
             ))
         );
     }
-    */
 }
