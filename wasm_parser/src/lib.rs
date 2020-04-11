@@ -545,203 +545,38 @@ fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use insta::assert_snapshot;
 
-    #[test]
-    fn test_parse_f32() {
-        let n: f32 = 32.2;
-
-        let nn = n.to_le_bytes();
-        let nn2 = nn.to_vec();
-
-        assert_eq!(32.2, take_f32(&nn2).unwrap().1);
-    }
-
-    #[test]
-    fn test_parse_f64() {
-        let n: f64 = 32.2;
-
-        let nn = n.to_le_bytes();
-        let nn2 = nn.to_vec();
-
-        assert_eq!(32.2, take_f64(&nn2).unwrap().1);
-    }
-
-    /*
-    #[test]
-    fn test_parse_vec() {
-        let k = 4 as u32;
-
-        let mut kk = Vec::new();
-        write_u32_leb128(&mut kk, k);
-        let mut w = kk.to_vec();
-
-        let mut payload = vec![1, 2, 3, 4];
-
-        w.extend(payload);
-
-        assert_eq!(vec![1, 2, 3, 4], take_vec(&w).unwrap().1);
-    }
-    */
-
-    #[test]
-    fn test_parse_name() {
-        let k = 4 as u32;
-
-        let mut kk = Vec::new();
-        write_u32_leb128(&mut kk, k);
-        let mut w = kk.to_vec();
-
-        let n = "test";
-        let mut nn = n.as_bytes();
-
-        let nn2 = nn.to_vec();
-
-        w.extend(nn2);
-
-        assert_eq!("test", take_name(&w).unwrap().1); //reverse
-    }
-
-    #[test]
-    fn test_limit_zero() {
-        let k = 4 as u32;
-
-        let mut kk = Vec::new();
-        write_u32_leb128(&mut kk, k);
-        let mut w = kk.to_vec();
-
-        let mut payload = vec![0 as u8];
-
-        w.push(0);
-        w.push(0);
-        w.push(0);
-
-        payload.extend(w);
-
-        assert_eq!(Limits::Zero(4), take_limits(&payload).unwrap().1);
-    }
-
-    #[test]
-    fn test_limit_one() {
-        let k = 4 as u32;
-        let k2 = 8 as u32;
-
-        let mut kk = Vec::new();
-        let mut kk2 = Vec::new();
-
-        write_u32_leb128(&mut kk, k);
-        write_u32_leb128(&mut kk2, k2);
-
-        let mut w = kk.to_vec();
-        let mut w2 = kk2.to_vec();
-
-        w.push(0);
-        w.push(0);
-        w.push(0);
-
-        w2.push(0);
-        w2.push(0);
-        w2.push(0);
-
-        let mut payload = vec![1 as u8];
-
-        payload.extend(w);
-        payload.extend(w2);
-
-        assert_eq!(Limits::One(4, 8), take_limits(&payload).unwrap().1);
-    }
-
-    #[test]
-    fn test_func_types() {
-        let mut payload = vec![0x60 as u8];
-
-        let mut kk = Vec::new();
-        write_u32_leb128(&mut kk, 2); //size
-
-        payload.extend(kk.clone());
-
-        payload.push(0x7F); //i32
-        payload.push(0x7F); //i32
-
-        payload.extend(kk); //second vec
-
-        payload.push(0x7F); //i32
-        payload.push(0x7F); //i32
-
-        let expected = FuncType {
-            param_types: vec![ValueType::I32, ValueType::I32],
-            return_types: vec![ValueType::I32, ValueType::I32],
+    macro_rules! test_file {
+        ($fs_name:expr) => {
+            let file = read_wasm!(&format!("test_files/{}", $fs_name));
+            let ast = parse(file).unwrap();
+            assert_snapshot!($fs_name, format!("{:#?}", ast));
         };
-
-        assert_eq!(expected, take_functype(payload.as_slice()).unwrap().1);
     }
 
     #[test]
-    fn test_blocktype_empty() {
-        let mut payload = vec![0x40 as u8];
-
-        assert_eq!(
-            BlockType::Empty,
-            take_blocktype(payload.as_slice()).unwrap().1
-        );
+    fn test_empty_wasm() {
+        test_file!("empty.wasm");
     }
 
     #[test]
-    fn test_blocktype_valtype() {
-        let mut payload = vec![0x7F as u8];
-
-        assert_eq!(
-            BlockType::ValueType(ValueType::I32),
-            take_blocktype(payload.as_slice()).unwrap().1
-        );
+    fn test_return_i32() {
+        test_file!("return_i32.wasm");
     }
 
     #[test]
-    fn test_globaltype_const() {
-        let mut payload = vec![0x7F as u8, 0x0];
-
-        let g = GlobalType {
-            value_type: ValueType::I32,
-            mu: Mu::Const,
-        };
-
-        assert_eq!(g, take_globaltype(payload.as_slice()).unwrap().1);
+    fn test_return_i64() {
+        test_file!("return_i64.wasm");
     }
 
     #[test]
-    fn test_globaltype_var() {
-        let mut payload = vec![0x7F as u8, 0x1];
-
-        let g = GlobalType {
-            value_type: ValueType::I32,
-            mu: Mu::Var,
-        };
-
-        assert_eq!(g, take_globaltype(payload.as_slice()).unwrap().1);
+    fn test_function_call() {
+        test_file!("function_call.wasm");
     }
 
     #[test]
-    fn test_tabletype() {
-        let mut payload = vec![0x70 as u8, 0x00 as u8];
-
-        let k = 4 as u32;
-
-        let mut kk = Vec::new();
-
-        write_u32_leb128(&mut kk, k);
-
-        let mut w = kk.to_vec();
-
-        w.push(0);
-        w.push(0);
-        w.push(0);
-
-        payload.extend(w);
-
-        let t = TableType {
-            element_type: 0x70,
-            limits: Limits::Zero(4),
-        };
-
-        assert_eq!(t, take_tabletype(payload.as_slice()).unwrap().1);
+    fn test_arithmetic() {
+        test_file!("arithmetic.wasm");
     }
 }
