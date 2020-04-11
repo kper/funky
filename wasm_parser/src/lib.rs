@@ -472,9 +472,19 @@ fn take_valtype(i: &[u8]) -> IResult<&[u8], ValueType> {
 
 fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
     debug!("take_blocktype");
-    let (i, n) = take(1u8)(i)?;
+    let (u, n) = take(1u8)(i)?;
 
-    Ok((i, n[0].into()))
+    let (i, bty) = match n[0] {
+        0x40 => (u, BlockType::Empty),
+        0x7F | 0x7E | 0x7D | 0x7C => (u, BlockType::ValueType(n[0].into())),
+        _ => {
+            let (i, k) = take_leb_i33(i)?;
+
+            (i, BlockType::s33(k))
+        }
+    };
+
+    Ok((i, bty))
 }
 
 fn take_byte(i: &[u8], len: u32) -> IResult<&[u8], &[u8]> {
@@ -528,6 +538,15 @@ pub(crate) fn take_leb_i64(i: &[u8]) -> IResult<&[u8], i64> {
     debug!("take_leb_i64");
     let (_, bytes) = take(8u8)(i)?;
     let leb = read_i64_leb128(bytes);
+    let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
+
+    Ok((i, leb.0))
+}
+
+pub(crate) fn take_leb_i33(i: &[u8]) -> IResult<&[u8], i64> {
+    debug!("take_leb_i33");
+    let (_, bytes) = take(5u8)(i)?;
+    let leb = read_i33_leb128(bytes);
     let (i, _) = take(leb.1)(i)?; //skip the bytes, which contain leb
 
     Ok((i, leb.0))

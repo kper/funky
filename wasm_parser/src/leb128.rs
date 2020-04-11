@@ -136,6 +136,45 @@ pub fn read_i64_leb128(input: &[u8]) -> (i64, usize) {
     (result, bytes_read)
 }
 
+pub fn read_i33_leb128(input: &[u8]) -> (i64, usize) {
+    let mut result = 0;
+    let mut shift = 0;
+    let size = 33;
+    let mut byte;
+    let mut bytes_read = 0;
+    let mut counter = 0;
+
+    loop {
+        if counter >= input.len() {
+            panic!("not enough data");
+        }
+
+        byte = input[counter];
+        bytes_read += 1;
+        if shift == 32 && byte != 0x00 && byte != 0x7f {
+            panic!("Overflow");
+        }
+
+        let low_bits = low_bits_of_byte(byte) as i64;
+        result |= low_bits << shift;
+        shift += 7;
+
+        if byte & CONTINUATION_BIT == 0 {
+            break;
+        }
+
+        counter += 1;
+    }
+
+    if shift < size && (SIGN_BIT & byte) == SIGN_BIT {
+        // Sign extend the result.
+        result |= !0 << shift;
+    }
+
+
+    (result, bytes_read)
+}
+
 /*
 pub fn read_signed_i32_leb128(data: &[u8], start_position: usize) -> (i32, usize) {
     let mut result = 0;

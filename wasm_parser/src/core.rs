@@ -25,6 +25,7 @@ pub enum ValueType {
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
+    s33(i64), //actually signed 33
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -425,14 +426,16 @@ impl std::convert::From<u8> for ValueType {
     }
 }
 
+/*
 impl std::convert::From<u8> for BlockType {
     fn from(item: u8) -> Self {
         match item {
             0x40 => Self::Empty,
-            v => Self::ValueType(v.into()),
+            0x7 => Self::ValueType(v.into()),
         }
     }
 }
+*/
 
 impl std::convert::From<u8> for Mu {
     fn from(item: u8) -> Self {

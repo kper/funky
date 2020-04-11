@@ -21,7 +21,7 @@ macro_rules! take_leb_u32_to_expr {
 
 pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("parse_instr");
-    debug!("i {:?}", i);
+    debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
     debug!("instr {:?}", instr);
     debug!("i {:?}", i);
@@ -390,6 +390,8 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
         ),
         _ => panic!("unknown instruction"),
     };
+
+    debug!("k {:?}", i);
 
     Ok((i, expr))
 }
