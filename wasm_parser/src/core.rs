@@ -13,7 +13,7 @@ pub enum SectionType {
     Custom,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ValueType {
     I32,
     I64,
@@ -21,7 +21,7 @@ pub enum ValueType {
     F64,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
@@ -147,13 +147,13 @@ pub struct DataSegment {
     pub data: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunctionBody {
     pub locals: Vec<LocalEntry>,
     pub code: Expr,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,
@@ -167,7 +167,7 @@ pub enum Limits {
 
 type Expr = Vec<Instruction>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
     Ctrl(CtrlInstructions),
@@ -181,7 +181,7 @@ pub type LabelIdx = u32;
 pub type FuncIdx = u32;
 pub type LocalIdx = u32;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum CtrlInstructions {
     OP_UNREACHABLE,
@@ -199,14 +199,14 @@ pub enum CtrlInstructions {
     OP_END,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum ParamInstructions {
     OP_DROP,
     OP_SELECT,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum VarInstructions {
     OP_LOCAL_GET(LocalIdx),
@@ -216,13 +216,13 @@ pub enum VarInstructions {
     OP_GLOBAL_SET(LocalIdx),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MemArg {
     pub align: u32,
     pub offset: u32,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum MemoryInstructions {
     OP_I32_LOAD(MemArg),
@@ -252,7 +252,7 @@ pub enum MemoryInstructions {
     OP_MEMORY_GROW,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(non_camel_case_types)]
 pub enum NumericInstructions {
     OP_I32_CONST(i32),

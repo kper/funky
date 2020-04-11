@@ -2,6 +2,7 @@ use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::ops::{Add, Mul};
 use wasm_parser::core::CtrlInstructions::*;
+use wasm_parser::core::FuncType;
 use wasm_parser::core::FunctionBody;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
@@ -74,6 +75,7 @@ struct Frame {
 pub struct ModuleInstance {
     start: u32,
     code: Vec<FunctionBody>,
+    fnTypes: Vec<FuncType>,
 }
 
 #[derive(Debug)]
@@ -102,10 +104,12 @@ impl ModuleInstance {
         let mut mi = ModuleInstance {
             start: 0,
             code: Vec::new(),
+            fnTypes: Vec::new(),
         };
         for section in m.sections {
             match section {
                 Section::Code { entries: x } => mi.code = x,
+                Section::Type { entries: x } => mi.fnTypes = x,
                 _ => {}
             }
         }
@@ -133,7 +137,8 @@ impl Engine {
         self.run_function(idx);
     }
     fn run_function(&mut self, idx: u32) {
-        let f = &self.module.code[idx as usize];
+        debug!("Running function {:?}", idx);
+        let f = self.module.code[idx as usize].clone();
         let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
@@ -141,6 +146,7 @@ impl Engine {
         };
         let mut ip = 0;
         while ip < f.code.len() {
+            debug!("Evaluating instruction {:?}", &f.code[ip]);
             match &f.code[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
@@ -177,6 +183,26 @@ impl Engine {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
+                Ctrl(OP_CALL(idx)) => {
+                    let t = &self.module.fnTypes[*idx as usize];
+                    let args = self
+                        .store
+                        .stack
+                        .split_off(self.store.stack.len() - t.param_types.len())
+                        .into_iter()
+                        .map(|x| match x {
+                            Value(v) => v,
+                            other => panic!("Expected value but found {:?}", other),
+                        })
+                        .collect();
+                    let cfr = Frame {
+                        arity: t.return_types.len() as u32,
+                        locals: args,
+                    };
+                    debug!("Calling {:?} with {:#?}", *idx, cfr);
+                    self.store.stack.push(Frame(cfr));
+                    self.run_function(*idx);
+                }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     break;
                 }
@@ -185,6 +211,7 @@ impl Engine {
             }
             ip += 1;
         }
+        // implicit return
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
             match self.store.stack.pop() {
@@ -209,6 +236,7 @@ mod tests {
             module: ModuleInstance {
                 start: 0,
                 code: Vec::new(),
+                fnTypes: Vec::new(),
             },
             store: Store {
                 stack: vec![Frame(Frame {
