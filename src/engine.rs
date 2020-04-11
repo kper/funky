@@ -58,14 +58,15 @@ pub struct Variable {
     val: Value,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Frame {
+    arity: u32,
     locals: Vec<Value>,
 }
 
@@ -125,21 +126,21 @@ impl Engine {
         }
     }
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
-        self.store.stack.push(Frame(Frame { locals: args }));
+        self.store.stack.push(Frame(Frame {
+            arity: args.len() as u32,
+            locals: args,
+        }));
         self.run_function(idx);
     }
     fn run_function(&mut self, idx: u32) {
         let f = &self.module.code[idx as usize];
-        let mut fr = match self.store.stack.pop() {
+        let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
             None => panic!("Empty stack on function call"),
         };
         let mut ip = 0;
-        loop {
-            if ip >= f.code.len() {
-                return;
-            }
+        while ip < f.code.len() {
             match &f.code[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
@@ -176,12 +177,25 @@ impl Engine {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
+                Ctrl(OP_RETURN) | Ctrl(OP_END) => {
+                    break;
+                }
                 Ctrl(OP_NOP) => {}
-                Ctrl(OP_END) => return,
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
         }
+        let mut ret = Vec::new();
+        for _ in 0..fr.arity {
+            match self.store.stack.pop() {
+                Some(Value(v)) => ret.push(Value(v)),
+                Some(x) => panic!("Expected value but found {:?}", x),
+                None => panic!("Unexpected empty stack!"),
+            }
+        }
+        while let Some(Frame(_)) = self.store.stack.pop() {}
+        self.store.stack.append(&mut ret);
+        return;
     }
 }
 
@@ -197,7 +211,10 @@ mod tests {
                 code: Vec::new(),
             },
             store: Store {
-                stack: vec![Frame(Frame { locals: Vec::new() })],
+                stack: vec![Frame(Frame {
+                    arity: 0,
+                    locals: Vec::new(),
+                })],
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
@@ -207,6 +224,10 @@ mod tests {
     #[test]
     fn test_run_function() {
         let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: Vec::new(),
+        })];
         e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -217,7 +238,10 @@ mod tests {
         }];
         e.run_function(0);
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
-        e.store.stack = vec![Frame(Frame { locals: Vec::new() })];
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: Vec::new(),
+        })];
         e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -236,6 +260,7 @@ mod tests {
     fn test_function_with_params() {
         let mut e = empty_engine();
         e.store.stack = vec![Frame(Frame {
+            arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
         e.module.code = vec![FunctionBody {
@@ -250,6 +275,7 @@ mod tests {
     fn test_function_local_set() {
         let mut e = empty_engine();
         e.store.stack = vec![Frame(Frame {
+            arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
         e.module.code = vec![FunctionBody {
