@@ -185,13 +185,13 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
         }
         0x3f => {
             let (i, m) = take(1u8)(i)?;
-            assert_eq!(END_INSTR, m);
+            assert_eq!([0x00], m);
             let block = Instruction::Mem(MemoryInstructions::OP_MEMORY_SIZE);
             (i, block)
         }
         0x40 => {
             let (i, m) = take(1u8)(i)?;
-            assert_eq!(END_INSTR, m);
+            assert_eq!([0x00], m);
             let block = Instruction::Mem(MemoryInstructions::OP_MEMORY_GROW);
             (i, block)
         }
@@ -473,11 +473,11 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
         instructions.push(ii);
     }
 
-    let (i, k) = take(1u8)(i)?; //0x0B or 0x05
+    let (mut i, k) = take(1u8)(i)?; //0x0B or 0x05
 
     if k == END_IF_BLOCK {
-        let (mut i, x) = take(1u8)(i)?; //0x05
-        assert_eq!(x, END_IF_BLOCK);
+        //let (mut i, x) = take(1u8)(i)?; //0x05
+        //assert_eq!(x, END_IF_BLOCK);
 
         //THIS IS THE ELSE BLOCK
         loop {
@@ -691,4 +691,34 @@ mod test {
             ))
         );
     }
+
+    /*
+    #[test]
+    fn test_instruction_if() {
+        //env_logger::init();
+
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x40); // empty
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_conditional(&payload).unwrap();
+
+        //debug!("{:?}", instructions);
+        assert!(instructions.0 != [11]);
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_IF(
+                BlockType::Empty,
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                ])
+            ))
+        );
+    }
+    */
 }
