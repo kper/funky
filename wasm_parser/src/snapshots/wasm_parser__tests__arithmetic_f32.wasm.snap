@@ -1,0 +1,151 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Type {
+            entries: [
+                FuncType {
+                    param_types: [
+                        F32,
+                        F32,
+                    ],
+                    return_types: [
+                        F32,
+                    ],
+                },
+            ],
+        },
+        Function {
+            types: [
+                0,
+                0,
+                0,
+                0,
+            ],
+        },
+        Memory {
+            entries: [
+                MemoryType {
+                    limits: Zero(
+                        17,
+                    ),
+                },
+            ],
+        },
+        Export {
+            entries: [
+                ExportEntry {
+                    name: "memory",
+                    kind: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "sub_f32",
+                    kind: Function {
+                        ty: 1,
+                    },
+                },
+                ExportEntry {
+                    name: "mult_f32",
+                    kind: Function {
+                        ty: 2,
+                    },
+                },
+                ExportEntry {
+                    name: "add_f32",
+                    kind: Function {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "div_f32",
+                    kind: Function {
+                        ty: 3,
+                    },
+                },
+            ],
+        },
+        Code {
+            entries: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_ADD,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_SUB,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_MUL,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_DIV,
+                        ),
+                    ],
+                },
+            ],
+        },
+        Custom {
+            name: "producers",
+        },
+    ],
+}

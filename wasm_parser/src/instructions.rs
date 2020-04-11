@@ -21,8 +21,10 @@ macro_rules! take_leb_u32_to_expr {
 
 pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("parse_instr");
+    debug!("i {:?}", i);
     let (i, instr) = take(1u8)(i)?;
     debug!("instr {:?}", instr);
+    debug!("i {:?}", i);
 
     let (i, expr) = match instr[0] {
         0x00 => (i, Instruction::Ctrl(CtrlInstructions::OP_UNREACHABLE)),

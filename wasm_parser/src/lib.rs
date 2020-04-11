@@ -579,4 +579,44 @@ mod tests {
     fn test_arithmetic() {
         test_file!("arithmetic.wasm");
     }
+
+    #[test]
+    fn test_arithmetic_i64() {
+        test_file!("arithmetic_i64.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_i32() {
+        test_file!("arithmetic_i32.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_f32() {
+        test_file!("arithmetic_f32.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_add_i64() {
+        test_file!("add_i64.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_sub_i64() {
+        test_file!("sub_i64.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_mult_i64() {
+        test_file!("mult_i64.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic_div_i64() {
+        test_file!("div_i64.wasm");
+    }
+
+    #[test]
+    fn test_block_add_i32() {
+        test_file!("block_add_i32.wasm");
+    }
 }
