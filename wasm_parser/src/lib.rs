@@ -1,9 +1,6 @@
-#![feature(vec_drain_as_slice)]
-
 extern crate log;
 
 use log::debug;
-use nom::error::ErrorKind;
 
 pub mod core;
 mod instructions;
