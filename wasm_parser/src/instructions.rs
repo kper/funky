@@ -1,5 +1,5 @@
 use log::debug;
-use nom::bytes::complete::{take};
+use nom::bytes::complete::take;
 use nom::multi::count;
 use nom::IResult;
 
@@ -409,7 +409,7 @@ fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, Box::new(instructions)));
+    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, instructions));
 
     Ok((i, block))
 }
@@ -436,7 +436,7 @@ fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, Box::new(instructions)));
+    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, instructions));
 
     Ok((i, block))
 }
@@ -489,15 +489,15 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
             i,
             Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 blockty,
-                Box::new(instructions),
-                Box::new(else_instructions),
+                instructions,
+                else_instructions,
             )),
         ));
     }
 
     Ok((
         i,
-        Instruction::Ctrl(CtrlInstructions::OP_IF(blockty, Box::new(instructions))),
+        Instruction::Ctrl(CtrlInstructions::OP_IF(blockty, instructions)),
     ))
 }
 
@@ -582,10 +582,10 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ])
+                ]
             ))
         );
     }
@@ -609,10 +609,10 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::ValueType(ValueType::F64),
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ])
+                ]
             ))
         );
     }
@@ -637,10 +637,10 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::S33(-128),
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ])
+                ]
             ))
         );
     }
@@ -666,15 +666,15 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                         BlockType::Empty,
-                        Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP),])
+                        vec![Instruction::Ctrl(CtrlInstructions::OP_NOP),]
                     )),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                ])
+                ]
             ))
         );
     }
@@ -699,13 +699,13 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                     BlockType::Empty,
-                    Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                    vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                         BlockType::Empty,
-                        Box::new(vec![])
-                    ))])
-                )),])
+                        vec![]
+                    ))]
+                ))]
             ))
         );
     }
@@ -730,10 +730,10 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_IF(
                 BlockType::Empty,
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ])
+                ]
             ))
         );
     }
@@ -759,8 +759,8 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 BlockType::Empty,
-                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)]),
-                Box::new(vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)])
+                vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)],
+                vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)]
             ))
         );
     }
@@ -782,10 +782,10 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_LOOP(
                 BlockType::Empty,
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ]),
+                ],
             ))
         );
     }
@@ -812,17 +812,17 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_LOOP(
                 BlockType::Empty,
-                Box::new(vec![
+                vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_LOOP(
                         BlockType::Empty,
-                        Box::new(vec![
+                        vec![
                             Instruction::Ctrl(CtrlInstructions::OP_NOP),
                             Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                        ]),
+                        ],
                     ))
-                ]),
+                ],
             ))
         );
     }

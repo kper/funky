@@ -15,7 +15,7 @@ use nom::combinator::complete;
 use nom::multi::{count, many0};
 use nom::IResult;
 
-pub const MAGIC_NUMBER: &'static [u8] = &[0, 97, 115, 109];
+pub const MAGIC_NUMBER: &[u8] = &[0, 97, 115, 109];
 const END_INSTR: &[u8] = &[0x0B];
 
 #[derive(Debug)]
@@ -115,7 +115,7 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
     Ok((
         i,
         Section::Custom {
-            name: name.to_string(),
+            name,
         },
     ))
 }
@@ -334,15 +334,15 @@ pub(crate) fn take_expr(mut i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
 fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
     debug!("take_import");
 
-    let (i, mod_name) = take_name(i)?;
+    let (i, module_name) = take_name(i)?;
     let (i, name) = take_name(i)?;
     let (i, desc) = take_desc(i)?;
 
     Ok((
         i,
         ImportEntry {
-            module_name: mod_name.to_string(),
-            name: name.to_string(),
+            module_name,
+            name,
             desc,
         },
     ))
@@ -412,7 +412,7 @@ fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
     Ok((
         i,
         GlobalType {
-            value_type: val.into(),
+            value_type: val,
             mu,
         },
     ))
