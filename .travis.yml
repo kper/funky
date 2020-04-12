@@ -8,7 +8,9 @@ matrix:
     - rust: nightly
 before_script:
   - rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy
+  - cargo install cargo-audit
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
   - cargo clippy --all-features -D warnings
+  - cargo audit -D
