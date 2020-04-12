@@ -1,23 +1,13 @@
 use log::debug;
-use nom::bytes::complete::{take, take_until};
+use nom::bytes::complete::{take};
 use nom::multi::count;
 use nom::IResult;
 
 use crate::core::*;
-use crate::{take_blocktype, take_expr, take_f32, take_f64, take_leb_i32, take_leb_i64};
+use crate::{take_blocktype, take_f32, take_f64, take_leb_i32, take_leb_i64};
 
 const END_INSTR: &[u8] = &[0x0B];
 const END_IF_BLOCK: &[u8] = &[0x05];
-
-macro_rules! take_leb_u32_to_expr {
-    ($i:expr, $expr:expr) => {{
-        let (i, idx) = crate::take_leb_u32($i)?;
-
-        let block = $expr(i);
-
-        return Ok((i, block));
-    }};
-}
 
 pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("parse_instr");
@@ -493,6 +483,7 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
         }
 
         let (i, e) = take(1u8)(i)?; //0x0B
+        assert_eq!(END_INSTR, e);
 
         return Ok((
             i,
@@ -645,7 +636,7 @@ mod test {
         assert_eq!(
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
-                BlockType::s33(-128),
+                BlockType::S33(-128),
                 Box::new(vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)

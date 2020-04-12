@@ -44,9 +44,9 @@ pub fn parse(content: Vec<u8>) -> Result<Module, ()> {
     debug!("{:#?}", parse_module(slice).unwrap());
     let sections = match parse_module(slice) {
         Ok((_, s)) => s,
-        Err(x) => return Err(()), // TODO: improve this error handling
+        Err(_) => return Err(()), // TODO: improve this error handling
     };
-    Ok(Module { sections: sections })
+    Ok(Module { sections })
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
@@ -166,15 +166,15 @@ fn parse_global_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, globals) = count(take_global, times as usize)(i)?;
 
-    Ok((i, Section::Global { globals: globals }))
+    Ok((i, Section::Global { globals }))
 }
 
 fn parse_export_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse export function");
     let (i, times) = take_leb_u32(i)?;
-    let (i, exports) = count(take_export, times as usize)(i)?;
+    let (i, entries) = count(take_export, times as usize)(i)?;
 
-    Ok((i, Section::Export { entries: exports }))
+    Ok((i, Section::Export { entries }))
 }
 
 fn parse_start_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -200,7 +200,7 @@ fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Data { entries: k }))
 }
 
-fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
+fn parse_code_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse_code_section");
 
     let (i, times) = take_leb_u32(i)?;
@@ -212,7 +212,7 @@ fn parse_code_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
     debug!("parse_code");
 
-    let (i, size) = take_leb_u32(i)?;
+    let (i, _size) = take_leb_u32(i)?;
     let (i, k) = take_func(i)?;
 
     Ok((i, k))
@@ -226,13 +226,13 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
 
     debug!("locals {:?}", locals);
 
-    let (i, expr) = take_expr(i)?;
+    let (i, code) = take_expr(i)?;
 
     Ok((
         i,
         FunctionBody {
-            locals: locals,
-            code: expr,
+            locals,
+            code,
         },
     ))
 }
@@ -289,13 +289,13 @@ fn take_export(i: &[u8]) -> IResult<&[u8], ExportEntry> {
     debug!("take_export");
 
     let (i, name) = take_name(i)?;
-    let (i, desc) = take_desc(i)?;
+    let (i, kind) = take_desc(i)?;
 
     Ok((
         i,
         ExportEntry {
-            name: name,
-            kind: desc,
+            name,
+            kind,
         },
     ))
 }
@@ -393,7 +393,7 @@ fn take_tabletype(i: &[u8]) -> IResult<&[u8], TableType> {
         i,
         TableType {
             element_type: 0x70,
-            limits: limits,
+            limits,
         },
     ))
 }
@@ -413,7 +413,7 @@ fn take_globaltype(i: &[u8]) -> IResult<&[u8], GlobalType> {
         i,
         GlobalType {
             value_type: val.into(),
-            mu: mu,
+            mu,
         },
     ))
 }
@@ -450,14 +450,14 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
     let (i, times) = take_leb_u32(i)?;
     let (i, t2) = count(take(1u8), times as usize)(i)?;
 
-    let parameters: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
+    let param_types: Vec<_> = t1.into_iter().map(|w| w[0].into()).collect();
     let return_types: Vec<_> = t2.into_iter().map(|w| w[0].into()).collect();
 
     Ok((
         i,
         FuncType {
-            param_types: parameters,
-            return_types: return_types,
+            param_types,
+            return_types,
         },
     ))
 }
@@ -480,7 +480,7 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
         _ => {
             let (i, k) = take_leb_i33(i)?;
 
-            (i, BlockType::s33(k))
+            (i, BlockType::S33(k))
         }
     };
 
@@ -707,22 +707,6 @@ mod tests {
         assert_eq!(n, -9223372036854775808);
     }
 
-    /*
-    #[test]
-    fn test_take_leb_i32_max() {
-        let k: Vec<u32> = vec![0xffffffff];
-        let (head, body, tail) = unsafe { k.align_to::<u8>() };
-        assert!(head.is_empty());
-        assert!(tail.is_empty());
-
-        println!("body {:?}", body);
-
-        let (_, n) = take_leb_i64(&body).unwrap();
-
-        assert_eq!(0xffffffff, n);
-    }
-    */
-
     #[test]
     fn test_empty_wasm() {
         test_file!("empty.wasm");
@@ -746,41 +730,6 @@ mod tests {
     #[test]
     fn test_arithmetic() {
         test_file!("arithmetic.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_i64() {
-        test_file!("arithmetic_i64.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_i32() {
-        test_file!("arithmetic_i32.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_f32() {
-        test_file!("arithmetic_f32.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_add_i64() {
-        test_file!("add_i64.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_sub_i64() {
-        test_file!("sub_i64.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_mult_i64() {
-        test_file!("mult_i64.wasm");
-    }
-
-    #[test]
-    fn test_arithmetic_div_i64() {
-        test_file!("div_i64.wasm");
     }
 
     #[test]
