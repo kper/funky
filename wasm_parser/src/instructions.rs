@@ -575,7 +575,7 @@ mod test {
 
     #[test]
     fn test_instruction_block() {
-        env_logger::init();
+        //env_logger::init();
 
         let mut payload = Vec::new();
         //payload.push(0x02); // block
@@ -591,6 +591,61 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                ])
+            ))
+        );
+    }
+
+    #[test]
+    fn test_instruction_block_val_type() {
+        //env_logger::init();
+
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x7C); // empty
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_block(&payload).unwrap();
+        assert!(instructions.0 != [11]);
+        assert_eq!(0, instructions.0.len());
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                BlockType::ValueType(ValueType::F64),
+                Box::new(vec![
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                ])
+            ))
+        );
+    }
+
+    #[test]
+    fn test_instruction_block_s33() {
+        //env_logger::init();
+
+        let mut payload = Vec::new();
+        //payload.push(0x02); // block
+        payload.push(0x80); // s33
+        payload.push(0x7f); // s33
+        payload.push(0x01); //nop
+        payload.push(0x01); //nop
+        payload.push(0x0B); //end
+
+        let instructions = take_block(&payload).unwrap();
+        assert!(instructions.0 != [11]);
+        assert_eq!(0, instructions.0.len());
+
+        assert_eq!(
+            instructions.1,
+            Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                BlockType::s33(-128),
                 Box::new(vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
