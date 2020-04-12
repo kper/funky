@@ -751,4 +751,14 @@ mod tests {
     fn test_if_loop() {
         test_file!("if_loop.wasm");
     }
+
+    #[test]
+    fn test_logic() {
+        test_file!("logic.wasm");
+    }
+
+    #[test]
+    fn test_gcd() {
+        test_file!("gcd.wasm");
+    }
 }

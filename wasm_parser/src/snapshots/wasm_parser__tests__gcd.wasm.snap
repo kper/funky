@@ -1,0 +1,334 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Type {
+            entries: [
+                FuncType {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+        },
+        Function {
+            types: [
+                0,
+                0,
+            ],
+        },
+        Memory {
+            entries: [
+                MemoryType {
+                    limits: Zero(
+                        17,
+                    ),
+                },
+            ],
+        },
+        Export {
+            entries: [
+                ExportEntry {
+                    name: "memory",
+                    kind: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "gcd",
+                    kind: Function {
+                        ty: 0,
+                    },
+                },
+                ExportEntry {
+                    name: "gcd_recursive",
+                    kind: Function {
+                        ty: 1,
+                    },
+                },
+            ],
+        },
+        Code {
+            entries: [
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 2,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Ctrl(
+                            OP_BLOCK(
+                                Empty,
+                                [
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    ),
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            1,
+                                        ),
+                                    ),
+                                    Num(
+                                        OP_I32_EQ,
+                                    ),
+                                    Ctrl(
+                                        OP_IF(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Ctrl(
+                                                    OP_BR(
+                                                        1,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                    Ctrl(
+                                        OP_LOOP(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_CONST(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_GT_U,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Param(
+                                                    OP_SELECT,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        3,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_CONST(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Param(
+                                                    OP_SELECT,
+                                                ),
+                                                Num(
+                                                    OP_I32_SUB,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        3,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_SUB,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_NE,
+                                                ),
+                                                Ctrl(
+                                                    OP_BR_IF(
+                                                        0,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                2,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Ctrl(
+                            OP_BLOCK(
+                                Empty,
+                                [
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            1,
+                                        ),
+                                    ),
+                                    Num(
+                                        OP_I32_EQZ,
+                                    ),
+                                    Ctrl(
+                                        OP_IF(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Ctrl(
+                                                    OP_BR(
+                                                        1,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                    Ctrl(
+                                        OP_LOOP(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_REM_U,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        2,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_SET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        1,
+                                                    ),
+                                                ),
+                                                Ctrl(
+                                                    OP_BR_IF(
+                                                        0,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                2,
+                            ),
+                        ),
+                    ],
+                },
+            ],
+        },
+        Custom {
+            name: "producers",
+        },
+    ],
+}
