@@ -68,17 +68,17 @@ fn check_memory_ty(memory: MemoryType) -> bool {
     }
 }
 
-fn check_external_kinds(e: ExternalKindType, types: Vec<FuncType>) -> bool {
+fn check_import_desc(e: ImportDesc, types: Vec<FuncType>) -> bool {
     match e {
-        ExternalKindType::Function { ty } => {
+        ImportDesc::Function { ty } => {
             if let Ok(_) = get_ty_of_typeidx(types, ty as usize) {
                 return true;
             }
             false
         }
-        ExternalKindType::Table { ty: _ } => true, //Limits are u32 that's why they are valid
-        ExternalKindType::Memory { ty } => check_memory_ty(ty),
-        ExternalKindType::Global { ty: _ } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
+        ImportDesc::Table { ty: _ } => true, //Limits are u32 that's why they are valid
+        ImportDesc::Memory { ty } => check_memory_ty(ty),
+        ImportDesc::Global { ty: _ } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
     }
 }
 
