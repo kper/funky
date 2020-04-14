@@ -2,16 +2,11 @@ use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::ops::{Add, Mul};
 use wasm_parser::core::CtrlInstructions::*;
-use wasm_parser::core::FuncType;
-use wasm_parser::core::FunctionBody;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
-use wasm_parser::core::Section;
 use wasm_parser::core::VarInstructions::*;
+use wasm_parser::core::*;
 use wasm_parser::Module;
-
-use std::collections::HashMap;
-use wasm_parser::core::Instruction;
 
 #[derive(Debug)]
 pub struct Engine {
@@ -108,8 +103,8 @@ impl ModuleInstance {
         };
         for section in m.sections {
             match section {
-                Section::Code { entries: x } => mi.code = x,
-                Section::Type { entries: x } => mi.fnTypes = x,
+                Section::Code(CodeSection { entries: x }) => mi.code = x,
+                Section::Type(TypeSection { entries: x }) => mi.fnTypes = x,
                 _ => {}
             }
         }
