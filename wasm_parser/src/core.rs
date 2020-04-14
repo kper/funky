@@ -30,7 +30,7 @@ pub enum BlockType {
     S33(i64), //actually signed 33
 }
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub struct FuncType {
     //form: ValueType,
     //param_count: varuint32,
@@ -213,7 +213,7 @@ pub enum Limits {
     One(u32, u32),
 }
 
-type Expr = Vec<Instruction>;
+pub type Expr = Vec<Instruction>;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]

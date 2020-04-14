@@ -4,195 +4,187 @@ use wasm_parser::Module;
 type IResult<T> = Result<T, &'static str>;
 
 pub mod instructions;
+//TODO rename module to `extract`
+mod concat;
+
+use concat::*;
 
 // Leading question: Should validation return errors or panic?
 
 use log::debug;
 
-macro_rules! matches(
-    ($e:expr, $p:pat) => (
-        match $e {
-            $p => true,
-            _ => false
-        }
-    )
-);
+#[derive(Debug, Clone)]
+struct Context<'a> {
+    types: Vec<&'a FuncType>,
+    functions: Vec<FuncType>,
+    tables: Vec<&'a TableType>,
+    mems: Vec<&'a MemoryType>,
+    global_entries: Vec<&'a GlobalVariable>,
+    globals_ty: Vec<&'a GlobalType>,
+    locals: Vec<()>,  //TODO
+    labels: Vec<()>,  //TODO
+    _return: Vec<()>, //TODO
+}
 
 pub fn validate(module: &Module) -> IResult<()> {
-    //https://webassembly.github.io/spec/core/valid/modules.html#valid-module
-
-    // For each functypei in module.types, the function type functypei must be valid.
-
-    debug!("Function types are valid"); //always valid
-
-    // For each funci in module.funcs, the definition funci must be valid with a function type fti.
-
-    debug!("TODO check functions");
-
-    // For each tablei in module.tables, the definition tablei must be valid with a table type tti.
-
-    let table_types: Vec<_> = module
-        .sections
+    let types = get_types(&module);
+    let functions = get_funcs(&module)
         .iter()
-        .filter_map(|ref w| match w {
-            Section::Table(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
+        .map(|w| get_ty_of_function(Vec::new(), **w as usize).unwrap())
         .collect();
+    let tables = get_tables(&module);
+    let mems = get_mems(&module);
+    let (global_entries, globals_ty) = get_globals(&module);
 
-    for ty in table_types {
-        assert!(check_table_ty(ty));
+    let C = Context {
+        types: types,
+        functions: functions,
+        tables: tables,
+        mems: mems,
+        global_entries: global_entries,
+        globals_ty: globals_ty,
+        locals: Vec::new(),
+        labels: Vec::new(),
+        _return: Vec::new(),
+    };
+
+    C.validate();
+
+    // Check elem
+
+    let elements = get_elemens(module);
+    for elem in elements {
+        assert!(check_elem_ty(elem));
     }
 
-    debug!("Table types are valid");
+    // Check data
 
-    // For each memi in module.mems, the definition memi must be valid with a memory type mti.
-
-    let mem_types: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Memory(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-
-    for ty in mem_types {
-        assert!(check_memory_ty(ty));
+    let data = get_data(module);
+    for d in data {
+        assert!(check_data_ty(d));
     }
 
-    debug!("Memory types are valid");
+    // Start
 
-    // For each globali in module.globals : ...
-
-    //TODO
-
-    debug!("Global types are valid");
-
-    let elem_types: Vec<_> = module
+    let start : Vec<_> = module
         .sections
         .iter()
-        .filter_map(|ref w| match w {
-            Section::Element(t) => Some(&t.entries),
+        .filter_map(|w| match w {
+            Section::Start(t) => Some(t),
             _ => None,
         })
-        .flatten()
         .collect();
 
-    for ty in elem_types {
-        assert!(check_elem_ty(ty));
-    }
-
-    debug!("Element types are valid");
-
-    let data_types: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Data(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-
-    for ty in data_types {
-        assert!(check_data_ty(ty));
-    }
-
-    debug!("Data types are valid");
-
-    let import_types: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Import(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-
-    for ty in import_types {
-        assert!(check_import_ty(ty));
-    }
-
-    debug!("Import types are valid");
-
-    let export_types: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Export(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-
-    for ty in export_types {
-        assert!(check_export_ty(ty));
-    }
-
-    debug!("Export types are valid");
-
-    // The length of C.tables must not be larger than 1.
-
-    let tables_sections = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Table(ref t) => Some(t),
-            _ => None,
-        })
-        .count();
-
-    debug!("Count Table Sections {}", tables_sections);
-
-    assert!(tables_sections <= 1);
-
-    // The length of C.mems must not be larger than 1.
-
-    let memory_sections = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Memory(ref t) => Some(t),
-            _ => None,
-        })
-        .count();
-
-    debug!("Count Memory Sections {}", memory_sections);
-
-    assert!(memory_sections <= 1);
-
-    // All export names exporti.name must be different.
-
-    let export_names: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
-            Section::Export(t) => Some(&t.entries),
-            _ => None,
-        })
-        .flatten()
-        .map(|e| &e.name)
-        .collect();
-
-    let mut names = std::collections::HashSet::new();
-
-    for name in export_names {
-        if !names.contains(&name) {
-            names.insert(name);
-        } else {
-            panic!("Name duplicate {}", name);
-        }
+    if let Some(s) = start.get(0) {
+        assert!(check_start(s));
     }
 
     Ok(())
 }
 
-fn check_table_ty(table_type: &TableType) -> bool {
-    true
+impl<'a> Context<'a> {
+    pub fn get_C_prime(&self) -> Self {
+        let copied = (&self.globals_ty).to_vec(); //TODO is this really copied?
+        let copied2 = (&self.global_entries).to_vec(); //TODO is this really copied?
+
+        Context {
+            types: Vec::new(),
+            functions: Vec::new(),
+            tables: Vec::new(),
+            mems: Vec::new(),
+            global_entries: copied2,
+            globals_ty: copied,
+            locals: Vec::new(),
+            labels: Vec::new(),
+            _return: Vec::new(),
+        }
+    }
+
+    pub fn validate(self) {
+        let C_prime = self.get_C_prime().clone(); //TODO this might not be necessary
+
+        // Check functype
+
+        // -> https://webassembly.github.io/spec/core/valid/types.html#t-1-n-xref-syntax-types-syntax-functype-rightarrow-t-2-m
+
+        // they are always valid
+        debug!("Functypes are valid");
+
+        // Check func
+
+        // due to optimization, that has been already checked in top-level `validate`
+        debug!("FunctionsTypes are valid");
+
+        // Check table
+
+        //https://webassembly.github.io/spec/core/valid/types.html#table-types
+
+        // table tables are valid when the limit is in u32 range
+        // that's statically guaranted
+        debug!("TablesTypes are valid");
+
+        // Check mem
+
+        for mem in self.mems {
+            assert!(check_memory_ty(mem));
+        }
+
+        debug!("MemoryTypes are valid");
+
+        // Check global
+
+        for entry in self.global_entries {
+            // For each global under the Context C'
+
+            let init = &entry.init;
+            let init_expr_ty = get_expr_const_ty(init, &C_prime.globals_ty);
+
+            if entry.ty.value_type != init_expr_ty {
+                //Expr has not the same type as the global
+                panic!("Expr has not the same type as the global");
+            }
+        }
+
+        debug!("GlobalTypes are valid");
+    }
+}
+
+/// Evalutes the expr `init` and checks if it returns const
+fn get_expr_const_ty(init: &Expr, globals_ty: &Vec<&GlobalType>) -> ValueType {
+    use wasm_parser::core::Instruction;
+    use wasm_parser::core::Mu;
+    use wasm_parser::core::NumericInstructions::*;
+    use wasm_parser::core::VarInstructions::*;
+
+    if init.len() == 0 {
+        panic!("No expr to evaluate");
+    }
+
+    let expr_ty = match init.get(0).unwrap() {
+        Instruction::Num(n) => match *n {
+            OP_I32_CONST(_) => ValueType::I32,
+            OP_I64_CONST(_) => ValueType::I64,
+            OP_F32_CONST(_) => ValueType::F32,
+            OP_F64_CONST(_) => ValueType::F64,
+            _ => panic!("Expression is not a const"),
+        },
+        Instruction::Var(n) => match *n {
+            OP_GLOBAL_GET(lidx) => match globals_ty.get(lidx as usize).as_ref() {
+                Some(global) => {
+                    if global.mu == Mu::Var {
+                        panic!("Global var is mutable");
+                    }
+
+                    global.value_type.clone()
+                }
+                None => panic!("Global does not exist"),
+            },
+            _ => panic!("Only Global get allowed"),
+        },
+        _ => panic!("Wrong expression"),
+    };
+
+    expr_ty
 }
 
 fn check_elem_ty(elem_ty: &ElementSegment) -> bool {
@@ -203,6 +195,11 @@ fn check_data_ty(data_ty: &DataSegment) -> bool {
     true
 }
 
+fn check_start(start: &&StartSection) -> bool {
+    true
+}
+
+/*
 fn check_import_ty(import_ty: &ImportEntry) -> bool {
     true
 }
@@ -210,9 +207,11 @@ fn check_import_ty(import_ty: &ImportEntry) -> bool {
 fn check_export_ty(import_ty: &ExportEntry) -> bool {
     true
 }
+*/
+
 /// k is the range
 /// k must be between `n` and `m`
-pub fn check_limits(limit: &Limits, k: u32) -> bool {
+fn check_limits(limit: &Limits, k: u32) -> bool {
     match limit {
         Limits::Zero(n) => &k > n,
         Limits::One(n, m) => &k > n && m > &k && n < m,
@@ -225,14 +224,14 @@ pub fn get_ty_of_blocktype(blocktype: BlockType, types: Vec<FuncType>) -> IResul
     let w = match blocktype {
         BlockType::ValueType(v) => get_ty_of_valuetype(v),
         BlockType::Empty => get_ty_of_valuetype_empty(),
-        BlockType::S33(v) => get_ty_of_typeidx(types, v.try_into().unwrap()).unwrap(), //TODO make this safe
+        BlockType::S33(v) => get_ty_of_function(types, v.try_into().unwrap()).unwrap(), //TODO make this safe
     };
 
     Ok(w)
 }
 
 // If there exists a `typeidx` in `types`, then `typeidx` has its type.
-fn get_ty_of_typeidx(types: Vec<FuncType>, typeidx: usize) -> IResult<FuncType> {
+fn get_ty_of_function(types: Vec<FuncType>, typeidx: usize) -> IResult<FuncType> {
     if let Some(t) = types.get(typeidx) {
         return Ok(FuncType {
             param_types: t.param_types.clone(),
@@ -275,7 +274,7 @@ fn check_memory_ty(memory: &MemoryType) -> bool {
 fn check_import_desc(e: ImportDesc, types: Vec<FuncType>) -> bool {
     match e {
         ImportDesc::Function { ty } => {
-            if let Ok(_) = get_ty_of_typeidx(types, ty as usize) {
+            if let Ok(_) = get_ty_of_function(types, ty as usize) {
                 return true;
             }
             false
