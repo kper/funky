@@ -65,6 +65,27 @@ fn get_ty_of_valuetype(val: ValueType) -> FuncType {
     }
 }
 
+fn check_memory_ty(memory: MemoryType) -> bool {
+    match memory.limits {
+        Limits::Zero(n) => n < 2u32.checked_pow(16).unwrap(), //cannot overflow
+        Limits::One(n, m) => n < 2u32.checked_pow(16).unwrap() && m < 2u32.checked_pow(16).unwrap(), //cannot overflow
+    }
+}
+
+fn check_external_kinds(e: ExternalKindType, types: Vec<FuncType>) -> bool {
+    match e {
+        ExternalKindType::Function { ty } => {
+            if let Ok(_) = get_ty_of_typeidx(types, ty as usize) {
+                return true;
+            }
+            false
+        }
+        ExternalKindType::Table { ty: _ } => true, //Limits are u32 that's why they are valid
+        //ExternalKindType::Memory { ty } => check_memory_ty(ty),
+        _ => panic!("asda"),
+    }
+}
+
 /// The ty has the type `[] -> []`
 fn get_ty_of_valuetype_empty() -> FuncType {
     FuncType {
