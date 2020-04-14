@@ -39,14 +39,14 @@ pub struct FuncType {
     pub return_types: Vec<ValueType>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
     pub name: String,        //utf8 string
     pub desc: ImportDesc,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum ImportDesc {
     Function { ty: FuncIdx },
     Table { ty: TableType },
@@ -54,7 +54,7 @@ pub enum ImportDesc {
     Global { ty: GlobalType },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum ExternalKindType {
     Function { ty: u32 },
     Table { ty: u32 },
@@ -62,50 +62,88 @@ pub enum ExternalKindType {
     Global { ty: u32 },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum Section {
-    Custom {
-        name: String,
-    },
-    Type {
-        //count: varuint32,
-        entries: Vec<FuncType>,
-    },
-    Import {
-        entries: Vec<ImportEntry>,
-    },
-    Function {
-        types: Vec<u32>,
-    },
-    Table {
-        entries: Vec<TableType>,
-    },
-    Memory {
-        entries: Vec<MemoryType>,
-    },
-    Global {
-        globals: Vec<GlobalVariable>,
-    },
-    Export {
-        entries: Vec<ExportEntry>,
-    },
-    Start {
-        index: u32,
-    },
-    Element {
-        entries: Vec<ElementSegment>,
-    },
-    Code {
-        entries: Vec<FunctionBody>,
-    },
-    Data {
-        entries: Vec<DataSegment>,
-    },
-    Name {
-        name_type: u8,
-        name_payload_len: u32,
-        name_payload_data: Vec<u8>,
-    },
+    Custom(CustomSection),
+    Type(TypeSection),
+    Import(ImportSection),
+    Function(FunctionSection),
+    Table(TableSection),
+    Memory(MemorySection),
+    Global(GlobalSection),
+    Export(ExportSection),
+    Start(StartSection),
+    Element(ElementSection),
+    Code(CodeSection),
+    Data(DataSection),
+    Name(NameSection),
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomSection {
+    pub name: String,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct TypeSection {
+    pub entries: Vec<FuncType>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportSection {
+    pub entries: Vec<ImportEntry>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct FunctionSection {
+    pub types: Vec<u32>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableSection {
+    pub entries: Vec<TableType>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct MemorySection {
+    pub entries: Vec<MemoryType>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSection {
+    pub globals: Vec<GlobalVariable>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExportSection {
+    pub entries: Vec<ExportEntry>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct StartSection {
+    pub index: u32,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct ElementSection {
+    pub entries: Vec<ElementSegment>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct CodeSection {
+    pub entries: Vec<FunctionBody>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSection {
+    pub entries: Vec<DataSegment>,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameSection {
+    pub name_type: u8,
+    pub name_payload_len: u32,
+    pub name_payload_data: Vec<u8>
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -131,39 +169,39 @@ pub enum Mu {
     Var,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalVariable {
     pub ty: GlobalType,
     pub init: Expr,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportEntry {
     pub name: String, //utf8 string
     pub kind: ExternalKindType,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElementSegment {
     pub index: u32,
     pub offset: Expr,
     pub elems: Vec<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct DataSegment {
     pub index: u32,
     pub offset: Expr,
     pub data: Vec<u8>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FunctionBody {
     pub locals: Vec<LocalEntry>,
     pub code: Expr,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq,  Serialize, Deserialize)]
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,

@@ -115,9 +115,9 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 
     Ok((
         i,
-        Section::Custom {
+        Section::Custom(CustomSection {
             name,
-        },
+        }),
     ))
 }
 
@@ -127,7 +127,8 @@ fn parse_type_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take_functype, times as usize)(i)?;
 
-    Ok((i, Section::Type { entries: vec }))
+    Ok((i, Section::Type(
+                TypeSection{ entries: vec })))
 }
 
 fn parse_import_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -135,7 +136,7 @@ fn parse_import_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, import) = count(take_import, times as usize)(i)?;
 
-    Ok((i, Section::Import { entries: import }))
+    Ok((i, Section::Import(ImportSection { entries: import })))
 }
 
 fn parse_function_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -143,7 +144,7 @@ fn parse_function_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, functions) = count(take_leb_u32, times as usize)(i)?;
 
-    Ok((i, Section::Function { types: functions }))
+    Ok((i, Section::Function(FunctionSection { types: functions })))
 }
 
 fn parse_table_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -151,7 +152,7 @@ fn parse_table_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, tables) = count(take_tabletype, times as usize)(i)?;
 
-    Ok((i, Section::Table { entries: tables }))
+    Ok((i, Section::Table(TableSection { entries: tables })))
 }
 
 fn parse_memory_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -159,7 +160,7 @@ fn parse_memory_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, mem) = count(take_memtype, times as usize)(i)?;
 
-    Ok((i, Section::Memory { entries: mem }))
+    Ok((i, Section::Memory(MemorySection { entries: mem })))
 }
 
 fn parse_global_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -167,7 +168,7 @@ fn parse_global_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, globals) = count(take_global, times as usize)(i)?;
 
-    Ok((i, Section::Global { globals }))
+    Ok((i, Section::Global(GlobalSection { globals })))
 }
 
 fn parse_export_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -175,14 +176,14 @@ fn parse_export_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, entries) = count(take_export, times as usize)(i)?;
 
-    Ok((i, Section::Export { entries }))
+    Ok((i, Section::Export(ExportSection { entries })))
 }
 
 fn parse_start_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse start function");
     let (i, func_idx) = take_leb_u32(i)?;
 
-    Ok((i, Section::Start { index: func_idx }))
+    Ok((i, Section::Start(StartSection { index: func_idx })))
 }
 
 fn parse_element_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -190,7 +191,7 @@ fn parse_element_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, elements) = count(take_elem, times as usize)(i)?;
 
-    Ok((i, Section::Element { entries: elements }))
+    Ok((i, Section::Element(ElementSection { entries: elements })))
 }
 
 fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -198,7 +199,7 @@ fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, k) = count(take_data, times as usize)(i)?;
 
-    Ok((i, Section::Data { entries: k }))
+    Ok((i, Section::Data(DataSection { entries: k })))
 }
 
 fn parse_code_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -207,7 +208,7 @@ fn parse_code_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, codes) = count(take_code, times as usize)(i)?;
 
-    Ok((i, Section::Code { entries: codes }))
+    Ok((i, Section::Code(CodeSection { entries: codes })))
 }
 
 fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
