@@ -617,7 +617,6 @@ mod test {
         );
     }
 
-    /*
     #[test]
     fn test_instruction_block_s33() {
         //env_logger::init();
@@ -645,7 +644,6 @@ mod test {
             ))
         );
     }
-    */
 
     #[test]
     fn test_instruction_block_nested_2() {

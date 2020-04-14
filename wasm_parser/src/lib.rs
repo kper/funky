@@ -477,12 +477,11 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
     let (i, bty) = match n[0] {
         0x40 => (u, BlockType::Empty),
         0x7F | 0x7E | 0x7D | 0x7C => (u, BlockType::ValueType(n[0].into())),
-        _ => panic!("Should I enable i32"),
-        /*_ => {
+        _ => {
             let (i, k) = take_leb_i33(i)?;
 
             (i, BlockType::S33(k))
-        }*/
+        }
     };
 
     Ok((i, bty))
@@ -568,7 +567,6 @@ pub(crate) fn take_leb_i64(i: &[u8]) -> IResult<&[u8], i64> {
     }
 }
 
-/*
 pub(crate) fn take_leb_i33(i: &[u8]) -> IResult<&[u8], i64> {
     debug!("take_leb_i33");
     if i.len() >= 6 {
@@ -585,7 +583,6 @@ pub(crate) fn take_leb_i33(i: &[u8]) -> IResult<&[u8], i64> {
         Ok((i, leb.0))
     }
 }
-*/
 
 /*
 fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
@@ -620,7 +617,6 @@ mod tests {
         assert_eq!(n, -1);
     }
 
-    /*
     #[test]
     fn test_take_leb_i33() {
         let bytes = [0x7f, 0, 0, 0];
@@ -629,7 +625,6 @@ mod tests {
 
         assert_eq!(n, -1);
     }
-    */
 
     #[test]
     fn test_take_leb_i64() {

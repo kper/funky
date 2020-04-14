@@ -136,7 +136,6 @@ pub fn read_i64_leb128(input: &[u8]) -> (i64, usize) {
     (result, bytes_read)
 }
 
-/*
 pub fn read_i33_leb128(input: &[u8]) -> (i64, usize) {
     let mut result = 0;
     let mut shift = 0;
@@ -175,7 +174,7 @@ pub fn read_i33_leb128(input: &[u8]) -> (i64, usize) {
 
     (result, bytes_read)
 }
-*/
+
 /*
 pub fn read_signed_i32_leb128(data: &[u8], start_position: usize) -> (i32, usize) {
     let mut result = 0;

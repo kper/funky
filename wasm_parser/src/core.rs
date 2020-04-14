@@ -25,7 +25,7 @@ pub enum ValueType {
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
-    //S33(i64), //actually signed 33
+    S33(i64), //actually signed 33
 }
 
 #[derive(Debug, PartialEq, Eq)]
