@@ -2,7 +2,9 @@ extern crate validation;
 
 use docopt::Docopt;
 use serde::Deserialize;
-use wasm_parser::{parse, read_wasm};
+use wasm_parser::Module;
+
+use validation::validate;
 
 const USAGE: &'static str = "
 WebAssembly validator for an AST.
@@ -31,10 +33,12 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let module = read_file(args.arg_input);
+    let module : Module = serde_json::from_str(&read_file(args.arg_input)).unwrap();
+
+    let result = validate(&module).unwrap();
 
     if !args.flag_no_output {
-        println!("{:#?}", module);
+        println!("{:#?}", result);
     }
 }
 
