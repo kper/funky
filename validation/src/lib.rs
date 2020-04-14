@@ -2,11 +2,7 @@ use wasm_parser::core::*;
 
 type IResult<T> = Result<T, &'static str>;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Either<T: PartialEq + Eq, G: PartialEq + Eq> {
-    A(T),
-    B(G),
-}
+pub mod instructions;
 
 // Leading question: Should validation return errors or panic?
 
