@@ -1,0 +1,8 @@
+[package]
+name = "validation"
+version = "0.1.0"
+authors = ["Dominik Süß", "Kevin Per <kevin.per@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+wasm-parser = { path = "../wasm_parser" }

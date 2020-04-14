@@ -9,10 +9,12 @@ edition = "2018"
 [workspace]
 members = [
 	"wasm_parser",
-	"simple"
+	"simple",
+	"validation"
 ]
 
 [dependencies]
+validation = { path = "./validation" }
 wasm-parser = { path = "./wasm_parser" }
 env_logger = "0.7"
 log = "*"
