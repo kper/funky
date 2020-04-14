@@ -39,7 +39,7 @@ fn main() {
 
     if !args.flag_no_output {
         if args.flag_json {
-            println!("{:#?}", serde_json::to_string(&module).unwrap()); 
+            println!("{}", serde_json::to_string(&module).unwrap()); 
         }
         else {
             println!("{:#?}", module);
