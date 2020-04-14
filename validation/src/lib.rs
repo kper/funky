@@ -81,8 +81,8 @@ fn check_external_kinds(e: ExternalKindType, types: Vec<FuncType>) -> bool {
             false
         }
         ExternalKindType::Table { ty: _ } => true, //Limits are u32 that's why they are valid
-        //ExternalKindType::Memory { ty } => check_memory_ty(ty),
-        _ => panic!("asda"),
+        ExternalKindType::Memory { ty } => check_memory_ty(ty),
+        ExternalKindType::Global { ty: _ } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
     }
 }
 
