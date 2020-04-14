@@ -16,6 +16,7 @@ pub struct Engine {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
+#[allow(dead_code)]
 pub enum Value {
     I32(i32),
     I64(i64),
@@ -55,13 +56,14 @@ pub struct Variable {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+#[allow(dead_code)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
 }
 
 #[derive(Debug, PartialEq, Clone)]
-struct Frame {
+pub struct Frame {
     arity: u32,
     locals: Vec<Value>,
 }
@@ -70,7 +72,7 @@ struct Frame {
 pub struct ModuleInstance {
     start: u32,
     code: Vec<FunctionBody>,
-    fnTypes: Vec<FuncType>,
+    fn_types: Vec<FuncType>,
 }
 
 #[derive(Debug)]
@@ -99,12 +101,12 @@ impl ModuleInstance {
         let mut mi = ModuleInstance {
             start: 0,
             code: Vec::new(),
-            fnTypes: Vec::new(),
+            fn_types: Vec::new(),
         };
         for section in m.sections {
             match section {
                 Section::Code(CodeSection { entries: x }) => mi.code = x,
-                Section::Type(TypeSection { entries: x }) => mi.fnTypes = x,
+                Section::Type(TypeSection { entries: x }) => mi.fn_types = x,
                 _ => {}
             }
         }
@@ -124,6 +126,7 @@ impl Engine {
             },
         }
     }
+    #[warn(dead_code)]
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         self.store.stack.push(Frame(Frame {
             arity: args.len() as u32,
@@ -179,7 +182,7 @@ impl Engine {
                     self.store.stack.push(Value(v1 * v2))
                 }
                 Ctrl(OP_CALL(idx)) => {
-                    let t = &self.module.fnTypes[*idx as usize];
+                    let t = &self.module.fn_types[*idx as usize];
                     let args = self
                         .store
                         .stack
@@ -231,7 +234,7 @@ mod tests {
             module: ModuleInstance {
                 start: 0,
                 code: Vec::new(),
-                fnTypes: Vec::new(),
+                fn_types: Vec::new(),
             },
             store: Store {
                 stack: vec![Frame(Frame {
