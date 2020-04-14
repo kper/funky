@@ -46,10 +46,10 @@ pub struct ImportEntry {
 
 #[derive(Debug)]
 pub enum ExternalKindType {
-    Function { ty: u32 },
-    Table { ty: u32 },
-    Memory { ty: u32 },
-    Global { ty: u32 },
+    Function { ty: FuncIdx },
+    Table { ty: TableType },
+    Memory { ty: MemoryType },
+    Global { ty: GlobalType },
 }
 
 #[derive(Debug)]
@@ -417,7 +417,7 @@ impl std::convert::From<u8> for SectionType {
 impl std::convert::From<u8> for ValueType {
     fn from(item: u8) -> Self {
         use log::debug;
-        
+
         debug!("convert value type {:X}", item);
         match item {
             0x7F => Self::I32,

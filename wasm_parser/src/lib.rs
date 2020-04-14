@@ -359,15 +359,15 @@ fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
             (i, ExternalKindType::Function { ty: t })
         }
         0x01 => {
-            let (i, t) = take_leb_u32(&i)?;
+            let (i, t) = take_tabletype(&i)?;
             (i, ExternalKindType::Table { ty: t })
         }
         0x02 => {
-            let (i, t) = take_leb_u32(&i)?;
+            let (i, t) = take_memtype(&i)?;
             (i, ExternalKindType::Memory { ty: t })
         }
         0x03 => {
-            let (i, t) = take_leb_u32(&i)?;
+            let (i, t) = take_globaltype(&i)?;
             (i, ExternalKindType::Global { ty: t })
         }
         _ => panic!("desc failed"),
