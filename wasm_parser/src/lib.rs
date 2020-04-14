@@ -14,11 +14,12 @@ use nom::bytes::complete::take;
 use nom::combinator::complete;
 use nom::multi::{count, many0};
 use nom::IResult;
+use serde::{Serialize, Deserialize};
 
 pub const MAGIC_NUMBER: &[u8] = &[0, 97, 115, 109];
 const END_INSTR: &[u8] = &[0x0B];
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Module {
     pub sections: Vec<Section>,
 }

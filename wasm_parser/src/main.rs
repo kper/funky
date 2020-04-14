@@ -8,19 +8,21 @@ const USAGE: &'static str = "
 WebAssembly parser for binary files.
 
 Usage:
-  ./wasm_parser <input> [--no-output]
+  ./wasm_parser <input> [--no-output, --json]
   ./wasm_parser (-h | --help)
   ./wasm_parser --version
 
 Options:
   -h --help     Show this screen.
   --version     Show version.
+  --json        Output in json
   --no-output   Don't print
 ";
 
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_no_output: bool,
+    flag_json: bool,
     arg_input: String,
 }
 
@@ -33,10 +35,15 @@ fn main() {
 
     let reader = read_wasm!(args.arg_input);
 
-    let module = parse(reader);
+    let module = parse(reader).unwrap();
 
     if !args.flag_no_output {
-        println!("{:#?}", module);
+        if args.flag_json {
+            println!("{:#?}", serde_json::to_string(&module).unwrap()); 
+        }
+        else {
+            println!("{:#?}", module);
+        }
     }
 
     /*

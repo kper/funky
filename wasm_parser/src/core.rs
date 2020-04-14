@@ -1,3 +1,5 @@
+use serde::{Serialize, Deserialize};
+
 pub enum SectionType {
     Type,
     Import,
@@ -13,7 +15,7 @@ pub enum SectionType {
     Custom,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum ValueType {
     I32,
     I64,
@@ -21,14 +23,14 @@ pub enum ValueType {
     F64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
     S33(i64), //actually signed 33
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FuncType {
     //form: ValueType,
     //param_count: varuint32,
@@ -37,14 +39,14 @@ pub struct FuncType {
     pub return_types: Vec<ValueType>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
     pub name: String,        //utf8 string
     pub desc: ExternalKindType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ExternalKindType {
     Function { ty: FuncIdx },
     Table { ty: TableType },
@@ -52,7 +54,7 @@ pub enum ExternalKindType {
     Global { ty: GlobalType },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Section {
     Custom {
         name: String,
@@ -98,69 +100,69 @@ pub enum Section {
     },
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TableType {
     pub element_type: u8, //0x70 for future ref
     pub limits: Limits,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemoryType {
     pub limits: Limits,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GlobalType {
     pub value_type: ValueType,
     pub mu: Mu,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Mu {
     Const,
     Var,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct GlobalVariable {
     pub ty: GlobalType,
     pub init: Expr,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExportEntry {
     pub name: String, //utf8 string
     pub kind: ExternalKindType,
     //index: varuint32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ElementSegment {
     pub index: u32,
     pub offset: Expr,
     pub elems: Vec<u32>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DataSegment {
     pub index: u32,
     pub offset: Expr,
     pub data: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FunctionBody {
     pub locals: Vec<LocalEntry>,
     pub code: Expr,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Limits {
     Zero(u32),
     One(u32, u32),
@@ -168,7 +170,7 @@ pub enum Limits {
 
 type Expr = Vec<Instruction>;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
     Ctrl(CtrlInstructions),
@@ -182,7 +184,7 @@ pub type LabelIdx = u32;
 pub type FuncIdx = u32;
 pub type LocalIdx = u32;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum CtrlInstructions {
     OP_UNREACHABLE,
@@ -200,14 +202,14 @@ pub enum CtrlInstructions {
     OP_END,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum ParamInstructions {
     OP_DROP,
     OP_SELECT,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum VarInstructions {
     OP_LOCAL_GET(LocalIdx),
@@ -217,13 +219,13 @@ pub enum VarInstructions {
     OP_GLOBAL_SET(LocalIdx),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct MemArg {
     pub align: u32,
     pub offset: u32,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum MemoryInstructions {
     OP_I32_LOAD(MemArg),
@@ -253,7 +255,7 @@ pub enum MemoryInstructions {
     OP_MEMORY_GROW,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum NumericInstructions {
     OP_I32_CONST(i32),
