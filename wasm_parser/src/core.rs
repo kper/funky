@@ -43,7 +43,15 @@ pub struct FuncType {
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
     pub name: String,        //utf8 string
-    pub desc: ExternalKindType,
+    pub desc: ImportDesc,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ImportDesc {
+    Function { ty: FuncIdx },
+    Table { ty: TableType },
+    Memory { ty: MemoryType },
+    Global { ty: GlobalType },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -133,7 +141,6 @@ pub struct GlobalVariable {
 pub struct ExportEntry {
     pub name: String, //utf8 string
     pub kind: ExternalKindType,
-    //index: varuint32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -337,7 +337,7 @@ fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
 
     let (i, module_name) = take_name(i)?;
     let (i, name) = take_name(i)?;
-    let (i, desc) = take_desc(i)?;
+    let (i, desc) = take_import_desc(i)?;
 
     Ok((
         i,
@@ -347,6 +347,34 @@ fn take_import(i: &[u8]) -> IResult<&[u8], ImportEntry> {
             desc,
         },
     ))
+}
+
+fn take_import_desc(i: &[u8]) -> IResult<&[u8], ImportDesc> {
+    debug!("take_desc");
+
+    let (i, b) = take(1u8)(i)?;
+
+    let (i, desc) = match b[0] {
+        0x00 => {
+            let (i, t) = take_leb_u32(&i)?;
+            (i, ImportDesc::Function { ty: t })
+        }
+        0x01 => {
+            let (i, t) = take_tabletype(&i)?;
+            (i, ImportDesc::Table { ty: t })
+        }
+        0x02 => {
+            let (i, t) = take_memtype(&i)?;
+            (i, ImportDesc::Memory { ty: t })
+        }
+        0x03 => {
+            let (i, t) = take_globaltype(&i)?;
+            (i, ImportDesc::Global { ty: t })
+        }
+        _ => panic!("desc failed"),
+    };
+
+    Ok((i, desc))
 }
 
 fn take_desc(i: &[u8]) -> IResult<&[u8], ExternalKindType> {
