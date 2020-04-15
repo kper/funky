@@ -32,7 +32,7 @@ pub fn validate(module: &Module) -> IResult<()> {
     let types = get_types(&module);
     let functions = get_funcs(&module)
         .iter()
-        .map(|w| get_ty_of_function(Vec::new(), **w as usize).unwrap())
+        .map(|w| get_ty_of_function(&types, **w as usize).unwrap())
         .collect();
     let tables = get_tables(&module);
     let mems = get_mems(&module);
@@ -148,7 +148,15 @@ impl<'a> Context<'a> {
 
         debug!("Start is valid");
 
-        // Imports are valid because typed
+        // Imports
+
+        let imports = get_imports(module);
+        for e in imports {
+            assert!(check_import_ty(
+                e,
+                &self.types,
+            ));
+        }
 
         debug!("Imports are valid");
 
@@ -319,6 +327,10 @@ fn check_start(start: &StartSection, functypes: &[&FuncType]) -> bool {
     true
 }
 
+fn check_import_ty(import_ty: &ImportEntry, functypes: &[&FuncType]) -> bool {
+    check_import_desc(&import_ty.desc, functypes)
+}
+
 fn check_export_ty(
     export_ty: &ExportEntry,
     functypes: &[&FuncType],
@@ -373,7 +385,7 @@ pub fn get_ty_of_blocktype(blocktype: BlockType, types: Vec<FuncType>) -> IResul
 */
 
 // If there exists a `typeidx` in `types`, then `typeidx` has its type.
-fn get_ty_of_function(types: Vec<FuncType>, typeidx: usize) -> IResult<FuncType> {
+fn get_ty_of_function(types: &[&FuncType], typeidx: usize) -> IResult<FuncType> {
     if let Some(t) = types.get(typeidx) {
         return Ok(FuncType {
             param_types: t.param_types.clone(),
@@ -407,6 +419,20 @@ fn get_ty_of_valuetype(val: ValueType) -> FuncType {
     }
 }
 */
+
+fn check_import_desc(e: &ImportDesc, types: &[&FuncType]) -> bool {
+    match e {
+        ImportDesc::Function { ty } => {
+            if let Ok(_) = get_ty_of_function(types, *ty as usize) {
+                return true;
+            }
+            false
+        }
+        ImportDesc::Table { ty: _ } => true, //Limits are u32 that's why they are valid
+        ImportDesc::Memory { ty } => check_memory_ty(&ty),
+        ImportDesc::Global { ty: _ } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
+    }
+}
 
 fn check_memory_ty(memory: &MemoryType) -> bool {
     match memory.limits {

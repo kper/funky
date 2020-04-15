@@ -29,6 +29,20 @@ pub(crate) fn get_exports(module: &Module) -> Vec<&ExportEntry> {
     ty
 }
 
+pub(crate) fn get_imports(module: &Module) -> Vec<&ImportEntry> {
+    let ty: Vec<_> = module
+        .sections
+        .iter()
+        .filter_map(|ref w| match w {
+            Section::Import(t) => Some(&t.entries),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    ty
+}
+
 pub(crate) fn get_start(module: &Module) -> Vec<&StartSection> {
     let ty: Vec<_> = module
         .sections
