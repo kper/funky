@@ -39,6 +39,15 @@ pub struct FuncType {
     pub return_types: Vec<ValueType>,
 }
 
+impl FuncType {
+    pub fn empty() -> Self {
+        FuncType {
+            param_types: vec![],
+            return_types: vec![],
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string

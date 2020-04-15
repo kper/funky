@@ -152,10 +152,7 @@ impl<'a> Context<'a> {
 
         let imports = get_imports(module);
         for e in imports {
-            assert!(check_import_ty(
-                e,
-                &self.types,
-            ));
+            assert!(check_import_ty(e, &self.types,));
         }
 
         debug!("Imports are valid");
@@ -444,6 +441,36 @@ fn check_memory_ty(memory: &MemoryType) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[should_panic("Export Functions are not unique")]
+    fn test_duplicated_export_entries() {
+        let k = ExportSection {
+            entries: vec![
+                ExportEntry {
+                    name: "test1".to_string(),
+                    kind: ExternalKindType::Function { ty: 0 },
+                },
+                ExportEntry {
+                    name: "test1".to_string(),
+                    kind: ExternalKindType::Function { ty: 1 },
+                },
+            ],
+        };
+
+        //TODO if this is a requirement too?
+        let w = FunctionSection {
+            types: vec![0, 1],
+        };
+
+        let t = TypeSection {
+            entries: vec![FuncType::empty(), FuncType::empty()],
+        };
+
+        let module = Module { sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)] };
+
+        validate(&module).unwrap();
+    }
 
     /*
     #[test]
