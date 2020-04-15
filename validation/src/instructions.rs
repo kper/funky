@@ -1,7 +1,7 @@
 use wasm_parser::core::NumericInstructions::*;
 use wasm_parser::core::*;
 
-type IResult<T> = Result<T, &'static str>;
+//type IResult<T> = Result<T, &'static str>;
 
 //https://webassembly.github.io/spec/core/valid/instructions.html#numeric-instructions
 //https://webassembly.github.io/spec/core/syntax/instructions.html#syntax-cvtop
@@ -214,6 +214,5 @@ pub fn get_ty_of_param(i: ParamInstructions, v: ValueType) -> FuncType {
     match i {
         OP_DROP => create_func_type(v),
         OP_SELECT => create_func_type2(v),
-        _ => panic!("cannot check for other numeric ops"),
     }
 }
