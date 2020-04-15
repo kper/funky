@@ -400,6 +400,8 @@ fn check_memory_ty(memory: &MemoryType) -> IResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasm_parser::parse;
+    use wasm_parser::read_wasm;
 
     #[test]
     fn test_empty_module() {
@@ -778,5 +780,63 @@ mod tests {
         };
 
         assert_eq!(Err("Memory exhausted"), check_memory_ty(&ty));
+    }
+
+    macro_rules! test_file {
+        ($fs_name:expr) => {
+            let file = read_wasm!(&format!("../wasm_parser/test_files/{}", $fs_name));
+            let ast = parse(file).unwrap();
+            assert!(validate(&ast).is_ok());
+        };
+    }
+
+    #[test]
+    fn test_parse_return_i32() {
+        test_file!("return_i32.wasm"); 
+    }
+
+    #[test]
+    fn test_return_i64() {
+        test_file!("return_i64.wasm");
+    }
+
+    #[test]
+    fn test_function_call() {
+        test_file!("function_call.wasm");
+    }
+
+    #[test]
+    fn test_arithmetic() {
+        test_file!("arithmetic.wasm");
+    }
+
+    #[test]
+    fn test_block_add_i32() {
+        test_file!("block_add_i32.wasm");
+    }
+
+    #[test]
+    fn test_loop_mult() {
+        test_file!("loop_mult.wasm");
+    }
+
+    #[test]
+    fn test_unreachable() {
+        test_file!("unreachable.wasm");
+    }
+
+    #[test]
+    fn test_if_loop() {
+        test_file!("if_loop.wasm");
+    }
+
+    #[test]
+    fn test_logic() {
+        test_file!("logic.wasm");
+    }
+
+    #[test]
+    fn test_gcd() {
+        test_file!("gcd.wasm");
     }
 }
