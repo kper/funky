@@ -220,7 +220,6 @@ impl Engine {
         }
         while let Some(Frame(_)) = self.store.stack.pop() {}
         self.store.stack.append(&mut ret);
-        return;
     }
 }
 
