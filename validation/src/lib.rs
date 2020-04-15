@@ -6,8 +6,7 @@ type IResult<T> = Result<T, &'static str>;
 type Expr = [Instruction];
 
 pub mod instructions;
-//TODO rename module to `extract`
-mod concat;
+mod extract;
 
 use concat::*;
 
