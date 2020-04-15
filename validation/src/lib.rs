@@ -419,15 +419,10 @@ fn get_ty_of_valuetype(val: ValueType) -> FuncType {
 
 fn check_import_desc(e: &ImportDesc, types: &[&FuncType]) -> bool {
     match e {
-        ImportDesc::Function { ty } => {
-            if let Ok(_) = get_ty_of_function(types, *ty as usize) {
-                return true;
-            }
-            false
-        }
-        ImportDesc::Table { ty: _ } => true, //Limits are u32 that's why they are valid
+        ImportDesc::Function { ty } => get_ty_of_function(types, *ty as usize).is_ok(),
+        ImportDesc::Table { .. } => true, //Limits are u32 that's why they are valid
         ImportDesc::Memory { ty } => check_memory_ty(&ty),
-        ImportDesc::Global { ty: _ } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
+        ImportDesc::Global { .. } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
     }
 }
 
@@ -459,15 +454,15 @@ mod tests {
         };
 
         //TODO if this is a requirement too?
-        let w = FunctionSection {
-            types: vec![0, 1],
-        };
+        let w = FunctionSection { types: vec![0, 1] };
 
         let t = TypeSection {
             entries: vec![FuncType::empty(), FuncType::empty()],
         };
 
-        let module = Module { sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)] };
+        let module = Module {
+            sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)],
+        };
 
         validate(&module).unwrap();
     }
