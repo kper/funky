@@ -35,7 +35,7 @@ pub fn validate(module: &Module) -> IResult<()> {
     for f in functions.iter() {
         if f.is_err() {
             error!("Function {:?}", f);
-            return Err("Function is not defined {:?}");
+            return Err("Function is not defined");
         }
     }
 
@@ -184,7 +184,7 @@ fn check_lengths(c: &Context) -> IResult<()> {
     // tables must not be larger than 1
 
     if c.tables.len() > 1 {
-        return Err("Tables are larger than 1");
+        return Err("More than one table");
     }
 
     debug!("Table size is ok");
@@ -192,7 +192,7 @@ fn check_lengths(c: &Context) -> IResult<()> {
     // Memory must not be larger than 1
 
     if c.mems.len() > 1 {
-        return Err("Memory are larger than 1");
+        return Err("More than one memory");
     }
 
     Ok(())
@@ -377,20 +377,24 @@ fn check_import_desc(e: &ImportDesc, types: &[&FuncType]) -> IResult<bool> {
     let b = match e {
         ImportDesc::Function { ty } => get_ty_of_function(types, *ty as usize).is_ok(),
         ImportDesc::Table { .. } => true, //Limits are u32 that's why they are valid
-        ImportDesc::Memory { ty } => check_memory_ty(&ty)?,
+        ImportDesc::Memory { ty } => check_memory_ty(&ty).is_ok(),
         ImportDesc::Global { .. } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
     };
 
     Ok(b)
 }
 
-fn check_memory_ty(memory: &MemoryType) -> IResult<bool> {
+fn check_memory_ty(memory: &MemoryType) -> IResult<()> {
     let b = match memory.limits {
         Limits::Zero(n) => n < 2u32.checked_pow(16).unwrap(), //cannot overflow
         Limits::One(n, m) => n < 2u32.checked_pow(16).unwrap() && m < 2u32.checked_pow(16).unwrap(), //cannot overflow
     };
 
-    Ok(b)
+    if b {
+        Ok(())
+    } else {
+        Err("Memory exhausted")
+    }
 }
 
 #[cfg(test)]
@@ -398,7 +402,28 @@ mod tests {
     use super::*;
 
     #[test]
-    #[should_panic("Export Functions are not unique")]
+    fn test_empty_module() {
+        let module = Module { sections: vec![] };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_check_if_function_defined() {
+        let w = FunctionSection { types: vec![0, 1] };
+
+        let t = TypeSection {
+            entries: vec![FuncType::empty()],
+        };
+
+        let module = Module {
+            sections: vec![Section::Type(t), Section::Function(w)],
+        };
+
+        assert_eq!(Err("Function is not defined"), validate(&module));
+    }
+
+    #[test]
     fn test_duplicated_export_entries() {
         let k = ExportSection {
             entries: vec![
@@ -413,7 +438,6 @@ mod tests {
             ],
         };
 
-        //TODO if this is a requirement too?
         let w = FunctionSection { types: vec![0, 1] };
 
         let t = TypeSection {
@@ -424,20 +448,335 @@ mod tests {
             sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)],
         };
 
-        validate(&module).unwrap();
+        assert_eq!(
+            Err("Export function names are not unique"),
+            validate(&module)
+        );
     }
 
-    /*
     #[test]
-    fn test_check_limits() {
-        let l = Limits::One(10, 20);
-        let l2 = Limits::Zero(10);
+    fn test_table_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Table { ty: 0 },
+            }],
+        };
 
-        assert!(check_limits(&l, 15));
-        assert!(check_limits(&l2, 15));
+        let w = TableSection {
+            entries: vec![TableType {
+                element_type: 0x70, //default
+                limits: Limits::Zero(10),
+            }],
+        };
 
-        assert_eq!(false, check_limits(&l, 9));
-        assert_eq!(false, check_limits(&l2, 9));
-        assert_eq!(false, check_limits(&l, 21));
-    }*/
+        let module = Module {
+            sections: vec![Section::Table(w), Section::Export(k)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_no_table_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Table { ty: 0 },
+            }],
+        };
+
+        let w = TableSection { entries: vec![] };
+
+        let module = Module {
+            sections: vec![Section::Export(k), Section::Table(w)],
+        };
+
+        assert_eq!(Err("Table does not exist"), validate(&module));
+    }
+
+    #[test]
+    fn test_memory_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Memory { ty: 0 },
+            }],
+        };
+
+        let w = MemorySection {
+            entries: vec![MemoryType {
+                limits: Limits::Zero(10),
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Memory(w), Section::Export(k)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_no_memory_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Memory { ty: 0 },
+            }],
+        };
+
+        let w = MemorySection { entries: vec![] };
+
+        let module = Module {
+            sections: vec![Section::Export(k), Section::Memory(w)],
+        };
+
+        assert_eq!(Err("Memory does not exist"), validate(&module));
+    }
+
+    #[test]
+    fn test_global_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Global { ty: 0 },
+            }],
+        };
+
+        let w = GlobalSection {
+            globals: vec![GlobalVariable {
+                ty: GlobalType {
+                    value_type: ValueType::I32,
+                    mu: Mu::Const,
+                },
+                init: vec![Instruction::Num(NumericInstructions::OP_I32_CONST(1))],
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Export(k), Section::Global(w)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_no_global_in_export() {
+        let k = ExportSection {
+            entries: vec![ExportEntry {
+                name: "test1".to_string(),
+                kind: ExternalKindType::Global { ty: 0 },
+            }],
+        };
+
+        let w = GlobalSection { globals: vec![] };
+
+        let module = Module {
+            sections: vec![Section::Export(k), Section::Global(w)],
+        };
+
+        assert_eq!(Err("Global does not exist"), validate(&module));
+    }
+
+    #[test]
+    fn test_function_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Function { ty: 0 },
+            }],
+        };
+
+        let x = TypeSection {
+            entries: vec![FuncType {
+                param_types: vec![],
+                return_types: vec![],
+            }],
+        };
+
+        let w = FunctionSection { types: vec![0] };
+
+        let module = Module {
+            sections: vec![Section::Import(k), Section::Type(x), Section::Function(w)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_no_function_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Function { ty: 0 },
+            }],
+        };
+
+        let x = TypeSection { entries: vec![] };
+
+        let w = FunctionSection { types: vec![] };
+
+        let module = Module {
+            sections: vec![Section::Import(k), Section::Type(x), Section::Function(w)],
+        };
+
+        assert_eq!(Err("Function is not defined"), validate(&module));
+    }
+
+    #[test]
+    fn test_table_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Table {
+                    ty: TableType {
+                        element_type: 0x70,
+                        limits: Limits::Zero(0),
+                    },
+                },
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Import(k)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_memory_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Memory {
+                    ty: MemoryType {
+                        limits: Limits::Zero(0),
+                    },
+                },
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Import(k)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_memory_exhaust_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Memory {
+                    ty: MemoryType {
+                        limits: Limits::Zero(u32::max_value()),
+                    },
+                },
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Import(k)],
+        };
+
+        assert_eq!(Err("Memory exhausted"), validate(&module));
+    }
+
+    #[test]
+    fn test_global_import() {
+        let k = ImportSection {
+            entries: vec![ImportEntry {
+                module_name: "test".to_string(),
+                name: "test1".to_string(),
+                desc: ImportDesc::Global {
+                    ty: GlobalType {
+                        value_type: ValueType::I32,
+                        mu: Mu::Var,
+                    },
+                },
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Import(k)],
+        };
+
+        assert!(validate(&module).is_ok());
+    }
+
+    #[test]
+    fn test_double_tables() {
+        let k = TableSection {
+            entries: vec![TableType {
+                element_type: 0x70,
+                limits: Limits::Zero(0 as u32),
+            }],
+        };
+
+        let w = TableSection {
+            entries: vec![TableType {
+                element_type: 0x70,
+                limits: Limits::Zero(0 as u32),
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Table(k), Section::Table(w)],
+        };
+
+        assert_eq!(Err("More than one table"), validate(&module));
+    }
+
+    #[test]
+    fn test_double_memory() {
+        let k = MemorySection {
+            entries: vec![MemoryType {
+                limits: Limits::Zero(0 as u32),
+            }],
+        };
+
+        let w = MemorySection {
+            entries: vec![MemoryType {
+                limits: Limits::Zero(0 as u32),
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Memory(k), Section::Memory(w)],
+        };
+
+        assert_eq!(Err("More than one memory"), validate(&module));
+    }
+
+    #[test]
+    fn test_memory_exhaust() {
+        let k = MemorySection {
+            entries: vec![MemoryType {
+                limits: Limits::Zero(u32::max_value()),
+            }],
+        };
+
+        let module = Module {
+            sections: vec![Section::Memory(k)],
+        };
+
+        assert_eq!(Err("Memory exhausted"), validate(&module));
+    }
+
+    #[test]
+    fn test_memory_exhaust_function() {
+        let ty = MemoryType {
+            limits: Limits::Zero(u32::max_value()),
+        };
+
+        assert_eq!(Err("Memory exhausted"), check_memory_ty(&ty));
+    }
 }
