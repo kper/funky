@@ -4,75 +4,87 @@ expression: "format!(\"{:#?}\", ast)"
 ---
 Module {
     sections: [
-        Type {
-            entries: [
-                FuncType {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [],
-                },
-            ],
-        },
-        Function {
-            types: [
-                0,
-            ],
-        },
-        Memory {
-            entries: [
-                MemoryType {
-                    limits: Zero(
-                        17,
-                    ),
-                },
-            ],
-        },
-        Export {
-            entries: [
-                ExportEntry {
-                    name: "memory",
-                    kind: Memory {
-                        ty: 0,
+        Type(
+            TypeSection {
+                entries: [
+                    FuncType {
+                        param_types: [
+                            I32,
+                        ],
+                        return_types: [],
                     },
-                },
-                ExportEntry {
-                    name: "is_greater",
-                    kind: Function {
-                        ty: 0,
+                ],
+            },
+        ),
+        Function(
+            FunctionSection {
+                types: [
+                    0,
+                ],
+            },
+        ),
+        Memory(
+            MemorySection {
+                entries: [
+                    MemoryType {
+                        limits: Zero(
+                            17,
+                        ),
                     },
-                },
-            ],
-        },
-        Code {
-            entries: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                ],
+            },
+        ),
+        Export(
+            ExportSection {
+                entries: [
+                    ExportEntry {
+                        name: "memory",
+                        kind: Memory {
+                            ty: 0,
+                        },
+                    },
+                    ExportEntry {
+                        name: "is_greater",
+                        kind: Function {
+                            ty: 0,
+                        },
+                    },
+                ],
+            },
+        ),
+        Code(
+            CodeSection {
+                entries: [
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                -1000,
+                            Num(
+                                OP_I64_CONST(
+                                    -1000,
+                                ),
                             ),
-                        ),
-                        Mem(
-                            OP_I64_STORE(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
+                            Mem(
+                                OP_I64_STORE(
+                                    MemArg {
+                                        align: 2,
+                                        offset: 0,
+                                    },
+                                ),
                             ),
-                        ),
-                    ],
-                },
-            ],
-        },
-        Custom {
-            name: "producers",
-        },
+                        ],
+                    },
+                ],
+            },
+        ),
+        Custom(
+            CustomSection {
+                name: "producers",
+            },
+        ),
     ],
 }

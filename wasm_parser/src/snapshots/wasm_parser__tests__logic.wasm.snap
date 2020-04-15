@@ -4,354 +4,366 @@ expression: "format!(\"{:#?}\", ast)"
 ---
 Module {
     sections: [
-        Type {
-            entries: [
-                FuncType {
-                    param_types: [
-                        I32,
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-        },
-        Function {
-            types: [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-            ],
-        },
-        Memory {
-            entries: [
-                MemoryType {
-                    limits: Zero(
-                        17,
-                    ),
-                },
-            ],
-        },
-        Export {
-            entries: [
-                ExportEntry {
-                    name: "memory",
-                    kind: Memory {
-                        ty: 0,
+        Type(
+            TypeSection {
+                entries: [
+                    FuncType {
+                        param_types: [
+                            I32,
+                            I32,
+                        ],
+                        return_types: [
+                            I32,
+                        ],
                     },
-                },
-                ExportEntry {
-                    name: "and",
-                    kind: Function {
-                        ty: 0,
+                ],
+            },
+        ),
+        Function(
+            FunctionSection {
+                types: [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ],
+            },
+        ),
+        Memory(
+            MemorySection {
+                entries: [
+                    MemoryType {
+                        limits: Zero(
+                            17,
+                        ),
                     },
-                },
-                ExportEntry {
-                    name: "or",
-                    kind: Function {
-                        ty: 2,
+                ],
+            },
+        ),
+        Export(
+            ExportSection {
+                entries: [
+                    ExportEntry {
+                        name: "memory",
+                        kind: Memory {
+                            ty: 0,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "xor",
-                    kind: Function {
-                        ty: 1,
+                    ExportEntry {
+                        name: "and",
+                        kind: Function {
+                            ty: 0,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "l",
-                    kind: Function {
-                        ty: 5,
+                    ExportEntry {
+                        name: "or",
+                        kind: Function {
+                            ty: 2,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "le",
-                    kind: Function {
-                        ty: 6,
+                    ExportEntry {
+                        name: "xor",
+                        kind: Function {
+                            ty: 1,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "ge",
-                    kind: Function {
-                        ty: 7,
+                    ExportEntry {
+                        name: "l",
+                        kind: Function {
+                            ty: 5,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "gt",
-                    kind: Function {
-                        ty: 8,
+                    ExportEntry {
+                        name: "le",
+                        kind: Function {
+                            ty: 6,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "eq",
-                    kind: Function {
-                        ty: 9,
+                    ExportEntry {
+                        name: "ge",
+                        kind: Function {
+                            ty: 7,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "shiftr",
-                    kind: Function {
-                        ty: 4,
+                    ExportEntry {
+                        name: "gt",
+                        kind: Function {
+                            ty: 8,
+                        },
                     },
-                },
-                ExportEntry {
-                    name: "shiftl",
-                    kind: Function {
-                        ty: 3,
+                    ExportEntry {
+                        name: "eq",
+                        kind: Function {
+                            ty: 9,
+                        },
                     },
-                },
-            ],
-        },
-        Code {
-            entries: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                    ExportEntry {
+                        name: "shiftr",
+                        kind: Function {
+                            ty: 4,
+                        },
+                    },
+                    ExportEntry {
+                        name: "shiftl",
+                        kind: Function {
+                            ty: 3,
+                        },
+                    },
+                ],
+            },
+        ),
+        Code(
+            CodeSection {
+                entries: [
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_NE,
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
+                            Num(
+                                OP_I32_NE,
                             ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_AND,
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_XOR,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_NE,
                             ),
-                        ),
-                        Num(
-                            OP_I32_OR,
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_NE,
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                31,
+                            Num(
+                                OP_I32_XOR,
                             ),
-                        ),
-                        Num(
-                            OP_I32_AND,
-                        ),
-                        Num(
-                            OP_I32_SHL,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                31,
+                            Num(
+                                OP_I32_OR,
                             ),
-                        ),
-                        Num(
-                            OP_I32_AND,
-                        ),
-                        Num(
-                            OP_I32_SHR_U,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_NE,
                             ),
-                        ),
-                        Num(
-                            OP_I32_LT_U,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_LE_U,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_CONST(
+                                    31,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_AND,
                             ),
-                        ),
-                        Num(
-                            OP_I32_GE_U,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_SHL,
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_GT_U,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Num(
+                                OP_I32_CONST(
+                                    31,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_EQ,
-                        ),
-                    ],
-                },
-            ],
-        },
-        Custom {
-            name: "producers",
-        },
+                            Num(
+                                OP_I32_AND,
+                            ),
+                            Num(
+                                OP_I32_SHR_U,
+                            ),
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
+                            ),
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
+                            ),
+                            Num(
+                                OP_I32_LT_U,
+                            ),
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
+                            ),
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
+                            ),
+                            Num(
+                                OP_I32_LE_U,
+                            ),
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
+                            ),
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
+                            ),
+                            Num(
+                                OP_I32_GE_U,
+                            ),
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
+                            ),
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
+                            ),
+                            Num(
+                                OP_I32_GT_U,
+                            ),
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
+                            ),
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
+                            ),
+                            Num(
+                                OP_I32_EQ,
+                            ),
+                        ],
+                    },
+                ],
+            },
+        ),
+        Custom(
+            CustomSection {
+                name: "producers",
+            },
+        ),
     ],
 }

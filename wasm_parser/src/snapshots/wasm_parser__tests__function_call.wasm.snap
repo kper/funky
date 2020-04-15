@@ -4,87 +4,97 @@ expression: "format!(\"{:#?}\", ast)"
 ---
 Module {
     sections: [
-        Type {
-            entries: [
-                FuncType {
-                    param_types: [
-                        I32,
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-                FuncType {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-        },
-        Function {
-            types: [
-                0,
-                1,
-            ],
-        },
-        Export {
-            entries: [
-                ExportEntry {
-                    name: "timesTwo",
-                    kind: Function {
-                        ty: 1,
+        Type(
+            TypeSection {
+                entries: [
+                    FuncType {
+                        param_types: [
+                            I32,
+                            I32,
+                        ],
+                        return_types: [
+                            I32,
+                        ],
                     },
-                },
-            ],
-        },
-        Code {
-            entries: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                    FuncType {
+                        param_types: [
+                            I32,
+                        ],
+                        return_types: [
+                            I32,
+                        ],
+                    },
+                ],
+            },
+        ),
+        Function(
+            FunctionSection {
+                types: [
+                    0,
+                    1,
+                ],
+            },
+        ),
+        Export(
+            ExportSection {
+                entries: [
+                    ExportEntry {
+                        name: "timesTwo",
+                        kind: Function {
+                            ty: 1,
+                        },
+                    },
+                ],
+            },
+        ),
+        Code(
+            CodeSection {
+                entries: [
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                            Var(
+                                OP_LOCAL_GET(
+                                    1,
+                                ),
                             ),
-                        ),
-                        Num(
-                            OP_I32_ADD,
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                            Num(
+                                OP_I32_ADD,
                             ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
+                        ],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                        Ctrl(
-                            OP_CALL(
-                                0,
+                            Var(
+                                OP_LOCAL_GET(
+                                    0,
+                                ),
                             ),
-                        ),
-                    ],
-                },
-            ],
-        },
-        Custom {
-            name: "name",
-        },
+                            Ctrl(
+                                OP_CALL(
+                                    0,
+                                ),
+                            ),
+                        ],
+                    },
+                ],
+            },
+        ),
+        Custom(
+            CustomSection {
+                name: "name",
+            },
+        ),
     ],
 }
