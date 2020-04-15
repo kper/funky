@@ -126,8 +126,10 @@ dependencies = [
 name = "funky"
 version = "0.1.0"
 dependencies = [
+ "docopt",
  "env_logger",
  "log",
+ "serde",
  "validation",
  "wasm-parser",
 ]
