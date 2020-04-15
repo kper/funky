@@ -15,6 +15,33 @@ pub(crate) fn get_types(module: &Module) -> Vec<&FuncType> {
     ty
 }
 
+pub(crate) fn get_exports(module: &Module) -> Vec<&ExportEntry> {
+    let ty: Vec<_> = module
+        .sections
+        .iter()
+        .filter_map(|ref w| match w {
+            Section::Export(t) => Some(&t.entries),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    ty
+}
+
+pub(crate) fn get_start(module: &Module) -> Vec<&StartSection> {
+    let ty: Vec<_> = module
+        .sections
+        .iter()
+        .filter_map(|ref w| match w {
+            Section::Start(t) => Some(t),
+            _ => None,
+        })
+        .collect();
+
+    ty
+}
+
 pub(crate) fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
     let ty: Vec<_> = module
         .sections

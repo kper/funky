@@ -185,7 +185,7 @@ pub struct ExportEntry {
 pub struct ElementSegment {
     pub index: u32,
     pub offset: Expr,
-    pub elems: Vec<u32>,
+    pub elems: Vec<FuncIdx>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]

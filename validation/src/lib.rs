@@ -11,7 +11,7 @@ use concat::*;
 
 // Leading question: Should validation return errors or panic?
 
-use log::debug;
+use log::{debug, error};
 
 #[derive(Debug, Clone)]
 struct Context<'a> {
@@ -48,36 +48,7 @@ pub fn validate(module: &Module) -> IResult<()> {
         _return: Vec::new(),
     };
 
-    C.validate();
-
-    // Check elem
-
-    let elements = get_elemens(module);
-    for elem in elements {
-        assert!(check_elem_ty(elem));
-    }
-
-    // Check data
-
-    let data = get_data(module);
-    for d in data {
-        assert!(check_data_ty(d));
-    }
-
-    // Start
-
-    let start : Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|w| match w {
-            Section::Start(t) => Some(t),
-            _ => None,
-        })
-        .collect();
-
-    if let Some(s) = start.get(0) {
-        assert!(check_start(s));
-    }
+    C.validate(&module);
 
     Ok(())
 }
@@ -100,7 +71,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn validate(self) {
+    pub fn validate(&self, module: &Module) {
         let C_prime = self.get_C_prime().clone(); //TODO this might not be necessary
 
         // Check functype
@@ -125,7 +96,7 @@ impl<'a> Context<'a> {
 
         // Check mem
 
-        for mem in self.mems {
+        for mem in self.mems.iter() {
             assert!(check_memory_ty(mem));
         }
 
@@ -133,11 +104,11 @@ impl<'a> Context<'a> {
 
         // Check global
 
-        for entry in self.global_entries {
+        for entry in self.global_entries.iter() {
             // For each global under the Context C'
 
             let init = &entry.init;
-            let init_expr_ty = get_expr_const_ty(init, &C_prime.globals_ty);
+            let init_expr_ty = get_expr_const_ty_global(init, &C_prime.globals_ty);
 
             if entry.ty.value_type != init_expr_ty {
                 //Expr has not the same type as the global
@@ -146,11 +117,86 @@ impl<'a> Context<'a> {
         }
 
         debug!("GlobalTypes are valid");
+
+        // Check elem
+
+        let elements = get_elemens(module);
+        for elem in elements {
+            assert!(check_elem_ty(elem, &self.tables, &self.types));
+        }
+
+        debug!("Elements are valid");
+
+        // Check data
+
+        let data = get_data(module);
+        for d in data {
+            assert!(check_data_ty(d, &self.mems));
+        }
+
+        debug!("Data is valid");
+
+        // Start
+
+        let start = get_start(module);
+
+        if let Some(s) = start.get(0) {
+            assert!(check_start(s, &self.types));
+        }
+
+        debug!("Start is valid");
+
+        // Imports are valid because typed
+
+        debug!("Imports are valid");
+
+        // Check exports
+
+        let exports = get_exports(module);
+        for e in exports {
+            assert!(check_export_ty(
+                e,
+                &self.types,
+                &self.tables,
+                &self.mems,
+                &self.globals_ty
+            ));
+        }
+
+        debug!("Exports are valid");
+
+        // tables must not be larger than 1
+
+        if self.tables.len() > 1 {
+            panic!("Tables are larger than 1");
+        }
+
+        debug!("Table size is ok");
+
+        // Memory must not be larger than 1
+
+        if self.mems.len() > 1 {
+            panic!("Memory are larger than 1");
+        }
+
+        // All export names must be different
+        
+        let exports = get_exports(module);
+        let mut set = std::collections::HashSet::new();
+
+        for e in exports.iter() {
+            if !set.contains(&e.name) {
+                set.insert(e.name.clone());
+            }
+            else {
+                panic!("Export function names are not unique");
+            }
+        }
     }
 }
 
 /// Evalutes the expr `init` and checks if it returns const
-fn get_expr_const_ty(init: &Expr, globals_ty: &Vec<&GlobalType>) -> ValueType {
+fn get_expr_const_ty_global(init: &Expr, globals_ty: &Vec<&GlobalType>) -> ValueType {
     use wasm_parser::core::Instruction;
     use wasm_parser::core::Mu;
     use wasm_parser::core::NumericInstructions::*;
@@ -187,27 +233,120 @@ fn get_expr_const_ty(init: &Expr, globals_ty: &Vec<&GlobalType>) -> ValueType {
     expr_ty
 }
 
-fn check_elem_ty(elem_ty: &ElementSegment) -> bool {
+fn check_elem_ty(
+    elem_ty: &ElementSegment,
+    tables: &Vec<&TableType>,
+    func_ty: &Vec<&FuncType>,
+) -> bool {
+    //https://webassembly.github.io/spec/core/valid/modules.html#element-segments
+
+    let table_idx = &elem_ty.index;
+    let offset = &elem_ty.offset;
+    let funcs_idx = &elem_ty.elems;
+
+    if let None = tables.get(*table_idx as usize) {
+        panic!("No table defined for element's index");
+    }
+
+    get_expr_const_I32_ty(offset);
+
+    // All function must be defined
+
+    let not_def_funcs: Vec<_> = funcs_idx
+        .iter()
+        .filter_map(|w| func_ty.get(*w as usize))
+        .collect();
+
+    for f in not_def_funcs.iter() {
+        error!("function is not defined {:?}", f);
+    }
+
+    if not_def_funcs.len() > 0 {
+        panic!("Element section is not correct");
+    }
+
     true
 }
 
-fn check_data_ty(data_ty: &DataSegment) -> bool {
+/// Evalutes the expr `init` and checks if it returns const and I32
+fn get_expr_const_I32_ty(init: &Expr) {
+    use wasm_parser::core::Instruction;
+    use wasm_parser::core::Mu;
+    use wasm_parser::core::NumericInstructions::*;
+    use wasm_parser::core::VarInstructions::*;
+
+    if init.len() == 0 {
+        panic!("No expr to evaluate");
+    }
+
+    let expr_ty = match init.get(0).unwrap() {
+        Instruction::Num(n) => match *n {
+            OP_I32_CONST(_) => ValueType::I32,
+            //OP_I64_CONST(_) => ValueType::I64,
+            //OP_F32_CONST(_) => ValueType::F32,
+            //OP_F64_CONST(_) => ValueType::F64,
+            _ => panic!("Expression is not a I32 const"),
+        },
+        _ => panic!("Wrong expression"),
+    };
+}
+
+fn check_data_ty(data_ty: &DataSegment, memtypes: &Vec<&MemoryType>) -> bool {
+    //https://webassembly.github.io/spec/core/valid/modules.html#data-segments
+
+    let mem_idx = data_ty.index;
+    let offset = &data_ty.offset;
+
+    if let None = memtypes.get(mem_idx as usize) {
+        panic!("Memory does not exist");
+    }
+
+    get_expr_const_I32_ty(&offset);
+
     true
 }
 
-fn check_start(start: &&StartSection) -> bool {
+fn check_start(start: &&StartSection, functypes: &Vec<&FuncType>) -> bool {
+    //https://webassembly.github.io/spec/core/valid/modules.html#valid-start
+
+    let fidx = start.index;
+
+    if let Some(f) = functypes.get(fidx as usize).as_ref() {
+        if f.param_types.len() != 0 && f.return_types.len() != 0 {
+            panic!("Function is not a valid start function {:?}", f);
+        }
+    }
+
     true
 }
 
-/*
-fn check_import_ty(import_ty: &ImportEntry) -> bool {
-    true
-}
+fn check_export_ty(
+    export_ty: &ExportEntry,
+    functypes: &Vec<&FuncType>,
+    tabletypes: &Vec<&TableType>,
+    memtypes: &Vec<&MemoryType>,
+    globaltypes: &Vec<&GlobalType>,
+) -> bool {
+    //https://webassembly.github.io/spec/core/valid/modules.html#exports
 
-fn check_export_ty(import_ty: &ExportEntry) -> bool {
+    macro_rules! exists(
+        ($e:ident, $w:ident, $k:expr) => (
+            match $e.get($w as usize).as_ref() {
+                Some(_) => {}, //exists
+                _ => panic!($k)
+            }
+        )
+    );
+
+    match export_ty.kind {
+        ExternalKindType::Function { ty } => exists!(functypes, ty, "Function does not exist"),
+        ExternalKindType::Table { ty } => exists!(tabletypes, ty, "Table does not exist"),
+        ExternalKindType::Memory { ty } => exists!(memtypes, ty, "Memory does not exist"),
+        ExternalKindType::Global { ty } => exists!(globaltypes, ty, "Global does not exist"),
+    }
+
     true
 }
-*/
 
 /// k is the range
 /// k must be between `n` and `m`
