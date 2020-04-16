@@ -33,7 +33,7 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let module : Module = serde_json::from_str(&read_file(args.arg_input)).unwrap();
+    let module : Module = serde_json::from_str(&read_file(args.arg_input)).expect("Converting file failed. Is the AST in json?");
 
     let result = validate(&module).unwrap();
 

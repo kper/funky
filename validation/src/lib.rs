@@ -129,7 +129,7 @@ impl<'a> Context<'a> {
 
         let elements = get_elemens(module);
         for elem in elements {
-            check_elem_ty(elem, &self.tables, &self.types)?;
+            check_elem_ty(elem, &self.tables, &self.functions)?;
         }
 
         debug!("Elements are valid");
@@ -148,7 +148,7 @@ impl<'a> Context<'a> {
         let start = get_start(module);
 
         if let Some(s) = start.get(0) {
-            check_start(s, &self.types)?;
+            check_start(s, &self.functions)?;
         }
 
         debug!("Start is valid");
@@ -157,6 +157,7 @@ impl<'a> Context<'a> {
 
         let imports = get_imports(module);
         for e in imports {
+            debug!("Checking import {}/{}", e.module_name, e.name);
             check_import_ty(e, &self.types)?;
         }
 
@@ -166,7 +167,8 @@ impl<'a> Context<'a> {
 
         let exports = get_exports(module);
         for e in exports {
-            check_export_ty(e, &self.types, &self.tables, &self.mems, &self.globals_ty)?;
+            debug!("Checking export {}", e.name);
+            check_export_ty(e, &self.functions, &self.tables, &self.mems, &self.globals_ty)?;
         }
 
         debug!("Exports are valid");
@@ -252,7 +254,7 @@ fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<
 fn check_elem_ty(
     elem_ty: &ElementSegment,
     tables: &[&TableType],
-    func_ty: &[&FuncType],
+    func_ty: &[FuncType],
 ) -> IResult<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#element-segments
 
@@ -316,7 +318,7 @@ fn check_data_ty(data_ty: &DataSegment, memtypes: &[&MemoryType]) -> IResult<boo
     Ok(true)
 }
 
-fn check_start(start: &StartSection, functypes: &[&FuncType]) -> IResult<bool> {
+fn check_start(start: &StartSection, functypes: &[FuncType]) -> IResult<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#valid-start
 
     let fidx = start.index;
@@ -331,13 +333,13 @@ fn check_start(start: &StartSection, functypes: &[&FuncType]) -> IResult<bool> {
     Ok(true)
 }
 
-fn check_import_ty(import_ty: &ImportEntry, functypes: &[&FuncType]) -> IResult<bool> {
-    check_import_desc(&import_ty.desc, functypes)
+fn check_import_ty(import_ty: &ImportEntry, types: &[&FuncType]) -> IResult<bool> {
+    check_import_desc(&import_ty.desc, types)
 }
 
 fn check_export_ty(
     export_ty: &ExportEntry,
-    functypes: &[&FuncType],
+    functypes: &[FuncType],
     tabletypes: &[&TableType],
     memtypes: &[&MemoryType],
     globaltypes: &[&GlobalType],
@@ -423,6 +425,21 @@ mod tests {
         };
 
         assert_eq!(Err("Function is not defined"), validate(&module));
+    }
+
+    #[test]
+    fn test_check_function_defined() {
+        let w = FunctionSection { types: vec![0, 0] };
+
+        let t = TypeSection {
+            entries: vec![FuncType::empty()],
+        };
+
+        let module = Module {
+            sections: vec![Section::Type(t), Section::Function(w)],
+        };
+
+        assert!(validate(&module).is_ok());
     }
 
     #[test]
@@ -792,7 +809,7 @@ mod tests {
 
     #[test]
     fn test_parse_return_i32() {
-        test_file!("return_i32.wasm"); 
+        test_file!("return_i32.wasm");
     }
 
     #[test]
