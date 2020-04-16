@@ -7,7 +7,7 @@ Module {
         Type(
             TypeSection {
                 entries: [
-                    FuncType {
+                    FunctionSignature {
                         param_types: [
                             I32,
                             I32,
