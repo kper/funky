@@ -125,7 +125,7 @@ fn parse_type_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse type section");
 
     let (i, times) = take_leb_u32(i)?;
-    let (i, vec) = count(take_functype, times as usize)(i)?;
+    let (i, vec) = count(take_function_signature, times as usize)(i)?;
 
     Ok((i, Section::Type(
                 TypeSection{ entries: vec })))
@@ -468,8 +468,8 @@ fn take_limits(i: &[u8]) -> IResult<&[u8], Limits> {
     })
 }
 
-fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
-    debug!("take_functype");
+fn take_function_signature(i: &[u8]) -> IResult<&[u8], FunctionSignature> {
+    debug!("take_function_signature");
 
     let (i, offset) = take(1u8)(i)?; //0x60
 
@@ -485,7 +485,7 @@ fn take_functype(i: &[u8]) -> IResult<&[u8], FuncType> {
 
     Ok((
         i,
-        FuncType {
+        FunctionSignature {
             param_types,
             return_types,
         },

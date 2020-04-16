@@ -1,18 +1,21 @@
 use serde::{Serialize, Deserialize};
 
-pub enum SectionType {
-    Type,
-    Import,
-    Function,
-    Table,
-    Memory,
-    Global,
-    Export,
-    Start,
-    Element,
-    Code,
-    Data,
-    Custom,
+/// This struct is basically the same as FuncType.
+/// But `FuncType` defines a concrete type of a function.
+/// Whereas `FunctionSignature` is the unique function signature in the module.
+#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct FunctionSignature {
+    pub param_types: Vec<ValueType>,
+    pub return_types: Vec<ValueType>,
+}
+
+impl FunctionSignature {
+    pub fn empty() -> Self {
+        FunctionSignature {
+            param_types: vec![],
+            return_types: vec![],
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
@@ -30,6 +33,7 @@ pub enum BlockType {
     S33(i64), //actually signed 33
 }
 
+/*
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 pub struct FuncType {
     //form: ValueType,
@@ -47,6 +51,7 @@ impl FuncType {
         }
     }
 }
+*/
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ImportEntry {
@@ -95,7 +100,7 @@ pub struct CustomSection {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct TypeSection {
-    pub entries: Vec<FuncType>,
+    pub entries: Vec<FunctionSignature>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -450,6 +455,7 @@ pub enum NumericInstructions {
     OP_F64_REINTERPRET_I64,
 }
 
+/*
 impl std::convert::From<u8> for SectionType {
     fn from(item: u8) -> Self {
         match item {
@@ -469,6 +475,7 @@ impl std::convert::From<u8> for SectionType {
         }
     }
 }
+*/
 
 impl std::convert::From<u8> for ValueType {
     fn from(item: u8) -> Self {
