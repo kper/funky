@@ -6,15 +6,21 @@ type IResult<T> = Result<T, &'static str>;
 type Expr = [Instruction];
 
 mod extract;
-pub mod instructions;
+//pub mod instructions;
 
 use extract::*;
 
 use log::{debug, error};
 
 #[derive(Debug, Clone)]
+pub struct FuncType {
+    param_types: Vec<ValueType>,
+    return_types: Vec<ValueType>,
+}
+
+#[derive(Debug, Clone)]
 struct Context<'a> {
-    types: Vec<&'a FuncType>,
+    types: Vec<&'a FunctionSignature>,
     functions: Vec<FuncType>,
     tables: Vec<&'a TableType>,
     mems: Vec<&'a MemoryType>,
@@ -168,7 +174,13 @@ impl<'a> Context<'a> {
         let exports = get_exports(module);
         for e in exports {
             debug!("Checking export {}", e.name);
-            check_export_ty(e, &self.functions, &self.tables, &self.mems, &self.globals_ty)?;
+            check_export_ty(
+                e,
+                &self.functions,
+                &self.tables,
+                &self.mems,
+                &self.globals_ty,
+            )?;
         }
 
         debug!("Exports are valid");
@@ -333,7 +345,7 @@ fn check_start(start: &StartSection, functypes: &[FuncType]) -> IResult<bool> {
     Ok(true)
 }
 
-fn check_import_ty(import_ty: &ImportEntry, types: &[&FuncType]) -> IResult<bool> {
+fn check_import_ty(import_ty: &ImportEntry, types: &[&FunctionSignature]) -> IResult<bool> {
     check_import_desc(&import_ty.desc, types)
 }
 
@@ -364,7 +376,7 @@ fn check_export_ty(
 }
 
 // If there exists a `typeidx` in `types`, then `typeidx` has its type.
-fn get_ty_of_function(types: &[&FuncType], typeidx: usize) -> IResult<FuncType> {
+fn get_ty_of_function(types: &[&FunctionSignature], typeidx: usize) -> IResult<FuncType> {
     if let Some(t) = types.get(typeidx) {
         return Ok(FuncType {
             param_types: t.param_types.clone(),
@@ -375,7 +387,7 @@ fn get_ty_of_function(types: &[&FuncType], typeidx: usize) -> IResult<FuncType> 
     Err("No function with this index")
 }
 
-fn check_import_desc(e: &ImportDesc, types: &[&FuncType]) -> IResult<bool> {
+fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> IResult<bool> {
     let b = match e {
         ImportDesc::Function { ty } => get_ty_of_function(types, *ty as usize).is_ok(),
         ImportDesc::Table { .. } => true, //Limits are u32 that's why they are valid
@@ -417,7 +429,7 @@ mod tests {
         let w = FunctionSection { types: vec![0, 1] };
 
         let t = TypeSection {
-            entries: vec![FuncType::empty()],
+            entries: vec![FunctionSignature::empty()],
         };
 
         let module = Module {
@@ -432,7 +444,7 @@ mod tests {
         let w = FunctionSection { types: vec![0, 0] };
 
         let t = TypeSection {
-            entries: vec![FuncType::empty()],
+            entries: vec![FunctionSignature::empty()],
         };
 
         let module = Module {
@@ -460,7 +472,7 @@ mod tests {
         let w = FunctionSection { types: vec![0, 1] };
 
         let t = TypeSection {
-            entries: vec![FuncType::empty(), FuncType::empty()],
+            entries: vec![FunctionSignature::empty(), FunctionSignature::empty()],
         };
 
         let module = Module {
@@ -609,7 +621,7 @@ mod tests {
         };
 
         let x = TypeSection {
-            entries: vec![FuncType {
+            entries: vec![FunctionSignature {
                 param_types: vec![],
                 return_types: vec![],
             }],

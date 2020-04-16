@@ -1,7 +1,7 @@
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
-pub(crate) fn get_types(module: &Module) -> Vec<&FuncType> {
+pub(crate) fn get_types(module: &Module) -> Vec<&FunctionSignature> {
     let ty: Vec<_> = module
         .sections
         .iter()
