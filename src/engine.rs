@@ -72,7 +72,7 @@ pub struct Frame {
 pub struct ModuleInstance {
     start: u32,
     code: Vec<FunctionBody>,
-    fn_types: Vec<FuncType>,
+    fn_types: Vec<FunctionSignature>,
 }
 
 #[derive(Debug)]
