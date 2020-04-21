@@ -173,11 +173,13 @@ impl Engine {
                 },
                 Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
                 Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
-                Num(OP_I32_ADD) | Num(OP_I64_ADD) => {
+                Num(OP_F32_CONST(v)) => self.store.stack.push(Value(F32(*v))),
+                Num(OP_F64_CONST(v)) => self.store.stack.push(Value(F64(*v))),
+                Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 + v2))
                 }
-                Num(OP_I32_MUL) | Num(OP_I64_MUL) => {
+                Num(OP_I32_MUL) | Num(OP_I64_MUL) | Num(OP_F32_MUL) | Num(OP_F64_MUL) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
