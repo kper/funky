@@ -4,6 +4,7 @@ use std::ops::{Add, Mul};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
+use wasm_parser::core::ParamInstructions::*;
 use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
@@ -183,6 +184,21 @@ impl Engine {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
+                Param(OP_DROP) => {
+                    self.store.stack.pop();
+                }
+                Param(OP_SELECT) => {
+                    let c = match self.store.stack.pop() {
+                        Some(Value(I32(x))) => x,
+                        _ => panic!("Expected I32 on top of stack"),
+                    };
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    if c != 0 {
+                        self.store.stack.push(Value(v1))
+                    } else {
+                        self.store.stack.push(Value(v2))
+                    }
+                }
                 Ctrl(OP_CALL(idx)) => {
                     let t = &self.module.fn_types[*idx as usize];
                     let args = self
@@ -339,5 +355,28 @@ mod tests {
         }];
         e.run_function(0);
         assert_eq!(I32(420), e.store.globals[0].val);
+    }
+
+    #[test]
+    fn test_drop_select() {
+        let mut e = empty_engine();
+        e.store.globals = vec![Variable {
+            mutable: true,
+            val: I32(20),
+        }];
+        e.module.code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(1)),
+                Num(OP_I32_CONST(2)),
+                Num(OP_I32_CONST(0)),
+                Num(OP_I32_CONST(4)),
+                Param(OP_DROP),
+                Param(OP_SELECT),
+                Var(OP_GLOBAL_SET(0)),
+            ],
+        }];
+        e.run_function(0);
+        assert_eq!(I32(1), e.store.globals[0].val);
     }
 }
