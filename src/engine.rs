@@ -243,23 +243,18 @@ impl ModuleInstance {
 
         for t in ty.into_iter() {
             let instance = match t.limits {
-                Limits::Zero(n) => {
-                    TableInstance {
-                        elem: Vec::with_capacity(n as usize),
-                        max: None,
-                    }
+                Limits::Zero(n) => TableInstance {
+                    elem: Vec::with_capacity(n as usize),
+                    max: None,
                 },
-                Limits::One(n, m) => {
-                    TableInstance {
-                        elem: Vec::with_capacity(n as usize),
-                        max: Some(m),
-                    }
-                }
+                Limits::One(n, m) => TableInstance {
+                    elem: Vec::with_capacity(n as usize),
+                    max: Some(m),
+                },
             };
 
             self.tableaddrs.push(self.store.tables.len() as u32);
             self.store.tables.push(instance);
-
         }
 
         Ok(())
@@ -312,7 +307,7 @@ impl ModuleInstance {
                     Mu::Var => true,
                     _ => false,
                 },
-                val: Value::I32(0), //FIXME THIS IS TOTALLY WRONG, evaluate expr
+                val: get_expr_const_ty_global(&gl.init)?,
             };
 
             self.globaladdrs.push(self.store.globals.len() as u32);
@@ -447,6 +442,35 @@ impl Engine {
         }
         while let Some(Frame(_)) = self.module.store.stack.pop() {}
         self.module.store.stack.append(&mut ret);
+    }
+}
+
+fn get_expr_const_ty_global<'a>(
+    init: &Expr,
+) -> std::result::Result<Value, ()> {
+    use wasm_parser::core::NumericInstructions::*;
+    use wasm_parser::core::VarInstructions::*;
+
+    if init.is_empty() {
+        error!("No expr to evaluate");
+        return Err(());
+    }
+
+    match init.get(0).unwrap() {
+        Instruction::Num(n) => match *n {
+            OP_I32_CONST(v) => Ok(Value::I32(v)),
+            OP_I64_CONST(v) => Ok(Value::I64(v)),
+            OP_F32_CONST(v) => Ok(Value::F32(v)),
+            OP_F64_CONST(v) => Ok(Value::F64(v)),
+            _ => {
+                error!("Expression is not a const");
+                return Err(());
+            },
+        },
+        _ => {
+            error!("Wrong expression");
+            return Err(());
+        },
     }
 }
 
