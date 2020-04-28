@@ -90,7 +90,7 @@ pub struct ModuleInstance {
     fn_types: Vec<FunctionSignature>,
     tableaddrs: Vec<TableIdx>,
     memaddrs: Vec<MemoryIdx>,
-    globaladdr: Vec<GlobalIdx>,
+    globaladdrs: Vec<GlobalIdx>,
     exports: Vec<ExportInstance>,
     pub store: Store,
 }
@@ -101,7 +101,7 @@ pub struct Store {
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
     pub stack: Vec<StackContent>,
-    pub globals: Vec<Variable>,
+    pub globals: Vec<Variable>, //=GlobalInstance
 }
 
 #[derive(Debug, Clone)]
@@ -115,11 +115,13 @@ pub struct FuncInstance {
 #[derive(Debug, Clone)]
 pub struct TableInstance {
     elem: Vec<FuncIdx>,
+    max: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MemoryInstance {
     data: Vec<u8>,
+    max: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -158,7 +160,7 @@ impl ModuleInstance {
             fn_types: Vec::new(),
             tableaddrs: Vec::new(),
             memaddrs: Vec::new(),
-            globaladdr: Vec::new(),
+            globaladdrs: Vec::new(),
             exports: Vec::new(),
             store: Store {
                 funcs: Vec::new(),
@@ -229,14 +231,94 @@ impl ModuleInstance {
     }
 
     fn allocate_tables(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        let ty: Vec<_> = m
+            .sections
+            .iter()
+            .filter_map(|ref w| match w {
+                Section::Table(t) => Some(&t.entries),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+
+        for t in ty.into_iter() {
+            let instance = match t.limits {
+                Limits::Zero(n) => {
+                    TableInstance {
+                        elem: Vec::with_capacity(n as usize),
+                        max: None,
+                    }
+                },
+                Limits::One(n, m) => {
+                    TableInstance {
+                        elem: Vec::with_capacity(n as usize),
+                        max: Some(m),
+                    }
+                }
+            };
+
+            self.tableaddrs.push(self.store.tables.len() as u32);
+            self.store.tables.push(instance);
+
+        }
+
         Ok(())
     }
 
     fn allocate_memories(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        let ty: Vec<_> = m
+            .sections
+            .iter()
+            .filter_map(|ref w| match w {
+                Section::Memory(t) => Some(&t.entries),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+
+        for memtype in ty.into_iter() {
+            let instance = match memtype.limits {
+                Limits::Zero(n) => MemoryInstance {
+                    data: Vec::with_capacity((n * 1024 * 64) as usize),
+                    max: None,
+                },
+                Limits::One(n, m) => MemoryInstance {
+                    data: Vec::with_capacity((n * 1024 * 64) as usize),
+                    max: Some(m),
+                },
+            };
+
+            self.memaddrs.push(self.store.memory.len() as u32);
+            self.store.memory.push(instance);
+        }
+
         Ok(())
     }
 
     fn allocate_globals(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        let ty: Vec<_> = m
+            .sections
+            .iter()
+            .filter_map(|ref w| match w {
+                Section::Global(t) => Some(&t.globals),
+                _ => None,
+            })
+            .flatten()
+            .collect();
+
+        for gl in ty.into_iter() {
+            let instance = Variable {
+                mutable: match gl.ty.mu {
+                    Mu::Var => true,
+                    _ => false,
+                },
+                val: Value::I32(0), //FIXME THIS IS TOTALLY WRONG, evaluate expr
+            };
+
+            self.globaladdrs.push(self.store.globals.len() as u32);
+            self.store.globals.push(instance);
+        }
+
         Ok(())
     }
 }
