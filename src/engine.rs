@@ -35,9 +35,9 @@ impl Into<ValueType> for Value {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Trap;
-type Result<T> = std::result::Result<T, Trap>;
+//#[derive(Debug, PartialEq, Clone, Copy)]
+//pub struct Trap;
+//type Result<T> = std::result::Result<T, Trap>;
 
 impl Add for Value {
     type Output = Self;
@@ -131,6 +131,7 @@ pub struct ExportInstance {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)] //TODO remove in the future
 pub enum ExternalVal {
     Func(FuncIdx),
     Table(TableIdx),
@@ -186,7 +187,7 @@ impl ModuleInstance {
 
     pub fn allocate(&mut self, m: &Module) -> std::result::Result<(), ()> {
         // Step 1
-        let imports = self.get_extern_values_in_imports(m)?;
+        let _imports = self.get_extern_values_in_imports(m)?;
 
         // Step 2a and 6
         self.allocate_functions(m)?;
@@ -447,9 +448,8 @@ impl Engine {
     }
 }
 
-fn get_expr_const_ty_global<'a>(init: &Expr) -> std::result::Result<Value, ()> {
+fn get_expr_const_ty_global(init: &Expr) -> std::result::Result<Value, ()> {
     use wasm_parser::core::NumericInstructions::*;
-    use wasm_parser::core::VarInstructions::*;
 
     if init.is_empty() {
         error!("No expr to evaluate");
