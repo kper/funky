@@ -84,7 +84,7 @@ pub(crate) fn get_data(module: &Module) -> Vec<&DataSegment> {
     ty
 }
 
-pub(crate) fn get_funcs(module: &Module) -> Vec<&u32> {
+pub(crate) fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
     let ty: Vec<_> = module
         .sections
         .iter()

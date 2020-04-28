@@ -1,5 +1,13 @@
 use serde::{Serialize, Deserialize};
 
+pub type FuncIdx = u32; 
+pub type TableIdx = u32;
+pub type MemoryIdx = u32;
+pub type GlobalIdx = u32;
+pub type LabelIdx = u32;
+pub type LocalIdx = u32;
+
+
 /// This struct is basically the same as FuncType.
 /// But `FuncType` defines a concrete type of a function.
 /// Whereas `FunctionSignature` is the unique function signature in the module.
@@ -110,7 +118,7 @@ pub struct ImportSection {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct FunctionSection {
-    pub types: Vec<u32>,
+    pub types: Vec<FuncIdx>,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -239,9 +247,6 @@ pub enum Instruction {
     Num(NumericInstructions),
 }
 
-pub type LabelIdx = u32;
-pub type FuncIdx = u32;
-pub type LocalIdx = u32;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
