@@ -445,9 +445,7 @@ impl Engine {
     }
 }
 
-fn get_expr_const_ty_global<'a>(
-    init: &Expr,
-) -> std::result::Result<Value, ()> {
+fn get_expr_const_ty_global<'a>(init: &Expr) -> std::result::Result<Value, ()> {
     use wasm_parser::core::NumericInstructions::*;
     use wasm_parser::core::VarInstructions::*;
 
@@ -465,12 +463,12 @@ fn get_expr_const_ty_global<'a>(
             _ => {
                 error!("Expression is not a const");
                 return Err(());
-            },
+            }
         },
         _ => {
             error!("Wrong expression");
             return Err(());
-        },
+        }
     }
 }
 
@@ -485,14 +483,20 @@ mod tests {
                 start: 0,
                 code: Vec::new(),
                 fn_types: Vec::new(),
-            },
-            store: Store {
-                stack: vec![Frame(Frame {
-                    arity: 0,
-                    locals: Vec::new(),
-                })],
-                globals: Vec::new(),
-                memory: Vec::new(),
+                tableaddrs: Vec::new(),
+                memaddrs: Vec::new(),
+                globaladdrs: Vec::new(),
+                exports: Vec::new(),
+                store: Store {
+                    funcs: Vec::new(),
+                    tables: Vec::new(),
+                    globals: Vec::new(),
+                    memory: Vec::new(),
+                    stack: vec![Frame(Frame {
+                        arity: 0,
+                        locals: Vec::new(),
+                    })],
+                },
             },
         }
     }
@@ -500,7 +504,7 @@ mod tests {
     #[test]
     fn test_run_function() {
         let mut e = empty_engine();
-        e.store.stack = vec![Frame(Frame {
+        e.module.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
         })];
@@ -513,8 +517,8 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
-        e.store.stack = vec![Frame(Frame {
+        assert_eq!(Value(I32(84)), e.module.store.stack.pop().unwrap());
+        e.module.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
         })];
@@ -529,13 +533,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
+        assert_eq!(Value(I64(128)), e.module.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_with_params() {
         let mut e = empty_engine();
-        e.store.stack = vec![Frame(Frame {
+        e.module.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
@@ -544,13 +548,13 @@ mod tests {
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
+        assert_eq!(Value(I32(5)), e.module.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_local_set() {
         let mut e = empty_engine();
-        e.store.stack = vec![Frame(Frame {
+        e.module.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
@@ -567,13 +571,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
+        assert_eq!(Value(I32(37)), e.module.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_globals() {
         let mut e = empty_engine();
-        e.store.globals = vec![Variable {
+        e.module.store.globals = vec![Variable {
             mutable: true,
             val: I32(69),
         }];
@@ -587,13 +591,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(I32(420), e.store.globals[0].val);
+        assert_eq!(I32(420), e.module.store.globals[0].val);
     }
 
     #[test]
     fn test_drop_select() {
         let mut e = empty_engine();
-        e.store.globals = vec![Variable {
+        e.module.store.globals = vec![Variable {
             mutable: true,
             val: I32(20),
         }];
@@ -610,6 +614,6 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(I32(1), e.store.globals[0].val);
+        assert_eq!(I32(1), e.module.store.globals[0].val);
     }
 }
