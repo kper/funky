@@ -448,7 +448,7 @@ impl Engine {
     }
 }
 
-fn get_expr_const_ty_global(init: &Expr) -> std::result::Result<Value, ()> {
+fn get_expr_const_ty_global(init: &[Instruction]) -> std::result::Result<Value, ()> {
     use wasm_parser::core::NumericInstructions::*;
 
     if init.is_empty() {
@@ -464,12 +464,12 @@ fn get_expr_const_ty_global(init: &Expr) -> std::result::Result<Value, ()> {
             OP_F64_CONST(v) => Ok(Value::F64(v)),
             _ => {
                 error!("Expression is not a const");
-                return Err(());
+                Err(())
             }
         },
         _ => {
             error!("Wrong expression");
-            return Err(());
+            Err(())
         }
     }
 }
