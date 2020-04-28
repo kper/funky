@@ -5,7 +5,7 @@ type IResult<T> = Result<T, &'static str>;
 
 type Expr = [Instruction];
 
-mod extract;
+pub mod extract;
 //pub mod instructions;
 
 use extract::*;

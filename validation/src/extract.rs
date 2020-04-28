@@ -84,7 +84,7 @@ pub(crate) fn get_data(module: &Module) -> Vec<&DataSegment> {
     ty
 }
 
-pub(crate) fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
+pub fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -123,7 +123,7 @@ pub(crate) fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
     all
 }
 
-pub(crate) fn get_tables(module: &Module) -> Vec<&TableType> {
+pub fn get_tables(module: &Module) -> Vec<&TableType> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -162,7 +162,7 @@ pub(crate) fn get_tables(module: &Module) -> Vec<&TableType> {
     all
 }
 
-pub(crate) fn get_mems(module: &Module) -> Vec<&MemoryType> {
+pub fn get_mems(module: &Module) -> Vec<&MemoryType> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -201,7 +201,7 @@ pub(crate) fn get_mems(module: &Module) -> Vec<&MemoryType> {
     all
 }
 
-pub(crate) fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) {
+pub fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) {
     let ty: Vec<_> = module
         .sections
         .iter()

@@ -185,31 +185,54 @@ impl ModuleInstance {
     }
 
     pub fn allocate(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        // Step 1
+        let imports = self.get_extern_values_in_imports(m)?;
+
+        // Step 2a and 6
         self.allocate_functions(m)?;
         //TODO host functions
+
+        // Step 3a and 7
         self.allocate_tables(m)?;
+
+        // Step 4a and 8
         self.allocate_memories(m)?;
+
+        // Step 5a and 9
         self.allocate_globals(m)?;
+
+        // Step 10
 
         Ok(())
     }
 
-    fn allocate_functions(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    fn get_extern_values_in_imports<'a>(
+        &mut self,
+        m: &'a Module,
+    ) -> std::result::Result<Vec<&'a ImportDesc>, ()> {
         let ty: Vec<_> = m
             .sections
             .iter()
             .filter_map(|ref w| match w {
-                Section::Function(t) => Some(&t.types),
+                Section::Import(t) => Some(&t.entries),
                 _ => None,
             })
             .flatten()
+            .map(|w| &w.desc)
             .collect();
 
-        for t in ty.into_iter() {
+        Ok(ty)
+    }
+
+    fn allocate_functions(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        // Gets all functions and imports
+        let ty = validation::extract::get_funcs(&m);
+
+        for t in ty.iter() {
             // Allocate function
 
-            if let Some(f) = self.fn_types.get(*t as usize) {
-                if let Some(c) = self.code.get(*t as usize) {
+            if let Some(f) = self.fn_types.get(**t as usize) {
+                if let Some(c) = self.code.get(**t as usize) {
                     let instance = FuncInstance {
                         ty: f.clone(),
                         module: Box::new(self.clone()),
@@ -231,17 +254,10 @@ impl ModuleInstance {
     }
 
     fn allocate_tables(&mut self, m: &Module) -> std::result::Result<(), ()> {
-        let ty: Vec<_> = m
-            .sections
-            .iter()
-            .filter_map(|ref w| match w {
-                Section::Table(t) => Some(&t.entries),
-                _ => None,
-            })
-            .flatten()
-            .collect();
+        // Gets all tables and imports
+        let ty = validation::extract::get_tables(&m);
 
-        for t in ty.into_iter() {
+        for t in ty.iter() {
             let instance = match t.limits {
                 Limits::Zero(n) => TableInstance {
                     elem: Vec::with_capacity(n as usize),
@@ -261,17 +277,10 @@ impl ModuleInstance {
     }
 
     fn allocate_memories(&mut self, m: &Module) -> std::result::Result<(), ()> {
-        let ty: Vec<_> = m
-            .sections
-            .iter()
-            .filter_map(|ref w| match w {
-                Section::Memory(t) => Some(&t.entries),
-                _ => None,
-            })
-            .flatten()
-            .collect();
+        // Gets all memories and imports
+        let ty = validation::extract::get_mems(&m);
 
-        for memtype in ty.into_iter() {
+        for memtype in ty.iter() {
             let instance = match memtype.limits {
                 Limits::Zero(n) => MemoryInstance {
                     data: Vec::with_capacity((n * 1024 * 64) as usize),
@@ -291,17 +300,10 @@ impl ModuleInstance {
     }
 
     fn allocate_globals(&mut self, m: &Module) -> std::result::Result<(), ()> {
-        let ty: Vec<_> = m
-            .sections
-            .iter()
-            .filter_map(|ref w| match w {
-                Section::Global(t) => Some(&t.globals),
-                _ => None,
-            })
-            .flatten()
-            .collect();
+        // Gets all globals and imports
+        let ty = validation::extract::get_globals(&m);
 
-        for gl in ty.into_iter() {
+        for gl in ty.0.iter() {
             let instance = Variable {
                 mutable: match gl.ty.mu {
                     Mu::Var => true,
