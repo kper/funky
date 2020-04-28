@@ -64,7 +64,7 @@ impl Mul for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
     val: Value,
@@ -83,7 +83,7 @@ pub struct Frame {
     locals: Vec<Value>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ModuleInstance {
     start: u32,
     code: Vec<FunctionBody>,
@@ -95,7 +95,7 @@ pub struct ModuleInstance {
     pub store: Store,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Store {
     pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
@@ -104,31 +104,31 @@ pub struct Store {
     pub globals: Vec<Variable>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FuncInstance {
     //FIXME Add HostFunc
     ty: FunctionSignature,
-    //module: Box<ModuleInstance>, FIXME ENABLE
+    module: Box<ModuleInstance>,
     code: FunctionBody,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TableInstance {
     elem: Vec<FuncIdx>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemoryInstance {
     data: Vec<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExportInstance {
     name: String,
     value: ExternalVal,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExternalVal {
     Func(FuncIdx),
     Table(TableIdx),
@@ -210,7 +210,7 @@ impl ModuleInstance {
                 if let Some(c) = self.code.get(*t as usize) {
                     let instance = FuncInstance {
                         ty: f.clone(),
-                        //module: Box::new(self),
+                        module: Box::new(self.clone()),
                         code: c.clone(),
                     };
 
@@ -268,7 +268,11 @@ impl Engine {
         while ip < f.code.len() {
             debug!("Evaluating instruction {:?}", &f.code[ip]);
             match &f.code[ip] {
-                Var(OP_LOCAL_GET(idx)) => self.module.store.stack.push(Value(fr.locals[*idx as usize])),
+                Var(OP_LOCAL_GET(idx)) => self
+                    .module
+                    .store
+                    .stack
+                    .push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.module.store.stack.pop() {
                     Some(Value(v)) => fr.locals[*idx as usize] = v,
                     Some(x) => panic!("Expected value but found {:?}", x),
