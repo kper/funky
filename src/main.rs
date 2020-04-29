@@ -4,7 +4,7 @@ extern crate env_logger;
 extern crate funky;
 
 use docopt::Docopt;
-use funky::engine::{Engine, ModuleInstance, Store};
+use funky::engine::{Engine, ModuleInstance};
 use funky::engine::Value::*;
 use serde::Deserialize;
 use validation::validate;
@@ -59,15 +59,7 @@ fn main() {
         return;
     }
 
-    let store = Store {
-        funcs: Vec::new(),
-        tables: Vec::new(),
-        stack: Vec::new(),
-        globals: Vec::new(),
-        memory: Vec::new(),
-    };
-
-    let mi = ModuleInstance::new(module, store);
+    let mi = ModuleInstance::new(module);
     info!("Constructing engine");
     let mut e = Engine::new(mi);
     info!("Invoking function {:?}", 1);

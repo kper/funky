@@ -1,12 +1,12 @@
 use crate::engine::*;
+//use std::cell::RefCell;
+//use std::rc::{Rc, Weak};
 use wasm_parser::core::*;
 use wasm_parser::Module;
-use std::rc::{Rc, Weak};
-use std::cell::RefCell;
 
 pub fn allocate(
     m: &Module,
-    mod_instance: ModuleInstance,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate");
@@ -15,17 +15,17 @@ pub fn allocate(
     let _imports = get_extern_values_in_imports(m)?;
 
     // Step 2a and 6
-    allocate_functions(m, &mut mod_instance, store)?;
+    allocate_functions(m, mod_instance, store)?;
     //TODO host functions
 
     // Step 3a and 7
-    allocate_tables(m, &mut mod_instance, store)?;
+    allocate_tables(m, mod_instance, store)?;
 
     // Step 4a and 8
-    allocate_memories(m, &mut mod_instance, store)?;
+    allocate_memories(m, mod_instance, store)?;
 
     // Step 5a and 9
-    allocate_globals(m, &mut mod_instance, store)?;
+    allocate_globals(m, mod_instance, store)?;
 
     // ... Step 13
 
@@ -62,18 +62,17 @@ fn allocate_functions(
     // Gets all functions and imports
     let ty = validation::extract::get_funcs(&m);
 
+    //let rc = Rc::new(mod_instance);
+    //let weak = Rc::downgrade(&rc);
     for t in ty.iter() {
         debug!("Function {:#?}", t);
         // Allocate function
 
         if let Some(f) = mod_instance.fn_types.get(**t as usize) {
             if let Some(c) = mod_instance.code.get(**t as usize) {
-
-                let rc = Rc::new(mod_instance);
-                
                 let instance = FuncInstance {
                     ty: f.clone(),
-                    module: Rc::downgrade(&rc),
+                    //module: weak,
                     code: c.clone(),
                 };
 
@@ -91,7 +90,11 @@ fn allocate_functions(
     Ok(())
 }
 
-fn allocate_tables(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<(), ()> {
+fn allocate_tables(
+    m: &Module,
+    mod_instance: &mut ModuleInstance,
+    store: &mut Store,
+) -> Result<(), ()> {
     debug!("allocate tables");
 
     // Gets all tables and imports

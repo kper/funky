@@ -1,8 +1,8 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
-use std::cell::RefCell;
+//use std::cell::RefCell;
 use std::ops::{Add, Mul};
-use std::rc::{Rc, Weak};
+//use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
@@ -12,10 +12,10 @@ use wasm_parser::core::*;
 use wasm_parser::Module;
 
 #[derive(Debug)]
-pub struct Engine<'a> {
+pub struct Engine {
     pub module: ModuleInstance,
     pub started: bool,
-    pub store: Store<'a>,
+    pub store: Store,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -69,8 +69,8 @@ impl Mul for Value {
 
 #[derive(Debug, Clone)]
 pub struct Variable {
-    mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
-    val: Value,
+    pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
+    pub val: Value,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -98,8 +98,8 @@ pub struct ModuleInstance {
 }
 
 #[derive(Debug, Clone)]
-pub struct Store<'a> {
-    pub funcs: Vec<FuncInstance<'a>>,
+pub struct Store {
+    pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
     pub stack: Vec<StackContent>,
@@ -107,33 +107,33 @@ pub struct Store<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct FuncInstance<'a> {
+pub struct FuncInstance {
     //FIXME Add HostFunc
-    ty: FunctionSignature,
-    module: Weak<&'a mut ModuleInstance>,
-    code: FunctionBody,
+    pub ty: FunctionSignature,
+    //module: Weak<&'a mut ModuleInstance>, FIXME reference
+    pub code: FunctionBody,
 }
 
 #[derive(Debug, Clone)]
 pub struct TableInstance {
-    elem: Vec<FuncIdx>,
-    max: Option<u32>,
+    pub elem: Vec<FuncIdx>,
+    pub max: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MemoryInstance {
-    data: Vec<u8>,
-    max: Option<u32>,
+    pub data: Vec<u8>,
+    pub max: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ExportInstance {
-    name: String,
-    value: ExternalVal,
+    pub name: String,
+    pub value: ExternalVal,
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)] //TODO remove in the future
+#[allow(dead_code)]
 pub enum ExternalVal {
     Func(FuncIdx),
     Table(TableIdx),
@@ -156,7 +156,7 @@ macro_rules! fetch_binop {
 }
 
 impl ModuleInstance {
-    pub fn new(m: Module, mut store: Store) -> Self {
+    pub fn new(m: Module) -> Self {
         let mut mi = ModuleInstance {
             start: 0,
             code: Vec::new(),
@@ -177,12 +177,12 @@ impl ModuleInstance {
         mi
     }
 
-    pub fn allocate(self, m: &Module, store: &mut Store) -> Result<(), ()> {
-        crate::allocation::allocate(m, self, store)
+    pub fn allocate(&mut self, m: &Module, store: &'static mut Store) {
+        crate::allocation::allocate(m, self, store).unwrap();
     }
 }
 
-impl<'a> Engine<'a> {
+impl Engine {
     pub fn new(mi: ModuleInstance) -> Self {
         Engine {
             module: mi,
