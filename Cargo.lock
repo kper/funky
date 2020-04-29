@@ -128,6 +128,7 @@ version = "0.1.0"
 dependencies = [
  "docopt",
  "env_logger",
+ "insta",
  "log",
  "serde",
  "validation",

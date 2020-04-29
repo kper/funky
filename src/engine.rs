@@ -186,6 +186,8 @@ impl ModuleInstance {
     }
 
     pub fn allocate(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        debug!("allocate");
+
         // Step 1
         let _imports = self.get_extern_values_in_imports(m)?;
 
@@ -202,7 +204,13 @@ impl ModuleInstance {
         // Step 5a and 9
         self.allocate_globals(m)?;
 
-        // Step 10
+        // ... Step 13
+            
+        // Step 14. TODO
+       
+        // TODO do exports
+
+        // Step 15.
 
         Ok(())
     }
@@ -226,10 +234,12 @@ impl ModuleInstance {
     }
 
     fn allocate_functions(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        debug!("allocate function");
         // Gets all functions and imports
         let ty = validation::extract::get_funcs(&m);
 
         for t in ty.iter() {
+            debug!("Function {:#?}", t); 
             // Allocate function
 
             if let Some(f) = self.fn_types.get(**t as usize) {
@@ -255,10 +265,12 @@ impl ModuleInstance {
     }
 
     fn allocate_tables(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        debug!("allocate tables");
         // Gets all tables and imports
         let ty = validation::extract::get_tables(&m);
 
         for t in ty.iter() {
+            debug!("table {:#?}", t);
             let instance = match t.limits {
                 Limits::Zero(n) => TableInstance {
                     elem: Vec::with_capacity(n as usize),
@@ -278,10 +290,12 @@ impl ModuleInstance {
     }
 
     fn allocate_memories(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        debug!("allocate memories");
         // Gets all memories and imports
         let ty = validation::extract::get_mems(&m);
 
         for memtype in ty.iter() {
+            debug!("memtype {:#?}", memtype);
             let instance = match memtype.limits {
                 Limits::Zero(n) => MemoryInstance {
                     data: Vec::with_capacity((n * 1024 * 64) as usize),
@@ -301,10 +315,12 @@ impl ModuleInstance {
     }
 
     fn allocate_globals(&mut self, m: &Module) -> std::result::Result<(), ()> {
+        debug!("allocate globals");
         // Gets all globals and imports
         let ty = validation::extract::get_globals(&m);
 
         for gl in ty.0.iter() {
+            debug!("global {:#?}", gl);
             let instance = Variable {
                 mutable: match gl.ty.mu {
                     Mu::Var => true,

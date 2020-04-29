@@ -1,10 +1,11 @@
 #[macro_use]
 extern crate log;
 extern crate env_logger;
-mod engine;
-use crate::engine::Engine;
-use crate::engine::ModuleInstance;
-use crate::engine::Value::*;
+extern crate funky;
+
+use funky::engine::Engine;
+use funky::engine::ModuleInstance;
+use funky::engine::Value::*;
 use docopt::Docopt;
 use serde::Deserialize;
 use validation::validate;
