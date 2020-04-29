@@ -89,8 +89,8 @@ pub struct Frame {
 #[derive(Debug, Clone)]
 pub struct ModuleInstance {
     pub start: u32,
-    pub code: Vec<FunctionBody,
-    pub fn_types: Vec<FunctionSignature,
+    pub code: Vec<FunctionBody>,
+    pub fn_types: Vec<FunctionSignature>,
     pub tableaddrs: Vec<TableIdx>,
     pub memaddrs: Vec<MemoryIdx>,
     pub globaladdrs: Vec<GlobalIdx>,
