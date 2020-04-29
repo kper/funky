@@ -10,7 +10,14 @@ macro_rules! test_file_module_instance {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
-        let instance = ModuleInstance::new(module);
+        let store = Store {
+            funcs: Vec::new(),
+            tables: Vec::new(),
+            stack: Vec::new(),
+            globals: Vec::new(),
+            memory: Vec::new(),
+        };
+        let instance = ModuleInstance::new(module, store);
 
         assert_snapshot!($fs_name, format!("{:#?}", instance));
     };

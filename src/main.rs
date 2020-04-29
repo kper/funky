@@ -3,10 +3,9 @@ extern crate log;
 extern crate env_logger;
 extern crate funky;
 
-use funky::engine::Engine;
-use funky::engine::ModuleInstance;
-use funky::engine::Value::*;
 use docopt::Docopt;
+use funky::engine::{Engine, ModuleInstance, Store};
+use funky::engine::Value::*;
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
@@ -60,10 +59,18 @@ fn main() {
         return;
     }
 
-    let mi = ModuleInstance::new(module);
+    let store = Store {
+        funcs: Vec::new(),
+        tables: Vec::new(),
+        stack: Vec::new(),
+        globals: Vec::new(),
+        memory: Vec::new(),
+    };
+
+    let mi = ModuleInstance::new(module, store);
     info!("Constructing engine");
     let mut e = Engine::new(mi);
     info!("Invoking function {:?}", 1);
     e.invoke_function(1, vec![I32(2)]);
-    println!("Last value on stack was: {:?}", e.module.store.stack.last())
+    println!("Last value on stack was: {:?}", e.store.stack.last())
 }

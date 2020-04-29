@@ -8,11 +8,14 @@ use wasm_parser::core::ParamInstructions::*;
 use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
+use std::rc::{Weak, Rc};
+use std::cell::RefCell;
 
 #[derive(Debug)]
 pub struct Engine {
     pub module: ModuleInstance,
     pub started: bool,
+    pub store: Store,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -92,7 +95,6 @@ pub struct ModuleInstance {
     memaddrs: Vec<MemoryIdx>,
     globaladdrs: Vec<GlobalIdx>,
     exports: Vec<ExportInstance>,
-    pub store: Store,
 }
 
 #[derive(Debug, Clone)]
@@ -108,7 +110,7 @@ pub struct Store {
 pub struct FuncInstance {
     //FIXME Add HostFunc
     ty: FunctionSignature,
-    module: Box<ModuleInstance>,
+    module: Weak<RefCell<ModuleInstance>>,
     code: FunctionBody,
 }
 
@@ -154,7 +156,7 @@ macro_rules! fetch_binop {
 }
 
 impl ModuleInstance {
-    pub fn new(m: Module) -> Self {
+    pub fn new(m: Module, mut store: Store) -> Self {
         let mut mi = ModuleInstance {
             start: 0,
             code: Vec::new(),
@@ -163,13 +165,6 @@ impl ModuleInstance {
             memaddrs: Vec::new(),
             globaladdrs: Vec::new(),
             exports: Vec::new(),
-            store: Store {
-                funcs: Vec::new(),
-                tables: Vec::new(),
-                stack: Vec::new(),
-                globals: Vec::new(),
-                memory: Vec::new(),
-            },
         };
         for section in m.sections.iter() {
             match section {
@@ -180,34 +175,47 @@ impl ModuleInstance {
             }
         }
 
-        mi.allocate(&m).expect("Allocation failed");
+        let mut rc = Rc::new(RefCell::new(mi)); //We need RefCell because here
+        let weak = Rc::downgrade(&rc); //We've a mutable ref on mi and now we want know a weak too
+        Rc::get_mut(&mut rc)
+            .expect("Cannot get a mut ref")
+            .borrow_mut()
+            .allocate(&m, weak, &mut store)
+            .expect("Allocation failed");
 
-        mi
+        Rc::try_unwrap(rc)
+            .expect("Messed up references")
+            .into_inner()
     }
 
-    pub fn allocate(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    pub fn allocate(
+        &mut self,
+        m: &Module,
+        weak: Weak<RefCell<ModuleInstance>>,
+        store: &mut Store,
+    ) -> std::result::Result<(), ()> {
         debug!("allocate");
 
         // Step 1
         let _imports = self.get_extern_values_in_imports(m)?;
 
         // Step 2a and 6
-        self.allocate_functions(m)?;
+        self.allocate_functions(m, weak, store)?;
         //TODO host functions
 
         // Step 3a and 7
-        self.allocate_tables(m)?;
+        self.allocate_tables(m, store)?;
 
         // Step 4a and 8
-        self.allocate_memories(m)?;
+        self.allocate_memories(m, store)?;
 
         // Step 5a and 9
-        self.allocate_globals(m)?;
+        self.allocate_globals(m, store)?;
 
         // ... Step 13
-            
+
         // Step 14. TODO
-       
+
         // TODO do exports
 
         // Step 15.
@@ -233,24 +241,29 @@ impl ModuleInstance {
         Ok(ty)
     }
 
-    fn allocate_functions(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    fn allocate_functions(
+        &mut self,
+        m: &Module,
+        weak: Weak<RefCell<ModuleInstance>>,
+        store: &mut Store
+    ) -> std::result::Result<(), ()> {
         debug!("allocate function");
         // Gets all functions and imports
         let ty = validation::extract::get_funcs(&m);
 
         for t in ty.iter() {
-            debug!("Function {:#?}", t); 
+            debug!("Function {:#?}", t);
             // Allocate function
 
             if let Some(f) = self.fn_types.get(**t as usize) {
                 if let Some(c) = self.code.get(**t as usize) {
                     let instance = FuncInstance {
                         ty: f.clone(),
-                        module: Box::new(self.clone()),
+                        module: weak.clone(),
                         code: c.clone(),
                     };
 
-                    self.store.funcs.push(instance);
+                    store.funcs.push(instance);
                 } else {
                     error!("{} code is not defined", t);
                     return Err(());
@@ -264,7 +277,7 @@ impl ModuleInstance {
         Ok(())
     }
 
-    fn allocate_tables(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    fn allocate_tables(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
         debug!("allocate tables");
         // Gets all tables and imports
         let ty = validation::extract::get_tables(&m);
@@ -282,14 +295,14 @@ impl ModuleInstance {
                 },
             };
 
-            self.tableaddrs.push(self.store.tables.len() as u32);
-            self.store.tables.push(instance);
+            self.tableaddrs.push(store.tables.len() as u32);
+            store.tables.push(instance);
         }
 
         Ok(())
     }
 
-    fn allocate_memories(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    fn allocate_memories(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
         debug!("allocate memories");
         // Gets all memories and imports
         let ty = validation::extract::get_mems(&m);
@@ -307,14 +320,14 @@ impl ModuleInstance {
                 },
             };
 
-            self.memaddrs.push(self.store.memory.len() as u32);
-            self.store.memory.push(instance);
+            self.memaddrs.push(store.memory.len() as u32);
+            store.memory.push(instance);
         }
 
         Ok(())
     }
 
-    fn allocate_globals(&mut self, m: &Module) -> std::result::Result<(), ()> {
+    fn allocate_globals(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
         debug!("allocate globals");
         // Gets all globals and imports
         let ty = validation::extract::get_globals(&m);
@@ -329,8 +342,8 @@ impl ModuleInstance {
                 val: get_expr_const_ty_global(&gl.init)?,
             };
 
-            self.globaladdrs.push(self.store.globals.len() as u32);
-            self.store.globals.push(instance);
+            self.globaladdrs.push(store.globals.len() as u32);
+            store.globals.push(instance);
         }
 
         Ok(())
@@ -342,11 +355,18 @@ impl Engine {
         Engine {
             module: mi,
             started: false,
+            store: Store {
+                funcs: Vec::new(),
+                tables: Vec::new(),
+                stack: Vec::new(),
+                globals: Vec::new(),
+                memory: Vec::new(),
+            },
         }
     }
     #[warn(dead_code)]
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
-        self.module.store.stack.push(Frame(Frame {
+        self.store.stack.push(Frame(Frame {
             arity: args.len() as u32,
             locals: args,
         }));
@@ -355,7 +375,7 @@ impl Engine {
     fn run_function(&mut self, idx: u32) {
         debug!("Running function {:?}", idx);
         let f = self.module.code[idx as usize].clone();
-        let mut fr = match self.module.store.stack.last().cloned() {
+        let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
             None => panic!("Empty stack on function call"),
@@ -365,69 +385,66 @@ impl Engine {
             debug!("Evaluating instruction {:?}", &f.code[ip]);
             match &f.code[ip] {
                 Var(OP_LOCAL_GET(idx)) => self
-                    .module
                     .store
                     .stack
                     .push(Value(fr.locals[*idx as usize])),
-                Var(OP_LOCAL_SET(idx)) => match self.module.store.stack.pop() {
+                Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => fr.locals[*idx as usize] = v,
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
-                Var(OP_LOCAL_TEE(idx)) => match self.module.store.stack.last() {
+                Var(OP_LOCAL_TEE(idx)) => match self.store.stack.last() {
                     Some(Value(v)) => fr.locals[*idx as usize] = *v,
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
                 Var(OP_GLOBAL_GET(idx)) => self
-                    .module
                     .store
                     .stack
-                    .push(Value(self.module.store.globals[*idx as usize].val)),
-                Var(OP_GLOBAL_SET(idx)) => match self.module.store.stack.pop() {
+                    .push(Value(self.store.globals[*idx as usize].val)),
+                Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => {
-                        if !self.module.store.globals[*idx as usize].mutable {
+                        if !self.store.globals[*idx as usize].mutable {
                             panic!("Attempting to modify a immutable global")
                         }
-                        self.module.store.globals[*idx as usize].val = v
+                        self.store.globals[*idx as usize].val = v
                     }
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
-                Num(OP_I32_CONST(v)) => self.module.store.stack.push(Value(I32(*v))),
-                Num(OP_I64_CONST(v)) => self.module.store.stack.push(Value(I64(*v))),
-                Num(OP_F32_CONST(v)) => self.module.store.stack.push(Value(F32(*v))),
-                Num(OP_F64_CONST(v)) => self.module.store.stack.push(Value(F64(*v))),
+                Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
+                Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
+                Num(OP_F32_CONST(v)) => self.store.stack.push(Value(F32(*v))),
+                Num(OP_F64_CONST(v)) => self.store.stack.push(Value(F64(*v))),
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
-                    let (v1, v2) = fetch_binop!(self.module.store.stack);
-                    self.module.store.stack.push(Value(v1 + v2))
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 + v2))
                 }
                 Num(OP_I32_MUL) | Num(OP_I64_MUL) | Num(OP_F32_MUL) | Num(OP_F64_MUL) => {
-                    let (v1, v2) = fetch_binop!(self.module.store.stack);
-                    self.module.store.stack.push(Value(v1 * v2))
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 * v2))
                 }
                 Param(OP_DROP) => {
-                    self.module.store.stack.pop();
+                    self.store.stack.pop();
                 }
                 Param(OP_SELECT) => {
-                    let c = match self.module.store.stack.pop() {
+                    let c = match self.store.stack.pop() {
                         Some(Value(I32(x))) => x,
                         _ => panic!("Expected I32 on top of stack"),
                     };
-                    let (v1, v2) = fetch_binop!(self.module.store.stack);
+                    let (v1, v2) = fetch_binop!(self.store.stack);
                     if c != 0 {
-                        self.module.store.stack.push(Value(v1))
+                        self.store.stack.push(Value(v1))
                     } else {
-                        self.module.store.stack.push(Value(v2))
+                        self.store.stack.push(Value(v2))
                     }
                 }
                 Ctrl(OP_CALL(idx)) => {
                     let t = &self.module.fn_types[*idx as usize];
                     let args = self
-                        .module
                         .store
                         .stack
-                        .split_off(self.module.store.stack.len() - t.param_types.len())
+                        .split_off(self.store.stack.len() - t.param_types.len())
                         .into_iter()
                         .map(|x| match x {
                             Value(v) => v,
@@ -439,7 +456,7 @@ impl Engine {
                         locals: args,
                     };
                     debug!("Calling {:?} with {:#?}", *idx, cfr);
-                    self.module.store.stack.push(Frame(cfr));
+                    self.store.stack.push(Frame(cfr));
                     self.run_function(*idx);
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
@@ -453,14 +470,14 @@ impl Engine {
         // implicit return
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
-            match self.module.store.stack.pop() {
+            match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
                 Some(x) => panic!("Expected value but found {:?}", x),
                 None => panic!("Unexpected empty stack!"),
             }
         }
-        while let Some(Frame(_)) = self.module.store.stack.pop() {}
-        self.module.store.stack.append(&mut ret);
+        while let Some(Frame(_)) = self.store.stack.pop() {}
+        self.store.stack.append(&mut ret);
     }
 }
 
@@ -497,6 +514,16 @@ mod tests {
     fn empty_engine() -> Engine {
         Engine {
             started: true,
+            store: Store {
+                funcs: Vec::new(),
+                tables: Vec::new(),
+                globals: Vec::new(),
+                memory: Vec::new(),
+                stack: vec![Frame(Frame {
+                    arity: 0,
+                    locals: Vec::new(),
+                })],
+            },
             module: ModuleInstance {
                 start: 0,
                 code: Vec::new(),
@@ -505,16 +532,6 @@ mod tests {
                 memaddrs: Vec::new(),
                 globaladdrs: Vec::new(),
                 exports: Vec::new(),
-                store: Store {
-                    funcs: Vec::new(),
-                    tables: Vec::new(),
-                    globals: Vec::new(),
-                    memory: Vec::new(),
-                    stack: vec![Frame(Frame {
-                        arity: 0,
-                        locals: Vec::new(),
-                    })],
-                },
             },
         }
     }
@@ -522,7 +539,7 @@ mod tests {
     #[test]
     fn test_run_function() {
         let mut e = empty_engine();
-        e.module.store.stack = vec![Frame(Frame {
+        e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
         })];
@@ -535,8 +552,8 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(84)), e.module.store.stack.pop().unwrap());
-        e.module.store.stack = vec![Frame(Frame {
+        assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
+        e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
         })];
@@ -551,13 +568,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I64(128)), e.module.store.stack.pop().unwrap());
+        assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_with_params() {
         let mut e = empty_engine();
-        e.module.store.stack = vec![Frame(Frame {
+        e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
@@ -566,13 +583,13 @@ mod tests {
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(5)), e.module.store.stack.pop().unwrap());
+        assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_local_set() {
         let mut e = empty_engine();
-        e.module.store.stack = vec![Frame(Frame {
+        e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
@@ -589,13 +606,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(Value(I32(37)), e.module.store.stack.pop().unwrap());
+        assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
     }
 
     #[test]
     fn test_function_globals() {
         let mut e = empty_engine();
-        e.module.store.globals = vec![Variable {
+        e.store.globals = vec![Variable {
             mutable: true,
             val: I32(69),
         }];
@@ -609,13 +626,13 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(I32(420), e.module.store.globals[0].val);
+        assert_eq!(I32(420), e.store.globals[0].val);
     }
 
     #[test]
     fn test_drop_select() {
         let mut e = empty_engine();
-        e.module.store.globals = vec![Variable {
+        e.store.globals = vec![Variable {
             mutable: true,
             val: I32(20),
         }];
@@ -632,6 +649,6 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(I32(1), e.module.store.globals[0].val);
+        assert_eq!(I32(1), e.store.globals[0].val);
     }
 }
