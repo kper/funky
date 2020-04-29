@@ -1,6 +1,8 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
+use std::cell::RefCell;
 use std::ops::{Add, Mul};
+use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
@@ -8,14 +10,12 @@ use wasm_parser::core::ParamInstructions::*;
 use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
-use std::rc::{Weak, Rc};
-use std::cell::RefCell;
 
 #[derive(Debug)]
-pub struct Engine {
+pub struct Engine<'a> {
     pub module: ModuleInstance,
     pub started: bool,
-    pub store: Store,
+    pub store: Store<'a>,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -88,18 +88,18 @@ pub struct Frame {
 
 #[derive(Debug, Clone)]
 pub struct ModuleInstance {
-    start: u32,
-    code: Vec<FunctionBody>,
-    fn_types: Vec<FunctionSignature>,
-    tableaddrs: Vec<TableIdx>,
-    memaddrs: Vec<MemoryIdx>,
-    globaladdrs: Vec<GlobalIdx>,
-    exports: Vec<ExportInstance>,
+    pub start: u32,
+    pub code: Vec<FunctionBody,
+    pub fn_types: Vec<FunctionSignature,
+    pub tableaddrs: Vec<TableIdx>,
+    pub memaddrs: Vec<MemoryIdx>,
+    pub globaladdrs: Vec<GlobalIdx>,
+    pub exports: Vec<ExportInstance>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Store {
-    pub funcs: Vec<FuncInstance>,
+pub struct Store<'a> {
+    pub funcs: Vec<FuncInstance<'a>>,
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
     pub stack: Vec<StackContent>,
@@ -107,10 +107,10 @@ pub struct Store {
 }
 
 #[derive(Debug, Clone)]
-pub struct FuncInstance {
+pub struct FuncInstance<'a> {
     //FIXME Add HostFunc
     ty: FunctionSignature,
-    module: Weak<RefCell<ModuleInstance>>,
+    module: Weak<&'a mut ModuleInstance>,
     code: FunctionBody,
 }
 
@@ -170,187 +170,19 @@ impl ModuleInstance {
             match section {
                 Section::Code(CodeSection { entries: x }) => mi.code = x.clone(),
                 Section::Type(TypeSection { entries: x }) => mi.fn_types = x.clone(),
-
                 _ => {}
             }
         }
 
-        let mut rc = Rc::new(RefCell::new(mi)); //We need RefCell because here
-        let weak = Rc::downgrade(&rc); //We've a mutable ref on mi and now we want know a weak too
-        Rc::get_mut(&mut rc)
-            .expect("Cannot get a mut ref")
-            .borrow_mut()
-            .allocate(&m, weak, &mut store)
-            .expect("Allocation failed");
-
-        Rc::try_unwrap(rc)
-            .expect("Messed up references")
-            .into_inner()
+        mi
     }
 
-    pub fn allocate(
-        &mut self,
-        m: &Module,
-        weak: Weak<RefCell<ModuleInstance>>,
-        store: &mut Store,
-    ) -> std::result::Result<(), ()> {
-        debug!("allocate");
-
-        // Step 1
-        let _imports = self.get_extern_values_in_imports(m)?;
-
-        // Step 2a and 6
-        self.allocate_functions(m, weak, store)?;
-        //TODO host functions
-
-        // Step 3a and 7
-        self.allocate_tables(m, store)?;
-
-        // Step 4a and 8
-        self.allocate_memories(m, store)?;
-
-        // Step 5a and 9
-        self.allocate_globals(m, store)?;
-
-        // ... Step 13
-
-        // Step 14. TODO
-
-        // TODO do exports
-
-        // Step 15.
-
-        Ok(())
-    }
-
-    fn get_extern_values_in_imports<'a>(
-        &mut self,
-        m: &'a Module,
-    ) -> std::result::Result<Vec<&'a ImportDesc>, ()> {
-        let ty: Vec<_> = m
-            .sections
-            .iter()
-            .filter_map(|ref w| match w {
-                Section::Import(t) => Some(&t.entries),
-                _ => None,
-            })
-            .flatten()
-            .map(|w| &w.desc)
-            .collect();
-
-        Ok(ty)
-    }
-
-    fn allocate_functions(
-        &mut self,
-        m: &Module,
-        weak: Weak<RefCell<ModuleInstance>>,
-        store: &mut Store
-    ) -> std::result::Result<(), ()> {
-        debug!("allocate function");
-        // Gets all functions and imports
-        let ty = validation::extract::get_funcs(&m);
-
-        for t in ty.iter() {
-            debug!("Function {:#?}", t);
-            // Allocate function
-
-            if let Some(f) = self.fn_types.get(**t as usize) {
-                if let Some(c) = self.code.get(**t as usize) {
-                    let instance = FuncInstance {
-                        ty: f.clone(),
-                        module: weak.clone(),
-                        code: c.clone(),
-                    };
-
-                    store.funcs.push(instance);
-                } else {
-                    error!("{} code is not defined", t);
-                    return Err(());
-                }
-            } else {
-                error!("{} function type is not defined", t);
-                return Err(());
-            }
-        }
-
-        Ok(())
-    }
-
-    fn allocate_tables(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
-        debug!("allocate tables");
-        // Gets all tables and imports
-        let ty = validation::extract::get_tables(&m);
-
-        for t in ty.iter() {
-            debug!("table {:#?}", t);
-            let instance = match t.limits {
-                Limits::Zero(n) => TableInstance {
-                    elem: Vec::with_capacity(n as usize),
-                    max: None,
-                },
-                Limits::One(n, m) => TableInstance {
-                    elem: Vec::with_capacity(n as usize),
-                    max: Some(m),
-                },
-            };
-
-            self.tableaddrs.push(store.tables.len() as u32);
-            store.tables.push(instance);
-        }
-
-        Ok(())
-    }
-
-    fn allocate_memories(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
-        debug!("allocate memories");
-        // Gets all memories and imports
-        let ty = validation::extract::get_mems(&m);
-
-        for memtype in ty.iter() {
-            debug!("memtype {:#?}", memtype);
-            let instance = match memtype.limits {
-                Limits::Zero(n) => MemoryInstance {
-                    data: Vec::with_capacity((n * 1024 * 64) as usize),
-                    max: None,
-                },
-                Limits::One(n, m) => MemoryInstance {
-                    data: Vec::with_capacity((n * 1024 * 64) as usize),
-                    max: Some(m),
-                },
-            };
-
-            self.memaddrs.push(store.memory.len() as u32);
-            store.memory.push(instance);
-        }
-
-        Ok(())
-    }
-
-    fn allocate_globals(&mut self, m: &Module, store: &mut Store) -> std::result::Result<(), ()> {
-        debug!("allocate globals");
-        // Gets all globals and imports
-        let ty = validation::extract::get_globals(&m);
-
-        for gl in ty.0.iter() {
-            debug!("global {:#?}", gl);
-            let instance = Variable {
-                mutable: match gl.ty.mu {
-                    Mu::Var => true,
-                    _ => false,
-                },
-                val: get_expr_const_ty_global(&gl.init)?,
-            };
-
-            self.globaladdrs.push(store.globals.len() as u32);
-            store.globals.push(instance);
-        }
-
-        Ok(())
+    pub fn allocate(self, m: &Module, store: &mut Store) -> Result<(), ()> {
+        crate::allocation::allocate(m, self, store)
     }
 }
 
-impl Engine {
+impl<'a> Engine<'a> {
     pub fn new(mi: ModuleInstance) -> Self {
         Engine {
             module: mi,
@@ -384,10 +216,7 @@ impl Engine {
         while ip < f.code.len() {
             debug!("Evaluating instruction {:?}", &f.code[ip]);
             match &f.code[ip] {
-                Var(OP_LOCAL_GET(idx)) => self
-                    .store
-                    .stack
-                    .push(Value(fr.locals[*idx as usize])),
+                Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => fr.locals[*idx as usize] = v,
                     Some(x) => panic!("Expected value but found {:?}", x),
@@ -481,37 +310,11 @@ impl Engine {
     }
 }
 
-fn get_expr_const_ty_global(init: &[Instruction]) -> std::result::Result<Value, ()> {
-    use wasm_parser::core::NumericInstructions::*;
-
-    if init.is_empty() {
-        error!("No expr to evaluate");
-        return Err(());
-    }
-
-    match init.get(0).unwrap() {
-        Instruction::Num(n) => match *n {
-            OP_I32_CONST(v) => Ok(Value::I32(v)),
-            OP_I64_CONST(v) => Ok(Value::I64(v)),
-            OP_F32_CONST(v) => Ok(Value::F32(v)),
-            OP_F64_CONST(v) => Ok(Value::F64(v)),
-            _ => {
-                error!("Expression is not a const");
-                Err(())
-            }
-        },
-        _ => {
-            error!("Wrong expression");
-            Err(())
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn empty_engine() -> Engine {
+    fn empty_engine<'a>() -> Engine<'a> {
         Engine {
             started: true,
             store: Store {
