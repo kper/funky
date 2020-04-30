@@ -5,10 +5,10 @@ extern crate funky;
 
 use docopt::Docopt;
 use funky::engine::{Engine, ModuleInstance};
-use funky::engine::Value::*;
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
+//use funky::engine::Value::*;
 
 const USAGE: &str = "
 Funky - a WebAssembly Interpreter
@@ -61,7 +61,7 @@ fn main() {
 
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
-    let mut e = Engine::new(mi, &module);
+    let e = Engine::new(mi, &module);
     debug!("engine {:#?}", e);
     //info!("Invoking function {:?}", 1);
     //e.invoke_function(1, vec![I32(2)]);
