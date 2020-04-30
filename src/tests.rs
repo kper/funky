@@ -1,8 +1,10 @@
+use crate::allocation::allocate;
 use crate::engine::*;
 use insta::assert_snapshot;
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 use validation::validate;
-use wasm_parser::parse;
-use wasm_parser::read_wasm;
+use wasm_parser::{parse, read_wasm, Module};
 
 macro_rules! test_file_module_instance {
     ($fs_name:expr) => {
@@ -10,17 +12,29 @@ macro_rules! test_file_module_instance {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
-        let store = Store {
-            funcs: Vec::new(),
-            tables: Vec::new(),
-            stack: Vec::new(),
-            globals: Vec::new(),
-            memory: Vec::new(),
-        };
-        let instance = ModuleInstance::new(module, store);
+        let instance = ModuleInstance::new(&module);
+        let engine = Engine::new(instance, &module);
 
-        assert_snapshot!($fs_name, format!("{:#?}", instance));
+        assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
+}
+
+#[test]
+fn test_allocation() {
+    let module = Module {
+        sections: Vec::new(),
+    };
+
+    let mut store = Store {
+        funcs: Vec::new(),
+        tables: Vec::new(),
+        stack: Vec::new(),
+        globals: Vec::new(),
+        memory: Vec::new(),
+    };
+    let instance = ModuleInstance::new(&module);
+    let rc = Rc::new(RefCell::new(instance));
+    allocate(&module, &rc, &mut store);
 }
 
 #[test]

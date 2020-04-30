@@ -1,8 +1,8 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
-//use std::cell::RefCell;
+use std::cell::RefCell;
 use std::ops::{Add, Mul};
-//use std::rc::{Rc, Weak};
+use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::NumericInstructions::*;
@@ -13,7 +13,7 @@ use wasm_parser::Module;
 
 #[derive(Debug)]
 pub struct Engine {
-    pub module: ModuleInstance,
+    pub module: Rc<RefCell<ModuleInstance>>,
     pub started: bool,
     pub store: Store,
 }
@@ -110,7 +110,7 @@ pub struct Store {
 pub struct FuncInstance {
     //FIXME Add HostFunc
     pub ty: FunctionSignature,
-    //module: Weak<&'a mut ModuleInstance>, FIXME reference
+    pub module: Weak<RefCell<ModuleInstance>>,
     pub code: FunctionBody,
 }
 
@@ -156,7 +156,7 @@ macro_rules! fetch_binop {
 }
 
 impl ModuleInstance {
-    pub fn new(m: Module) -> Self {
+    pub fn new(m: &Module) -> Self {
         let mut mi = ModuleInstance {
             start: 0,
             code: Vec::new(),
@@ -176,16 +176,12 @@ impl ModuleInstance {
 
         mi
     }
-
-    pub fn allocate(&mut self, m: &Module, store: &'static mut Store) {
-        crate::allocation::allocate(m, self, store).unwrap();
-    }
 }
 
 impl Engine {
-    pub fn new(mi: ModuleInstance) -> Self {
-        Engine {
-            module: mi,
+    pub fn new(mi: ModuleInstance, module: &Module) -> Self {
+        let mut e = Engine {
+            module: Rc::new(RefCell::new(mi)),
             started: false,
             store: Store {
                 funcs: Vec::new(),
@@ -194,8 +190,17 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
-        }
+        };
+
+        e.allocate(module);
+
+        e
     }
+
+    fn allocate(&mut self, m: &Module) {
+        crate::allocation::allocate(m, &self.module, &mut self.store).unwrap();
+    }
+
     #[warn(dead_code)]
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         self.store.stack.push(Frame(Frame {
@@ -206,7 +211,8 @@ impl Engine {
     }
     fn run_function(&mut self, idx: u32) {
         debug!("Running function {:?}", idx);
-        let f = self.module.code[idx as usize].clone();
+        //let instance = self.module.borrow_mut();
+        let f = self.module.borrow().code[idx as usize].clone();
         let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
@@ -269,7 +275,7 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_CALL(idx)) => {
-                    let t = &self.module.fn_types[*idx as usize];
+                    let t = self.module.borrow().fn_types[*idx as usize].clone();
                     let args = self
                         .store
                         .stack
@@ -314,7 +320,7 @@ impl Engine {
 mod tests {
     use super::*;
 
-    fn empty_engine<'a>() -> Engine<'a> {
+    fn empty_engine() -> Engine {
         Engine {
             started: true,
             store: Store {
@@ -327,7 +333,7 @@ mod tests {
                     locals: Vec::new(),
                 })],
             },
-            module: ModuleInstance {
+            module: Rc::new(RefCell::new(ModuleInstance {
                 start: 0,
                 code: Vec::new(),
                 fn_types: Vec::new(),
@@ -335,7 +341,7 @@ mod tests {
                 memaddrs: Vec::new(),
                 globaladdrs: Vec::new(),
                 exports: Vec::new(),
-            },
+            })),
         }
     }
 
@@ -346,7 +352,7 @@ mod tests {
             arity: 1,
             locals: Vec::new(),
         })];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(42)),
@@ -360,7 +366,7 @@ mod tests {
             arity: 1,
             locals: Vec::new(),
         })];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I64_CONST(32)),
@@ -381,7 +387,7 @@ mod tests {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         }];
@@ -396,7 +402,7 @@ mod tests {
             arity: 1,
             locals: vec![I32(1), I32(4)],
         })];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_LOCAL_GET(0)),
@@ -419,7 +425,7 @@ mod tests {
             mutable: true,
             val: I32(69),
         }];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_GLOBAL_GET(0)),
@@ -439,7 +445,7 @@ mod tests {
             mutable: true,
             val: I32(20),
         }];
-        e.module.code = vec![FunctionBody {
+        e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(1)),

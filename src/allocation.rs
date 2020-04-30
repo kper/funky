@@ -1,12 +1,12 @@
 use crate::engine::*;
-//use std::cell::RefCell;
-//use std::rc::{Rc, Weak};
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
 pub fn allocate(
     m: &Module,
-    mod_instance: &mut ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate");
@@ -55,7 +55,7 @@ fn get_extern_values_in_imports<'a>(m: &'a Module) -> Result<Vec<&'a ImportDesc>
 
 fn allocate_functions(
     m: &Module,
-    mod_instance: &mut ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> std::result::Result<(), ()> {
     debug!("allocate function");
@@ -63,16 +63,16 @@ fn allocate_functions(
     let ty = validation::extract::get_funcs(&m);
 
     //let rc = Rc::new(mod_instance);
-    //let weak = Rc::downgrade(&rc);
+    let weak = Rc::downgrade(mod_instance);
     for t in ty.iter() {
         debug!("Function {:#?}", t);
         // Allocate function
 
-        if let Some(f) = mod_instance.fn_types.get(**t as usize) {
-            if let Some(c) = mod_instance.code.get(**t as usize) {
+        if let Some(f) = mod_instance.borrow().fn_types.get(**t as usize) {
+            if let Some(c) = mod_instance.borrow().code.get(**t as usize) {
                 let instance = FuncInstance {
                     ty: f.clone(),
-                    //module: weak,
+                    module: weak.clone(),
                     code: c.clone(),
                 };
 
@@ -92,7 +92,7 @@ fn allocate_functions(
 
 fn allocate_tables(
     m: &Module,
-    mod_instance: &mut ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate tables");
@@ -113,7 +113,10 @@ fn allocate_tables(
             },
         };
 
-        mod_instance.tableaddrs.push(store.tables.len() as u32);
+        mod_instance
+            .borrow_mut()
+            .tableaddrs
+            .push(store.tables.len() as u32);
         store.tables.push(instance);
     }
 
@@ -122,7 +125,7 @@ fn allocate_tables(
 
 fn allocate_memories(
     m: &Module,
-    mod_instance: &mut ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate memories");
@@ -142,7 +145,10 @@ fn allocate_memories(
             },
         };
 
-        mod_instance.memaddrs.push(store.memory.len() as u32);
+        mod_instance
+            .borrow_mut()
+            .memaddrs
+            .push(store.memory.len() as u32);
         store.memory.push(instance);
     }
 
@@ -151,7 +157,7 @@ fn allocate_memories(
 
 fn allocate_globals(
     m: &Module,
-    mod_instance: &mut ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> std::result::Result<(), ()> {
     debug!("allocate globals");
@@ -168,7 +174,10 @@ fn allocate_globals(
             val: get_expr_const_ty_global(&gl.init)?,
         };
 
-        mod_instance.globaladdrs.push(store.globals.len() as u32);
+        mod_instance
+            .borrow_mut()
+            .globaladdrs
+            .push(store.globals.len() as u32);
         store.globals.push(instance);
     }
 
