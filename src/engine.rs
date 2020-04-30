@@ -67,7 +67,7 @@ impl Mul for Value {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
     pub val: Value,
@@ -116,7 +116,7 @@ pub struct FuncInstance {
 
 #[derive(Debug, Clone)]
 pub struct TableInstance {
-    pub elem: Vec<FuncIdx>,
+    pub elem: Vec<Option<FuncIdx>>,
     pub max: Option<u32>,
 }
 

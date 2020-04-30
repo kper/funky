@@ -1,6 +1,6 @@
 use crate::engine::*;
 use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
@@ -104,11 +104,11 @@ fn allocate_tables(
         debug!("table {:#?}", t);
         let instance = match t.limits {
             Limits::Zero(n) => TableInstance {
-                elem: Vec::with_capacity(n as usize),
+                elem: vec![None; n as usize],
                 max: None,
             },
             Limits::One(n, m) => TableInstance {
-                elem: Vec::with_capacity(n as usize),
+                elem: vec![None; n as usize],
                 max: Some(m),
             },
         };
@@ -136,11 +136,11 @@ fn allocate_memories(
         debug!("memtype {:#?}", memtype);
         let instance = match memtype.limits {
             Limits::Zero(n) => MemoryInstance {
-                data: Vec::with_capacity((n * 1024 * 64) as usize),
+                data: vec![0u8; (n * 1024 * 64) as usize],
                 max: None,
             },
             Limits::One(n, m) => MemoryInstance {
-                data: Vec::with_capacity((n * 1024 * 64) as usize),
+                data: vec![0u8; (n * 1024 * 64) as usize],
                 max: Some(m),
             },
         };

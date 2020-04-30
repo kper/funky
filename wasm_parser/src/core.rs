@@ -7,6 +7,7 @@ pub type GlobalIdx = u32;
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
 
+pub type Expr = Vec<Instruction>;
 
 /// This struct is basically the same as FuncType.
 /// But `FuncType` defines a concrete type of a function.
@@ -235,7 +236,6 @@ pub enum Limits {
     One(u32, u32),
 }
 
-pub type Expr = Vec<Instruction>;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
