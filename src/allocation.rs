@@ -70,14 +70,14 @@ fn allocate_functions(
 
         {
             let borrow = mod_instance.borrow();
-            let fbody = match borrow.fn_types.get(**t as usize).clone() {
+            let fbody = match borrow.fn_types.get(**t as usize) {
                 Some(fbody) => fbody,
                 None => {
                     panic!("{} function type is not defined", t);
                 }
             };
 
-            let fcode = match borrow.code.get(**t as usize).clone() {
+            let fcode = match borrow.code.get(**t as usize) {
                 Some(fcode) => fcode,
                 None => {
                     panic!("{} code is not defined", t);

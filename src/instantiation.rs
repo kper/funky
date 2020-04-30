@@ -69,16 +69,17 @@ fn instantiate_elements<'a>(
 
         if let Value::I32(table_index) = eoval {
             //table_index = eo_i
-            let table_addr = mod_instance
-                .borrow()
+
+            let borrow = mod_instance.borrow();
+
+            let table_addr = borrow
                 .tableaddrs
                 .get(table_index as usize)
-                .ok_or("Table index does not exists")?
-                .clone();
+                .ok_or("Table index does not exists")?;
 
             let table_inst = store
                 .tables
-                .get_mut(table_addr as usize)
+                .get_mut(*table_addr as usize)
                 .ok_or("Table addr does not exists")?;
 
             let eend = table_index + e.init.len() as i32;
@@ -92,16 +93,14 @@ fn instantiate_elements<'a>(
             for (j, funcindex) in e.init.iter().enumerate() {
                 use std::mem::replace;
 
-                let funcaddr = mod_instance
-                    .borrow()
+                let funcaddr = borrow
                     .funcaddrs
                     .get(*funcindex as usize)
-                    .ok_or("No function with funcindex")?
-                    .clone();
+                    .ok_or("No function with funcindex")?;
 
                 replace(
                     &mut table_inst.elem[table_index as usize + j],
-                    Some(funcaddr),
+                    Some(*funcaddr),
                 );
             }
         } else {
@@ -127,16 +126,16 @@ fn instantiate_data<'a>(
 
         if let Value::I32(mem_idx) = doval {
             //mem_idx = do_i
-            let mem_addr = mod_instance
-                .borrow()
+            let borrow = mod_instance
+                .borrow();
+            let mem_addr = borrow
                 .memaddrs
                 .get(mem_idx as usize)
-                .ok_or("Memory index does not exists")?
-                .clone();
+                .ok_or("Memory index does not exists")?;
 
             let mem_inst = store
                 .memory
-                .get_mut(mem_addr as usize)
+                .get_mut(*mem_addr as usize)
                 .ok_or("Memory addr does not exists")?;
 
             let dend = mem_idx + data.init.len() as i32;
@@ -170,9 +169,9 @@ fn instantiate_start<'a>(
         let borrow = mod_instance.borrow();
         let func_addr = borrow
             .funcaddrs
-            .get(start_section.index.clone() as usize)
+            .get((start_section.index) as usize)
             .ok_or(())?;
-        let func_instance = store.funcs.get(func_addr.clone() as usize).ok_or(())?;
+        let func_instance = store.funcs.get(*func_addr as usize).ok_or(())?;
 
         return Ok(Some(func_instance));
     } else {
