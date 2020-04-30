@@ -61,8 +61,17 @@ fn main() {
 
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
-    let e = Engine::new(mi, &module);
+    let mut e = Engine::new(mi, &module);
     debug!("engine {:#?}", e);
+
+    debug!("Instantiation engine");
+
+    let start_function = e.instantiation(&module);
+    
+    if let Some(start_function) = start_function {
+        //TODO invoke
+    }
+
     //info!("Invoking function {:?}", 1);
     //e.invoke_function(1, vec![I32(2)]);
     //println!("Last value on stack was: {:?}", e.store.stack.last())

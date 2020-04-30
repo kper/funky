@@ -14,7 +14,7 @@ use wasm_parser::Module;
 
 #[derive(Debug)]
 pub struct Engine {
-    pub module: Rc<RefCell<ModuleInstance>>,
+    pub module: Rc<RefCell<ModuleInstance>>, //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
 }
@@ -26,6 +26,19 @@ pub enum Value {
     I64(i64),
     F32(f32),
     F64(f64),
+}
+
+type Arity = u32;
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub enum ExtendedInstruction {
+    Trap,
+    Invoke(FuncIdx),
+    InitElement(TableIdx, u32, Vec<FuncIdx>),
+    InitData(MemoryIdx, u32, Vec<u8>),
+    Label(Arity, Vec<ExtendedInstruction>, Vec<Instruction>),
+    Frame(Arity, Option<Frame>, Vec<Instruction>),
 }
 
 impl Into<ValueType> for Value {
@@ -74,17 +87,25 @@ pub struct Variable {
     pub val: Value,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum StackContent {
     Value(Value),
-    Frame(Frame),
+    Frame(Frame), //TODO add labels
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
 pub struct Frame {
-    arity: u32,
-    locals: Vec<Value>,
+    pub arity: u32,
+    pub locals: Vec<Value>,
+    pub module_instance: Weak<RefCell<ModuleInstance>>,
+}
+
+impl PartialEq for Frame {
+    fn eq(&self, other: &Self) -> bool {
+        self.arity == other.arity && self.locals == other.locals
+        //&& self.module_instance.ptr_eq(&other.module_instance)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -92,6 +113,7 @@ pub struct ModuleInstance {
     pub start: u32,
     pub code: Vec<FunctionBody>,
     pub fn_types: Vec<FunctionSignature>,
+    pub funcaddrs: Vec<FuncIdx>,
     pub tableaddrs: Vec<TableIdx>,
     pub memaddrs: Vec<MemoryIdx>,
     pub globaladdrs: Vec<GlobalIdx>,
@@ -127,7 +149,7 @@ pub struct MemoryInstance {
     pub max: Option<u32>,
 }
 
-/// Overriden debug implementation
+/// Overwritten debug implementation
 /// Because `data` can have a lot of entries, which
 /// can be a problem when printing
 impl fmt::Debug for MemoryInstance {
@@ -149,7 +171,7 @@ impl Into<ExportInstance> for &ExportEntry {
     fn into(self) -> ExportInstance {
         ExportInstance {
             name: self.name.clone(),
-            value: self.kind
+            value: self.kind,
         }
     }
 }
@@ -185,6 +207,7 @@ impl ModuleInstance {
             start: 0,
             code: Vec::new(),
             fn_types: Vec::new(),
+            funcaddrs: Vec::new(),
             tableaddrs: Vec::new(),
             memaddrs: Vec::new(),
             globaladdrs: Vec::new(),
@@ -221,9 +244,19 @@ impl Engine {
         e
     }
 
+    pub fn downgrade_mod_instance(&self) -> Weak<RefCell<ModuleInstance>> {
+        Rc::downgrade(&self.module)
+    }
+
     fn allocate(&mut self, m: &Module) {
         info!("Allocation");
-        crate::allocation::allocate(m, &self.module, &mut self.store).unwrap();
+        crate::allocation::allocate(m, &self.module, &mut self.store).expect("Allocation failed");
+    }
+
+    pub fn instantiation(&mut self, m: &Module) {
+        info!("Instantiation");
+        crate::instantiation::instantiation(m, &self.module, &mut self.store)
+            .expect("Instantiation failed");
     }
 
     #[warn(dead_code)]
@@ -231,6 +264,7 @@ impl Engine {
         self.store.stack.push(Frame(Frame {
             arity: args.len() as u32,
             locals: args,
+            module_instance: Rc::downgrade(&self.module),
         }));
         debug!("Invoking function on {:#?}", self);
         self.run_function(idx);
@@ -315,6 +349,7 @@ impl Engine {
                     let cfr = Frame {
                         arity: t.return_types.len() as u32,
                         locals: args,
+                        module_instance: Rc::downgrade(&self.module),
                     };
                     debug!("Calling {:?} with {:#?}", *idx, cfr);
                     self.store.stack.push(Frame(cfr));
@@ -347,6 +382,16 @@ mod tests {
     use super::*;
 
     fn empty_engine() -> Engine {
+        let mi = Rc::new(RefCell::new(ModuleInstance {
+            start: 0,
+            code: Vec::new(),
+            fn_types: Vec::new(),
+            funcaddrs: Vec::new(),
+            tableaddrs: Vec::new(),
+            memaddrs: Vec::new(),
+            globaladdrs: Vec::new(),
+            exports: Vec::new(),
+        }));
         Engine {
             started: true,
             store: Store {
@@ -357,17 +402,10 @@ mod tests {
                 stack: vec![Frame(Frame {
                     arity: 0,
                     locals: Vec::new(),
+                    module_instance: Rc::downgrade(&mi),
                 })],
             },
-            module: Rc::new(RefCell::new(ModuleInstance {
-                start: 0,
-                code: Vec::new(),
-                fn_types: Vec::new(),
-                tableaddrs: Vec::new(),
-                memaddrs: Vec::new(),
-                globaladdrs: Vec::new(),
-                exports: Vec::new(),
-            })),
+            module: mi,
         }
     }
 
@@ -377,6 +415,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
+            module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -391,6 +430,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
+            module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -412,6 +452,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
+            module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -427,6 +468,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
+            module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],

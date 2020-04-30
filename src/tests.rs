@@ -1,5 +1,7 @@
 use crate::engine::*;
 use insta::assert_snapshot;
+use std::cell::RefCell;
+use std::rc::Rc;
 use validation::validate;
 use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
@@ -59,11 +61,15 @@ fn test_allocation_funcs() {
 
     // Module instance has an entry for type
     // Module instance has an entry for code
+    // Module instance has an entry for funcaddrs
 
-    assert_eq!(1, engine.module.borrow().fn_types.len());
-    assert_eq!(sig, engine.module.borrow().fn_types[0]);
-    assert_eq!(1, engine.module.borrow().code.len());
-    assert_eq!(body, engine.module.borrow().code[0]);
+    let mi = engine.module.borrow();
+    assert_eq!(1, mi.fn_types.len());
+    assert_eq!(sig, mi.fn_types[0]);
+    assert_eq!(1, mi.code.len());
+    assert_eq!(body, mi.code[0]);
+    assert_eq!(1, mi.funcaddrs.len());
+    assert_eq!(Some(&0), mi.funcaddrs.get(0));
 
     // Store has an entry for func instance
 

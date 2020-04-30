@@ -43,7 +43,7 @@ pub(crate) fn get_imports(module: &Module) -> Vec<&ImportEntry> {
     ty
 }
 
-pub(crate) fn get_start(module: &Module) -> Vec<&StartSection> {
+pub fn get_start(module: &Module) -> Vec<&StartSection> {
     let ty: Vec<_> = module
         .sections
         .iter()

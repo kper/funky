@@ -33,7 +33,6 @@ pub fn allocate(
 
     allocate_exports(m, mod_instance, store)?;
 
-
     // Step 15.
 
     Ok(())
@@ -58,7 +57,7 @@ fn allocate_functions(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> std::result::Result<(), ()> {
+) -> Result<(), ()> {
     debug!("allocate function");
     // Gets all functions and imports
     let ty = validation::extract::get_funcs(&m);
@@ -69,23 +68,35 @@ fn allocate_functions(
         debug!("Function {:#?}", t);
         // Allocate function
 
-        if let Some(f) = mod_instance.borrow().fn_types.get(**t as usize) {
-            if let Some(c) = mod_instance.borrow().code.get(**t as usize) {
-                let instance = FuncInstance {
-                    ty: f.clone(),
-                    module: weak.clone(),
-                    code: c.clone(),
-                };
+        {
+            let borrow = mod_instance.borrow();
+            let fbody = match borrow.fn_types.get(**t as usize).clone() {
+                Some(fbody) => fbody,
+                None => {
+                    panic!("{} function type is not defined", t);
+                }
+            };
 
-                store.funcs.push(instance);
-            } else {
-                error!("{} code is not defined", t);
-                return Err(());
-            }
-        } else {
-            error!("{} function type is not defined", t);
-            return Err(());
+            let fcode = match borrow.code.get(**t as usize).clone() {
+                Some(fcode) => fcode,
+                None => {
+                    panic!("{} code is not defined", t);
+                }
+            };
+
+            let instance = FuncInstance {
+                ty: fbody.clone(),
+                module: weak.clone(),
+                code: fcode.clone(),
+            };
+
+            store.funcs.push(instance);
         }
+
+        mod_instance
+            .borrow_mut()
+            .funcaddrs
+            .push(store.funcs.len() as u32 - 1);
     }
 
     debug!("Functions in store {:#?}", store.funcs);
@@ -122,7 +133,7 @@ fn allocate_tables(
             .push(store.tables.len() as u32);
         store.tables.push(instance);
     }
-    
+
     debug!("Tables in mod_i {:?}", mod_instance.borrow().tableaddrs);
     debug!("Tables in store {:#?}", store.tables);
 
@@ -180,7 +191,7 @@ fn allocate_globals(
                 Mu::Var => true,
                 _ => false,
             },
-            val: get_expr_const_ty_global(&gl.init)?,
+            val: get_expr_const_ty_global(&gl.init)?, //TODO this might be a problem, because we only accept CONST and no other globals
         };
 
         mod_instance
@@ -202,17 +213,14 @@ fn allocate_exports(
     _store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate exports");
-    
+
     // Gets all exports
     let ty = validation::extract::get_exports(&m);
 
     for export in ty.into_iter() {
         debug!("Export {:?}", export);
-        
-        mod_instance
-            .borrow_mut()
-            .exports
-            .push(export.into());
+
+        mod_instance.borrow_mut().exports.push(export.into());
     }
 
     debug!("Exports in mod_i {:?}", mod_instance.borrow().exports);
@@ -220,7 +228,7 @@ fn allocate_exports(
     Ok(())
 }
 
-fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()> {
+pub(crate) fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()> {
     use wasm_parser::core::NumericInstructions::*;
 
     if init.is_empty() {
