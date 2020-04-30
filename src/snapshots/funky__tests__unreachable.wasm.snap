@@ -1,0 +1,70 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_UNREACHABLE,
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+            tableaddrs: [],
+            memaddrs: [
+                0,
+            ],
+            globaladdrs: [],
+            exports: [],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_UNREACHABLE,
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
+        stack: [],
+        globals: [],
+    },
+}

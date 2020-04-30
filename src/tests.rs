@@ -187,56 +187,52 @@ fn test_empty_wasm() {
     test_file_engine!("empty.wasm");
 }
 
-/*
 #[test]
 fn test_return_i32() {
     test_file_engine!("return_i32.wasm");
 }
-*/
 
-/*
 #[test]
 fn test_return_i64() {
-    test_file_module_instance!("return_i64.wasm");
+    test_file_engine!("return_i64.wasm");
 }
 
 #[test]
 fn test_function_call() {
-    test_file_module_instance!("function_call.wasm");
+    test_file_engine!("function_call.wasm");
 }
 
 #[test]
 fn test_arithmetic() {
-    test_file_module_instance!("arithmetic.wasm");
+    test_file_engine!("arithmetic.wasm");
 }
 
 #[test]
 fn test_block_add_i32() {
-    test_file_module_instance!("block_add_i32.wasm");
+    test_file_engine!("block_add_i32.wasm");
 }
 
 #[test]
 fn test_loop_mult() {
-    test_file_module_instance!("loop_mult.wasm");
+    test_file_engine!("loop_mult.wasm");
 }
 
 #[test]
 fn test_unreachable() {
-    test_file_module_instance!("unreachable.wasm");
+    test_file_engine!("unreachable.wasm");
 }
 
 #[test]
 fn test_if_loop() {
-    test_file_module_instance!("if_loop.wasm");
+    test_file_engine!("if_loop.wasm");
 }
 
 #[test]
 fn test_logic() {
-    test_file_module_instance!("logic.wasm");
+    test_file_engine!("logic.wasm");
 }
 
 #[test]
 fn test_gcd() {
-    test_file_module_instance!("gcd.wasm");
+    test_file_engine!("gcd.wasm");
 }
-*/

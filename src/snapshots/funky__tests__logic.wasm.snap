@@ -1,0 +1,740 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_XOR,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_OR,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                31,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                        Num(
+                            OP_I32_SHL,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                31,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                        Num(
+                            OP_I32_SHR_U,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_LT_U,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_LE_U,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_GE_U,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_GT_U,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQ,
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+            tableaddrs: [],
+            memaddrs: [
+                0,
+            ],
+            globaladdrs: [],
+            exports: [],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_NE,
+                        ),
+                        Num(
+                            OP_I32_AND,
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
+        stack: [],
+        globals: [],
+    },
+}

@@ -1,0 +1,210 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_MUL,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Param(
+                            OP_SELECT,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Ctrl(
+                            OP_IF(
+                                Empty,
+                                [
+                                    Ctrl(
+                                        OP_LOOP(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_CONST(
+                                                        -1,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_ADD,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Ctrl(
+                                                    OP_BR_IF(
+                                                        0,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+            tableaddrs: [],
+            memaddrs: [
+                0,
+            ],
+            globaladdrs: [],
+            exports: [],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_MUL,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Param(
+                            OP_SELECT,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Ctrl(
+                            OP_IF(
+                                Empty,
+                                [
+                                    Ctrl(
+                                        OP_LOOP(
+                                            Empty,
+                                            [
+                                                Var(
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_CONST(
+                                                        -1,
+                                                    ),
+                                                ),
+                                                Num(
+                                                    OP_I32_ADD,
+                                                ),
+                                                Var(
+                                                    OP_LOCAL_TEE(
+                                                        0,
+                                                    ),
+                                                ),
+                                                Ctrl(
+                                                    OP_BR_IF(
+                                                        0,
+                                                    ),
+                                                ),
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
+        stack: [],
+        globals: [],
+    },
+}
