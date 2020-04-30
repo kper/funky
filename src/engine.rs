@@ -1,6 +1,7 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::cell::RefCell;
+use std::fmt;
 use std::ops::{Add, Mul};
 use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
@@ -120,10 +121,22 @@ pub struct TableInstance {
     pub max: Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MemoryInstance {
     pub data: Vec<u8>,
     pub max: Option<u32>,
+}
+
+/// Overriden debug implementation
+/// Because `data` can have a lot of entries, which
+/// can be a problem when printing
+impl fmt::Debug for MemoryInstance {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("MemoryInstance")
+            .field("data (only length)", &self.data.len())
+            .field("max", &self.max)
+            .finish()
+    }
 }
 
 #[derive(Debug, Clone)]
