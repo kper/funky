@@ -56,7 +56,7 @@ pub(crate) fn get_start(module: &Module) -> Vec<&StartSection> {
     ty
 }
 
-pub(crate) fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
+pub fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -70,7 +70,7 @@ pub(crate) fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
     ty
 }
 
-pub(crate) fn get_data(module: &Module) -> Vec<&DataSegment> {
+pub fn get_data(module: &Module) -> Vec<&DataSegment> {
     let ty: Vec<_> = module
         .sections
         .iter()

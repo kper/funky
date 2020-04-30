@@ -270,9 +270,9 @@ fn check_elem_ty(
 ) -> IResult<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#element-segments
 
-    let table_idx = &elem_ty.index;
+    let table_idx = &elem_ty.table;
     let offset = &elem_ty.offset;
-    let funcs_idx = &elem_ty.elems;
+    let funcs_idx = &elem_ty.init;
 
     if tables.get(*table_idx as usize).is_none() {
         return Err("No table defined for element's index");
@@ -318,7 +318,7 @@ fn get_expr_const_i32_ty(init: &Expr) -> IResult<ValueType> {
 fn check_data_ty(data_ty: &DataSegment, memtypes: &[&MemoryType]) -> IResult<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#data-segments
 
-    let mem_idx = data_ty.index;
+    let mem_idx = data_ty.data;
     let offset = &data_ty.offset;
 
     if memtypes.get(mem_idx as usize).is_none() {

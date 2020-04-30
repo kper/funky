@@ -206,16 +206,16 @@ pub struct ExportEntry {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElementSegment {
-    pub index: u32,
+    pub table: TableIdx,
     pub offset: Expr,
-    pub elems: Vec<FuncIdx>,
+    pub init: Vec<FuncIdx>,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct DataSegment {
-    pub index: u32,
+    pub data: MemoryIdx,
     pub offset: Expr,
-    pub data: Vec<u8>,
+    pub init: Vec<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

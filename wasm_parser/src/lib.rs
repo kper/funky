@@ -262,9 +262,9 @@ fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
     Ok((
         i,
         DataSegment {
-            index: mem_idx,
+            data: mem_idx,
             offset: e,
-            data: b.into_iter().map(|w| w[0]).collect(),
+            init: b.into_iter().map(|w| w[0]).collect(),
         },
     ))
 }
@@ -280,9 +280,9 @@ fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
     Ok((
         i,
         ElementSegment {
-            index: table_idx,
+            table: table_idx,
             offset: e,
-            elems: y_vec,
+            init: y_vec,
         },
     ))
 }
