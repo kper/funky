@@ -87,6 +87,8 @@ fn allocate_functions(
         }
     }
 
+    debug!("Functions in store {:#?}", store.funcs);
+
     Ok(())
 }
 
@@ -119,6 +121,9 @@ fn allocate_tables(
             .push(store.tables.len() as u32);
         store.tables.push(instance);
     }
+    
+    debug!("Tables in mod_i {:?}", mod_instance.borrow().tableaddrs);
+    debug!("Tables in store {:#?}", store.tables);
 
     Ok(())
 }
@@ -152,6 +157,9 @@ fn allocate_memories(
         store.memory.push(instance);
     }
 
+    debug!("Memories in mod_i {:?}", mod_instance.borrow().memaddrs);
+    debug!("Memories in store {:#?}", store.memory);
+
     Ok(())
 }
 
@@ -180,6 +188,9 @@ fn allocate_globals(
             .push(store.globals.len() as u32);
         store.globals.push(instance);
     }
+
+    debug!("Globals in mod_i {:?}", mod_instance.borrow().globaladdrs);
+    debug!("Globals in store {:#?}", store.globals);
 
     Ok(())
 }
