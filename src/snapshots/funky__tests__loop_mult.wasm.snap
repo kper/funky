@@ -182,6 +182,10 @@ Engine {
                     ],
                 },
             ],
+            funcaddrs: [
+                0,
+                1,
+            ],
             tableaddrs: [],
             memaddrs: [
                 0,

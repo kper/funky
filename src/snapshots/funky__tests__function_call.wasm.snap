@@ -65,6 +65,10 @@ Engine {
                     ],
                 },
             ],
+            funcaddrs: [
+                0,
+                1,
+            ],
             tableaddrs: [],
             memaddrs: [],
             globaladdrs: [],

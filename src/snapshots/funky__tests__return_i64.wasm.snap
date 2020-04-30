@@ -39,6 +39,9 @@ Engine {
                     return_types: [],
                 },
             ],
+            funcaddrs: [
+                0,
+            ],
             tableaddrs: [],
             memaddrs: [
                 0,
