@@ -198,6 +198,7 @@ impl Engine {
     }
 
     fn allocate(&mut self, m: &Module) {
+        info!("Allocation");
         crate::allocation::allocate(m, &self.module, &mut self.store).unwrap();
     }
 
@@ -207,6 +208,7 @@ impl Engine {
             arity: args.len() as u32,
             locals: args,
         }));
+        debug!("Invoking function on {:#?}", self);
         self.run_function(idx);
     }
     fn run_function(&mut self, idx: u32) {
