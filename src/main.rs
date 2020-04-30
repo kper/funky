@@ -66,11 +66,7 @@ fn main() {
 
     debug!("Instantiation engine");
 
-    let start_function = e.instantiation(&module);
-    
-    if let Some(start_function) = start_function {
-        //TODO invoke
-    }
+    e.instantiation(&module);
 
     //info!("Invoking function {:?}", 1);
     //e.invoke_function(1, vec![I32(2)]);

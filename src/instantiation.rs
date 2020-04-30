@@ -1,10 +1,11 @@
 use crate::engine::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_parser::core::*;
+//use wasm_parser::core::*;
 use wasm_parser::Module;
 
 type StartFunction = FuncInstance;
+
 /// Returns the StartFunction, which needs to be invoked
 pub fn instantiation<'a>(
     m: &Module,

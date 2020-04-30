@@ -255,8 +255,12 @@ impl Engine {
 
     pub fn instantiation(&mut self, m: &Module) {
         info!("Instantiation");
-        crate::instantiation::instantiation(m, &self.module, &mut self.store)
+        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)
             .expect("Instantiation failed");
+
+        if let Some(_f) = start_function {
+            //TODO invoke
+        }
     }
 
     #[warn(dead_code)]
