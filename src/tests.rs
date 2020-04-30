@@ -183,6 +183,34 @@ fn test_allocation_globals() {
 }
 
 #[test]
+fn test_allocation_exports() {
+    let engine = allocation!(vec![
+        Section::Memory(MemorySection {
+            entries: vec![MemoryType {
+                limits: Limits::Zero(10)
+            }]
+        }),
+        Section::Export(ExportSection {
+            entries: vec![ExportEntry {
+                name: "memory".to_string(),
+                kind: ExternalKindType::Memory { ty: 0 }
+            }]
+        })
+    ]);
+
+    // Module instance has an entry for exporsts
+
+    assert_eq!(1, engine.module.borrow().exports.len());
+    assert_eq!(
+        ExportInstance {
+            name: "memory".to_string(),
+            value: ExternalKindType::Memory { ty: 0 }
+        },
+        engine.module.borrow().exports[0]
+    );
+}
+
+#[test]
 fn test_empty_wasm() {
     test_file_engine!("empty.wasm");
 }

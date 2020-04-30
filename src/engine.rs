@@ -139,12 +139,22 @@ impl fmt::Debug for MemoryInstance {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExportInstance {
     pub name: String,
-    pub value: ExternalVal,
+    pub value: ExternalKindType, //TODO maybe drop the Type in name?
 }
 
+impl Into<ExportInstance> for &ExportEntry {
+    fn into(self) -> ExportInstance {
+        ExportInstance {
+            name: self.name.clone(),
+            value: self.kind
+        }
+    }
+}
+
+/*
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub enum ExternalVal {
@@ -153,6 +163,7 @@ pub enum ExternalVal {
     Mem(MemoryIdx),
     Global(GlobalIdx),
 }
+*/
 
 macro_rules! fetch_binop {
     ($stack: expr) => {{

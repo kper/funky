@@ -15,7 +15,7 @@ pub(crate) fn get_types(module: &Module) -> Vec<&FunctionSignature> {
     ty
 }
 
-pub(crate) fn get_exports(module: &Module) -> Vec<&ExportEntry> {
+pub fn get_exports(module: &Module) -> Vec<&ExportEntry> {
     let ty: Vec<_> = module
         .sections
         .iter()

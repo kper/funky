@@ -274,7 +274,32 @@ Engine {
                 0,
             ],
             globaladdrs: [],
-            exports: [],
+            exports: [
+                ExportInstance {
+                    name: "memory",
+                    value: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "sub_i64",
+                    value: Function {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "mult_i64",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+                ExportInstance {
+                    name: "div",
+                    value: Function {
+                        ty: 2,
+                    },
+                },
+            ],
         },
     },
     started: false,

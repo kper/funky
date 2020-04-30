@@ -187,7 +187,26 @@ Engine {
                 0,
             ],
             globaladdrs: [],
-            exports: [],
+            exports: [
+                ExportInstance {
+                    name: "memory",
+                    value: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "block",
+                    value: Function {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "my_loop",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+            ],
         },
     },
     started: false,

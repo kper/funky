@@ -260,7 +260,74 @@ Engine {
                 0,
             ],
             globaladdrs: [],
-            exports: [],
+            exports: [
+                ExportInstance {
+                    name: "memory",
+                    value: Memory {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "and",
+                    value: Function {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "or",
+                    value: Function {
+                        ty: 2,
+                    },
+                },
+                ExportInstance {
+                    name: "xor",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+                ExportInstance {
+                    name: "l",
+                    value: Function {
+                        ty: 5,
+                    },
+                },
+                ExportInstance {
+                    name: "le",
+                    value: Function {
+                        ty: 6,
+                    },
+                },
+                ExportInstance {
+                    name: "ge",
+                    value: Function {
+                        ty: 7,
+                    },
+                },
+                ExportInstance {
+                    name: "gt",
+                    value: Function {
+                        ty: 8,
+                    },
+                },
+                ExportInstance {
+                    name: "eq",
+                    value: Function {
+                        ty: 9,
+                    },
+                },
+                ExportInstance {
+                    name: "shiftr",
+                    value: Function {
+                        ty: 4,
+                    },
+                },
+                ExportInstance {
+                    name: "shiftl",
+                    value: Function {
+                        ty: 3,
+                    },
+                },
+            ],
         },
     },
     started: false,

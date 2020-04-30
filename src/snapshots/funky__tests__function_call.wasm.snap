@@ -68,7 +68,14 @@ Engine {
             tableaddrs: [],
             memaddrs: [],
             globaladdrs: [],
-            exports: [],
+            exports: [
+                ExportInstance {
+                    name: "timesTwo",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+            ],
         },
     },
     started: false,

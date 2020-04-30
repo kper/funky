@@ -77,8 +77,8 @@ pub enum ImportDesc {
     Global { ty: GlobalType },
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub enum ExternalKindType {
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Copy)]
+pub enum ExternalKindType { //TODO refactor to tuple construct?
     Function { ty: u32 },
     Table { ty: u32 },
     Memory { ty: u32 },

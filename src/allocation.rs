@@ -29,9 +29,10 @@ pub fn allocate(
 
     // ... Step 13
 
-    // Step 14. TODO
+    // Step 14.
 
-    // TODO do exports
+    allocate_exports(m, mod_instance, store)?;
+
 
     // Step 15.
 
@@ -167,7 +168,7 @@ fn allocate_globals(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> std::result::Result<(), ()> {
+) -> Result<(), ()> {
     debug!("allocate globals");
     // Gets all globals and imports
     let ty = validation::extract::get_globals(&m);
@@ -191,6 +192,30 @@ fn allocate_globals(
 
     debug!("Globals in mod_i {:?}", mod_instance.borrow().globaladdrs);
     debug!("Globals in store {:#?}", store.globals);
+
+    Ok(())
+}
+
+fn allocate_exports(
+    m: &Module,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    _store: &mut Store,
+) -> Result<(), ()> {
+    debug!("allocate exports");
+    
+    // Gets all exports
+    let ty = validation::extract::get_exports(&m);
+
+    for export in ty.into_iter() {
+        debug!("Export {:?}", export);
+        
+        mod_instance
+            .borrow_mut()
+            .exports
+            .push(export.into());
+    }
+
+    debug!("Exports in mod_i {:?}", mod_instance.borrow().exports);
 
     Ok(())
 }
