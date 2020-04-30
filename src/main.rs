@@ -63,7 +63,7 @@ fn main() {
     info!("Constructing engine");
     let mut e = Engine::new(mi, &module);
     debug!("engine {:#?}", e);
-    info!("Invoking function {:?}", 1);
-    e.invoke_function(1, vec![I32(2)]);
-    println!("Last value on stack was: {:?}", e.store.stack.last())
+    //info!("Invoking function {:?}", 1);
+    //e.invoke_function(1, vec![I32(2)]);
+    //println!("Last value on stack was: {:?}", e.store.stack.last())
 }
