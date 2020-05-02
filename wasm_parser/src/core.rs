@@ -27,7 +27,7 @@ impl FunctionSignature {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone, Serialize, Deserialize)]
 pub enum ValueType {
     I32,
     I64,

@@ -266,17 +266,37 @@ impl Engine {
 
     #[warn(dead_code)]
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
+        //TODO check if function[idx] exists
+        
+        self.check_parameters_of_function(idx, &args);
+
         self.store.stack.push(Frame(Frame {
             arity: args.len() as u32,
             locals: args,
             module_instance: Rc::downgrade(&self.module),
         }));
+
         debug!("Invoking function on {:#?}", self);
         self.run_function(idx);
     }
+
+    fn check_parameters_of_function(&self, idx: u32, args: &Vec<Value>) {
+        let fn_types = &self.module.borrow().fn_types[idx as usize];
+
+        if fn_types.param_types
+            != args
+                .iter()
+                .cloned()
+                .map(|w| w.into())
+                .collect::<Vec<ValueType>>()
+        {
+            panic!("Function expected different parameters");
+        }
+    }
+
     fn run_function(&mut self, idx: u32) {
         debug!("Running function {:?}", idx);
-        //let instance = self.module.borrow_mut();
+
         let f = self.module.borrow().code[idx as usize].clone();
         let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
@@ -412,6 +432,25 @@ mod tests {
             },
             module: mi,
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "Function expected different parameters")]
+    fn test_invoke_wrong_parameters() {
+        let mut e = empty_engine();
+
+        // We have 2 parameters, but supply 3
+        e.module.borrow_mut().fn_types = vec![FunctionSignature {
+            param_types: vec![ValueType::I32, ValueType::I32],
+            return_types: vec![],
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        }];
+
+        e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]);
     }
 
     #[test]
