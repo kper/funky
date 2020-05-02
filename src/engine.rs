@@ -235,7 +235,7 @@ impl_two_op_all_numbers!(ge, |left, right| left >= right);
 fn eqz(left: Value) -> Value {
     match left {
         I32(v1) => I32((v1 == 0_i32) as i32),
-        I64(v1) => I64((v1 == 0_i64 as i64) as i64),
+        I64(v1) => I64((v1 == 0_i64) as i64),
         _ => panic!("Type missmatch during eqz"),
     }
 }
@@ -444,7 +444,7 @@ impl Engine {
         self.run_function(idx).expect("run function failed");
     }
 
-    fn check_parameters_of_function(&self, idx: u32, args: &Vec<Value>) {
+    fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
         let fn_types = &self.module.borrow().fn_types[idx as usize];
 
         if fn_types.param_types
