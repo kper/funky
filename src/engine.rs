@@ -258,8 +258,9 @@ impl Engine {
         let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)
             .expect("Instantiation failed");
 
-        if let Some(_f) = start_function {
-            //TODO invoke
+        if let Some(func_addr) = start_function {
+            debug!("Invoking start function with {:?}", func_addr);
+            self.invoke_function(func_addr, vec![]);
         }
     }
 

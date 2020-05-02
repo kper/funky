@@ -4,14 +4,14 @@ use std::rc::Rc;
 //use wasm_parser::core::*;
 use wasm_parser::Module;
 
-type StartFunction = FuncInstance;
+type StartFunctionAddr = u32;
 
-/// Returns the StartFunction, which needs to be invoked
-pub fn instantiation<'a>(
+/// Returns the addr of the start function, which needs to be invoked
+pub fn instantiation(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
-    store: &'a mut Store,
-) -> Result<Option<&'a StartFunction>, ()> {
+    store: &mut Store,
+) -> Result<Option<StartFunctionAddr>, ()> {
     // Step 1
 
     // Module is already valid, because checked before
@@ -156,11 +156,11 @@ fn instantiate_data<'a>(
     Ok(())
 }
 
-fn instantiate_start<'a>(
+fn instantiate_start(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
-    store: &'a mut Store,
-) -> Result<Option<&'a FuncInstance>, ()> {
+    store: &mut Store,
+) -> Result<Option<u32>, ()> {
     debug!("instantiate start");
 
     if let Some(start_section) = validation::extract::get_start(m).first() {
@@ -171,9 +171,11 @@ fn instantiate_start<'a>(
             .funcaddrs
             .get((start_section.index) as usize)
             .ok_or(())?;
-        let func_instance = store.funcs.get(*func_addr as usize).ok_or(())?;
 
-        return Ok(Some(func_instance));
+        // Check if the functions really exists
+        let _func_instance = store.funcs.get(*func_addr as usize).ok_or(())?;
+
+        return Ok(Some(*func_addr));
     } else {
         debug!("No start section");
     }
