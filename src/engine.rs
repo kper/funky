@@ -2,7 +2,7 @@ use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::cell::RefCell;
 use std::fmt;
-use std::ops::{Add, Mul};
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
@@ -41,6 +41,12 @@ pub enum ExtendedInstruction {
     Frame(Arity, Option<Frame>, Vec<Instruction>),
 }
 
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+enum InstructionOutcome {
+    Trap,
+}
+
 impl Into<ValueType> for Value {
     fn into(self) -> ValueType {
         match self {
@@ -68,6 +74,20 @@ impl Add for Value {
         }
     }
 }
+
+impl Sub for Value {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 - v2),
+            (I64(v1), I64(v2)) => I64(v1 - v2),
+            (F32(v1), F32(v2)) => F32(v1 - v2),
+            (F64(v1), F64(v2)) => F64(v1 - v2),
+            _ => panic!("Type missmatch during subtraction"),
+        }
+    }
+}
+
 impl Mul for Value {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
@@ -76,8 +96,147 @@ impl Mul for Value {
             (I64(v1), I64(v2)) => I64(v1 * v2),
             (F32(v1), F32(v2)) => F32(v1 * v2),
             (F64(v1), F64(v2)) => F64(v1 * v2),
-            _ => panic!("Type missmatch during addition"),
+            _ => panic!("Type missmatch during subtraction"),
         }
+    }
+}
+
+impl Div for Value {
+    type Output = Self;
+    fn div(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 / v2),
+            (I64(v1), I64(v2)) => I64(v1 / v2),
+            (F32(v1), F32(v2)) => F32(v1 / v2),
+            (F64(v1), F64(v2)) => F64(v1 / v2),
+            _ => panic!("Type missmatch during division"),
+        }
+    }
+}
+
+impl BitAnd for Value {
+    type Output = Self;
+    fn bitand(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 & v2),
+            (I64(v1), I64(v2)) => I64(v1 & v2),
+            _ => panic!("Type missmatch during bitand"),
+        }
+    }
+}
+
+impl BitOr for Value {
+    type Output = Self;
+    fn bitor(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 | v2),
+            (I64(v1), I64(v2)) => I64(v1 | v2),
+            _ => panic!("Type missmatch during bitor"),
+        }
+    }
+}
+
+impl BitXor for Value {
+    type Output = Self;
+    fn bitxor(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 ^ v2),
+            (I64(v1), I64(v2)) => I64(v1 ^ v2),
+            _ => panic!("Type missmatch during bitxor"),
+        }
+    }
+}
+
+impl Shl for Value {
+    type Output = Self;
+    fn shl(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 << v2),
+            (I64(v1), I64(v2)) => I64(v1 << v2),
+            _ => panic!("Type missmatch during shift left"),
+        }
+    }
+}
+
+impl Shr for Value {
+    type Output = Self;
+    fn shr(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 >> v2),
+            (I64(v1), I64(v2)) => I64(v1 >> v2),
+            _ => panic!("Type missmatch during shift right"),
+        }
+    }
+}
+
+impl Rem for Value {
+    type Output = Self;
+    fn rem(self, other: Self) -> Self {
+        match (self, other) {
+            (I32(v1), I32(v2)) => I32(v1 % v2),
+            (I64(v1), I64(v2)) => I64(v1 % v2),
+            (F32(v1), F32(v2)) => F32(v1 % v2),
+            (F64(v1), F64(v2)) => F64(v1 % v2),
+            _ => panic!("Type missmatch during remainder"),
+        }
+    }
+}
+
+macro_rules! impl_two_op_integer {
+    ($f:ident) => {
+        fn $f(left: Value, right: Value) -> Value {
+            match (left, right) {
+                (I32(v1), I32(v2)) => I32(v1.$f(v2 as u32)),
+                (I64(v1), I64(v2)) => I64(v1.$f(v2 as u32)),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
+macro_rules! impl_two_op_all_numbers {
+    ($f:ident, $k:expr) => {
+        fn $f(left: Value, right: Value) -> Value {
+            match (left, right) {
+                (I32(v1), I32(v2)) => I32($k(v1, v2) as i32),
+                (I64(v1), I64(v2)) => I64($k(v1, v2) as i64),
+                (F32(v1), F32(v2)) => F32($k(v1, v2) as u32 as f32),
+                (F64(v1), F64(v2)) => F64($k(v1, v2) as u32 as f64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
+macro_rules! impl_one_op_integer {
+    ($f:ident) => {
+        fn $f(left: Value) -> Value {
+            match left {
+                I32(v1) => I32(v1.$f() as i32),
+                I64(v1) => I64(v1.$f() as i64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
+impl_two_op_integer!(rotate_left);
+impl_two_op_integer!(rotate_right);
+
+impl_one_op_integer!(leading_zeros);
+impl_one_op_integer!(trailing_zeros);
+impl_one_op_integer!(count_ones);
+
+impl_two_op_all_numbers!(lt, |left, right| left < right);
+impl_two_op_all_numbers!(gt, |left, right| left > right);
+impl_two_op_all_numbers!(le, |left, right| left <= right);
+impl_two_op_all_numbers!(ge, |left, right| left >= right);
+
+fn eqz(left: Value) -> Value {
+    match left {
+        I32(v1) => I32((v1 == 0_i32) as i32),
+        I64(v1) => I64((v1 == 0_i64 as i64) as i64),
+        _ => panic!("Type missmatch during eqz"),
     }
 }
 
@@ -187,16 +346,21 @@ pub enum ExternalVal {
 }
 */
 
-macro_rules! fetch_binop {
+macro_rules! fetch_unop {
     ($stack: expr) => {{
         let v1 = match $stack.pop().unwrap() {
             Value(v) => v,
             x => panic!("Top of stack was not of type $v_ty: {:?}", x),
         };
-        let v2 = match $stack.pop().unwrap() {
-            Value(v) => v,
-            x => panic!("Top of stack was not of type $v_ty: {:?}", x),
-        };
+        (v1)
+    }};
+}
+
+macro_rules! fetch_binop {
+    ($stack: expr) => {{
+        let v1 = fetch_unop!($stack);
+        let v2 = fetch_unop!($stack);
+
         (v1, v2)
     }};
 }
@@ -267,7 +431,7 @@ impl Engine {
     #[warn(dead_code)]
     pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         //TODO check if function[idx] exists
-        
+
         self.check_parameters_of_function(idx, &args);
 
         self.store.stack.push(Frame(Frame {
@@ -277,7 +441,7 @@ impl Engine {
         }));
 
         debug!("Invoking function on {:#?}", self);
-        self.run_function(idx);
+        self.run_function(idx).expect("run function failed");
     }
 
     fn check_parameters_of_function(&self, idx: u32, args: &Vec<Value>) {
@@ -294,7 +458,7 @@ impl Engine {
         }
     }
 
-    fn run_function(&mut self, idx: u32) {
+    fn run_function(&mut self, idx: u32) -> Result<(), InstructionOutcome> {
         debug!("Running function {:?}", idx);
 
         let f = self.module.borrow().code[idx as usize].clone();
@@ -344,6 +508,100 @@ impl Engine {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
+                Num(OP_I32_DIV_U) | Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_I64_DIV_U)
+                | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 * v2))
+                }
+                Num(OP_I32_REM_U) | Num(OP_I64_REM_U) | Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 % v2))
+                }
+                Num(OP_I32_AND) | Num(OP_I64_AND) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 & v2))
+                }
+                Num(OP_I32_OR) | Num(OP_I64_OR) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 | v2))
+                }
+                Num(OP_I32_XOR) | Num(OP_I64_XOR) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 ^ v2))
+                }
+                Num(OP_I32_SHL) | Num(OP_I64_SHL) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 << v2))
+                }
+                Num(OP_I32_SHR_U) | Num(OP_I64_SHR_U) | Num(OP_I32_SHR_S) | Num(OP_I64_SHR_S) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(v1 >> v2))
+                }
+                Num(OP_I32_ROTL) | Num(OP_I64_ROTL) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(rotate_left(v1, v2)))
+                }
+                Num(OP_I32_ROTR) | Num(OP_I64_ROTR) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(rotate_right(v1, v2)))
+                }
+                Num(OP_I32_CLZ) | Num(OP_I64_CLZ) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(leading_zeros(v1)))
+                }
+                Num(OP_I32_CTZ) | Num(OP_I64_CTZ) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(trailing_zeros(v1)))
+                }
+                Num(OP_I32_POPCNT) | Num(OP_I64_POPCNT) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(count_ones(v1)))
+                }
+                Num(OP_I32_EQZ) | Num(OP_I64_EQZ) => {
+                    let v1 = fetch_unop!(self.store.stack);
+
+                    self.store.stack.push(Value(eqz(v1)))
+                }
+                Num(OP_I32_EQ) | Num(OP_I64_EQ) | Num(OP_F32_EQ) | Num(OP_F64_EQ) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let res = v1 == v2;
+
+                    if res {
+                        self.store.stack.push(StackContent::Value(Value::I32(1)))
+                    } else {
+                        self.store.stack.push(StackContent::Value(Value::I32(0)))
+                    }
+                }
+                Num(OP_I32_NE) | Num(OP_I64_NE) | Num(OP_F32_NE) | Num(OP_F64_NE) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let res = v1 != v2;
+
+                    if res {
+                        self.store.stack.push(StackContent::Value(Value::I32(1)))
+                    } else {
+                        self.store.stack.push(StackContent::Value(Value::I32(0)))
+                    }
+                }
+                Num(OP_I32_LT_S) | Num(OP_I64_LT_S) | Num(OP_F32_LT) | Num(OP_F64_LT)
+                | Num(OP_I32_LT_U) | Num(OP_I64_LT_U) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(lt(v1, v2)))
+                }
+                Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT)
+                | Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(gt(v1, v2)))
+                }
+                Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE)
+                | Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(le(v1, v2)))
+                }
+                Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE)
+                | Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(ge(v1, v2)))
+                }
                 Param(OP_DROP) => {
                     self.store.stack.pop();
                 }
@@ -378,7 +636,7 @@ impl Engine {
                     };
                     debug!("Calling {:?} with {:#?}", *idx, cfr);
                     self.store.stack.push(Frame(cfr));
-                    self.run_function(*idx);
+                    self.run_function(*idx)?;
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     break;
@@ -399,6 +657,8 @@ impl Engine {
         }
         while let Some(Frame(_)) = self.store.stack.pop() {}
         self.store.stack.append(&mut ret);
+
+        Ok(())
     }
 }
 
