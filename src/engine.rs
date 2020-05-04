@@ -708,46 +708,11 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
-                    let (arity, args) = match ty {
-                        BlockType::Empty => (0, vec![]),
-                        BlockType::ValueType(_v) => (1, vec![self.store.stack.pop()]),
-                        BlockType::ValueTypeTy(ty) => {
-                            let m = self
-                                .module
-                                .borrow()
-                                .fn_types
-                                .get(*ty as usize)
-                                .ok_or(InstructionOutcome::Trap)?
-                                .param_types
-                                .len();
-
-                            let n = self
-                                .module
-                                .borrow()
-                                .fn_types
-                                .get(*ty as usize)
-                                .ok_or(InstructionOutcome::Trap)?
-                                .return_types
-                                .len();
-
-                            let mut v = Vec::with_capacity(m);
-                            for _ in 0..m {
-                                v.push(self.store.stack.pop());
-                            }
-
-                            (n, v)
-                        }
-                    };
+                    let (arity, args) = self.get_block_params(&ty)?;
 
                     let cfr = Frame {
                         arity: arity as u32,
-                        locals: args
-                            .iter()
-                            .map(|w| match w.as_ref().expect("Cannot be None") {
-                                StackContent::Value(v) => v.clone(),
-                                _ => panic!("Something was messed up"),
-                            })
-                            .collect(),
+                        locals: args,
                         module_instance: Rc::downgrade(&self.module),
                     };
 
@@ -756,6 +721,50 @@ impl Engine {
                     self.run_instructions(block_instructions)?;
 
                     self.store.stack.pop(); //Not sure if ok?
+                }
+                Ctrl(OP_IF(ty, block_instructions_branch)) => {
+                    if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
+                        let (arity, args) = self.get_block_params(&ty)?;
+
+                        let cfr = Frame {
+                            arity: arity as u32,
+                            locals: args,
+                            module_instance: Rc::downgrade(&self.module),
+                        };
+
+                        if v != 0 {
+                            //non-zero therefore execute
+                            self.store.stack.push(Frame(cfr));
+
+                            self.run_instructions(block_instructions_branch)?;
+
+                            self.store.stack.pop(); //Not sure if ok?
+                        }
+                    } else {
+                        panic!("Value must be i32.const");
+                    }
+                }
+                Ctrl(OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2)) => {
+                    if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
+                        let (arity, args) = self.get_block_params(&ty)?;
+
+                        let cfr = Frame {
+                            arity: arity as u32,
+                            locals: args,
+                            module_instance: Rc::downgrade(&self.module),
+                        };
+
+                        self.store.stack.push(Frame(cfr));
+                        if v != 0 {
+                            self.run_instructions(block_instructions_branch_1)?;
+                        } else {
+                            self.run_instructions(block_instructions_branch_2)?;
+                        }
+
+                        self.store.stack.pop(); //Not sure if ok?
+                    } else {
+                        panic!("Value must be i32.const");
+                    }
                 }
                 Ctrl(OP_CALL(idx)) => {
                     let t = self.module.borrow().fn_types[*idx as usize].clone();
@@ -801,6 +810,52 @@ impl Engine {
         self.store.stack.append(&mut ret);
 
         Ok(())
+    }
+
+    fn get_block_params(
+        &mut self,
+        block_ty: &BlockType,
+    ) -> Result<(usize, Vec<Value>), InstructionOutcome> {
+        let (arity, args) = match block_ty {
+            BlockType::Empty => (0, vec![]),
+            BlockType::ValueType(_v) => (1, vec![self.store.stack.pop()]),
+            BlockType::ValueTypeTy(ty) => {
+                let m = self
+                    .module
+                    .borrow()
+                    .fn_types
+                    .get(*ty as usize)
+                    .ok_or(InstructionOutcome::Trap)?
+                    .param_types
+                    .len();
+
+                let n = self
+                    .module
+                    .borrow()
+                    .fn_types
+                    .get(*ty as usize)
+                    .ok_or(InstructionOutcome::Trap)?
+                    .return_types
+                    .len();
+
+                let mut v = Vec::with_capacity(m);
+                for _ in 0..m {
+                    v.push(self.store.stack.pop());
+                }
+
+                (n, v)
+            }
+        };
+
+        Ok((
+            arity,
+            args.iter()
+                .map(|w| match w.as_ref().expect("Cannot be None") {
+                    StackContent::Value(v) => v.clone(),
+                    _ => panic!("Something was messed up"),
+                })
+                .collect(),
+        ))
     }
 }
 
