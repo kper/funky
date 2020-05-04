@@ -253,7 +253,7 @@ fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<
                         return Err("Global var is mutable");
                     }
 
-                    Ok(global.value_type.clone())
+                    Ok(global.value_type)
                 }
                 None => Err("Global does not exist"),
             },

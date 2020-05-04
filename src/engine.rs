@@ -458,6 +458,7 @@ impl Engine {
         }
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn run_function(&mut self, idx: u32) -> Result<(), InstructionOutcome> {
         debug!("Running function {:?}", idx);
 
