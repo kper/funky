@@ -297,7 +297,8 @@ pub struct Variable {
 #[allow(dead_code)]
 pub enum StackContent {
     Value(Value),
-    Frame(Frame), //TODO add labels
+    Frame(Frame),
+    Label,
 }
 
 #[derive(Debug, Clone)]
@@ -509,16 +510,21 @@ impl Engine {
     fn run_function(&mut self, idx: u32) -> Result<(), InstructionOutcome> {
         debug!("Running function {:?}", idx);
 
-        let f = self.module.borrow().code[idx as usize].clone();
+        let f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
+
+        self.run_instructions(&f.code)
+    }
+
+    fn run_instructions(&mut self, instructions: &[Instruction]) -> Result<(), InstructionOutcome> {
         let mut fr = match self.store.stack.last().cloned() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
             None => panic!("Empty stack on function call"),
         };
         let mut ip = 0;
-        while ip < f.code.len() {
-            debug!("Evaluating instruction {:?}", &f.code[ip]);
-            match &f.code[ip] {
+        while ip < instructions.len() {
+            debug!("Evaluating instruction {:?}", &instructions[ip]);
+            match &instructions[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
                 Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => fr.locals[*idx as usize] = v,
@@ -701,6 +707,58 @@ impl Engine {
                         self.store.stack.push(Value(v2))
                     }
                 }
+                Ctrl(OP_BLOCK(ty, block_instructions)) => {
+                    let (arity, args) = match ty {
+                        BlockType::Empty => (0, vec![]),
+                        BlockType::ValueType(_v) => (1, vec![self.store.stack.pop()]),
+                        BlockType::ValueTypeTy(ty) => {
+                            let m = self
+                                .module
+                                .borrow()
+                                .fn_types
+                                .get(*ty as usize)
+                                .ok_or(InstructionOutcome::Trap)?
+                                .param_types
+                                .len();
+
+                            let n = self
+                                .module
+                                .borrow()
+                                .fn_types
+                                .get(*ty as usize)
+                                .ok_or(InstructionOutcome::Trap)?
+                                .return_types
+                                .len();
+
+                            let mut v = Vec::with_capacity(m);
+                            for _ in 0..m {
+                                v.push(self.store.stack.pop());
+                            }
+
+                            (n, v)
+                        }
+                        //TODO add S33
+                        _ => panic!("unknown blocktype"),
+                    };
+
+                    let cfr = Frame {
+                        arity: arity as u32,
+                        locals: args
+                            .iter()
+                            .map(|w| match w.as_ref().expect("Cannot be None") {
+                                StackContent::Value(v) => v.clone(),
+                                _ => panic!("Something was messed up"),
+                            })
+                            .collect(),
+                        module_instance: Rc::downgrade(&self.module),
+                    };
+
+                    self.store.stack.push(Frame(cfr));
+
+                    self.run_instructions(block_instructions)?;
+
+                    self.store.stack.pop(); //Not sure if ok?
+                }
                 Ctrl(OP_CALL(idx)) => {
                     let t = self.module.borrow().fn_types[*idx as usize].clone();
                     let args = self
@@ -713,12 +771,14 @@ impl Engine {
                             other => panic!("Expected value but found {:?}", other),
                         })
                         .collect();
+
                     let cfr = Frame {
                         arity: t.return_types.len() as u32,
                         locals: args,
                         module_instance: Rc::downgrade(&self.module),
                     };
-                    debug!("Calling {:?} with {:#?}", *idx, cfr);
+
+                    debug!("Calling {:?} with {:#?}", idx, cfr);
                     self.store.stack.push(Frame(cfr));
                     self.run_function(*idx)?;
                 }

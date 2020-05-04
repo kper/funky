@@ -35,10 +35,12 @@ pub enum ValueType {
     F64,
 }
 
+type TypeIdx = u32;
 #[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
+    ValueTypeTy(TypeIdx),
     S33(i64), //actually signed 33
 }
 
