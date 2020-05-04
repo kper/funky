@@ -298,7 +298,7 @@ pub struct Variable {
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
-    Label,
+    Label(usize, Arity),
 }
 
 #[derive(Debug, Clone)]
@@ -708,6 +708,8 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
+                    let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
+
                     let (arity, args) = self.get_block_params(&ty)?;
 
                     let cfr = Frame {
@@ -716,6 +718,7 @@ impl Engine {
                         module_instance: Rc::downgrade(&self.module),
                     };
 
+                    self.store.stack.push(Label(label_idx, arity as u32));
                     self.store.stack.push(Frame(cfr));
 
                     self.run_instructions(block_instructions)?;
@@ -723,6 +726,7 @@ impl Engine {
                     self.store.stack.pop(); //Not sure if ok?
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
+                    let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
                         let (arity, args) = self.get_block_params(&ty)?;
 
@@ -733,6 +737,8 @@ impl Engine {
                         };
 
                         if v != 0 {
+                            self.store.stack.push(Label(label_idx, arity as u32));
+
                             //non-zero therefore execute
                             self.store.stack.push(Frame(cfr));
 
@@ -744,8 +750,13 @@ impl Engine {
                         panic!("Value must be i32.const");
                     }
                 }
-                Ctrl(OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2)) => {
+                Ctrl(OP_IF_AND_ELSE(
+                    ty,
+                    block_instructions_branch_1,
+                    block_instructions_branch_2,
+                )) => {
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
+                        let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
                         let (arity, args) = self.get_block_params(&ty)?;
 
                         let cfr = Frame {
@@ -754,6 +765,7 @@ impl Engine {
                             module_instance: Rc::downgrade(&self.module),
                         };
 
+                        self.store.stack.push(Label(label_idx, arity as u32));
                         self.store.stack.push(Frame(cfr));
                         if v != 0 {
                             self.run_instructions(block_instructions_branch_1)?;
@@ -766,6 +778,14 @@ impl Engine {
                         panic!("Value must be i32.const");
                     }
                 }
+                Ctrl(OP_BR(label_idx)) => self.do_branch(label_idx)?,
+                Ctrl(OP_BR_IF(label_idx)) => {
+                    if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
+                        if c != 0 { 
+                            self.do_branch(label_idx)?
+                        }
+                    }
+                },
                 Ctrl(OP_CALL(idx)) => {
                     let t = self.module.borrow().fn_types[*idx as usize].clone();
                     let args = self
@@ -812,6 +832,94 @@ impl Engine {
         Ok(())
     }
 
+    fn do_branch(&mut self, label_idx: &u32) -> Result<(), InstructionOutcome> {
+        let labels_len = self.get_labels()?.len();
+
+        if let Some(StackContent::Label(L, arity)) = self.get_labels()?.get(*label_idx as usize) {
+            let content = self.get_content_from_stack(*arity)?;
+            for i in content.iter() {
+                if let StackContent::Value(_) = i {
+                    // ok
+                } else {
+                    panic!("Expected value");
+                }
+            }
+
+            for l in 0..labels_len {
+                {
+                    let v = &mut self.store.stack;
+
+                    for i in (0..v.len()).rev() {
+                        match v[i] {
+                            StackContent::Value(_) => break,
+                            _ => {
+                                v.remove(i);
+                            }
+                        }
+                    }
+                }
+
+                if let Some(StackContent::Label(_, _)) = self.store.stack.last() {
+                    self.store.stack.pop();
+                } else {
+                    panic!("Expected label");
+                }
+            }
+
+            self.store.stack.extend(content);
+        } else {
+            panic!("Invalid label");
+        }
+
+        Ok(())
+    }
+
+    /// Gets the labels of the stack
+    fn get_labels<'a>(&'a self) -> Result<Vec<&'a StackContent>, InstructionOutcome> {
+        Ok(self
+            .store
+            .stack
+            .iter()
+            .filter_map(|w| {
+                if let &StackContent::Label(id, _) = w {
+                    Some(w)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>())
+    }
+
+    /// Counts the label in the stacks and returns it
+    fn get_label_count(&self) -> Result<usize, InstructionOutcome> {
+        Ok(self
+            .store
+            .stack
+            .iter()
+            .filter_map(|w| {
+                if let &StackContent::Label(id, _) = w {
+                    Some(id)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .len())
+    }
+
+    fn get_content_from_stack(
+        &mut self,
+        arity: u32,
+    ) -> Result<Vec<StackContent>, InstructionOutcome> {
+        let mut v = Vec::with_capacity(arity as usize);
+        for _ in 0..arity {
+            v.push(self.store.stack.pop().expect("Not expecting None"));
+        }
+
+        Ok(v)
+    }
+
+    /// Pops the values of the stack. Returns arity and values
     fn get_block_params(
         &mut self,
         block_ty: &BlockType,
