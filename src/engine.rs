@@ -220,6 +220,42 @@ macro_rules! impl_one_op_integer {
     };
 }
 
+macro_rules! impl_one_op_float {
+    ($f:ident) => {
+        fn $f(left: Value) -> Value {
+            match left {
+                F32(v1) => F32(v1.$f() as f32),
+                F64(v1) => F64(v1.$f() as f64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
+macro_rules! impl_one_op_float_closure {
+    ($k:ident, $f:expr) => {
+        fn $k(left: Value) -> Value {
+            match left {
+                F32(v1) => F32($f(v1.into()) as f32),
+                F64(v1) => F64($f(v1) as f64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
+macro_rules! impl_two_op_float {
+    ($f:ident, $k:expr) => {
+        fn $f(left: Value, right: Value) -> Value {
+            match (left, right) {
+                (F32(v1), F32(v2)) => F32($k(v1.into(), v2.into()) as f32),
+                (F64(v1), F64(v2)) => F64($k(v1, v2) as f64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+}
+
 impl_two_op_integer!(rotate_left);
 impl_two_op_integer!(rotate_right);
 
@@ -231,6 +267,17 @@ impl_two_op_all_numbers!(lt, |left, right| left < right);
 impl_two_op_all_numbers!(gt, |left, right| left > right);
 impl_two_op_all_numbers!(le, |left, right| left <= right);
 impl_two_op_all_numbers!(ge, |left, right| left >= right);
+
+impl_one_op_float!(abs);
+impl_one_op_float_closure!(neg, |w: f64| -w);
+impl_one_op_float!(ceil);
+impl_one_op_float!(floor);
+impl_one_op_float!(round);
+impl_one_op_float!(sqrt);
+impl_one_op_float!(trunc);
+
+impl_two_op_float!(min, |left: f64, right: f64| left.min(right));
+impl_two_op_float!(max, |left: f64, right: f64| left.max(right));
 
 fn eqz(left: Value) -> Value {
     match left {
@@ -602,6 +649,42 @@ impl Engine {
                 | Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(ge(v1, v2)))
+                }
+                Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(abs(v1)))
+                }
+                Num(OP_F32_NEG) | Num(OP_F64_NEG) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(neg(v1)))
+                }
+                Num(OP_F32_CEIL) | Num(OP_F64_CEIL) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(ceil(v1)))
+                }
+                Num(OP_F32_FLOOR) | Num(OP_F64_FLOOR) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(floor(v1)))
+                }
+                Num(OP_F32_TRUNC) | Num(OP_F64_TRUNC) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(trunc(v1)))
+                }
+                Num(OP_F32_NEAREST) | Num(OP_F64_NEAREST) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(round(v1)))
+                }
+                Num(OP_F32_SQRT) | Num(OP_F64_SQRT) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(sqrt(v1)))
+                }
+                Num(OP_F32_MIN) | Num(OP_F64_MIN) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(min(v1, v2)))
+                }
+                Num(OP_F32_MAX) | Num(OP_F64_MAX) => {
+                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(max(v1, v2)))
                 }
                 Param(OP_DROP) => {
                     self.store.stack.pop();
