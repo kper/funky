@@ -30,18 +30,7 @@ pub enum Value {
 
 type Arity = u32;
 
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum ExtendedInstruction {
-    Trap,
-    Invoke(FuncIdx),
-    InitElement(TableIdx, u32, Vec<FuncIdx>),
-    InitData(MemoryIdx, u32, Vec<u8>),
-    Label(Arity, Vec<ExtendedInstruction>, Vec<Instruction>),
-    Frame(Arity, Option<Frame>, Vec<Instruction>),
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 #[allow(dead_code)]
 enum InstructionOutcome {
     Trap,
@@ -57,10 +46,6 @@ impl Into<ValueType> for Value {
         }
     }
 }
-
-//#[derive(Debug, PartialEq, Clone, Copy)]
-//pub struct Trap;
-//type Result<T> = std::result::Result<T, Trap>;
 
 impl Add for Value {
     type Output = Self;
@@ -294,11 +279,16 @@ pub struct Variable {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[allow(dead_code)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
-    Label(usize, Arity),
+    Label(Label),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Label {
+    id: usize,
+    arity: Arity,
 }
 
 #[derive(Debug, Clone)]
@@ -311,7 +301,6 @@ pub struct Frame {
 impl PartialEq for Frame {
     fn eq(&self, other: &Self) -> bool {
         self.arity == other.arity && self.locals == other.locals
-        //&& self.module_instance.ptr_eq(&other.module_instance)
     }
 }
 
@@ -354,6 +343,22 @@ pub struct TableInstance {
 pub struct MemoryInstance {
     pub data: Vec<u8>,
     pub max: Option<u32>,
+}
+
+impl StackContent {
+    pub fn is_value(&self) -> bool {
+        match self {
+            StackContent::Value(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_label(&self) -> bool {
+        match self {
+            StackContent::Label(_) => true,
+            _ => false,
+        }
+    }
 }
 
 /// Overwritten debug implementation
@@ -512,15 +517,33 @@ impl Engine {
 
         let f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
 
-        self.run_instructions(&f.code)
+        let mut fr = self.get_frame();
+
+        debug!("frame {:#?}", fr);
+
+        self.run_instructions(&mut fr, &f.code)?;
+
+        // implicit return
+        let mut ret = Vec::new();
+        for _ in 0..fr.arity {
+            match self.store.stack.pop() {
+                Some(Value(v)) => ret.push(Value(v)),
+                Some(x) => panic!("Expected value but found {:?}", x),
+                None => {}
+                //None => panic!("Unexpected empty stack!"),
+            }
+        }
+        while let Some(Frame(_)) = self.store.stack.pop() {}
+        self.store.stack.append(&mut ret);
+
+        Ok(())
     }
 
-    fn run_instructions(&mut self, instructions: &[Instruction]) -> Result<(), InstructionOutcome> {
-        let mut fr = match self.store.stack.last().cloned() {
-            Some(Frame(fr)) => fr,
-            Some(x) => panic!("Expected frame but found {:?}", x),
-            None => panic!("Empty stack on function call"),
-        };
+    fn run_instructions(
+        &mut self,
+        fr: &mut Frame,
+        instructions: &[Instruction],
+    ) -> Result<(), InstructionOutcome> {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
@@ -708,46 +731,40 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
-                    let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
+                    debug!("OP_BLOCK {:?}, {:#?}", ty, block_instructions);
 
-                    let (arity, args) = self.get_block_params(&ty)?;
+                    let label_idx = self.get_label_count()?;
 
-                    let cfr = Frame {
+                    let arity = 0;
+                    let label = Label {
+                        id: label_idx,
                         arity: arity as u32,
-                        locals: args,
-                        module_instance: Rc::downgrade(&self.module),
                     };
 
-                    self.store.stack.push(Label(label_idx, arity as u32));
-                    self.store.stack.push(Frame(cfr));
-
-                    self.run_instructions(block_instructions)?;
-
-                    self.store.stack.pop(); //Not sure if ok?
+                    self.enter_block(&label, fr, block_instructions)?;
+                    self.exit_block(&label)?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
-                    let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
-                    if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        let (arity, args) = self.get_block_params(&ty)?;
-
-                        let cfr = Frame {
-                            arity: arity as u32,
-                            locals: args,
-                            module_instance: Rc::downgrade(&self.module),
-                        };
+                    let label_idx = self.get_label_count()?;
+                    let element = self.store.stack.pop();
+                    if let Some(StackContent::Value(Value::I32(v))) = element {
+                        //let (arity, args) = self.get_block_params(&ty)?;
+                        
+                        //TODO do something with the args
 
                         if v != 0 {
-                            self.store.stack.push(Label(label_idx, arity as u32));
+                            let arity = 0;
+                            let label = Label {
+                                id: label_idx,
+                                arity: arity as u32,
+                            };
 
-                            //non-zero therefore execute
-                            self.store.stack.push(Frame(cfr));
-
-                            self.run_instructions(block_instructions_branch)?;
-
-                            self.store.stack.pop(); //Not sure if ok?
+                            self.enter_block(&label, fr, &block_instructions_branch)?;
+                            self.exit_block(&label)?;
+                            //self.run_instructions(fr, block_instructions_branch)?;
                         }
                     } else {
-                        panic!("Value must be i32.const");
+                        panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
                 Ctrl(OP_IF_AND_ELSE(
@@ -756,24 +773,23 @@ impl Engine {
                     block_instructions_branch_2,
                 )) => {
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        let label_idx = self.get_label_count().expect("label count failed"); //actually cannot fail
+                        let label_idx = self.get_label_count()?;
                         let (arity, args) = self.get_block_params(&ty)?;
+                        //
+                        //TODO do something with the args
 
-                        let cfr = Frame {
+                        let label = Label {
+                            id: label_idx,
                             arity: arity as u32,
-                            locals: args,
-                            module_instance: Rc::downgrade(&self.module),
                         };
 
-                        self.store.stack.push(Label(label_idx, arity as u32));
-                        self.store.stack.push(Frame(cfr));
                         if v != 0 {
-                            self.run_instructions(block_instructions_branch_1)?;
+                            self.enter_block(&label, fr, &block_instructions_branch_1)?;
                         } else {
-                            self.run_instructions(block_instructions_branch_2)?;
+                            self.enter_block(&label, fr, &block_instructions_branch_2)?;
                         }
 
-                        self.store.stack.pop(); //Not sure if ok?
+                        self.exit_block(&label)?;
                     } else {
                         panic!("Value must be i32.const");
                     }
@@ -781,11 +797,11 @@ impl Engine {
                 Ctrl(OP_BR(label_idx)) => self.do_branch(label_idx)?,
                 Ctrl(OP_BR_IF(label_idx)) => {
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
-                        if c != 0 { 
+                        if c != 0 {
                             self.do_branch(label_idx)?
                         }
                     }
-                },
+                }
                 Ctrl(OP_CALL(idx)) => {
                     let t = self.module.borrow().fn_types[*idx as usize].clone();
                     let args = self
@@ -817,17 +833,56 @@ impl Engine {
             }
             ip += 1;
         }
-        // implicit return
-        let mut ret = Vec::new();
-        for _ in 0..fr.arity {
-            match self.store.stack.pop() {
-                Some(Value(v)) => ret.push(Value(v)),
-                Some(x) => panic!("Expected value but found {:?}", x),
-                None => panic!("Unexpected empty stack!"),
-            }
+
+        Ok(())
+    }
+
+    /// Get the frame at the top of the stack
+    fn get_frame(&mut self) -> Frame {
+        debug!("stack {:#?}", self.store.stack);
+        match self.store.stack.pop() {
+            Some(Frame(fr)) => fr,
+            Some(x) => panic!("Expected frame but found {:?}", x),
+            None => panic!("Empty stack on function call"),
         }
-        while let Some(Frame(_)) = self.store.stack.pop() {}
-        self.store.stack.append(&mut ret);
+    }
+
+    fn enter_block(
+        &mut self,
+        l: &Label,
+        frame: &mut Frame,
+        instructions: &[Instruction],
+    ) -> Result<(), InstructionOutcome> {
+        self.store.stack.push(StackContent::Label(*l));
+        self.run_instructions(frame, instructions)?;
+        Ok(())
+    }
+
+    fn exit_block(&mut self, l: &Label) -> Result<(), InstructionOutcome> {
+        debug!("exit_block {:?}", l);
+
+        let indices = self
+            .store
+            .stack
+            .iter()
+            .rev()
+            .take_while(|w| w.is_value())
+            .map(|_| ())
+            .collect::<Vec<_>>();
+
+        let val_m = self
+            .store
+            .stack
+            .drain((self.store.stack.len() - indices.len())..)
+            .collect::<Vec<_>>();
+
+        for _ in 0..(val_m.len() - 1) {
+            debug!("Popping from stack {:?}", self.store.stack.pop());
+        }
+
+        assert!(self.store.stack.pop().expect("must not be None").is_label());
+
+        self.store.stack.extend(val_m);
 
         Ok(())
     }
@@ -835,8 +890,8 @@ impl Engine {
     fn do_branch(&mut self, label_idx: &u32) -> Result<(), InstructionOutcome> {
         let labels_len = self.get_labels()?.len();
 
-        if let Some(StackContent::Label(L, arity)) = self.get_labels()?.get(*label_idx as usize) {
-            let content = self.get_content_from_stack(*arity)?;
+        if let Some(label) = self.get_labels()?.get(*label_idx as usize) {
+            let content = self.get_content_from_stack(label.arity)?;
             for i in content.iter() {
                 if let StackContent::Value(_) = i {
                     // ok
@@ -859,7 +914,7 @@ impl Engine {
                     }
                 }
 
-                if let Some(StackContent::Label(_, _)) = self.store.stack.last() {
+                if let Some(StackContent::Label(_)) = self.store.stack.last() {
                     self.store.stack.pop();
                 } else {
                     panic!("Expected label");
@@ -868,21 +923,21 @@ impl Engine {
 
             self.store.stack.extend(content);
         } else {
-            panic!("Invalid label");
+            panic!("No label found");
         }
 
         Ok(())
     }
 
     /// Gets the labels of the stack
-    fn get_labels<'a>(&'a self) -> Result<Vec<&'a StackContent>, InstructionOutcome> {
+    fn get_labels(&self) -> Result<Vec<Label>, InstructionOutcome> {
         Ok(self
             .store
             .stack
             .iter()
             .filter_map(|w| {
-                if let &StackContent::Label(id, _) = w {
-                    Some(w)
+                if let &StackContent::Label(x) = w {
+                    Some(x)
                 } else {
                     None
                 }
@@ -897,8 +952,8 @@ impl Engine {
             .stack
             .iter()
             .filter_map(|w| {
-                if let &StackContent::Label(id, _) = w {
-                    Some(id)
+                if let &StackContent::Label(x) = w {
+                    Some(x)
                 } else {
                     None
                 }
@@ -954,6 +1009,8 @@ impl Engine {
                 (n, v)
             }
         };
+
+        debug!("args {:#?}", args);
 
         Ok((
             arity,
@@ -1069,6 +1126,69 @@ mod tests {
         }];
         e.run_function(0);
         assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_block() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![I32(1), I32(1)],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_BLOCK(
+                BlockType::ValueType(ValueType::I32),
+                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(Value(I32(2)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_if() {
+        let mut e = empty_engine();
+        e.store.stack = vec![
+            Value(Value::I32(1)),
+            Frame(Frame {
+                arity: 1,
+                locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_IF(
+                BlockType::ValueType(ValueType::I32),
+                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(Value(I32(2)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_if_false() {
+        let mut e = empty_engine();
+        e.store.stack = vec![
+            Value(Value::I32(0)), //THIS CHANGED
+            Frame(Frame {
+                arity: 1,
+                locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_IF(
+                BlockType::ValueType(ValueType::I32),
+                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(None, e.store.stack.pop());
     }
 
     #[test]
