@@ -737,8 +737,6 @@ impl Engine {
 
                             (n, v)
                         }
-                        //TODO add S33
-                        _ => panic!("unknown blocktype"),
                     };
 
                     let cfr = Frame {

@@ -510,7 +510,7 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
         _ => {
             let (i, k) = take_leb_i33(i)?;
 
-            (i, BlockType::S33(k))
+            (i, BlockType::ValueTypeTy(k))
         }
     };
 
