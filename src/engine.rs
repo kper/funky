@@ -529,8 +529,7 @@ impl Engine {
             match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
                 Some(x) => panic!("Expected value but found {:?}", x),
-                None => {}
-                //None => panic!("Unexpected empty stack!"),
+                None => {} //None => panic!("Unexpected empty stack!"),
             }
         }
         while let Some(Frame(_)) = self.store.stack.pop() {}
@@ -749,7 +748,7 @@ impl Engine {
                     let element = self.store.stack.pop();
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         //let (arity, args) = self.get_block_params(&ty)?;
-                        
+
                         //TODO do something with the args
 
                         if v != 0 {
@@ -774,10 +773,11 @@ impl Engine {
                 )) => {
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
                         let label_idx = self.get_label_count()?;
-                        let (arity, args) = self.get_block_params(&ty)?;
+                        //let (arity, args) = self.get_block_params(&ty)?;
                         //
                         //TODO do something with the args
 
+                        let arity = 0;
                         let label = Label {
                             id: label_idx,
                             arity: arity as u32,
@@ -1189,6 +1189,52 @@ mod tests {
         }];
         e.run_function(0);
         assert_eq!(None, e.store.stack.pop());
+    }
+
+    #[test]
+    fn test_function_if_else_1() {
+        let mut e = empty_engine();
+        e.store.stack = vec![
+            Value(Value::I32(1)),
+            Frame(Frame {
+                arity: 1,
+                locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_IF_AND_ELSE(
+                BlockType::ValueType(ValueType::I32),
+                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                vec![Num(OP_I32_CONST(-1000))],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(Some(StackContent::Value(Value::I32(2))), e.store.stack.pop());
+    }
+
+    #[test]
+    fn test_function_if_else_2() {
+        let mut e = empty_engine();
+        e.store.stack = vec![
+            Value(Value::I32(0)), //changed
+            Frame(Frame {
+                arity: 1,
+                locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_IF_AND_ELSE(
+                BlockType::ValueType(ValueType::I32),
+                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                vec![Num(OP_I32_CONST(-1000))],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(Some(StackContent::Value(Value::I32(-1000))), e.store.stack.pop());
     }
 
     #[test]
