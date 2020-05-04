@@ -748,6 +748,7 @@ impl Engine {
                     let element = self.store.stack.pop();
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         //let (arity, args) = self.get_block_params(&ty)?;
+                        let arity = self.get_block_ty_arity(&ty)?;
 
                         //TODO do something with the args
 
@@ -774,10 +775,10 @@ impl Engine {
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
                         let label_idx = self.get_label_count()?;
                         //let (arity, args) = self.get_block_params(&ty)?;
-                        //
+                        let arity = self.get_block_ty_arity(&ty)?;
+
                         //TODO do something with the args
 
-                        let arity = 0;
                         let label = Label {
                             id: label_idx,
                             arity: arity as u32,
@@ -974,14 +975,28 @@ impl Engine {
         Ok(v)
     }
 
-    /// Pops the values of the stack. Returns arity and values
+    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize, InstructionOutcome> {
+        Ok(match block_ty {
+            BlockType::Empty => 0,
+            BlockType::ValueType(v) => 1,
+            BlockType::ValueTypeTy(ty) => self
+                .module
+                .borrow()
+                .fn_types
+                .get(*ty as usize)
+                .ok_or(InstructionOutcome::Trap)?
+                .return_types
+                .len(),
+        })
+    }
+
     fn get_block_params(
         &mut self,
         block_ty: &BlockType,
     ) -> Result<(usize, Vec<Value>), InstructionOutcome> {
         let (arity, args) = match block_ty {
             BlockType::Empty => (0, vec![]),
-            BlockType::ValueType(_v) => (1, vec![self.store.stack.pop()]),
+            BlockType::ValueType(v) => (1, vec![self.store.stack.pop()]),
             BlockType::ValueTypeTy(ty) => {
                 let m = self
                     .module
@@ -1211,7 +1226,10 @@ mod tests {
             ))],
         }];
         e.run_function(0);
-        assert_eq!(Some(StackContent::Value(Value::I32(2))), e.store.stack.pop());
+        assert_eq!(
+            Some(StackContent::Value(Value::I32(2))),
+            e.store.stack.pop()
+        );
     }
 
     #[test]
@@ -1234,7 +1252,10 @@ mod tests {
             ))],
         }];
         e.run_function(0);
-        assert_eq!(Some(StackContent::Value(Value::I32(-1000))), e.store.stack.pop());
+        assert_eq!(
+            Some(StackContent::Value(Value::I32(-1000))),
+            e.store.stack.pop()
+        );
     }
 
     #[test]
