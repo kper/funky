@@ -432,7 +432,7 @@ Engine {
                             OP_I32_NE,
                         ),
                         Num(
-                            OP_I32_AND,
+                            OP_I32_XOR,
                         ),
                     ],
                 },
@@ -456,29 +456,21 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
+                            OP_I32_OR,
+                        ),
+                        Num(
                             OP_I32_CONST(
                                 0,
                             ),
                         ),
                         Num(
                             OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
                         ),
                     ],
                 },
@@ -502,14 +494,6 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
@@ -517,14 +501,14 @@ Engine {
                         ),
                         Num(
                             OP_I32_CONST(
-                                0,
+                                31,
                             ),
                         ),
                         Num(
-                            OP_I32_NE,
+                            OP_I32_AND,
                         ),
                         Num(
-                            OP_I32_AND,
+                            OP_I32_SHL,
                         ),
                     ],
                 },
@@ -548,14 +532,6 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
@@ -563,14 +539,14 @@ Engine {
                         ),
                         Num(
                             OP_I32_CONST(
-                                0,
+                                31,
                             ),
                         ),
                         Num(
-                            OP_I32_NE,
+                            OP_I32_AND,
                         ),
                         Num(
-                            OP_I32_AND,
+                            OP_I32_SHR_U,
                         ),
                     ],
                 },
@@ -594,29 +570,13 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
+                            OP_I32_LT_U,
                         ),
                     ],
                 },
@@ -640,29 +600,13 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
+                            OP_I32_LE_U,
                         ),
                     ],
                 },
@@ -686,29 +630,13 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
+                            OP_I32_GE_U,
                         ),
                     ],
                 },
@@ -732,29 +660,13 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
+                            OP_I32_GT_U,
                         ),
                     ],
                 },
@@ -778,29 +690,13 @@ Engine {
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
                         Var(
                             OP_LOCAL_GET(
                                 1,
                             ),
                         ),
                         Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_NE,
-                        ),
-                        Num(
-                            OP_I32_AND,
+                            OP_I32_EQ,
                         ),
                     ],
                 },

@@ -515,7 +515,7 @@ Engine {
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
-                            count: 2,
+                            count: 1,
                             ty: I32,
                         },
                     ],
@@ -526,16 +526,11 @@ Engine {
                                 [
                                     Var(
                                         OP_LOCAL_GET(
-                                            0,
-                                        ),
-                                    ),
-                                    Var(
-                                        OP_LOCAL_GET(
                                             1,
                                         ),
                                     ),
                                     Num(
-                                        OP_I32_EQ,
+                                        OP_I32_EQZ,
                                     ),
                                     Ctrl(
                                         OP_IF(
@@ -565,16 +560,6 @@ Engine {
                                             [
                                                 Var(
                                                     OP_LOCAL_GET(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
                                                         0,
                                                     ),
                                                 ),
@@ -582,53 +567,14 @@ Engine {
                                                     OP_LOCAL_GET(
                                                         1,
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_GT_U,
                                                 ),
                                                 Var(
                                                     OP_LOCAL_TEE(
                                                         2,
                                                     ),
                                                 ),
-                                                Param(
-                                                    OP_SELECT,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        3,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        1,
-                                                    ),
-                                                ),
                                                 Num(
-                                                    OP_I32_CONST(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        2,
-                                                    ),
-                                                ),
-                                                Param(
-                                                    OP_SELECT,
-                                                ),
-                                                Num(
-                                                    OP_I32_SUB,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_TEE(
-                                                        2,
-                                                    ),
+                                                    OP_I32_REM_U,
                                                 ),
                                                 Var(
                                                     OP_LOCAL_SET(
@@ -641,25 +587,14 @@ Engine {
                                                     ),
                                                 ),
                                                 Var(
-                                                    OP_LOCAL_GET(
+                                                    OP_LOCAL_SET(
                                                         0,
                                                     ),
                                                 ),
                                                 Var(
                                                     OP_LOCAL_GET(
-                                                        3,
+                                                        1,
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_SUB,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_TEE(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_NE,
                                                 ),
                                                 Ctrl(
                                                     OP_BR_IF(

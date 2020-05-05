@@ -8,7 +8,7 @@ use funky::engine::{Engine, ModuleInstance};
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
-//use funky::engine::Value::*;
+use funky::engine::Value::*;
 
 const USAGE: &str = "
 Funky - a WebAssembly Interpreter
@@ -68,7 +68,8 @@ fn main() {
 
     e.instantiation(&module);
 
-    //info!("Invoking function {:?}", 1);
-    //e.invoke_function(1, vec![I32(2)]);
-    //println!("Last value on stack was: {:?}", e.store.stack.last())
+    info!("Invoking function {:?}", 1);
+    //e.invoke_function(0, vec![I32(2), I32(10)]);
+    e.invoke_exported_function(0, vec![]);
+    eprintln!("Last value on stack was: {:?}", e.store.stack.last())
 }

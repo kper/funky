@@ -1,3 +1,4 @@
+use crate::engine::Value::*;
 use crate::engine::*;
 use insta::assert_snapshot;
 use std::cell::RefCell;
@@ -17,6 +18,22 @@ macro_rules! test_file_engine {
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
+}
+
+macro_rules! test_run_engine {
+    ($fs_name:expr, $num_f:expr, $init:expr) => {{
+        let file = read_wasm!(&format!("tests/{}", $fs_name));
+        let module = parse(file).expect("Parsing failed");
+        assert!(validate(&module).is_ok());
+
+        let instance = ModuleInstance::new(&module);
+        let mut engine = Engine::new(instance, &module);
+
+        assert_snapshot!($fs_name, format!("{:#?}", engine));
+
+        engine.invoke_exported_function($num_f, $init);
+        engine
+    }};
 }
 
 macro_rules! allocation {
@@ -222,6 +239,11 @@ fn test_empty_wasm() {
 }
 
 #[test]
+fn test_sum_loop() {
+    test_file_engine!("sum_loop.wasm");
+}
+
+#[test]
 fn test_return_i32() {
     test_file_engine!("return_i32.wasm");
 }
@@ -269,4 +291,31 @@ fn test_logic() {
 #[test]
 fn test_gcd() {
     test_file_engine!("gcd.wasm");
+}
+
+#[test]
+fn test_run_add() {
+    let engine = test_run_engine!("add.wasm", 0, vec![I32(1), I32(2)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(3))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_call() {
+    /*
+    (module
+    (func $getAnswer (result i32) i32.const 42)
+    (func (export "getAnswerPlus1") (result i32)
+        call $getAnswer
+        i32.const 1
+        i32.add))
+     */
+
+    let engine = test_run_engine!("call.wasm", 0, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(43))),
+        engine.store.stack.last()
+    )
 }

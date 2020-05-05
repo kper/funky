@@ -278,7 +278,7 @@ pub struct Variable {
     pub val: Value,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
@@ -291,7 +291,7 @@ pub struct Label {
     arity: Arity,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
@@ -316,7 +316,7 @@ pub struct ModuleInstance {
     pub exports: Vec<ExportInstance>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Store {
     pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
@@ -481,10 +481,40 @@ impl Engine {
         }
     }
 
-    #[warn(dead_code)]
-    pub fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
-        //TODO check if function[idx] exists
+    /// Take only exported functions into consideration
+    pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) {
+        let k = {
+            let x = self.module.borrow();
 
+            let w = x
+                .exports
+                .get(idx as usize)
+                .expect("Exported function not found");
+
+            w.value.clone()
+        };
+
+        let exported = match k {
+            ExternalKindType::Function { ty } => {
+                let func_addr = self
+                    .module
+                    .borrow()
+                    .funcaddrs
+                    .get(ty as usize)
+                    .expect("Function not found")
+                    .clone();
+
+                self.invoke_function(func_addr, args);
+            }
+            _ => {
+                panic!("Exported function not found");
+            }
+        };
+    }
+
+    #[warn(dead_code)]
+    fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
+        //TODO check if function[idx] exists
         self.check_parameters_of_function(idx, &args);
 
         self.store.stack.push(Frame(Frame {
@@ -498,10 +528,16 @@ impl Engine {
     }
 
     fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
-        let fn_types = &self.module.borrow().fn_types[idx as usize];
+        let fn_types = &self
+            .store
+            .funcs
+            .get(idx as usize)
+            .expect("Function not found")
+            .ty
+            .param_types;
 
-        if fn_types.param_types
-            != args
+        if fn_types
+            != &args
                 .iter()
                 .cloned()
                 .map(|w| w.into())
@@ -524,16 +560,25 @@ impl Engine {
         self.run_instructions(&mut fr, &f.code)?;
 
         // implicit return
+        debug!("Implicit return (arity {:?})", fr.arity);
+
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
+            debug!("Popping {:?}", self.store.stack.last());
             match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
                 Some(x) => panic!("Expected value but found {:?}", x),
                 None => {} //None => panic!("Unexpected empty stack!"),
             }
         }
-        while let Some(Frame(_)) = self.store.stack.pop() {}
+        debug!("Popping frames");
+        while let Some(Frame(_)) = self.store.stack.last() {
+            self.store.stack.pop();
+        }
+
         self.store.stack.append(&mut ret);
+
+        debug!("Stack after function return {:#?}", self.store.stack);
 
         Ok(())
     }
@@ -556,13 +601,17 @@ impl Engine {
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
                     //debug!("locals {:#?}", fr.locals);
-                    match self.store.stack.last() {
-                        Some(Value(v)) => fr.locals[*idx as usize] = *v,
+
+                    let value = match self.store.stack.last() {
+                        Some(Value(v)) => {
+                            fr.locals[*idx as usize] = *v;
+                            *v
+                        }
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.set"),
-                    }
+                    };
 
-                    self.store.stack.push(self.store.stack.last().unwrap().clone()); //unwrap will be always ok
+                    self.store.stack.push(StackContent::Value(value));
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
@@ -578,10 +627,23 @@ impl Engine {
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
-                Num(OP_I32_CONST(v)) => self.store.stack.push(Value(I32(*v))),
-                Num(OP_I64_CONST(v)) => self.store.stack.push(Value(I64(*v))),
-                Num(OP_F32_CONST(v)) => self.store.stack.push(Value(F32(*v))),
-                Num(OP_F64_CONST(v)) => self.store.stack.push(Value(F64(*v))),
+                Num(OP_I32_CONST(v)) => {
+                    debug!("OP_I32_CONST: pushing {} to stack", v);
+                    self.store.stack.push(Value(I32(*v)));
+                    debug!("stack {:#?}", self.store.stack);
+                }
+                Num(OP_I64_CONST(v)) => {
+                    debug!("OP_I64_CONST: pushing {} to stack", v);
+                    self.store.stack.push(Value(I64(*v)))
+                }
+                Num(OP_F32_CONST(v)) => {
+                    debug!("OP_F32_CONST: pushing {} to stack", v);
+                    self.store.stack.push(Value(F32(*v)))
+                }
+                Num(OP_F64_CONST(v)) => {
+                    debug!("OP_F64_CONST: pushing {} to stack", v);
+                    self.store.stack.push(Value(F64(*v)))
+                }
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 + v2))
@@ -736,7 +798,7 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
-                    debug!("OP_BLOCK {:?}, {:#?}", ty, block_instructions);
+                    debug!("OP_BLOCK {:?}", ty);
 
                     let label_idx = self.get_label_count()?;
 
@@ -750,7 +812,7 @@ impl Engine {
                     self.exit_block(&label)?;
                 }
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
-                    debug!("OP_LOOP {:?}, {:#?}", ty, block_instructions);
+                    debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
                     let label_idx = self.get_label_count()?;
                     let arity = self.get_block_ty_arity(&ty)?;
@@ -825,6 +887,8 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_CALL(idx)) => {
+                    debug!("OP_CALL {:?}", idx);
+
                     let t = self.module.borrow().fn_types[*idx as usize].clone();
                     let args = self
                         .store
@@ -848,6 +912,7 @@ impl Engine {
                     self.run_function(*idx)?;
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
+                    debug!("Return");
                     break;
                 }
                 Ctrl(OP_NOP) => {}
@@ -1097,16 +1162,22 @@ mod tests {
     fn test_invoke_wrong_parameters() {
         let mut e = empty_engine();
 
-        // We have 2 parameters, but supply 3
-        e.module.borrow_mut().fn_types = vec![FunctionSignature {
-            param_types: vec![ValueType::I32, ValueType::I32],
-            return_types: vec![],
-        }];
-
-        e.module.borrow_mut().code = vec![FunctionBody {
+        let body = FunctionBody {
             locals: vec![],
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        };
+
+        // We have 2 parameters, but supply 3
+        e.store.funcs = vec![FuncInstance {
+            ty: FunctionSignature {
+                param_types: vec![ValueType::I32, ValueType::I32],
+                return_types: vec![],
+            },
+            module: Rc::downgrade(&e.module),
+            code: body.clone(),
         }];
+
+        e.module.borrow_mut().code = vec![body.clone()];
 
         e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]);
     }

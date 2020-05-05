@@ -59,12 +59,17 @@ fn allocate_functions(
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate function");
+
+    debug!("module {:#?}", m);
+
     // Gets all functions and imports
     let ty = validation::extract::get_funcs(&m);
 
+    debug!("functions extracted {:#?}", ty);
+
     //let rc = Rc::new(mod_instance);
     let weak = Rc::downgrade(mod_instance);
-    for t in ty.iter() {
+    for (code_index, t) in ty.iter().enumerate() {
         debug!("Function {:#?}", t);
         // Allocate function
 
@@ -77,7 +82,7 @@ fn allocate_functions(
                 }
             };
 
-            let fcode = match borrow.code.get(**t as usize) {
+            let fcode = match borrow.code.get(code_index as usize) {
                 Some(fcode) => fcode,
                 None => {
                     panic!("{} code is not defined", t);

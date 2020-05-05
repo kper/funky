@@ -28,7 +28,7 @@ pub fn instantiation(
 
     // Step 8
 
-    store.stack.push(StackContent::Frame(frame.clone()));
+    store.stack.push(StackContent::Frame(frame));
 
     // Step 9 and Step 13
     if let Err(err) = instantiate_elements(m, mod_instance, store) {
@@ -42,6 +42,12 @@ pub fn instantiation(
 
     // Step 11 and 12
     if let Some(StackContent::Frame(f)) = store.stack.pop() {
+        let frame = Frame {
+            locals: Vec::new(),
+            arity: 0,
+            module_instance: Rc::downgrade(&mod_instance),
+        };
+
         assert_eq!(frame, f);
     } else {
         panic!("No frame on the stack");
@@ -121,17 +127,22 @@ fn instantiate_data<'a>(
     let ty = validation::extract::get_data(&m);
 
     for data in ty.iter() {
+        debug!("data offset {:?}", data.offset);
+
         let doval = crate::allocation::get_expr_const_ty_global(&data.offset)
             .map_err(|_| "Fetching const expr failed")?;
 
         if let Value::I32(mem_idx) = doval {
+            debug!("Memory index is {}", mem_idx);
+
             //mem_idx = do_i
-            let borrow = mod_instance
-                .borrow();
+            let borrow = mod_instance.borrow();
             let mem_addr = borrow
                 .memaddrs
                 .get(mem_idx as usize)
                 .ok_or("Memory index does not exists")?;
+
+            debug!("Memory addr is {}", mem_addr);
 
             let mem_inst = store
                 .memory
