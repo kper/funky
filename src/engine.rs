@@ -494,20 +494,19 @@ impl Engine {
                 .get(idx as usize)
                 .expect("Exported function not found or found something else");
 
-            w.value.clone()
+            w.value
         };
 
         debug!("Exports {:#?}", k);
 
-        let exported = match k {
+        let _ = match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = self
+                let func_addr = *self
                     .module
                     .borrow()
                     .funcaddrs
                     .get(ty as usize)
-                    .expect("Function not found")
-                    .clone();
+                    .expect("Function not found");
 
                 self.invoke_function(func_addr, args);
             }
@@ -622,8 +621,14 @@ impl Engine {
 
                     let value = match self.store.stack.last() {
                         Some(Value(v)) => {
-                            fr.locals.push(*v);
-                            v.clone()
+                            match fr.locals.get(*idx as usize) {
+                                None => {
+                                    fr.locals.push(*v);
+                                }
+                                Some(_) => {}
+                            };
+
+                            *v
                         }
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.tee"),
@@ -631,14 +636,13 @@ impl Engine {
 
                     self.store.stack.push(StackContent::Value(value));
 
-                    let value = match self.store.stack.last() {
+                    match self.store.stack.last() {
                         Some(Value(v)) => {
                             fr.locals[*idx as usize] = *v;
-                            *v
                         }
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.tee"),
-                    };
+                    }
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
@@ -866,7 +870,6 @@ impl Engine {
                         //TODO do something with the args
 
                         if v != 0 {
-                            let arity = 0;
                             let label = Label {
                                 id: label_idx,
                                 arity: arity as u32,
@@ -1002,7 +1005,12 @@ impl Engine {
         }
         */
 
-        assert!(self.store.stack.pop().expect("Expected Label found nothing").is_label());
+        assert!(self
+            .store
+            .stack
+            .pop()
+            .expect("Expected Label found nothing")
+            .is_label());
 
         self.store.stack.extend(val_m);
 
@@ -1010,55 +1018,53 @@ impl Engine {
     }
 
     fn do_branch(&mut self, label_idx: &u32) -> Result<(), InstructionOutcome> {
-        let labels_len = self.get_labels()?.len();
+        let labels = self.get_labels()?.iter().copied().collect::<Vec<_>>();
+        let labels_len = labels.len();
+        let label = labels.get(*label_idx as usize).expect("No label found");
 
-        if let Some(label) = self.get_labels()?.get(*label_idx as usize) {
-            let content = self.get_content_from_stack(label.arity)?;
-            for i in content.iter() {
-                if let StackContent::Value(_) = i {
-                    // ok
-                } else {
-                    panic!("Expected value");
-                }
+        let content = self.get_content_from_stack(label.arity)?;
+        for i in content.iter() {
+            if let StackContent::Value(_) = i {
+                // ok
+            } else {
+                panic!("Expected value");
             }
+        }
 
-            for l in 0..labels_len {
-                {
-                    let v = &mut self.store.stack;
+        for _ in 0..labels_len {
+            {
+                let v = &mut self.store.stack;
 
-                    for i in (0..v.len()).rev() {
-                        match v[i] {
-                            StackContent::Value(_) => break,
-                            _ => {
-                                v.remove(i);
-                            }
+                for i in (0..v.len()).rev() {
+                    match v[i] {
+                        StackContent::Value(_) => break,
+                        _ => {
+                            v.remove(i);
                         }
                     }
                 }
-
-                if let Some(StackContent::Label(_)) = self.store.stack.last() {
-                    self.store.stack.pop();
-                } else {
-                    panic!("Expected label");
-                }
             }
 
-            self.store.stack.extend(content);
-        } else {
-            panic!("No label found");
+            if let Some(StackContent::Label(_)) = self.store.stack.last() {
+                self.store.stack.pop();
+            } else {
+                panic!("Expected label");
+            }
         }
+
+        self.store.stack.extend(content);
 
         Ok(())
     }
 
     /// Gets the labels of the stack
-    fn get_labels(&self) -> Result<Vec<Label>, InstructionOutcome> {
+    fn get_labels<'a>(&'a self) -> Result<Vec<&'a Label>, InstructionOutcome> {
         Ok(self
             .store
             .stack
             .iter()
             .filter_map(|w| {
-                if let &StackContent::Label(x) = w {
+                if let StackContent::Label(x) = w {
                     Some(x)
                 } else {
                     None
@@ -1074,14 +1080,13 @@ impl Engine {
             .stack
             .iter()
             .filter_map(|w| {
-                if let &StackContent::Label(x) = w {
+                if let StackContent::Label(x) = w {
                     Some(x)
                 } else {
                     None
                 }
             })
-            .collect::<Vec<_>>()
-            .len())
+            .count())
     }
 
     fn get_content_from_stack(
@@ -1099,7 +1104,7 @@ impl Engine {
     fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize, InstructionOutcome> {
         Ok(match block_ty {
             BlockType::Empty => 0,
-            BlockType::ValueType(v) => 1,
+            BlockType::ValueType(_) => 1,
             BlockType::ValueTypeTy(ty) => self
                 .module
                 .borrow()
@@ -1111,6 +1116,7 @@ impl Engine {
         })
     }
 
+    /*
     fn get_block_params(
         &mut self,
         block_ty: &BlockType,
@@ -1152,12 +1158,13 @@ impl Engine {
             arity,
             args.iter()
                 .map(|w| match w.as_ref().expect("Cannot be None") {
-                    StackContent::Value(v) => v.clone(),
+                    StackContent::Value(v) => v,
                     _ => panic!("Something was messed up"),
                 })
                 .collect(),
         ))
     }
+    */
 }
 
 #[cfg(test)]
