@@ -994,11 +994,15 @@ impl Engine {
             .drain((self.store.stack.len() - indices.len())..)
             .collect::<Vec<_>>();
 
+        debug!("val_m {:?}", val_m);
+
+        /*
         for _ in 0..(val_m.len() - 1) {
             debug!("Popping from stack {:?}", self.store.stack.pop());
         }
+        */
 
-        assert!(self.store.stack.pop().expect("must not be None").is_label());
+        assert!(self.store.stack.pop().expect("Expected Label found nothing").is_label());
 
         self.store.stack.extend(val_m);
 
