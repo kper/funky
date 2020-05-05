@@ -401,6 +401,7 @@ pub enum ExternalVal {
 
 macro_rules! fetch_unop {
     ($stack: expr) => {{
+        debug!("Popping {:?}", $stack.last());
         let v1 = match $stack.pop().unwrap() {
             Value(v) => v,
             x => panic!("Top of stack was not of type $v_ty: {:?}", x),
@@ -595,6 +596,7 @@ impl Engine {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
+            debug!("stack {:#?}", self.store.stack);
             match &instructions[ip] {
                 Var(OP_LOCAL_GET(idx)) => {
                     self.store.stack.push(Value(fr.locals[*idx as usize]));
@@ -637,7 +639,7 @@ impl Engine {
                         None => panic!("Empty stack during local.tee"),
                     };
 
-                    //self.store.stack.push(StackContent::Value(value));
+                    self.store.stack.push(StackContent::Value(value));
 
                     match self.store.stack.last() {
                         Some(Value(v)) => {
@@ -828,17 +830,18 @@ impl Engine {
                 }
                 Param(OP_SELECT) => {
                     debug!("OP_SELECT");
+                    debug!("Popping {:?}", self.store.stack.last());
                     let c = match self.store.stack.pop() {
                         Some(Value(I32(x))) => x,
                         _ => panic!("Expected I32 on top of stack"),
                     };
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     if c != 0 {
-                        debug!("pushing {:?}", v1);
-                        self.store.stack.push(Value(v1))
-                    } else {
-                        debug!("pushing {:?}", v2);
+                        debug!("C is not 0 therefore, pushing {:?}", v2);
                         self.store.stack.push(Value(v2))
+                    } else {
+                        debug!("C is not 0 therefore, pushing {:?}", v1);
+                        self.store.stack.push(Value(v1))
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
@@ -1465,6 +1468,6 @@ mod tests {
             ],
         }];
         e.run_function(0);
-        assert_eq!(I32(1), e.store.globals[0].val);
+        assert_eq!(I32(2), e.store.globals[0].val);
     }
 }
