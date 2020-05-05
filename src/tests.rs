@@ -319,3 +319,39 @@ fn test_run_call() {
         engine.store.stack.last()
     )
 }
+
+#[test]
+fn test_run_gcd() {
+    env_logger::init();
+    let engine = test_run_engine!("gcd.wasm", 1, vec![I32(50), I32(10)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(10))),
+        engine.store.stack.last()
+    )
+}
+
+/*
+#[test]
+fn test_run_call_indirect() {
+    /*
+     (module
+      (table 2 anyfunc)
+      (func $f1 (result i32)
+        i32.const 42)
+      (func $f2 (result i32)
+        i32.const 13)
+      (elem (i32.const 0) $f1 $f2)
+      (type $return_i32 (func (result i32)))
+      (func (export "callByIndex") (param $i i32) (result i32)
+        local.get $i
+        call_indirect (type $return_i32))
+    )*/
+
+    env_logger::init();
+    let engine = test_run_engine!("wasm-table.wasm", 0, vec![I32(1)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(43))),
+        engine.store.stack.last()
+    )
+}
+*/

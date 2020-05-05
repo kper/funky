@@ -268,6 +268,7 @@ fn check_elem_ty(
     tables: &[&TableType],
     func_ty: &[FuncType],
 ) -> IResult<bool> {
+    debug!("check_elem_ty");
     //https://webassembly.github.io/spec/core/valid/modules.html#element-segments
 
     let table_idx = &elem_ty.table;
@@ -280,11 +281,12 @@ fn check_elem_ty(
 
     get_expr_const_i32_ty(offset)?;
 
-    // All function must be defined
+
+    debug!("defined functions {:#?}", func_ty);
 
     let not_def_funcs: Vec<_> = funcs_idx
         .iter()
-        .filter_map(|w| func_ty.get(*w as usize))
+        .filter(|w| func_ty.get(**w as usize).is_none())
         .collect();
 
     for f in not_def_funcs.iter() {

@@ -596,7 +596,10 @@ impl Engine {
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
             match &instructions[ip] {
-                Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
+                Var(OP_LOCAL_GET(idx)) => {
+                    self.store.stack.push(Value(fr.locals[*idx as usize]));
+                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
+                },
                 Var(OP_LOCAL_SET(idx)) => {
                     debug!("OP_LOCAL_SET {:?}", idx);
                     debug!("locals {:#?}", fr.locals);
@@ -634,7 +637,7 @@ impl Engine {
                         None => panic!("Empty stack during local.tee"),
                     };
 
-                    self.store.stack.push(StackContent::Value(value));
+                    //self.store.stack.push(StackContent::Value(value));
 
                     match self.store.stack.last() {
                         Some(Value(v)) => {
@@ -643,6 +646,8 @@ impl Engine {
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.tee"),
                     }
+
+                    debug!("stack {:?}", self.store.stack);
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
@@ -818,17 +823,21 @@ impl Engine {
                     self.store.stack.push(Value(max(v1, v2)))
                 }
                 Param(OP_DROP) => {
-                    self.store.stack.pop();
+                    debug!("OP_DROP");
+                    debug!("Dropping {:?}", self.store.stack.pop());
                 }
                 Param(OP_SELECT) => {
+                    debug!("OP_SELECT");
                     let c = match self.store.stack.pop() {
                         Some(Value(I32(x))) => x,
                         _ => panic!("Expected I32 on top of stack"),
                     };
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     if c != 0 {
+                        debug!("pushing {:?}", v1);
                         self.store.stack.push(Value(v1))
                     } else {
+                        debug!("pushing {:?}", v2);
                         self.store.stack.push(Value(v2))
                     }
                 }
@@ -860,7 +869,7 @@ impl Engine {
                     self.exit_block(&label)?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
-                    debug!("OP_IF {:?}, {:#?}", ty, block_instructions_branch);
+                    debug!("OP_IF {:?}", ty);
                     let label_idx = self.get_label_count()?;
                     let element = self.store.stack.pop();
                     if let Some(StackContent::Value(Value::I32(v))) = element {
