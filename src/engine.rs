@@ -553,11 +553,17 @@ impl Engine {
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
-                Var(OP_LOCAL_TEE(idx)) => match self.store.stack.last() {
-                    Some(Value(v)) => fr.locals[*idx as usize] = *v,
-                    Some(x) => panic!("Expected value but found {:?}", x),
-                    None => panic!("Empty stack during local.set"),
-                },
+                Var(OP_LOCAL_TEE(idx)) => {
+                    debug!("OP_LOCAL_TEE {:?}", idx);
+                    //debug!("locals {:#?}", fr.locals);
+                    match self.store.stack.last() {
+                        Some(Value(v)) => fr.locals[*idx as usize] = *v,
+                        Some(x) => panic!("Expected value but found {:?}", x),
+                        None => panic!("Empty stack during local.set"),
+                    }
+
+                    self.store.stack.push(self.store.stack.last().unwrap().clone()); //unwrap will be always ok
+                }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
                     .stack
@@ -734,7 +740,20 @@ impl Engine {
 
                     let label_idx = self.get_label_count()?;
 
-                    let arity = 0;
+                    let arity = self.get_block_ty_arity(&ty)?;
+                    let label = Label {
+                        id: label_idx,
+                        arity: arity as u32,
+                    };
+
+                    self.enter_block(&label, fr, block_instructions)?;
+                    self.exit_block(&label)?;
+                }
+                Ctrl(OP_LOOP(ty, block_instructions)) => {
+                    debug!("OP_LOOP {:?}, {:#?}", ty, block_instructions);
+
+                    let label_idx = self.get_label_count()?;
+                    let arity = self.get_block_ty_arity(&ty)?;
                     let label = Label {
                         id: label_idx,
                         arity: arity as u32,
@@ -744,6 +763,7 @@ impl Engine {
                     self.exit_block(&label)?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
+                    debug!("OP_IF {:?}, {:#?}", ty, block_instructions_branch);
                     let label_idx = self.get_label_count()?;
                     let element = self.store.stack.pop();
                     if let Some(StackContent::Value(Value::I32(v))) = element {
@@ -772,6 +792,7 @@ impl Engine {
                     block_instructions_branch_1,
                     block_instructions_branch_2,
                 )) => {
+                    debug!("OP_IF_AND_ELSE {:?}", ty);
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
                         let label_idx = self.get_label_count()?;
                         //let (arity, args) = self.get_block_params(&ty)?;
