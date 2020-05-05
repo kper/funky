@@ -483,16 +483,21 @@ impl Engine {
 
     /// Take only exported functions into consideration
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) {
+        debug!("invoke_exported_function {:?}", idx);
         let k = {
             let x = self.module.borrow();
+
+            debug!("x's element {:?}", x.exports.get(idx as usize));
 
             let w = x
                 .exports
                 .get(idx as usize)
-                .expect("Exported function not found");
+                .expect("Exported function not found or found something else");
 
             w.value.clone()
         };
+
+        debug!("Exports {:#?}", k);
 
         let exported = match k {
             ExternalKindType::Function { ty } => {
@@ -523,7 +528,7 @@ impl Engine {
             module_instance: Rc::downgrade(&self.module),
         }));
 
-        debug!("Invoking function on {:#?}", self);
+        debug!("Invoking function");
         self.run_function(idx).expect("run function failed");
     }
 
@@ -593,14 +598,38 @@ impl Engine {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
             match &instructions[ip] {
                 Var(OP_LOCAL_GET(idx)) => self.store.stack.push(Value(fr.locals[*idx as usize])),
-                Var(OP_LOCAL_SET(idx)) => match self.store.stack.pop() {
-                    Some(Value(v)) => fr.locals[*idx as usize] = v,
-                    Some(x) => panic!("Expected value but found {:?}", x),
-                    None => panic!("Empty stack during local.set"),
-                },
+                Var(OP_LOCAL_SET(idx)) => {
+                    debug!("OP_LOCAL_SET {:?}", idx);
+                    debug!("locals {:#?}", fr.locals);
+
+                    match self.store.stack.pop() {
+                        Some(Value(v)) => {
+                            match fr.locals.get_mut(*idx as usize) {
+                                Some(k) => *k = v, //Exists replace
+                                None => {
+                                    //Does not exists; push
+                                    fr.locals.push(v)
+                                }
+                            }
+                        }
+                        Some(x) => panic!("Expected value but found {:?}", x),
+                        None => panic!("Empty stack during local.set"),
+                    }
+                }
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
-                    //debug!("locals {:#?}", fr.locals);
+                    debug!("locals {:#?}", fr.locals);
+
+                    let value = match self.store.stack.last() {
+                        Some(Value(v)) => {
+                            fr.locals.push(*v);
+                            v.clone()
+                        }
+                        Some(x) => panic!("Expected value but found {:?}", x),
+                        None => panic!("Empty stack during local.tee"),
+                    };
+
+                    self.store.stack.push(StackContent::Value(value));
 
                     let value = match self.store.stack.last() {
                         Some(Value(v)) => {
@@ -608,10 +637,8 @@ impl Engine {
                             *v
                         }
                         Some(x) => panic!("Expected value but found {:?}", x),
-                        None => panic!("Empty stack during local.set"),
+                        None => panic!("Empty stack during local.tee"),
                     };
-
-                    self.store.stack.push(StackContent::Value(value));
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store

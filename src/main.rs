@@ -70,6 +70,6 @@ fn main() {
 
     info!("Invoking function {:?}", 1);
     //e.invoke_function(0, vec![I32(2), I32(10)]);
-    e.invoke_exported_function(0, vec![]);
+    e.invoke_exported_function(1, vec![I32(30), I32(50)]);
     eprintln!("Last value on stack was: {:?}", e.store.stack.last())
 }
