@@ -532,6 +532,27 @@ impl Engine {
         self.run_function(idx).expect("run function failed");
     }
 
+    fn local_set(&mut self, idx: u32, fr: &mut Frame) -> Result<(), InstructionOutcome> {
+        debug!("OP_LOCAL_SET {:?}", idx);
+        debug!("locals {:#?}", fr.locals);
+
+        match self.store.stack.pop() {
+            Some(Value(v)) => {
+                match fr.locals.get_mut(idx as usize) {
+                    Some(k) => *k = v, //Exists replace
+                    None => {
+                        //Does not exists; push
+                        fr.locals.push(v)
+                    }
+                }
+            }
+            Some(x) => panic!("Expected value but found {:?}", x),
+            None => panic!("Empty stack during local.set"),
+        }
+
+        Ok(())
+    }
+
     fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
         let fn_types = &self
             .store
@@ -601,53 +622,33 @@ impl Engine {
                 Var(OP_LOCAL_GET(idx)) => {
                     self.store.stack.push(Value(fr.locals[*idx as usize]));
                     debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
-                },
+                }
                 Var(OP_LOCAL_SET(idx)) => {
-                    debug!("OP_LOCAL_SET {:?}", idx);
-                    debug!("locals {:#?}", fr.locals);
-
-                    match self.store.stack.pop() {
-                        Some(Value(v)) => {
-                            match fr.locals.get_mut(*idx as usize) {
-                                Some(k) => *k = v, //Exists replace
-                                None => {
-                                    //Does not exists; push
-                                    fr.locals.push(v)
-                                }
-                            }
-                        }
-                        Some(x) => panic!("Expected value but found {:?}", x),
-                        None => panic!("Empty stack during local.set"),
-                    }
+                    self.local_set(*idx, fr)?;
                 }
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
                     debug!("locals {:#?}", fr.locals);
 
-                    let value = match self.store.stack.last() {
+                    let value = match self.store.stack.pop() {
                         Some(Value(v)) => {
                             match fr.locals.get(*idx as usize) {
                                 None => {
-                                    fr.locals.push(*v);
+                                    fr.locals.push(v);
                                 }
                                 Some(_) => {}
                             };
 
-                            *v
+                            v
                         }
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.tee"),
                     };
 
                     self.store.stack.push(StackContent::Value(value));
+                    self.store.stack.push(StackContent::Value(value));
 
-                    match self.store.stack.last() {
-                        Some(Value(v)) => {
-                            fr.locals[*idx as usize] = *v;
-                        }
-                        Some(x) => panic!("Expected value but found {:?}", x),
-                        None => panic!("Empty stack during local.tee"),
-                    }
+                    self.local_set(*idx, fr);
 
                     debug!("stack {:?}", self.store.stack);
                 }
@@ -856,7 +857,7 @@ impl Engine {
                     };
 
                     self.enter_block(&label, fr, block_instructions)?;
-                    self.exit_block(&label)?;
+                    self.exit_block(&label, block_instructions)?;
                 }
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
@@ -869,7 +870,7 @@ impl Engine {
                     };
 
                     self.enter_block(&label, fr, block_instructions)?;
-                    self.exit_block(&label)?;
+                    self.exit_block(&label, block_instructions)?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
@@ -888,7 +889,7 @@ impl Engine {
                             };
 
                             self.enter_block(&label, fr, &block_instructions_branch)?;
-                            self.exit_block(&label)?;
+                            self.exit_block(&label, &block_instructions_branch)?;
                             //self.run_instructions(fr, block_instructions_branch)?;
                         }
                     } else {
@@ -915,11 +916,12 @@ impl Engine {
 
                         if v != 0 {
                             self.enter_block(&label, fr, &block_instructions_branch_1)?;
+                            self.exit_block(&label, &block_instructions_branch_1)?;
                         } else {
                             self.enter_block(&label, fr, &block_instructions_branch_2)?;
+                            self.exit_block(&label, &block_instructions_branch_2)?;
                         }
 
-                        self.exit_block(&label)?;
                     } else {
                         panic!("Value must be i32.const");
                     }
@@ -991,23 +993,16 @@ impl Engine {
         Ok(())
     }
 
-    fn exit_block(&mut self, l: &Label) -> Result<(), InstructionOutcome> {
-        debug!("exit_block {:?}", l);
+    fn exit_block(&mut self, _l: &Label, block_instructions: &[Instruction]) -> Result<(), InstructionOutcome> {
+        debug!("exit_block {:?}", block_instructions);
 
-        let indices = self
-            .store
-            .stack
-            .iter()
-            .rev()
-            .take_while(|w| w.is_value())
-            .map(|_| ())
-            .collect::<Vec<_>>();
+        let mut val_m = Vec::new();
 
-        let val_m = self
-            .store
-            .stack
-            .drain((self.store.stack.len() - indices.len())..)
-            .collect::<Vec<_>>();
+        debug!("stack {:#?}", self.store.stack);
+
+        while let Some(Value(v)) = self.store.stack.last() {
+            val_m.push(self.store.stack.pop().unwrap());
+        }
 
         debug!("val_m {:?}", val_m);
 
@@ -1021,10 +1016,12 @@ impl Engine {
             .store
             .stack
             .pop()
-            .expect("Expected Label found nothing")
+            .expect("Expected Label, but found nothing")
             .is_label());
 
-        self.store.stack.extend(val_m);
+        self.store.stack.append(&mut val_m);
+
+        debug!("stack {:#?}", self.store.stack);
 
         Ok(())
     }
@@ -1032,9 +1029,18 @@ impl Engine {
     fn do_branch(&mut self, label_idx: &u32) -> Result<(), InstructionOutcome> {
         let labels = self.get_labels()?.iter().copied().collect::<Vec<_>>();
         let labels_len = labels.len();
-        let label = labels.get(*label_idx as usize).expect("No label found");
+
+        assert!(label_idx + 1 <= labels_len as u32);
+
+        // Get the last label + label_idx
+        let label = labels
+            .get(labels.len() - 1 - *label_idx as usize)
+            .expect("No label found");
+
+        debug!("label {:?}", label);
 
         let content = self.get_content_from_stack(label.arity)?;
+        debug!("content {:?}", content);
         for i in content.iter() {
             if let StackContent::Value(_) = i {
                 // ok
@@ -1043,28 +1049,25 @@ impl Engine {
             }
         }
 
-        for _ in 0..labels_len {
+        for _ in 0..*label_idx {
             {
-                let v = &mut self.store.stack;
+                //let v = &mut self.store.stack;
 
-                for i in (0..v.len()).rev() {
-                    match v[i] {
-                        StackContent::Value(_) => break,
-                        _ => {
-                            v.remove(i);
-                        }
-                    }
+                while let Some(StackContent::Value(_)) = self.store.stack.last() {
+                    debug!("Popping value {:?}", self.store.stack.pop());
                 }
-            }
 
-            if let Some(StackContent::Label(_)) = self.store.stack.last() {
-                self.store.stack.pop();
-            } else {
-                panic!("Expected label");
+                if let Some(StackContent::Label(_)) = self.store.stack.last() {
+                    debug!("Popping label {:?}", self.store.stack.pop());
+                } else {
+                    panic!("Expected label");
+                }
             }
         }
 
         self.store.stack.extend(content);
+
+        debug!("stack {:#?}", self.store.stack);
 
         Ok(())
     }
