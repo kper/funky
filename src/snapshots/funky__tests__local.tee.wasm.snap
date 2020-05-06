@@ -1,0 +1,857 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F32,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                10,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                11,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_F32_CONST(
+                                11.1,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_F64_CONST(
+                                12.2,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F32,
+                        },
+                        LocalEntry {
+                            count: 2,
+                            ty: I64,
+                        },
+                        LocalEntry {
+                            count: 1,
+                            ty: F64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                2,
+                            ),
+                        ),
+                        Num(
+                            OP_F64_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                3,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                4,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                5,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                6,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                7,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                8,
+                            ),
+                        ),
+                        Num(
+                            OP_F64_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        F32,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        F64,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [
+                        F32,
+                    ],
+                    return_types: [
+                        F32,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [
+                        F64,
+                    ],
+                    return_types: [
+                        F64,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [
+                        I64,
+                        F32,
+                        F64,
+                        I32,
+                        I32,
+                    ],
+                    return_types: [],
+                },
+            ],
+            funcaddrs: [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+            ],
+            tableaddrs: [],
+            memaddrs: [],
+            globaladdrs: [],
+            exports: [
+                ExportInstance {
+                    name: "type-local-i32",
+                    value: Function {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "type-local-i64",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+                ExportInstance {
+                    name: "type-local-f32",
+                    value: Function {
+                        ty: 2,
+                    },
+                },
+                ExportInstance {
+                    name: "type-local-f64",
+                    value: Function {
+                        ty: 3,
+                    },
+                },
+                ExportInstance {
+                    name: "type-param-i32",
+                    value: Function {
+                        ty: 4,
+                    },
+                },
+                ExportInstance {
+                    name: "type-param-i64",
+                    value: Function {
+                        ty: 5,
+                    },
+                },
+                ExportInstance {
+                    name: "type-param-f32",
+                    value: Function {
+                        ty: 6,
+                    },
+                },
+                ExportInstance {
+                    name: "type-param-f64",
+                    value: Function {
+                        ty: 7,
+                    },
+                },
+                ExportInstance {
+                    name: "type-mixed",
+                    value: Function {
+                        ty: 8,
+                    },
+                },
+            ],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        F32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F32,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        F64,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                10,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                11,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        F32,
+                    ],
+                    return_types: [
+                        F32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_F32_CONST(
+                                11.1,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        F64,
+                    ],
+                    return_types: [
+                        F64,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_F64_CONST(
+                                12.2,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                        F32,
+                        F64,
+                        I32,
+                        I32,
+                    ],
+                    return_types: [],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: F32,
+                        },
+                        LocalEntry {
+                            count: 2,
+                            ty: I64,
+                        },
+                        LocalEntry {
+                            count: 1,
+                            ty: F64,
+                        },
+                    ],
+                    code: [
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                1,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                2,
+                            ),
+                        ),
+                        Num(
+                            OP_F64_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                3,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                4,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F32_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                5,
+                            ),
+                        ),
+                        Num(
+                            OP_F32_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                6,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_I64_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                7,
+                            ),
+                        ),
+                        Num(
+                            OP_I64_EQZ,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                        Num(
+                            OP_F64_CONST(
+                                0.0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_TEE(
+                                8,
+                            ),
+                        ),
+                        Num(
+                            OP_F64_NEG,
+                        ),
+                        Param(
+                            OP_DROP,
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [],
+        stack: [],
+        globals: [],
+    },
+}

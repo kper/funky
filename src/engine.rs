@@ -39,6 +39,7 @@ enum InstructionError {
 enum InstructionOutcome {
     Branch(u32),
     End,
+    Return,
 }
 
 impl Into<ValueType> for Value {
@@ -587,16 +588,17 @@ impl Engine {
 
         debug!("frame {:#?}", fr);
 
-        //loop {
         match self.run_instructions(&mut fr, &f.code)? {
             InstructionOutcome::End => {
                 debug!("End reached");
             }
+            InstructionOutcome::Return => {
+                debug!("Return reached");
+            }
             InstructionOutcome::Branch(b) => {
-                debug!("todo branch {}", b);
+                debug!("Branch {}", b);
             }
         }
-        //}
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -861,9 +863,36 @@ impl Engine {
 
                     self.store.stack.push(StackContent::Label(label));
 
-                    self.enter_block(&label, fr, instructions, &block_instructions, ip)?;
+                    let outcome =
+                        self.enter_block(&label, fr, instructions, &block_instructions, ip)?;
 
-                    self.exit_block(&label, &block_instructions)?;
+                    debug!("OP_BLOCK outcome {:?}", outcome);
+
+                    match outcome {
+                        InstructionOutcome::End => {
+                            debug!("Calling exit_block from OP_BLOCK");
+                            self.exit_block(&label, &block_instructions)?;
+                        }
+                        InstructionOutcome::Return => {
+                            debug!("Skipping exit_block in OP_BLOCK");
+                            return Ok(InstructionOutcome::Return);
+                        }
+                        InstructionOutcome::Branch(b) => {
+                            /// The current branch should continue,
+                            /// it was the branch which was jumped to
+                            /// if not exit
+                            if (b - 1) == 0{
+                                debug!("Continue block's instructions");
+                            }
+                            else {
+                                //debug!("Skipping exit_block in OP_BLOCK");
+                                debug!("Calling exit_block from OP_BLOCK");
+                                self.exit_block(&label, &block_instructions)?;
+
+                                return Ok(InstructionOutcome::Branch(b - 1));
+                            }
+                        }
+                    }
                 }
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
@@ -890,8 +919,15 @@ impl Engine {
                             }
                             Ok(InstructionOutcome::Branch(b)) => {
                                 debug!("Finally branched");
+                                debug!("Calling exit_block from Branch");
                                 self.exit_block(&label, &block_instructions)?;
-                                return Ok(InstructionOutcome::Branch(b));
+                                return Ok(InstructionOutcome::Branch(b)); //don't substract because, there is no continuation
+                            }
+                            Ok(InstructionOutcome::Return) => {
+                                debug!("Finally returned");
+                                debug!("Calling exit_block from Return");
+                                self.exit_block(&label, &block_instructions)?;
+                                return Ok(InstructionOutcome::Return);
                             }
                             Err(err) => {
                                 return Err(err);
@@ -959,7 +995,7 @@ impl Engine {
                                 &block_instructions_branch_1,
                                 ip,
                             )?;
-                        self.exit_block(&label, &block_instructions_branch_1)?;
+                            self.exit_block(&label, &block_instructions_branch_1)?;
                         } else {
                             self.enter_block(
                                 &label,
@@ -975,12 +1011,18 @@ impl Engine {
                     }
                 }
                 Ctrl(OP_BR(label_idx)) => {
+                    debug!("OP_BR {}", label_idx);
                     return self.do_branch(label_idx);
                 }
                 Ctrl(OP_BR_IF(label_idx)) => {
+                    debug!("OP_BR_IF {}", label_idx);
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
+                        debug!("c is {}", c);
                         if c != 0 {
+                            debug!("Branching to {}", label_idx);
                             return self.do_branch(label_idx);
+                        } else {
+                            debug!("Not Branching to {}", label_idx);
                         }
                     }
                 }
@@ -1011,13 +1053,13 @@ impl Engine {
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
-                    break;
+                    return Ok(InstructionOutcome::Return);
                 }
                 Ctrl(OP_NOP) => {}
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
-            
+
             debug!("stack {:#?}", self.store.stack);
         }
 

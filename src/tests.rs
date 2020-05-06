@@ -339,6 +339,170 @@ fn test_run_incr_counter() {
     )
 }
 
+#[test]
+fn test_run_gt() {
+    let engine = test_run_engine!("gt.wasm", 0, vec![I32(10), I32(11)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(0))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_gt_2() {
+    let engine = test_run_engine!("gt.wasm", 0, vec![I32(11), I32(10)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(1))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_sub() {
+    let engine = test_run_engine!("sub.wasm", 0, vec![I32(10), I32(11)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(-1))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_sub2() {
+    let engine = test_run_engine!("sub.wasm", 0, vec![I32(11), I32(10)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(1))),
+        engine.store.stack.last()
+    )
+}
+
+    /*
+     (module
+  (func (export "type-local-i32") (result i32) (local i32) (local.tee 0 (i32.const 0)))
+  (func (export "type-local-i64") (result i64) (local i64) (local.tee 0 (i64.const 0)))
+  (func (export "type-local-f32") (result f32) (local f32) (local.tee 0 (f32.const 0)))
+  (func (export "type-local-f64") (result f64) (local f64) (local.tee 0 (f64.const 0)))
+
+  (func (export "type-param-i32") (param i32) (result i32) (local.tee 0 (i32.const 10)))
+  (func (export "type-param-i64") (param i64) (result i64) (local.tee 0 (i64.const 11)))
+  (func (export "type-param-f32") (param f32) (result f32) (local.tee 0 (f32.const 11.1)))
+  (func (export "type-param-f64") (param f64) (result f64) (local.tee 0 (f64.const 12.2)))
+
+  (func (export "type-mixed") (param i64 f32 f64 i32 i32) (local f32 i64 i64 f64)
+    (drop (i64.eqz (local.tee 0 (i64.const 0))))
+    (drop (f32.neg (local.tee 1 (f32.const 0))))
+    (drop (f64.neg (local.tee 2 (f64.const 0))))
+    (drop (i32.eqz (local.tee 3 (i32.const 0))))
+    (drop (i32.eqz (local.tee 4 (i32.const 0))))
+    (drop (f32.neg (local.tee 5 (f32.const 0))))
+    (drop (i64.eqz (local.tee 6 (i64.const 0))))
+    (drop (i64.eqz (local.tee 7 (i64.const 0))))
+    (drop (f64.neg (local.tee 8 (f64.const 0))))
+  ))*/
+
+#[test]
+fn test_run_local_tee() {
+    let engine = test_run_engine!("local.tee.wasm", 0, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(0))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_1() {
+    let engine = test_run_engine!("local.tee.wasm", 1, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I64(0))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_2() {
+    let engine = test_run_engine!("local.tee.wasm", 2, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(F32(0.0))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_3() {
+    let engine = test_run_engine!("local.tee.wasm", 3, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(F64(0.0))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_4() {
+    let engine = test_run_engine!("local.tee.wasm", 4, vec![I32(2)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(10))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_5() {
+    let engine = test_run_engine!("local.tee.wasm", 5, vec![I64(3)]);
+    assert_eq!(
+        Some(&StackContent::Value(I64(11))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_6() {
+    let engine = test_run_engine!("local.tee.wasm", 6, vec![F32(4.4)]);
+    assert_eq!(
+        Some(&StackContent::Value(F32(11.1))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_local_tee_7() {
+    let engine = test_run_engine!("local.tee.wasm", 7, vec![F64(5.5)]);
+    assert_eq!(
+        Some(&StackContent::Value(F64(12.2))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_as_loop_first_br_if_1() {
+    /*
+      (func (export "as-loop-first") (param i32) (result i32)
+        (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
+      )
+    */
+    let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(0)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(2))),
+        engine.store.stack.last()
+    )
+}
+
+
+#[test]
+fn test_run_as_loop_first_br_if_2() {
+    /*
+      (func (export "as-loop-first") (param i32) (result i32)
+        (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
+      )
+    */
+//    env_logger::init();
+    let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(1)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(3))),
+        engine.store.stack.last()
+    )
+}
+
+
+
 /*
 #[test]
 fn test_run_call_indirect() {
