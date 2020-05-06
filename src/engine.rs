@@ -292,7 +292,6 @@ pub enum StackContent {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Label {
-    id: usize,
     arity: Arity,
 }
 
@@ -853,11 +852,11 @@ impl Engine {
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
                     debug!("OP_BLOCK {:?}", ty);
 
-                    let label_idx = self.get_label_count()?;
+                    //let label_idx = self.get_label_count()?;
 
                     let arity = self.get_block_ty_arity(&ty)?;
                     let label = Label {
-                        id: label_idx,
+                        //id: label_idx,
                         arity: arity as u32,
                     };
 
@@ -870,10 +869,10 @@ impl Engine {
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    let label_idx = self.get_label_count()?;
+                    //let label_idx = self.get_label_count()?;
                     let arity = self.get_block_ty_arity(&ty)?;
                     let label = Label {
-                        id: label_idx,
+                        //id: label_idx,
                         arity: arity as u32,
                     };
 
@@ -914,7 +913,7 @@ impl Engine {
 
                         if v != 0 {
                             let label = Label {
-                                id: label_idx,
+                                //id: label_idx,
                                 arity: arity as u32,
                             };
 
@@ -941,14 +940,13 @@ impl Engine {
                 )) => {
                     debug!("OP_IF_AND_ELSE {:?}", ty);
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        let label_idx = self.get_label_count()?;
+                        //let label_idx = self.get_label_count()?;
                         //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
 
                         //TODO do something with the args
 
                         let label = Label {
-                            id: label_idx,
                             arity: arity as u32,
                         };
 
