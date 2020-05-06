@@ -630,7 +630,6 @@ impl Engine {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
-            debug!("stack {:#?}", self.store.stack);
             match instructions[ip].clone() {
                 Var(OP_LOCAL_GET(idx)) => {
                     self.store.stack.push(Value(fr.locals[idx as usize]));
@@ -688,52 +687,52 @@ impl Engine {
                     self.store.stack.push(Value(F64(v)))
                 }
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 + v2))
                 }
                 Num(OP_I32_SUB) | Num(OP_I64_SUB) | Num(OP_F32_SUB) | Num(OP_F64_SUB) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 - v2))
                 }
                 Num(OP_I32_MUL) | Num(OP_I64_MUL) | Num(OP_F32_MUL) | Num(OP_F64_MUL) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
                 Num(OP_I32_DIV_U) | Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_I64_DIV_U)
                 | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
                 Num(OP_I32_REM_U) | Num(OP_I64_REM_U) | Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 % v2))
                 }
                 Num(OP_I32_AND) | Num(OP_I64_AND) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 & v2))
                 }
                 Num(OP_I32_OR) | Num(OP_I64_OR) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 | v2))
                 }
                 Num(OP_I32_XOR) | Num(OP_I64_XOR) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 ^ v2))
                 }
                 Num(OP_I32_SHL) | Num(OP_I64_SHL) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 << v2))
                 }
                 Num(OP_I32_SHR_U) | Num(OP_I64_SHR_U) | Num(OP_I32_SHR_S) | Num(OP_I64_SHR_S) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 >> v2))
                 }
                 Num(OP_I32_ROTL) | Num(OP_I64_ROTL) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(rotate_left(v1, v2)))
                 }
                 Num(OP_I32_ROTR) | Num(OP_I64_ROTR) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(rotate_right(v1, v2)))
                 }
                 Num(OP_I32_CLZ) | Num(OP_I64_CLZ) => {
@@ -780,17 +779,17 @@ impl Engine {
                 }
                 Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT)
                 | Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(gt(v1, v2)))
                 }
                 Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE)
                 | Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(le(v1, v2)))
                 }
                 Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE)
                 | Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(ge(v1, v2)))
                 }
                 Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
@@ -1018,6 +1017,8 @@ impl Engine {
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
+            
+            debug!("stack {:#?}", self.store.stack);
         }
 
         Ok(InstructionOutcome::End)
@@ -1025,7 +1026,6 @@ impl Engine {
 
     /// Get the frame at the top of the stack
     fn get_frame(&mut self) -> Frame {
-        debug!("stack {:#?}", self.store.stack);
         match self.store.stack.pop() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
@@ -1059,8 +1059,6 @@ impl Engine {
 
         let mut val_m = Vec::new();
 
-        debug!("stack {:#?}", self.store.stack);
-
         while let Some(Value(v)) = self.store.stack.last() {
             val_m.push(self.store.stack.pop().unwrap());
         }
@@ -1081,8 +1079,6 @@ impl Engine {
             .is_label());
 
         self.store.stack.append(&mut val_m);
-
-        debug!("stack {:#?}", self.store.stack);
 
         Ok(())
     }
@@ -1126,8 +1122,6 @@ impl Engine {
         }
 
         self.store.stack.extend(content);
-
-        debug!("stack {:#?}", self.store.stack);
 
         Ok(InstructionOutcome::Branch(label_idx))
     }
