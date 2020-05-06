@@ -881,15 +881,16 @@ impl Engine {
                             /// The current branch should continue,
                             /// it was the branch which was jumped to
                             /// if not exit
-                            if (b - 1) == 0{
+                            if b == 0 {
                                 debug!("Continue block's instructions");
-                            }
-                            else {
+                            } else {
                                 //debug!("Skipping exit_block in OP_BLOCK");
                                 debug!("Calling exit_block from OP_BLOCK");
                                 self.exit_block(&label, &block_instructions)?;
 
-                                return Ok(InstructionOutcome::Branch(b - 1));
+                                return Ok(InstructionOutcome::Branch(
+                                    b.checked_sub(1).unwrap_or(0),
+                                ));
                             }
                         }
                     }
@@ -921,7 +922,9 @@ impl Engine {
                                 debug!("Finally branched");
                                 debug!("Calling exit_block from Branch");
                                 self.exit_block(&label, &block_instructions)?;
-                                return Ok(InstructionOutcome::Branch(b)); //don't substract because, there is no continuation
+                                return Ok(InstructionOutcome::Branch(
+                                    b.checked_sub(1).unwrap_or(0),
+                                ));
                             }
                             Ok(InstructionOutcome::Return) => {
                                 debug!("Finally returned");

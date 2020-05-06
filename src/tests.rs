@@ -322,8 +322,8 @@ fn test_run_call() {
 
 #[test]
 fn test_run_gcd() {
-    env_logger::init();
-    let engine = test_run_engine!("gcd.wasm", 1, vec![I32(50), I32(10)]);
+    //env_logger::init();
+    let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
     assert_eq!(
         Some(&StackContent::Value(I32(10))),
         engine.store.stack.last()
@@ -332,6 +332,7 @@ fn test_run_gcd() {
 
 #[test]
 fn test_run_incr_counter() {
+    env_logger::init();
     let engine = test_run_engine!("incr_counter.wasm", 0, vec![]);
     assert_eq!(
         None,
@@ -497,6 +498,101 @@ fn test_run_as_loop_first_br_if_2() {
     let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(1)]);
     assert_eq!(
         Some(&StackContent::Value(I32(3))),
+        engine.store.stack.last()
+    )
+}
+
+/*
+(func (export "br_if0") (result i32)
+    (local $i i32)
+    (local.set $i (i32.const 0))
+    (block $outer (result i32)
+      (block $inner
+        (br_if $inner (i32.const 0))
+        (local.set $i (i32.or (local.get $i) (i32.const 0x1)))
+        (br_if $inner (i32.const 1))
+        (local.set $i (i32.or (local.get $i) (i32.const 0x2)))
+      )
+      (drop (br_if $outer
+        (block (result i32)
+          (local.set $i (i32.or (local.get $i) (i32.const 0x4)))
+          (local.get $i)
+        )
+        (i32.const 0)
+      ))
+      (local.set $i (i32.or (local.get $i) (i32.const 0x8)))
+      (drop (br_if $outer
+        (block (result i32)
+          (local.set $i (i32.or (local.get $i) (i32.const 0x10)))
+          (local.get $i)
+        )
+        (i32.const 1)
+      ))
+      (local.set $i (i32.or (local.get $i) (i32.const 0x20))) (local.get $i)
+    )
+  )
+
+  (func (export "br_if1") (result i32)
+    (block $l0 (result i32)
+      (drop
+        (br_if $l0
+          (block $l1 (result i32) (br $l1 (i32.const 1)))
+          (i32.const 1)
+        )
+      )
+      (i32.const 0)
+    )
+  )
+
+  (func (export "br_if2") (result i32)
+    (block $l0 (result i32)
+      (if (i32.const 1)
+        (then
+          (drop
+            (br_if $l0
+              (block $l1 (result i32) (br $l1 (i32.const 1)))
+              (i32.const 1)
+            )
+          )
+        )
+      )
+      (i32.const 0)
+    )
+  )
+
+  (func (export "br_if3") (result i32)
+    (local $i1 i32)
+    (drop
+      (i32.add
+        (block $l0 (result i32)
+          (drop (br_if $l0
+            (block (result i32) (local.set $i1 (i32.const 1)) (local.get $i1))
+            (block (result i32) (local.set $i1 (i32.const 2)) (local.get $i1))
+          ))
+          (i32.const 0)
+        )
+        (i32.const 0)
+      )
+    )
+    (local.get $i1)
+  )
+
+  (func (export "br") (result i32)
+    (block $l0 (result i32)
+      (if (i32.const 1)
+        (then (br $l0 (block $l1 (result i32) (br $l1 (i32.const 1)))))
+        (else (block (drop (block $l1 (result i32) (br $l1 (i32.const 1))))))
+      )
+      (i32.const 1)
+    )
+  ))*/
+
+#[test]
+fn test_run_br_if0() {
+    //env_logger::init();
+    let engine = test_run_engine!("labels.wasm", 0, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(0x1d))),
         engine.store.stack.last()
     )
 }
