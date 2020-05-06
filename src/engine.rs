@@ -642,19 +642,9 @@ impl Engine {
                 }
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
-                    debug!("locals {:#?}", fr.locals);
 
                     let value = match self.store.stack.pop() {
-                        Some(Value(v)) => {
-                            match fr.locals.get(idx as usize) {
-                                None => {
-                                    fr.locals.push(v);
-                                }
-                                Some(_) => {}
-                            };
-
-                            v
-                        }
+                        Some(StackContent::Value(v)) => v,
                         Some(x) => panic!("Expected value but found {:?}", x),
                         None => panic!("Empty stack during local.tee"),
                     };
@@ -662,9 +652,10 @@ impl Engine {
                     self.store.stack.push(StackContent::Value(value));
                     self.store.stack.push(StackContent::Value(value));
 
-                    self.local_set(idx, fr);
+                    self.local_set(idx, fr)?;
 
                     debug!("stack {:?}", self.store.stack);
+                    debug!("locals {:#?}", fr.locals);
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
