@@ -31,9 +31,14 @@ pub enum Value {
 type Arity = u32;
 
 #[derive(Debug, PartialEq, Clone)]
-#[allow(dead_code)]
-enum InstructionOutcome {
+enum InstructionError {
     Trap,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+enum InstructionOutcome {
+    Branch(u32),
+    End,
 }
 
 impl Into<ValueType> for Value {
@@ -532,7 +537,7 @@ impl Engine {
         self.run_function(idx).expect("run function failed");
     }
 
-    fn local_set(&mut self, idx: u32, fr: &mut Frame) -> Result<(), InstructionOutcome> {
+    fn local_set(&mut self, idx: u32, fr: &mut Frame) -> Result<(), InstructionError> {
         debug!("OP_LOCAL_SET {:?}", idx);
         debug!("locals {:#?}", fr.locals);
 
@@ -574,16 +579,25 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_function(&mut self, idx: u32) -> Result<(), InstructionOutcome> {
+    fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
         debug!("Running function {:?}", idx);
 
-        let f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
+        let mut f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
 
         let mut fr = self.get_frame();
 
         debug!("frame {:#?}", fr);
 
-        self.run_instructions(&mut fr, &f.code)?;
+        //loop {
+        match self.run_instructions(&mut fr, &f.code)? {
+            InstructionOutcome::End => {
+                debug!("End reached");
+            }
+            InstructionOutcome::Branch(b) => {
+                debug!("todo branch {}", b);
+            }
+        }
+        //}
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -613,18 +627,18 @@ impl Engine {
         &mut self,
         fr: &mut Frame,
         instructions: &[Instruction],
-    ) -> Result<(), InstructionOutcome> {
+    ) -> Result<InstructionOutcome, InstructionError> {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
             debug!("stack {:#?}", self.store.stack);
-            match &instructions[ip] {
+            match instructions[ip].clone() {
                 Var(OP_LOCAL_GET(idx)) => {
-                    self.store.stack.push(Value(fr.locals[*idx as usize]));
-                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
+                    self.store.stack.push(Value(fr.locals[idx as usize]));
+                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[idx as usize]);
                 }
                 Var(OP_LOCAL_SET(idx)) => {
-                    self.local_set(*idx, fr)?;
+                    self.local_set(idx, fr)?;
                 }
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
@@ -632,7 +646,7 @@ impl Engine {
 
                     let value = match self.store.stack.pop() {
                         Some(Value(v)) => {
-                            match fr.locals.get(*idx as usize) {
+                            match fr.locals.get(idx as usize) {
                                 None => {
                                     fr.locals.push(v);
                                 }
@@ -648,40 +662,40 @@ impl Engine {
                     self.store.stack.push(StackContent::Value(value));
                     self.store.stack.push(StackContent::Value(value));
 
-                    self.local_set(*idx, fr);
+                    self.local_set(idx, fr);
 
                     debug!("stack {:?}", self.store.stack);
                 }
                 Var(OP_GLOBAL_GET(idx)) => self
                     .store
                     .stack
-                    .push(Value(self.store.globals[*idx as usize].val)),
+                    .push(Value(self.store.globals[idx as usize].val)),
                 Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => {
-                        if !self.store.globals[*idx as usize].mutable {
+                        if !self.store.globals[idx as usize].mutable {
                             panic!("Attempting to modify a immutable global")
                         }
-                        self.store.globals[*idx as usize].val = v
+                        self.store.globals[idx as usize].val = v
                     }
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
                 },
                 Num(OP_I32_CONST(v)) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I32(*v)));
+                    self.store.stack.push(Value(I32(v)));
                     debug!("stack {:#?}", self.store.stack);
                 }
                 Num(OP_I64_CONST(v)) => {
                     debug!("OP_I64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I64(*v)))
+                    self.store.stack.push(Value(I64(v)))
                 }
                 Num(OP_F32_CONST(v)) => {
                     debug!("OP_F32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F32(*v)))
+                    self.store.stack.push(Value(F32(v)))
                 }
                 Num(OP_F64_CONST(v)) => {
                     debug!("OP_F64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F64(*v)))
+                    self.store.stack.push(Value(F64(v)))
                 }
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
@@ -856,8 +870,11 @@ impl Engine {
                         arity: arity as u32,
                     };
 
-                    self.enter_block(&label, fr, block_instructions)?;
-                    self.exit_block(&label, block_instructions)?;
+                    self.store.stack.push(StackContent::Label(label));
+
+                    self.enter_block(&label, fr, instructions, &block_instructions, ip)?;
+
+                    self.exit_block(&label, &block_instructions)?;
                 }
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
@@ -869,8 +886,30 @@ impl Engine {
                         arity: arity as u32,
                     };
 
-                    self.enter_block(&label, fr, block_instructions)?;
-                    self.exit_block(&label, block_instructions)?;
+                    self.store.stack.push(StackContent::Label(label));
+
+                    loop {
+                        let outcome =
+                            self.enter_block(&label, fr, instructions, &block_instructions, ip);
+
+                        debug!("outcome {:?}", outcome);
+
+                        match outcome {
+                            Ok(InstructionOutcome::Branch(0)) => {
+                                debug!("Branch to self");
+                                //self.exit_block(&label, &block_instructions)?;
+                            }
+                            Ok(InstructionOutcome::Branch(b)) => {
+                                debug!("Finally branched");
+                                self.exit_block(&label, &block_instructions)?;
+                                return Ok(InstructionOutcome::Branch(b));
+                            }
+                            Err(err) => {
+                                return Err(err);
+                            }
+                            _ => {}
+                        }
+                    }
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
@@ -888,8 +927,16 @@ impl Engine {
                                 arity: arity as u32,
                             };
 
-                            self.enter_block(&label, fr, &block_instructions_branch)?;
-                            self.exit_block(&label, &block_instructions_branch)?;
+                            self.store.stack.push(StackContent::Label(label));
+
+                            self.enter_block(
+                                &label,
+                                fr,
+                                instructions,
+                                &block_instructions_branch,
+                                ip,
+                            )?;
+                            //self.exit_block(&label, &block_instructions_branch)?;
                             //self.run_instructions(fr, block_instructions_branch)?;
                         }
                     } else {
@@ -914,30 +961,45 @@ impl Engine {
                             arity: arity as u32,
                         };
 
+                        self.store.stack.push(StackContent::Label(label));
+
                         if v != 0 {
-                            self.enter_block(&label, fr, &block_instructions_branch_1)?;
-                            self.exit_block(&label, &block_instructions_branch_1)?;
+                            self.enter_block(
+                                &label,
+                                fr,
+                                instructions,
+                                &block_instructions_branch_1,
+                                ip,
+                            )?;
+                        self.exit_block(&label, &block_instructions_branch_1)?;
                         } else {
-                            self.enter_block(&label, fr, &block_instructions_branch_2)?;
+                            self.enter_block(
+                                &label,
+                                fr,
+                                instructions,
+                                &block_instructions_branch_2,
+                                ip,
+                            )?;
                             self.exit_block(&label, &block_instructions_branch_2)?;
                         }
-
                     } else {
                         panic!("Value must be i32.const");
                     }
                 }
-                Ctrl(OP_BR(label_idx)) => self.do_branch(label_idx)?,
+                Ctrl(OP_BR(label_idx)) => {
+                    return self.do_branch(label_idx);
+                }
                 Ctrl(OP_BR_IF(label_idx)) => {
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
                         if c != 0 {
-                            self.do_branch(label_idx)?
+                            return self.do_branch(label_idx);
                         }
                     }
                 }
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
-                    let t = self.module.borrow().fn_types[*idx as usize].clone();
+                    let t = self.module.borrow().fn_types[idx as usize].clone();
                     let args = self
                         .store
                         .stack
@@ -957,7 +1019,7 @@ impl Engine {
 
                     debug!("Calling {:?} with {:#?}", idx, cfr);
                     self.store.stack.push(Frame(cfr));
-                    self.run_function(*idx)?;
+                    self.run_function(idx)?;
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
@@ -969,7 +1031,7 @@ impl Engine {
             ip += 1;
         }
 
-        Ok(())
+        Ok(InstructionOutcome::End)
     }
 
     /// Get the frame at the top of the stack
@@ -987,13 +1049,23 @@ impl Engine {
         l: &Label,
         frame: &mut Frame,
         instructions: &[Instruction],
-    ) -> Result<(), InstructionOutcome> {
-        self.store.stack.push(StackContent::Label(*l));
-        self.run_instructions(frame, instructions)?;
-        Ok(())
+        block: &[Instruction],
+        pc: usize,
+    ) -> Result<InstructionOutcome, InstructionError> {
+        /*
+        let mut v = instructions.split_off(pc + 1);
+        instructions.extend_from_slice(block);
+        instructions.append(&mut v);
+        */
+
+        self.run_instructions(frame, block)
     }
 
-    fn exit_block(&mut self, _l: &Label, block_instructions: &[Instruction]) -> Result<(), InstructionOutcome> {
+    fn exit_block(
+        &mut self,
+        _l: &Label,
+        block_instructions: &[Instruction],
+    ) -> Result<(), InstructionError> {
         debug!("exit_block {:?}", block_instructions);
 
         let mut val_m = Vec::new();
@@ -1026,7 +1098,8 @@ impl Engine {
         Ok(())
     }
 
-    fn do_branch(&mut self, label_idx: &u32) -> Result<(), InstructionOutcome> {
+    fn do_branch(&mut self, label_idx: u32) -> Result<InstructionOutcome, InstructionError> {
+        debug!("do_branch {}", label_idx);
         let labels = self.get_labels()?.iter().copied().collect::<Vec<_>>();
         let labels_len = labels.len();
 
@@ -1034,7 +1107,7 @@ impl Engine {
 
         // Get the last label + label_idx
         let label = labels
-            .get(labels.len() - 1 - *label_idx as usize)
+            .get(labels.len() - 1 - label_idx as usize)
             .expect("No label found");
 
         debug!("label {:?}", label);
@@ -1049,10 +1122,8 @@ impl Engine {
             }
         }
 
-        for _ in 0..*label_idx {
+        for _ in 0..label_idx {
             {
-                //let v = &mut self.store.stack;
-
                 while let Some(StackContent::Value(_)) = self.store.stack.last() {
                     debug!("Popping value {:?}", self.store.stack.pop());
                 }
@@ -1069,11 +1140,11 @@ impl Engine {
 
         debug!("stack {:#?}", self.store.stack);
 
-        Ok(())
+        Ok(InstructionOutcome::Branch(label_idx))
     }
 
     /// Gets the labels of the stack
-    fn get_labels<'a>(&'a self) -> Result<Vec<&'a Label>, InstructionOutcome> {
+    fn get_labels<'a>(&'a self) -> Result<Vec<&'a Label>, InstructionError> {
         Ok(self
             .store
             .stack
@@ -1089,7 +1160,7 @@ impl Engine {
     }
 
     /// Counts the label in the stacks and returns it
-    fn get_label_count(&self) -> Result<usize, InstructionOutcome> {
+    fn get_label_count(&self) -> Result<usize, InstructionError> {
         Ok(self
             .store
             .stack
@@ -1107,7 +1178,7 @@ impl Engine {
     fn get_content_from_stack(
         &mut self,
         arity: u32,
-    ) -> Result<Vec<StackContent>, InstructionOutcome> {
+    ) -> Result<Vec<StackContent>, InstructionError> {
         let mut v = Vec::with_capacity(arity as usize);
         for _ in 0..arity {
             v.push(self.store.stack.pop().expect("Not expecting None"));
@@ -1116,7 +1187,7 @@ impl Engine {
         Ok(v)
     }
 
-    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize, InstructionOutcome> {
+    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize, InstructionError> {
         Ok(match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,
@@ -1125,7 +1196,7 @@ impl Engine {
                 .borrow()
                 .fn_types
                 .get(*ty as usize)
-                .ok_or(InstructionOutcome::Trap)?
+                .ok_or(InstructionError::Trap)?
                 .return_types
                 .len(),
         })
@@ -1135,7 +1206,7 @@ impl Engine {
     fn get_block_params(
         &mut self,
         block_ty: &BlockType,
-    ) -> Result<(usize, Vec<Value>), InstructionOutcome> {
+    ) -> Result<(usize, Vec<Value>), InstructionError> {
         let (arity, args) = match block_ty {
             BlockType::Empty => (0, vec![]),
             BlockType::ValueType(v) => (1, vec![self.store.stack.pop()]),
@@ -1145,7 +1216,7 @@ impl Engine {
                     .borrow()
                     .fn_types
                     .get(*ty as usize)
-                    .ok_or(InstructionOutcome::Trap)?
+                    .ok_or(InstructionError::Trap)?
                     .param_types
                     .len();
 
@@ -1154,7 +1225,7 @@ impl Engine {
                     .borrow()
                     .fn_types
                     .get(*ty as usize)
-                    .ok_or(InstructionOutcome::Trap)?
+                    .ok_or(InstructionError::Trap)?
                     .return_types
                     .len();
 

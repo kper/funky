@@ -330,6 +330,15 @@ fn test_run_gcd() {
     )
 }
 
+#[test]
+fn test_run_incr_counter() {
+    let engine = test_run_engine!("incr_counter.wasm", 0, vec![]);
+    assert_eq!(
+        None,
+        engine.store.stack.last()
+    )
+}
+
 /*
 #[test]
 fn test_run_call_indirect() {
