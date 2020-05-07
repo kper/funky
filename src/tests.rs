@@ -340,9 +340,9 @@ fn test_run_gcd_recursive() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_incr_counter() {
-    env_logger::init();
+    //env_logger::init();
     let engine = test_run_engine!("incr_counter.wasm", 0, vec![]);
     assert_eq!(
         None,
@@ -482,7 +482,7 @@ fn test_run_local_tee_7() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_as_loop_first_br_if_1() {
     /*
       (func (export "as-loop-first") (param i32) (result i32)
@@ -497,7 +497,7 @@ fn test_run_as_loop_first_br_if_1() {
 }
 
 
-//#[test]
+#[test]
 fn test_run_as_loop_first_br_if_2() {
     /*
       (func (export "as-loop-first") (param i32) (result i32)
@@ -617,7 +617,7 @@ fn test_run_br_if1() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_br_if2() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 2, vec![]);
@@ -664,7 +664,7 @@ fn test_run_loop() {
   )
 */
 
-//#[test]
+#[test]
 fn test_run_as_loop_mid_br1() {
     //env_logger::init();
     let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(0)]);
@@ -674,7 +674,7 @@ fn test_run_as_loop_mid_br1() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_as_loop_mid_br2() {
     //env_logger::init();
     let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(1)]);
@@ -690,8 +690,8 @@ fn test_run_as_loop_mid_br2() {
   )
 */
 
-//#[test]
 /*
+#[test]
 fn test_run_as_loop_last_br_if1() {
     env_logger::init();
     let engine = test_run_engine!("as_loop_last_br_if.wasm", 0, vec![I32(5)]);
@@ -699,7 +699,7 @@ fn test_run_as_loop_last_br_if1() {
         None,
         engine.store.stack.last()
     )
-}*/
+}
 
 //#[test]
 fn test_run_as_loop_last_br_if2() {
@@ -710,6 +710,7 @@ fn test_run_as_loop_last_br_if2() {
         engine.store.stack.last()
     )
 }
+*/
 
 
 /*
