@@ -332,7 +332,7 @@ fn test_run_gcd_loop() {
 
 #[test]
 fn test_run_gcd_recursive() {
-    //env_logger::init();
+    env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
     assert_eq!(
         Some(&StackContent::Value(I32(10))),

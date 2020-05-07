@@ -898,7 +898,7 @@ impl Engine {
                         instructions,
                         &block_instructions,
                         ip,
-                        Instruction::REPEAT_LOOP(ip),
+                        Instruction::REPEAT_LOOP(ip + 1), // skip copying instructions
                     );
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
@@ -909,7 +909,6 @@ impl Engine {
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
-
 
                         //TODO do something with the args
 
@@ -930,8 +929,7 @@ impl Engine {
                                 ip,
                                 Instruction::EXIT_BLOCK,
                             );
-                        }
-                        else {
+                        } else {
                             debug!("C is zero, therefore not branching");
                         }
                     } else {
@@ -1029,7 +1027,7 @@ impl Engine {
                     ip = ip_before;
                     debug!("Iterating to ip {}", ip);
 
-                    self.exit_block();
+                    //self.exit_block();
                     continue;
                 }
                 x => panic!("Instruction {:?} not implemented", x),
