@@ -901,77 +901,44 @@ impl Engine {
                         Instruction::REPEAT_LOOP(ip),
                     );
                 }
-                /*
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
                     let label_idx = self.get_label_count()?;
                     let element = self.store.stack.pop();
+                    debug!("Popping value {:?}", element);
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
 
+
                         //TODO do something with the args
 
                         if v != 0 {
+                            debug!("C is not zero, therefore branching");
+
                             let label = Label {
-                                //id: label_idx,
                                 arity: arity as u32,
+                                ip_before: ip,
+                                ip_after: ip,
                             };
 
-                            self.store.stack.push(StackContent::Label(label));
-
-                            /*
                             self.enter_block(
-                                &label,
+                                label,
                                 fr,
                                 instructions,
                                 &block_instructions_branch,
                                 ip,
-                            )?;
-                            */
-
-                            let outcome = self.enter_block(
-                                &label,
-                                fr,
-                                instructions,
-                                &block_instructions_branch,
-                                ip,
+                                Instruction::EXIT_BLOCK,
                             );
-
-                            debug!("outcome {:?}", outcome);
-
-                            match outcome {
-                                Ok(InstructionOutcome::Branch(0)) => {
-                                    debug!("Branch to self");
-                                    //self.exit_block(&label, &block_instructions)?;
-                                }
-                                Ok(InstructionOutcome::Branch(b)) => {
-                                    debug!("Finally branched");
-                                    debug!("Calling exit_block from Branch");
-                                    self.exit_block(&label, &block_instructions_branch)?;
-                                    return Ok(InstructionOutcome::Branch(
-                                        b.checked_sub(1).unwrap_or(0),
-                                    ));
-                                }
-                                Ok(InstructionOutcome::Return) => {
-                                    debug!("Finally returned");
-                                    debug!("Calling exit_block from Return");
-                                    self.exit_block(&label, &block_instructions_branch)?;
-                                    return Ok(InstructionOutcome::Return);
-                                }
-                                Err(err) => {
-                                    return Err(err);
-                                }
-                                _ => {}
-                            }
-
-                            //self.exit_block(&label, &block_instructions_branch)?;
-                            //self.run_instructions(fr, block_instructions_branch)?;
+                        }
+                        else {
+                            debug!("C is zero, therefore not branching");
                         }
                     } else {
                         panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
+                /*
                 Ctrl(OP_IF_AND_ELSE(
                     ty,
                     block_instructions_branch_1,
@@ -1061,6 +1028,8 @@ impl Engine {
                     debug!("REPEAT_LOOP");
                     ip = ip_before;
                     debug!("Iterating to ip {}", ip);
+
+                    self.exit_block();
                     continue;
                 }
                 x => panic!("Instruction {:?} not implemented", x),

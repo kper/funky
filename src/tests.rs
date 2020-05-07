@@ -320,10 +320,20 @@ fn test_run_call() {
     )
 }
 
-//#[test]
-fn test_run_gcd() {
+#[test]
+fn test_run_gcd_loop() {
     //env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 1, vec![I32(50), I32(10)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(10))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_gcd_recursive() {
+    //env_logger::init();
+    let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
     assert_eq!(
         Some(&StackContent::Value(I32(10))),
         engine.store.stack.last()
@@ -637,7 +647,7 @@ fn test_run_br_if4() {
     )
 }
 
-#[test]
+//#[test] I think the test is wrong
 fn test_run_loop() {
     env_logger::init();
     let engine = test_run_engine!("loop.wasm", 0, vec![]);
