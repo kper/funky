@@ -596,7 +596,7 @@ impl Engine {
                 debug!("Return reached");
             }
             InstructionOutcome::Branch(b) => {
-                debug!("Branch {}", b);
+                panic!("Branch {} reached, but should not", b);
             }
         }
 
@@ -957,6 +957,7 @@ impl Engine {
 
                             self.store.stack.push(StackContent::Label(label));
 
+                            /*
                             self.enter_block(
                                 &label,
                                 fr,
@@ -964,6 +965,38 @@ impl Engine {
                                 &block_instructions_branch,
                                 ip,
                             )?;
+                            */
+
+                        let outcome =
+                            self.enter_block(&label, fr, instructions, &block_instructions_branch, ip);
+
+                        debug!("outcome {:?}", outcome);
+
+                        match outcome {
+                            Ok(InstructionOutcome::Branch(0)) => {
+                                debug!("Branch to self");
+                                //self.exit_block(&label, &block_instructions)?;
+                            }
+                            Ok(InstructionOutcome::Branch(b)) => {
+                                debug!("Finally branched");
+                                debug!("Calling exit_block from Branch");
+                                self.exit_block(&label, &block_instructions_branch)?;
+                                return Ok(InstructionOutcome::Branch(
+                                    b.checked_sub(1).unwrap_or(0),
+                                ));
+                            }
+                            Ok(InstructionOutcome::Return) => {
+                                debug!("Finally returned");
+                                debug!("Calling exit_block from Return");
+                                self.exit_block(&label, &block_instructions_branch)?;
+                                return Ok(InstructionOutcome::Return);
+                            }
+                            Err(err) => {
+                                return Err(err);
+                            }
+                            _ => {}
+                        }
+
                             //self.exit_block(&label, &block_instructions_branch)?;
                             //self.run_instructions(fr, block_instructions_branch)?;
                         }
@@ -971,7 +1004,7 @@ impl Engine {
                         panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
-                Ctrl(OP_IF_AND_ELSE(
+                /*Ctrl(OP_IF_AND_ELSE(
                     ty,
                     block_instructions_branch_1,
                     block_instructions_branch_2,
@@ -1013,6 +1046,7 @@ impl Engine {
                         panic!("Value must be i32.const");
                     }
                 }
+                */
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
                     return self.do_branch(label_idx);

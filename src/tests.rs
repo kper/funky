@@ -320,7 +320,6 @@ fn test_run_call() {
     )
 }
 
-#[test]
 fn test_run_gcd() {
     //env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
@@ -597,6 +596,96 @@ fn test_run_br_if0() {
     )
 }
 
+#[test]
+fn test_run_br_if1() {
+    //env_logger::init();
+    let engine = test_run_engine!("labels.wasm", 1, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(0x1))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_br_if2() {
+    //env_logger::init();
+    let engine = test_run_engine!("labels.wasm", 2, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(1))),
+        engine.store.stack.last()
+    )
+}
+
+fn test_run_br_if3() {
+    //env_logger::init();
+    let engine = test_run_engine!("labels.wasm", 3, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(1))),
+        engine.store.stack.last()
+    )
+}
+
+fn test_run_br_if4() {
+    //env_logger::init();
+    let engine = test_run_engine!("labels.wasm", 4, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(2))),
+        engine.store.stack.last()
+    )
+}
+
+/*
+(func (export "as-loop-mid") (param i32) (result i32)
+    (block (loop (call $dummy) (br_if 1 (local.get 0)) (return (i32.const 2))))
+    (i32.const 4)
+  )
+*/
+
+#[test]
+fn test_run_as_loop_mid_br1() {
+    //env_logger::init();
+    let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(0)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(2))),
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_as_loop_mid_br2() {
+    //env_logger::init();
+    let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(1)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(4))),
+        engine.store.stack.last()
+    )
+}
+
+/*
+  (func (export "as-loop-last") (param i32)
+    (loop (call $dummy) (br_if 1 (local.get 0)))
+  )
+*/
+
+#[test]
+fn test_run_as_loop_last_br_if1() {
+    //env_logger::init();
+    let engine = test_run_engine!("as_loop_last_br_if.wasm", 0, vec![I32(0)]);
+    assert_eq!(
+        None,
+        engine.store.stack.last()
+    )
+}
+
+#[test]
+fn test_run_as_loop_last_br_if2() {
+    //env_logger::init();
+    let engine = test_run_engine!("as_loop_last_br_if.wasm", 0, vec![I32(1)]);
+    assert_eq!(
+        None,
+        engine.store.stack.last()
+    )
+}
 
 
 /*

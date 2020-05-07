@@ -1,0 +1,127 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [],
+                    code: [],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_LOOP(
+                                Empty,
+                                [
+                                    Ctrl(
+                                        OP_CALL(
+                                            0,
+                                        ),
+                                    ),
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    ),
+                                    Ctrl(
+                                        OP_BR_IF(
+                                            1,
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [],
+                },
+            ],
+            funcaddrs: [
+                0,
+                1,
+            ],
+            tableaddrs: [],
+            memaddrs: [],
+            globaladdrs: [],
+            exports: [
+                ExportInstance {
+                    name: "as-loop-last",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+            ],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_LOOP(
+                                Empty,
+                                [
+                                    Ctrl(
+                                        OP_CALL(
+                                            0,
+                                        ),
+                                    ),
+                                    Var(
+                                        OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    ),
+                                    Ctrl(
+                                        OP_BR_IF(
+                                            1,
+                                        ),
+                                    ),
+                                ],
+                            ),
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [],
+        stack: [],
+        globals: [],
+    },
+}
