@@ -68,8 +68,8 @@ fn main() {
 
     e.instantiation(&module);
 
-    info!("Invoking function {:?}", 0);
+    info!("Invoking function {:?}", 2);
     //e.invoke_function(0, vec![I32(2), I32(10)]);
-    e.invoke_exported_function(0, vec![I32(1), I32(1)]);
+    e.invoke_exported_function(2, vec![I32(50), I32(10)]);
     eprintln!("Last value on stack was: {:?}", e.store.stack.last())
 }
