@@ -522,11 +522,13 @@ impl Engine {
 
         let len = args.len() as u32;
 
+        /*
         self.store.stack.push(Label(Label {
             arity: len,
             ip_before: 0,
             ip_after: self.module.borrow().code[idx as usize].code.len(),
         }));
+        */
 
         self.store.stack.push(Frame(Frame {
             arity: len,
