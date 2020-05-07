@@ -35,13 +35,6 @@ enum InstructionError {
     Trap,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum InstructionOutcome {
-    Branch(u32),
-    End,
-    Return,
-}
-
 impl Into<ValueType> for Value {
     fn into(self) -> ValueType {
         match self {
@@ -294,6 +287,8 @@ pub enum StackContent {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Label {
     arity: Arity,
+    ip_before: usize,
+    ip_after: usize,
 }
 
 #[derive(Debug)]
@@ -522,16 +517,24 @@ impl Engine {
         };
     }
 
-    #[warn(dead_code)]
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
-        //TODO check if function[idx] exists
         self.check_parameters_of_function(idx, &args);
 
+        let len = args.len() as u32;
+
+        self.store.stack.push(Label(Label {
+            arity: len,
+            ip_before: 0,
+            ip_after: self.module.borrow().code[idx as usize].code.len(),
+        }));
+
         self.store.stack.push(Frame(Frame {
-            arity: args.len() as u32,
+            arity: len,
             locals: args,
             module_instance: Rc::downgrade(&self.module),
         }));
+
+        debug!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
         self.run_function(idx).expect("run function failed");
@@ -588,17 +591,8 @@ impl Engine {
 
         debug!("frame {:#?}", fr);
 
-        match self.run_instructions(&mut fr, &f.code)? {
-            InstructionOutcome::End => {
-                debug!("End reached");
-            }
-            InstructionOutcome::Return => {
-                debug!("Return reached");
-            }
-            InstructionOutcome::Branch(b) => {
-                panic!("Branch {} reached, but should not", b);
-            }
-        }
+        let mut instructions = f.code.clone();
+        self.run_instructions(&mut fr, &mut instructions)?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -617,6 +611,14 @@ impl Engine {
             self.store.stack.pop();
         }
 
+        /*
+        debug!("Popping labels");
+        while let Some(Label(_)) = self.store.stack.last() {
+            debug!("Pop label");
+            self.store.stack.pop();
+        }
+        */
+
         self.store.stack.append(&mut ret);
 
         debug!("Stack after function return {:#?}", self.store.stack);
@@ -627,8 +629,8 @@ impl Engine {
     fn run_instructions(
         &mut self,
         fr: &mut Frame,
-        instructions: &[Instruction],
-    ) -> Result<InstructionOutcome, InstructionError> {
+        instructions: &mut Vec<Instruction>,
+    ) -> Result<(), InstructionError> {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
@@ -856,45 +858,21 @@ impl Engine {
                     //let label_idx = self.get_label_count()?;
 
                     let arity = self.get_block_ty_arity(&ty)?;
+
                     let label = Label {
                         //id: label_idx,
                         arity: arity as u32,
+                        ip_before: ip,
+                        ip_after: ip,
                     };
 
-                    self.store.stack.push(StackContent::Label(label));
+                    //self.store.stack.push(StackContent::Label(label));
 
-                    let outcome =
-                        self.enter_block(&label, fr, instructions, &block_instructions, ip)?;
+                    self.enter_block(label, fr, instructions, &block_instructions, ip)?;
 
-                    debug!("OP_BLOCK outcome {:?}", outcome);
-
-                    match outcome {
-                        InstructionOutcome::End => {
-                            debug!("Calling exit_block from OP_BLOCK");
-                            self.exit_block(&label, &block_instructions)?;
-                        }
-                        InstructionOutcome::Return => {
-                            debug!("Skipping exit_block in OP_BLOCK");
-                            return Ok(InstructionOutcome::Return);
-                        }
-                        InstructionOutcome::Branch(b) => {
-                            /// The current branch should continue,
-                            /// it was the branch which was jumped to
-                            /// if not exit
-                            if b == 0 {
-                                debug!("Continue block's instructions");
-                            } else {
-                                //debug!("Skipping exit_block in OP_BLOCK");
-                                debug!("Calling exit_block from OP_BLOCK");
-                                self.exit_block(&label, &block_instructions)?;
-
-                                return Ok(InstructionOutcome::Branch(
-                                    b.checked_sub(1).unwrap_or(0),
-                                ));
-                            }
-                        }
-                    }
+                    //self.exit_block(&label, &block_instructions)?;
                 }
+                /*
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
@@ -1009,7 +987,7 @@ impl Engine {
                         panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
-                /*Ctrl(OP_IF_AND_ELSE(
+                Ctrl(OP_IF_AND_ELSE(
                     ty,
                     block_instructions_branch_1,
                     block_instructions_branch_2,
@@ -1054,8 +1032,10 @@ impl Engine {
                 */
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
-                    return self.do_branch(label_idx);
+                    self.do_branch(label_idx, &mut ip);
+                    //continue;
                 }
+                /*
                 Ctrl(OP_BR_IF(label_idx)) => {
                     debug!("OP_BR_IF {}", label_idx);
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
@@ -1068,6 +1048,7 @@ impl Engine {
                         }
                     }
                 }
+                */
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
@@ -1083,29 +1064,27 @@ impl Engine {
                         })
                         .collect();
 
-                    let cfr = Frame {
-                        arity: t.return_types.len() as u32,
-                        locals: args,
-                        module_instance: Rc::downgrade(&self.module),
-                    };
-
-                    debug!("Calling {:?} with {:#?}", idx, cfr);
-                    self.store.stack.push(Frame(cfr));
-                    self.run_function(idx)?;
+                    self.invoke_function(idx, args);
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
-                    return Ok(InstructionOutcome::Return);
+                    return Ok(());
                 }
                 Ctrl(OP_NOP) => {}
+                EXIT_BLOCK => {
+                    debug!("EXIT_BLOCK");
+                    self.exit_block();
+                }
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
 
+            debug!("ip is now {}", ip);
+
             debug!("stack {:#?}", self.store.stack);
         }
 
-        Ok(InstructionOutcome::End)
+        Ok(())
     }
 
     /// Get the frame at the top of the stack
@@ -1120,41 +1099,54 @@ impl Engine {
 
     fn enter_block(
         &mut self,
-        l: &Label,
+        mut l: Label,
         frame: &mut Frame,
-        instructions: &[Instruction],
+        instructions: &mut Vec<Instruction>,
         block: &[Instruction],
         pc: usize,
-    ) -> Result<InstructionOutcome, InstructionError> {
-        /*
+    ) -> Result<(), InstructionError> {
+        debug!("enter block");
+
+        debug!("instructions before {:?}", instructions);
+
         let mut v = instructions.split_off(pc + 1);
         instructions.extend_from_slice(block);
+        instructions.push(EXIT_BLOCK);
         instructions.append(&mut v);
-        */
 
-        self.run_instructions(frame, block)
+        debug!("instructions after {:?}", instructions);
+
+        debug!("Adjusting stack");
+        debug!("Stack before {:#?}", self.store.stack);
+        self.store.stack.push(StackContent::Label(l));
+        self.store
+            .stack
+            .iter_mut()
+            .filter_map(|w| match w {
+                StackContent::Label(v) => Some(v),
+                _ => None,
+            })
+            .for_each(|w| w.ip_after += block.len() + 1);
+
+        //l.ip_after += 1;
+
+        debug!("Stack after {:#?}", self.store.stack);
+
+        Ok(())
+
+        //self.run_instructions(frame, block)
     }
 
-    fn exit_block(
-        &mut self,
-        _l: &Label,
-        block_instructions: &[Instruction],
-    ) -> Result<(), InstructionError> {
-        debug!("exit_block {:?}", block_instructions);
+    fn exit_block(&mut self) -> Result<(), InstructionError> {
+        debug!("exit_block");
 
         let mut val_m = Vec::new();
 
-        while let Some(Value(v)) = self.store.stack.last() {
+        while let Some(Value(_v)) = self.store.stack.last() {
             val_m.push(self.store.stack.pop().unwrap());
         }
 
-        debug!("val_m {:?}", val_m);
-
-        /*
-        for _ in 0..(val_m.len() - 1) {
-            debug!("Popping from stack {:?}", self.store.stack.pop());
-        }
-        */
+        debug!("values {:?}", val_m);
 
         assert!(self
             .store
@@ -1168,7 +1160,7 @@ impl Engine {
         Ok(())
     }
 
-    fn do_branch(&mut self, label_idx: u32) -> Result<InstructionOutcome, InstructionError> {
+    fn do_branch(&mut self, label_idx: u32, ip: &mut usize) -> Result<(), InstructionError> {
         debug!("do_branch {}", label_idx);
         let labels = self.get_labels()?.iter().copied().collect::<Vec<_>>();
         let labels_len = labels.len();
@@ -1195,11 +1187,15 @@ impl Engine {
         for _ in 0..label_idx {
             {
                 while let Some(StackContent::Value(_)) = self.store.stack.last() {
-                    debug!("Popping value {:?}", self.store.stack.pop());
+                    let k = self.store.stack.pop();
+                    debug!("Popping value {:?}", k);
                 }
 
-                if let Some(StackContent::Label(_)) = self.store.stack.last() {
-                    debug!("Popping label {:?}", self.store.stack.pop());
+                if let Some(StackContent::Label(l)) = self.store.stack.last() {
+                    *ip = l.ip_after;
+                    debug!("Iterating to {}", ip);
+                    let k = self.store.stack.pop();
+                    debug!("Popping label {:?}", k);
                 } else {
                     panic!("Expected label");
                 }
@@ -1208,7 +1204,7 @@ impl Engine {
 
         self.store.stack.extend(content);
 
-        Ok(InstructionOutcome::Branch(label_idx))
+        Ok(())
     }
 
     /// Gets the labels of the stack
@@ -1452,41 +1448,53 @@ mod tests {
 
     #[test]
     fn test_function_block_br() {
-        env_logger::init();
         let mut e = empty_engine();
-        e.store.stack = vec![Frame(Frame {
-            arity: 1,
-            locals: vec![I32(1), I32(1)],
-            module_instance: e.downgrade_mod_instance(),
-        })];
+
+        let code = vec![Ctrl(OP_BLOCK(
+            BlockType::Empty,
+            vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],
+        ))];
+
+        e.store.stack = vec![
+            Frame(Frame {
+                arity: 0,
+                locals: vec![],
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
-            code: vec![Ctrl(OP_BLOCK(
-                BlockType::Empty,
-                vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],
-            ))],
+            code: code,
         }];
         e.run_function(0);
         assert_eq!(None, e.store.stack.pop());
     }
 
-    //#[test]
+    #[test]
     fn test_function_block_br_deep() {
         let mut e = empty_engine();
-        e.store.stack = vec![Frame(Frame {
-            arity: 1,
-            locals: vec![I32(1), I32(1)],
-            module_instance: e.downgrade_mod_instance(),
-        })];
+
+        //env_logger::init();
+        let code = vec![Ctrl(OP_BLOCK(
+            BlockType::Empty,
+            vec![Ctrl(OP_BLOCK(
+                BlockType::Empty,
+                vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(2))]))],
+            ))],
+        ))];
+
+        e.store.stack = vec![
+            Frame(Frame {
+                arity: 0,
+                locals: vec![],
+                module_instance: e.downgrade_mod_instance(),
+            }),
+        ];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
-            code: vec![Ctrl(OP_BLOCK(
-                BlockType::Empty,
-                vec![Ctrl(OP_BLOCK(
-                    BlockType::Empty,
-                    vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(2))]))],
-                ))],
-            ))],
+            code,
         }];
         e.run_function(0);
         assert_eq!(None, e.store.stack.pop());

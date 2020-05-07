@@ -242,6 +242,7 @@ pub enum Limits {
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
+    EXIT_BLOCK,
     Ctrl(CtrlInstructions),
     Param(ParamInstructions),
     Var(VarInstructions),
