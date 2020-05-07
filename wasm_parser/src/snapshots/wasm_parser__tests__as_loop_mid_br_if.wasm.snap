@@ -1,0 +1,103 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Type(
+            TypeSection {
+                entries: [
+                    FunctionSignature {
+                        param_types: [],
+                        return_types: [],
+                    },
+                    FunctionSignature {
+                        param_types: [
+                            I32,
+                        ],
+                        return_types: [
+                            I32,
+                        ],
+                    },
+                ],
+            },
+        ),
+        Function(
+            FunctionSection {
+                types: [
+                    0,
+                    1,
+                ],
+            },
+        ),
+        Export(
+            ExportSection {
+                entries: [
+                    ExportEntry {
+                        name: "as-loop-mid",
+                        kind: Function {
+                            ty: 1,
+                        },
+                    },
+                ],
+            },
+        ),
+        Code(
+            CodeSection {
+                entries: [
+                    FunctionBody {
+                        locals: [],
+                        code: [],
+                    },
+                    FunctionBody {
+                        locals: [],
+                        code: [
+                            Ctrl(
+                                OP_BLOCK(
+                                    Empty,
+                                    [
+                                        Ctrl(
+                                            OP_LOOP(
+                                                Empty,
+                                                [
+                                                    Ctrl(
+                                                        OP_CALL(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            2,
+                                                        ),
+                                                    ),
+                                                    Ctrl(
+                                                        OP_RETURN,
+                                                    ),
+                                                ],
+                                            ),
+                                        ),
+                                    ],
+                                ),
+                            ),
+                            Num(
+                                OP_I32_CONST(
+                                    4,
+                                ),
+                            ),
+                        ],
+                    },
+                ],
+            },
+        ),
+    ],
+}

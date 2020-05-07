@@ -378,7 +378,7 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
             i,
             Instruction::Num(NumericInstructions::OP_F64_REINTERPRET_I64),
         ),
-        _ => panic!("unknown instruction"),
+        _ => panic!("unknown instruction {}", instr[0]),
     };
 
     debug!("instr {:?}", expr);
@@ -636,7 +636,7 @@ mod test {
         assert_eq!(
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
-                BlockType::S33(-128),
+                BlockType::ValueTypeTy(-128),
                 vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)

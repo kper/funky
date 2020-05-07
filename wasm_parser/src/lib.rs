@@ -206,6 +206,7 @@ fn parse_code_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     debug!("parse_code_section");
 
     let (i, times) = take_leb_u32(i)?;
+    debug!("times {}", times);
     let (i, codes) = count(take_code, times as usize)(i)?;
 
     Ok((i, Section::Code(CodeSection { entries: codes })))
@@ -215,6 +216,7 @@ fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
     debug!("parse_code");
 
     let (i, _size) = take_leb_u32(i)?;
+    debug!("_size {}", _size);
     let (i, k) = take_func(i)?;
 
     Ok((i, k))
@@ -224,6 +226,7 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
     debug!("take_func");
 
     let (i, times) = take_leb_u32(i)?;
+    debug!("times {}", times);
     let (i, locals) = count(take_local, times as usize)(i)?;
 
     debug!("locals {:?}", locals);
@@ -315,14 +318,15 @@ pub(crate) fn take_expr(mut i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
     let mut instructions = Vec::new();
 
     loop {
-        let (w, ii) = instructions::parse_instr(i)?;
-        instructions.push(ii);
-        i = w;
-        let (_, k) = take(1u8)(w)?; //0x0B
+        let (_, k) = take(1u8)(i)?; //0x0B
 
         if k == END_INSTR {
             break;
         }
+
+        let (w, ii) = instructions::parse_instr(i)?;
+        instructions.push(ii);
+        i = w;
     }
 
     debug!("instructions {:#?}", instructions);
@@ -790,5 +794,11 @@ mod tests {
     #[test]
     fn test_gcd() {
         test_file!("gcd.wasm");
+    }
+
+    #[test]
+    fn test_as_loop_mid_br_if() {
+        env_logger::init();
+        test_file!("as_loop_mid_br_if.wasm");
     }
 }
