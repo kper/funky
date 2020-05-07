@@ -622,11 +622,12 @@ fn test_run_br_if3() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 3, vec![]);
     assert_eq!(
-        Some(&StackContent::Value(I32(1))),
+        Some(&StackContent::Value(I32(2))),
         engine.store.stack.last()
     )
 }
 
+//#[test]
 fn test_run_br_if4() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 4, vec![]);
