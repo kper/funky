@@ -320,9 +320,10 @@ fn test_run_call() {
     )
 }
 
+//#[test]
 fn test_run_gcd() {
     //env_logger::init();
-    let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
+    let engine = test_run_engine!("gcd.wasm", 1, vec![I32(50), I32(10)]);
     assert_eq!(
         Some(&StackContent::Value(I32(10))),
         engine.store.stack.last()
@@ -399,7 +400,7 @@ fn test_run_sub2() {
     (drop (f64.neg (local.tee 8 (f64.const 0))))
   ))*/
 
-//#[test]
+#[test]
 fn test_run_local_tee() {
     let engine = test_run_engine!("local.tee.wasm", 0, vec![]);
     assert_eq!(
@@ -408,7 +409,7 @@ fn test_run_local_tee() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_1() {
     let engine = test_run_engine!("local.tee.wasm", 1, vec![]);
     assert_eq!(
@@ -417,7 +418,7 @@ fn test_run_local_tee_1() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_2() {
     let engine = test_run_engine!("local.tee.wasm", 2, vec![]);
     assert_eq!(
@@ -426,7 +427,7 @@ fn test_run_local_tee_2() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_3() {
     let engine = test_run_engine!("local.tee.wasm", 3, vec![]);
     assert_eq!(
@@ -435,7 +436,7 @@ fn test_run_local_tee_3() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_4() {
     let engine = test_run_engine!("local.tee.wasm", 4, vec![I32(2)]);
     assert_eq!(
@@ -444,7 +445,7 @@ fn test_run_local_tee_4() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_5() {
     let engine = test_run_engine!("local.tee.wasm", 5, vec![I64(3)]);
     assert_eq!(
@@ -453,7 +454,7 @@ fn test_run_local_tee_5() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_6() {
     let engine = test_run_engine!("local.tee.wasm", 6, vec![F32(4.4)]);
     assert_eq!(
@@ -462,7 +463,7 @@ fn test_run_local_tee_6() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_local_tee_7() {
     let engine = test_run_engine!("local.tee.wasm", 7, vec![F64(5.5)]);
     assert_eq!(
@@ -586,7 +587,7 @@ fn test_run_as_loop_first_br_if_2() {
     )
   ))*/
 
-//#[test]
+#[test]
 fn test_run_br_if0() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 0, vec![]);
