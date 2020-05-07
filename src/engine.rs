@@ -967,35 +967,40 @@ impl Engine {
                             )?;
                             */
 
-                        let outcome =
-                            self.enter_block(&label, fr, instructions, &block_instructions_branch, ip);
+                            let outcome = self.enter_block(
+                                &label,
+                                fr,
+                                instructions,
+                                &block_instructions_branch,
+                                ip,
+                            );
 
-                        debug!("outcome {:?}", outcome);
+                            debug!("outcome {:?}", outcome);
 
-                        match outcome {
-                            Ok(InstructionOutcome::Branch(0)) => {
-                                debug!("Branch to self");
-                                //self.exit_block(&label, &block_instructions)?;
+                            match outcome {
+                                Ok(InstructionOutcome::Branch(0)) => {
+                                    debug!("Branch to self");
+                                    //self.exit_block(&label, &block_instructions)?;
+                                }
+                                Ok(InstructionOutcome::Branch(b)) => {
+                                    debug!("Finally branched");
+                                    debug!("Calling exit_block from Branch");
+                                    self.exit_block(&label, &block_instructions_branch)?;
+                                    return Ok(InstructionOutcome::Branch(
+                                        b.checked_sub(1).unwrap_or(0),
+                                    ));
+                                }
+                                Ok(InstructionOutcome::Return) => {
+                                    debug!("Finally returned");
+                                    debug!("Calling exit_block from Return");
+                                    self.exit_block(&label, &block_instructions_branch)?;
+                                    return Ok(InstructionOutcome::Return);
+                                }
+                                Err(err) => {
+                                    return Err(err);
+                                }
+                                _ => {}
                             }
-                            Ok(InstructionOutcome::Branch(b)) => {
-                                debug!("Finally branched");
-                                debug!("Calling exit_block from Branch");
-                                self.exit_block(&label, &block_instructions_branch)?;
-                                return Ok(InstructionOutcome::Branch(
-                                    b.checked_sub(1).unwrap_or(0),
-                                ));
-                            }
-                            Ok(InstructionOutcome::Return) => {
-                                debug!("Finally returned");
-                                debug!("Calling exit_block from Return");
-                                self.exit_block(&label, &block_instructions_branch)?;
-                                return Ok(InstructionOutcome::Return);
-                            }
-                            Err(err) => {
-                                return Err(err);
-                            }
-                            _ => {}
-                        }
 
                             //self.exit_block(&label, &block_instructions_branch)?;
                             //self.run_instructions(fr, block_instructions_branch)?;
@@ -1105,6 +1110,7 @@ impl Engine {
 
     /// Get the frame at the top of the stack
     fn get_frame(&mut self) -> Frame {
+        debug!("get_frame");
         match self.store.stack.pop() {
             Some(Frame(fr)) => fr,
             Some(x) => panic!("Expected frame but found {:?}", x),
@@ -1442,6 +1448,48 @@ mod tests {
         }];
         e.run_function(0);
         assert_eq!(Value(I32(2)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_function_block_br() {
+        env_logger::init();
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![I32(1), I32(1)],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_BLOCK(
+                BlockType::Empty,
+                vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(None, e.store.stack.pop());
+    }
+
+    //#[test]
+    fn test_function_block_br_deep() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![I32(1), I32(1)],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Ctrl(OP_BLOCK(
+                BlockType::Empty,
+                vec![Ctrl(OP_BLOCK(
+                    BlockType::Empty,
+                    vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(2))]))],
+                ))],
+            ))],
+        }];
+        e.run_function(0);
+        assert_eq!(None, e.store.stack.pop());
     }
 
     //#[test]
