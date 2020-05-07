@@ -587,7 +587,7 @@ impl Engine {
     fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
         debug!("Running function {:?}", idx);
 
-        let mut f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
+        let f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
 
         let mut fr = self.get_frame();
 
@@ -899,11 +899,10 @@ impl Engine {
                         &block_instructions,
                         ip,
                         Instruction::REPEAT_LOOP(ip + 1), // skip copying instructions
-                    );
+                    )?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
-                    let label_idx = self.get_label_count()?;
                     let element = self.store.stack.pop();
                     debug!("Popping value {:?}", element);
                     if let Some(StackContent::Value(Value::I32(v))) = element {
@@ -928,7 +927,7 @@ impl Engine {
                                 &block_instructions_branch,
                                 ip,
                                 Instruction::EXIT_BLOCK,
-                            );
+                            )?;
                         } else {
                             debug!("C is zero, therefore not branching");
                         }
@@ -965,7 +964,7 @@ impl Engine {
                                 &block_instructions_branch_1,
                                 ip,
                                 Instruction::EXIT_BLOCK,
-                            );
+                            )?;
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
@@ -976,7 +975,7 @@ impl Engine {
                                 &block_instructions_branch_2,
                                 ip,
                                 Instruction::EXIT_BLOCK,
-                            );
+                            )?;
                         }
                     } else {
                         panic!("Value must be i32.const");
@@ -984,7 +983,7 @@ impl Engine {
                 }
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
-                    self.do_branch(label_idx, &mut ip);
+                    self.do_branch(label_idx, &mut ip)?;
                 }
                 Ctrl(OP_BR_IF(label_idx)) => {
                     debug!("OP_BR_IF {}", label_idx);
@@ -992,7 +991,7 @@ impl Engine {
                         debug!("c is {}", c);
                         if c != 0 {
                             debug!("Branching to {}", label_idx);
-                            self.do_branch(label_idx, &mut ip);
+                            self.do_branch(label_idx, &mut ip)?;
                         } else {
                             debug!("Not Branching to {}", label_idx);
                         }
@@ -1022,14 +1021,13 @@ impl Engine {
                 Ctrl(OP_NOP) => {}
                 EXIT_BLOCK => {
                     debug!("EXIT_BLOCK");
-                    self.exit_block();
+                    self.exit_block()?;
                 }
                 REPEAT_LOOP(ip_before) => {
                     debug!("REPEAT_LOOP");
                     ip = ip_before;
                     debug!("Iterating to ip {}", ip);
 
-                    //self.exit_block();
                     continue;
                 }
                 x => panic!("Instruction {:?} not implemented", x),
@@ -1056,8 +1054,8 @@ impl Engine {
 
     fn enter_block(
         &mut self,
-        mut l: Label,
-        frame: &mut Frame,
+        l: Label,
+        _frame: &mut Frame,
         instructions: &mut Vec<Instruction>,
         block: &[Instruction],
         pc: usize,
@@ -1152,9 +1150,7 @@ impl Engine {
                 debug!("Popping value {:?}", k);
             }
 
-            if let Some(StackContent::Label(l)) = self.store.stack.last() {
-                //*ip = l.ip_after;
-                //debug!("Iterating to {}", ip);
+            if let Some(StackContent::Label(_)) = self.store.stack.last() {
                 let k = self.store.stack.pop();
                 debug!("Popping label {:?}", k);
             } else {
@@ -1183,22 +1179,7 @@ impl Engine {
             .collect::<Vec<_>>())
     }
 
-    /// Counts the label in the stacks and returns it
-    fn get_label_count(&self) -> Result<usize, InstructionError> {
-        Ok(self
-            .store
-            .stack
-            .iter()
-            .filter_map(|w| {
-                if let StackContent::Label(x) = w {
-                    Some(x)
-                } else {
-                    None
-                }
-            })
-            .count())
-    }
-
+    /// Pops `arity` times off the stack and returns it
     fn get_content_from_stack(
         &mut self,
         arity: u32,
