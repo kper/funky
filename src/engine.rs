@@ -863,7 +863,6 @@ impl Engine {
                     let arity = self.get_block_ty_arity(&ty)?;
 
                     let label = Label {
-                        //id: label_idx,
                         arity: arity as u32,
                         ip_before: ip,
                         ip_after: ip,
@@ -871,55 +870,38 @@ impl Engine {
 
                     //self.store.stack.push(StackContent::Label(label));
 
-                    self.enter_block(label, fr, instructions, &block_instructions, ip)?;
+                    self.enter_block(
+                        label,
+                        fr,
+                        instructions,
+                        &block_instructions,
+                        ip,
+                        Instruction::EXIT_BLOCK,
+                    )?;
 
                     //self.exit_block(&label, &block_instructions)?;
                 }
-                /*
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    //let label_idx = self.get_label_count()?;
                     let arity = self.get_block_ty_arity(&ty)?;
+
                     let label = Label {
-                        //id: label_idx,
                         arity: arity as u32,
+                        ip_before: ip,
+                        ip_after: ip,
                     };
 
-                    self.store.stack.push(StackContent::Label(label));
-
-                    loop {
-                        let outcome =
-                            self.enter_block(&label, fr, instructions, &block_instructions, ip);
-
-                        debug!("outcome {:?}", outcome);
-
-                        match outcome {
-                            Ok(InstructionOutcome::Branch(0)) => {
-                                debug!("Branch to self");
-                                //self.exit_block(&label, &block_instructions)?;
-                            }
-                            Ok(InstructionOutcome::Branch(b)) => {
-                                debug!("Finally branched");
-                                debug!("Calling exit_block from Branch");
-                                self.exit_block(&label, &block_instructions)?;
-                                return Ok(InstructionOutcome::Branch(
-                                    b.checked_sub(1).unwrap_or(0),
-                                ));
-                            }
-                            Ok(InstructionOutcome::Return) => {
-                                debug!("Finally returned");
-                                debug!("Calling exit_block from Return");
-                                self.exit_block(&label, &block_instructions)?;
-                                return Ok(InstructionOutcome::Return);
-                            }
-                            Err(err) => {
-                                return Err(err);
-                            }
-                            _ => {}
-                        }
-                    }
+                    self.enter_block(
+                        label,
+                        fr,
+                        instructions,
+                        &block_instructions,
+                        ip,
+                        Instruction::REPEAT_LOOP(ip),
+                    );
                 }
+                /*
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
                     let label_idx = self.get_label_count()?;
@@ -1075,6 +1057,12 @@ impl Engine {
                     debug!("EXIT_BLOCK");
                     self.exit_block();
                 }
+                REPEAT_LOOP(ip_before) => {
+                    debug!("REPEAT_LOOP");
+                    ip = ip_before;
+                    debug!("Iterating to ip {}", ip);
+                    continue;
+                }
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
@@ -1104,6 +1092,7 @@ impl Engine {
         instructions: &mut Vec<Instruction>,
         block: &[Instruction],
         pc: usize,
+        terminator_instruction: Instruction,
     ) -> Result<(), InstructionError> {
         debug!("enter block");
 
@@ -1111,7 +1100,7 @@ impl Engine {
 
         let mut v = instructions.split_off(pc + 1);
         instructions.extend_from_slice(block);
-        instructions.push(EXIT_BLOCK);
+        instructions.push(terminator_instruction);
         instructions.append(&mut v);
 
         debug!("instructions after {:?}", instructions);

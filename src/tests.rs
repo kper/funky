@@ -637,6 +637,16 @@ fn test_run_br_if4() {
     )
 }
 
+#[test]
+fn test_run_loop() {
+    env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 0, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(5))),
+        engine.store.stack.last()
+    )
+}
+
 /*
 (func (export "as-loop-mid") (param i32) (result i32)
     (block (loop (call $dummy) (br_if 1 (local.get 0)) (return (i32.const 2))))
