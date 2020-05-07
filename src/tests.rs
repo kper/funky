@@ -684,33 +684,25 @@ fn test_run_as_loop_mid_br2() {
     )
 }
 
-/*
-  (func (export "as-loop-last") (param i32)
-    (loop (call $dummy) (br_if 1 (local.get 0)))
-  )
-*/
-
-/*
 #[test]
-fn test_run_as_loop_last_br_if1() {
-    env_logger::init();
-    let engine = test_run_engine!("as_loop_last_br_if.wasm", 0, vec![I32(5)]);
+fn test_run_if_empty() {
+    //env_logger::init();
+    let engine = test_run_engine!("if.wasm", 0, vec![I32(0)]);
     assert_eq!(
         None,
         engine.store.stack.last()
     )
 }
 
-//#[test]
-fn test_run_as_loop_last_br_if2() {
+#[test]
+fn test_run_if_singular() {
     //env_logger::init();
-    let engine = test_run_engine!("as_loop_last_br_if.wasm", 0, vec![I32(1)]);
+    let engine = test_run_engine!("if.wasm", 1, vec![I32(0)]);
     assert_eq!(
-        None,
+        Some(&StackContent::Value(I32(8))),
         engine.store.stack.last()
     )
 }
-*/
 
 
 /*

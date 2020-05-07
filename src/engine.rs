@@ -936,7 +936,6 @@ impl Engine {
                         panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
-                /*
                 Ctrl(OP_IF_AND_ELSE(
                     ty,
                     block_instructions_branch_1,
@@ -952,34 +951,37 @@ impl Engine {
 
                         let label = Label {
                             arity: arity as u32,
+                            ip_before: ip,
+                            ip_after: ip,
                         };
 
-                        self.store.stack.push(StackContent::Label(label));
-
                         if v != 0 {
+                            debug!("C is not zero, therefore branching (1)");
+
                             self.enter_block(
-                                &label,
+                                label,
                                 fr,
                                 instructions,
                                 &block_instructions_branch_1,
                                 ip,
-                            )?;
-                            self.exit_block(&label, &block_instructions_branch_1)?;
+                                Instruction::EXIT_BLOCK,
+                            );
                         } else {
+                            debug!("C is zero, therefore branching (2)");
+
                             self.enter_block(
-                                &label,
+                                label,
                                 fr,
                                 instructions,
                                 &block_instructions_branch_2,
                                 ip,
-                            )?;
-                            self.exit_block(&label, &block_instructions_branch_2)?;
+                                Instruction::EXIT_BLOCK,
+                            );
                         }
                     } else {
                         panic!("Value must be i32.const");
                     }
                 }
-                */
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
                     self.do_branch(label_idx, &mut ip);
