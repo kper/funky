@@ -836,7 +836,8 @@ impl Engine {
                 }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
-                    debug!("Dropping {:?}", self.store.stack.pop());
+                    let k = self.store.stack.pop();
+                    debug!("Dropping {:?}", k);
                 }
                 Param(OP_SELECT) => {
                     debug!("OP_SELECT");
@@ -1035,22 +1036,19 @@ impl Engine {
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
                     self.do_branch(label_idx, &mut ip);
-                    //continue;
                 }
-                /*
                 Ctrl(OP_BR_IF(label_idx)) => {
                     debug!("OP_BR_IF {}", label_idx);
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
                         debug!("c is {}", c);
                         if c != 0 {
                             debug!("Branching to {}", label_idx);
-                            return self.do_branch(label_idx);
+                            self.do_branch(label_idx, &mut ip);
                         } else {
                             debug!("Not Branching to {}", label_idx);
                         }
                     }
                 }
-                */
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
@@ -1176,6 +1174,9 @@ impl Engine {
 
         debug!("label {:?}", label);
 
+        *ip = label.ip_after;
+        debug!("Iterating to {}", ip);
+
         let content = self.get_content_from_stack(label.arity)?;
         debug!("content {:?}", content);
         for i in content.iter() {
@@ -1186,21 +1187,20 @@ impl Engine {
             }
         }
 
-        for _ in 0..label_idx {
-            {
-                while let Some(StackContent::Value(_)) = self.store.stack.last() {
-                    let k = self.store.stack.pop();
-                    debug!("Popping value {:?}", k);
-                }
+        debug!("Range {:?}", 0..label_idx);
+        for _ in 0..(label_idx + 1) {
+            while let Some(StackContent::Value(_)) = self.store.stack.last() {
+                let k = self.store.stack.pop();
+                debug!("Popping value {:?}", k);
+            }
 
-                if let Some(StackContent::Label(l)) = self.store.stack.last() {
-                    *ip = l.ip_after;
-                    debug!("Iterating to {}", ip);
-                    let k = self.store.stack.pop();
-                    debug!("Popping label {:?}", k);
-                } else {
-                    panic!("Expected label");
-                }
+            if let Some(StackContent::Label(l)) = self.store.stack.last() {
+                //*ip = l.ip_after;
+                //debug!("Iterating to {}", ip);
+                let k = self.store.stack.pop();
+                debug!("Popping label {:?}", k);
+            } else {
+                panic!("Expected label");
             }
         }
 
@@ -1457,13 +1457,11 @@ mod tests {
             vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],
         ))];
 
-        e.store.stack = vec![
-            Frame(Frame {
-                arity: 0,
-                locals: vec![],
-                module_instance: e.downgrade_mod_instance(),
-            }),
-        ];
+        e.store.stack = vec![Frame(Frame {
+            arity: 0,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
 
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -1486,13 +1484,11 @@ mod tests {
             ))],
         ))];
 
-        e.store.stack = vec![
-            Frame(Frame {
-                arity: 0,
-                locals: vec![],
-                module_instance: e.downgrade_mod_instance(),
-            }),
-        ];
+        e.store.stack = vec![Frame(Frame {
+            arity: 0,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
 
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],

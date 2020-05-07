@@ -597,7 +597,7 @@ fn test_run_br_if0() {
     )
 }
 
-//#[test]
+#[test]
 fn test_run_br_if1() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 1, vec![]);
@@ -617,6 +617,7 @@ fn test_run_br_if2() {
     )
 }
 
+#[test]
 fn test_run_br_if3() {
     //env_logger::init();
     let engine = test_run_engine!("labels.wasm", 3, vec![]);
