@@ -1331,7 +1331,7 @@ mod tests {
                 Num(OP_I32_ADD),
             ],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I32(84)), e.store.stack.pop().unwrap());
         e.store.stack = vec![Frame(Frame {
             arity: 1,
@@ -1348,7 +1348,7 @@ mod tests {
                 Num(OP_I64_MUL),
             ],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I64(128)), e.store.stack.pop().unwrap());
     }
 
@@ -1364,7 +1364,7 @@ mod tests {
             locals: vec![],
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I32(5)), e.store.stack.pop().unwrap());
     }
 
@@ -1383,7 +1383,7 @@ mod tests {
                 vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
             ))],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I32(2)), e.store.stack.pop().unwrap());
     }
 
@@ -1406,7 +1406,7 @@ mod tests {
             locals: vec![],
             code: code,
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(None, e.store.stack.pop());
     }
 
@@ -1433,11 +1433,11 @@ mod tests {
             locals: vec![],
             code,
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(None, e.store.stack.pop());
     }
 
-    //#[test]
+    #[test]
     fn test_function_if() {
         let mut e = empty_engine();
         e.store.stack = vec![
@@ -1455,11 +1455,11 @@ mod tests {
                 vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
             ))],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I32(2)), e.store.stack.pop().unwrap());
     }
 
-    //#[test]
+    #[test]
     fn test_function_if_false() {
         let mut e = empty_engine();
         e.store.stack = vec![
@@ -1477,11 +1477,11 @@ mod tests {
                 vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
             ))],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(None, e.store.stack.pop());
     }
 
-    //#[test]
+    #[test]
     fn test_function_if_else_1() {
         let mut e = empty_engine();
         e.store.stack = vec![
@@ -1500,14 +1500,14 @@ mod tests {
                 vec![Num(OP_I32_CONST(-1000))],
             ))],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(
             Some(StackContent::Value(Value::I32(2))),
             e.store.stack.pop()
         );
     }
 
-    //#[test]
+    #[test]
     fn test_function_if_else_2() {
         let mut e = empty_engine();
         e.store.stack = vec![
@@ -1526,7 +1526,7 @@ mod tests {
                 vec![Num(OP_I32_CONST(-1000))],
             ))],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(
             Some(StackContent::Value(Value::I32(-1000))),
             e.store.stack.pop()
@@ -1553,7 +1553,7 @@ mod tests {
                 Num(OP_I32_ADD),
             ],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(Value(I32(37)), e.store.stack.pop().unwrap());
     }
 
@@ -1573,7 +1573,7 @@ mod tests {
                 Var(OP_GLOBAL_SET(0)),
             ],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(I32(420), e.store.globals[0].val);
     }
 
@@ -1596,7 +1596,7 @@ mod tests {
                 Var(OP_GLOBAL_SET(0)),
             ],
         }];
-        e.run_function(0);
+        e.run_function(0).unwrap();
         assert_eq!(I32(2), e.store.globals[0].val);
     }
 }
