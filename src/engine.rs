@@ -640,9 +640,11 @@ impl Engine {
                 Var(OP_LOCAL_GET(idx)) => {
                     self.store.stack.push(Value(fr.locals[idx as usize]));
                     debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[idx as usize]);
+                    debug!("locals {:#?}", fr.locals);
                 }
                 Var(OP_LOCAL_SET(idx)) => {
                     self.local_set(idx, fr)?;
+                    debug!("locals {:#?}", fr.locals);
                 }
                 Var(OP_LOCAL_TEE(idx)) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
@@ -661,16 +663,20 @@ impl Engine {
                     debug!("stack {:?}", self.store.stack);
                     debug!("locals {:#?}", fr.locals);
                 }
-                Var(OP_GLOBAL_GET(idx)) => self
-                    .store
-                    .stack
-                    .push(Value(self.store.globals[idx as usize].val)),
+                Var(OP_GLOBAL_GET(idx)) => {
+                    self.store
+                        .stack
+                        .push(Value(self.store.globals[idx as usize].val));
+
+                    debug!("globals {:#?}", self.store.globals);
+                }
                 Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => {
                         if !self.store.globals[idx as usize].mutable {
                             panic!("Attempting to modify a immutable global")
                         }
-                        self.store.globals[idx as usize].val = v
+                        self.store.globals[idx as usize].val = v;
+                        debug!("globals {:#?}", self.store.globals);
                     }
                     Some(x) => panic!("Expected value but found {:?}", x),
                     None => panic!("Empty stack during local.set"),
@@ -1025,10 +1031,11 @@ impl Engine {
                 }
                 REPEAT_LOOP(ip_before) => {
                     debug!("REPEAT_LOOP");
-                    ip = ip_before;
-                    debug!("Iterating to ip {}", ip);
+                    //ip = ip_before;
+                    //debug!("Iterating to ip {}", ip);
 
-                    continue;
+                    //FIXME?
+                    self.exit_block()?; 
                 }
                 x => panic!("Instruction {:?} not implemented", x),
             }
