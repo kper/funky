@@ -289,6 +289,7 @@ pub struct Label {
     arity: Arity,
     ip_before: usize,
     ip_after: usize,
+    is_loop: bool,
 }
 
 #[derive(Debug)]
@@ -872,6 +873,7 @@ impl Engine {
                         arity: arity as u32,
                         ip_before: ip,
                         ip_after: ip,
+                        is_loop: false,
                     };
 
                     //self.store.stack.push(StackContent::Label(label));
@@ -896,6 +898,7 @@ impl Engine {
                         arity: arity as u32,
                         ip_before: ip,
                         ip_after: ip,
+                        is_loop: true,
                     };
 
                     self.enter_block(
@@ -904,7 +907,7 @@ impl Engine {
                         instructions,
                         &block_instructions,
                         ip,
-                        Instruction::REPEAT_LOOP(ip + 1), // skip copying instructions
+                        Instruction::EXIT_BLOCK, //Instruction::REPEAT_LOOP(ip + 1), // skip copying instructions
                     )?;
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
@@ -924,6 +927,7 @@ impl Engine {
                                 arity: arity as u32,
                                 ip_before: ip,
                                 ip_after: ip,
+                                is_loop: false,
                             };
 
                             self.enter_block(
@@ -958,6 +962,7 @@ impl Engine {
                             arity: arity as u32,
                             ip_before: ip,
                             ip_after: ip,
+                            is_loop: false,
                         };
 
                         if v != 0 {
@@ -1031,11 +1036,11 @@ impl Engine {
                 }
                 REPEAT_LOOP(ip_before) => {
                     debug!("REPEAT_LOOP");
-                    //ip = ip_before;
-                    //debug!("Iterating to ip {}", ip);
+                    ip = ip_before;
+                    debug!("Iterating to ip {}", ip);
 
-                    //FIXME?
-                    self.exit_block()?; 
+                    //self.exit_block()?;
+                    continue;
                 }
                 x => panic!("Instruction {:?} not implemented", x),
             }
@@ -1123,21 +1128,35 @@ impl Engine {
         Ok(())
     }
 
+    fn get_label(&self, label_idx: u32) -> Result<Label, InstructionError> {
+            let r = self.get_labels()?;
+            let labels = r.iter().collect::<Vec<_>>();
+            let labels_len = labels.len();
+
+            assert!(label_idx + 1 <= labels_len as u32);
+
+            // Get the last label + label_idx
+            let label = labels
+                .get(labels.len() - 1 - label_idx as usize)
+                .expect("No label found");
+
+            Ok(***label)
+    }
+
     fn do_branch(&mut self, label_idx: u32, ip: &mut usize) -> Result<(), InstructionError> {
         debug!("do_branch {}", label_idx);
-        let labels = self.get_labels()?.iter().copied().collect::<Vec<_>>();
-        let labels_len = labels.len();
-
-        assert!(label_idx + 1 <= labels_len as u32);
-
-        // Get the last label + label_idx
-        let label = labels
-            .get(labels.len() - 1 - label_idx as usize)
-            .expect("No label found");
+        let label = self.get_label(label_idx)?;
 
         debug!("label {:?}", label);
 
-        *ip = label.ip_after;
+        if !label.is_loop {
+            *ip = label.ip_after; //Jump after the block
+        } else {
+            *ip = label.ip_before; //Jump to the first instruction of the loop
+            // this is a hack
+            self.store.stack.push(StackContent::Label(label.clone())); // duplicate because later removed
+        }
+
         debug!("Iterating to {}", ip);
 
         let content = self.get_content_from_stack(label.arity)?;
