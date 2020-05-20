@@ -484,6 +484,37 @@ macro_rules! store_memory {
     };
 }
 
+macro_rules! store_memoryN {
+    ($self:expr, $arg:expr, $size:expr, $ty:ty, $variant:ident, $new_ty:ty, $N:expr) => {
+        let k = fetch_unop!($self.store.stack);
+        let v1 = fetch_unop!($self.store.stack);
+
+        if let $variant(t) = k {
+            if let I32(v) = v1 {
+                let ea = (v + $arg.offset as i32) as usize;
+
+                let module = &$self.module.borrow();
+
+                let addr = module.memaddrs.get(0).expect("No memory address found");
+
+                let instance = &mut $self.store.memory[*addr as usize];
+
+                if instance.data.len() < ea + ($N / 8) {
+                    panic!("Offset is corrupt");
+                }
+
+                let mut bytes = t.to_le_bytes();
+
+                instance.data[ea..ea + $size].swap_with_slice(&mut bytes[0..($N / 8)]);
+            } else {
+                panic!("Expected I32, found something else");
+            }
+        } else {
+            panic!("Expected a different value on the stack");
+        }
+    };
+}
+
 impl ModuleInstance {
     pub fn new(m: &Module) -> Self {
         let mut mi = ModuleInstance {
@@ -950,6 +981,21 @@ impl Engine {
                 }
                 Mem(OP_F64_STORE(arg)) => {
                     store_memory!(self, arg, 8, f64, F64);
+                }
+                Mem(OP_I32_STORE_8(arg)) => {
+                    store_memoryN!(self, arg, 1, i32, I32, i8, 8);
+                }
+                Mem(OP_I32_STORE_16(arg)) => {
+                    store_memoryN!(self, arg, 2, i32, I32, i16, 16);
+                }
+                Mem(OP_I64_STORE_8(arg)) => {
+                    store_memoryN!(self, arg, 1, i64, I64, i8, 8);
+                }
+                Mem(OP_I64_STORE_16(arg)) => {
+                    store_memoryN!(self, arg, 2, i64, I64, i16, 16);
+                }
+                Mem(OP_I64_STORE_32(arg)) => {
+                    store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
                     debug!("OP_BLOCK {:?}", ty);
@@ -1662,13 +1708,11 @@ mod tests {
     fn test_memory_store_i32() {
         let mut e = empty_engine();
         e.module.borrow_mut().memaddrs.push(0);
-        e.store.memory = vec![
-            MemoryInstance {
-                data: [0; 4].to_vec(),
-                max: None,
-            }
-        ];
-        
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 4].to_vec(),
+            max: None,
+        }];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -1676,8 +1720,8 @@ mod tests {
                 Num(OP_I32_CONST(4)),
                 Mem(OP_I32_STORE(MemArg {
                     offset: 0,
-                    align: 1
-                }))
+                    align: 1,
+                })),
             ],
         }];
         e.run_function(0).unwrap();
@@ -1685,16 +1729,64 @@ mod tests {
     }
 
     #[test]
+    fn test_memory_store_i32_in_i8() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 1].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_I32_CONST(4)),
+                Mem(OP_I32_STORE_8(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!((4 as i8).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+    #[test]
+    fn test_memory_store_i32_in_i16() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 2].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_I32_CONST(9)),
+                Mem(OP_I32_STORE_16(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!((9 as i16).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+
+
+    #[test]
     fn test_memory_store_i64() {
         let mut e = empty_engine();
         e.module.borrow_mut().memaddrs.push(0);
-        e.store.memory = vec![
-            MemoryInstance {
-                data: [0; 8].to_vec(),
-                max: None,
-            }
-        ];
-        
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 8].to_vec(),
+            max: None,
+        }];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -1702,8 +1794,8 @@ mod tests {
                 Num(OP_I64_CONST(4)),
                 Mem(OP_I64_STORE(MemArg {
                     offset: 0,
-                    align: 1
-                }))
+                    align: 1,
+                })),
             ],
         }];
         e.run_function(0).unwrap();
@@ -1711,16 +1803,62 @@ mod tests {
     }
 
     #[test]
+    fn test_memory_store_i64_in_i16() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 2].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_I64_CONST(9)),
+                Mem(OP_I64_STORE_16(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!((9 as i16).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+    #[test]
+    fn test_memory_store_i64_in_i32() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 4].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_I64_CONST(i64::MAX)),
+                Mem(OP_I64_STORE_32(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(((i64::MAX % 2_i64.pow(32)) as i32).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+    #[test]
     fn test_memory_store_f32() {
         let mut e = empty_engine();
         e.module.borrow_mut().memaddrs.push(0);
-        e.store.memory = vec![
-            MemoryInstance {
-                data: [0; 4].to_vec(),
-                max: None,
-            }
-        ];
-        
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 4].to_vec(),
+            max: None,
+        }];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -1728,25 +1866,26 @@ mod tests {
                 Num(OP_F32_CONST(4.1)),
                 Mem(OP_F32_STORE(MemArg {
                     offset: 0,
-                    align: 1
-                }))
+                    align: 1,
+                })),
             ],
         }];
         e.run_function(0).unwrap();
-        assert_eq!((4.1 as f32).to_le_bytes(), e.store.memory[0].data.as_slice());
+        assert_eq!(
+            (4.1 as f32).to_le_bytes(),
+            e.store.memory[0].data.as_slice()
+        );
     }
 
     #[test]
     fn test_memory_store_f64() {
         let mut e = empty_engine();
         e.module.borrow_mut().memaddrs.push(0);
-        e.store.memory = vec![
-            MemoryInstance {
-                data: [0; 8].to_vec(),
-                max: None,
-            }
-        ];
-        
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 8].to_vec(),
+            max: None,
+        }];
+
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
             code: vec![
@@ -1754,11 +1893,14 @@ mod tests {
                 Num(OP_F64_CONST(4.1)),
                 Mem(OP_F64_STORE(MemArg {
                     offset: 0,
-                    align: 1
-                }))
+                    align: 1,
+                })),
             ],
         }];
         e.run_function(0).unwrap();
-        assert_eq!((4.1 as f64).to_le_bytes(), e.store.memory[0].data.as_slice());
+        assert_eq!(
+            (4.1 as f64).to_le_bytes(),
+            e.store.memory[0].data.as_slice()
+        );
     }
 }
