@@ -19,6 +19,13 @@ pub struct Engine {
     pub store: Store,
 }
 
+#[derive(Debug)]
+pub enum InstructionOutcome {
+    EXIT,
+    BRANCH(u32),
+    RETURN,
+}
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[allow(dead_code)]
 pub enum Value {
@@ -633,8 +640,8 @@ impl Engine {
     fn run_instructions(
         &mut self,
         fr: &mut Frame,
-        instructions: &mut Vec<Instruction>,
-    ) -> Result<(), InstructionError> {
+        instructions: &Vec<Instruction>,
+    ) -> Result<InstructionOutcome, InstructionError> {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
@@ -877,8 +884,24 @@ impl Engine {
                         is_loop: false,
                     };
 
-                    //self.store.stack.push(StackContent::Label(label));
+                    self.store.stack.push(StackContent::Label(label));
+                    let outcome = self.run_instructions(fr, &block_instructions)?;
 
+                    match outcome {
+                        InstructionOutcome::BRANCH(0) => {}
+                        InstructionOutcome::BRANCH(x) => {
+                            self.exit_block()?;
+                            return Ok(InstructionOutcome::BRANCH(x - 1));
+                        }
+                        InstructionOutcome::RETURN => {
+                            return Ok((InstructionOutcome::RETURN));
+                        }
+                        InstructionOutcome::EXIT => {}
+                    }
+
+                    self.exit_block()?;
+
+                    /*
                     self.enter_block(
                         label,
                         fr,
@@ -887,8 +910,7 @@ impl Engine {
                         ip,
                         Instruction::EXIT_BLOCK,
                     )?;
-
-                    //self.exit_block(&label, &block_instructions)?;
+                    */
                 }
                 Ctrl(OP_LOOP(ty, block_instructions)) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
@@ -902,6 +924,31 @@ impl Engine {
                         is_loop: true,
                     };
 
+                    self.store.stack.push(StackContent::Label(label));
+
+                    loop {
+                        let outcome = self.run_instructions(fr, &block_instructions)?;
+
+                        match outcome {
+                            InstructionOutcome::BRANCH(0) => {
+                                continue;
+                            }
+                            InstructionOutcome::BRANCH(x) => {
+                                self.exit_block()?;
+                                return Ok(InstructionOutcome::BRANCH(x - 1));
+                            }
+                            InstructionOutcome::RETURN => {
+                                return Ok((InstructionOutcome::RETURN));
+                            }
+                            InstructionOutcome::EXIT => {
+                                break;
+                            }
+                        }
+                    }
+
+                    self.exit_block()?;
+
+                    /*
                     self.enter_block(
                         label,
                         fr,
@@ -910,11 +957,13 @@ impl Engine {
                         ip,
                         Instruction::EXIT_BLOCK, //Instruction::REPEAT_LOOP(ip + 1), // skip copying instructions
                     )?;
+                    */
                 }
                 Ctrl(OP_IF(ty, block_instructions_branch)) => {
                     debug!("OP_IF {:?}", ty);
                     let element = self.store.stack.pop();
                     debug!("Popping value {:?}", element);
+
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
@@ -931,14 +980,22 @@ impl Engine {
                                 is_loop: false,
                             };
 
-                            self.enter_block(
-                                label,
-                                fr,
-                                instructions,
-                                &block_instructions_branch,
-                                ip,
-                                Instruction::EXIT_BLOCK,
-                            )?;
+                            self.store.stack.push(StackContent::Label(label));
+                            let outcome = self.run_instructions(fr, &block_instructions_branch)?;
+
+                            match outcome {
+                                InstructionOutcome::BRANCH(0) => {}
+                                InstructionOutcome::BRANCH(x) => {
+                                    self.exit_block()?;
+                                    return Ok(InstructionOutcome::BRANCH(x - 1));
+                                }
+                                InstructionOutcome::RETURN => {
+                                    return Ok((InstructionOutcome::RETURN));
+                                }
+                                InstructionOutcome::EXIT => {}
+                            }
+
+                            self.exit_block()?;
                         } else {
                             debug!("C is zero, therefore not branching");
                         }
@@ -966,9 +1023,25 @@ impl Engine {
                             is_loop: false,
                         };
 
+                        self.store.stack.push(StackContent::Label(label));
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
+                            let outcome = self.run_instructions(fr, &block_instructions_branch_1)?;
+
+                            match outcome {
+                                InstructionOutcome::BRANCH(0) => {}
+                                InstructionOutcome::BRANCH(x) => {
+                                    self.exit_block()?;
+                                    return Ok(InstructionOutcome::BRANCH(x - 1));
+                                }
+                                InstructionOutcome::RETURN => {
+                                    return Ok((InstructionOutcome::RETURN));
+                                }
+                                InstructionOutcome::EXIT => {}
+                            }
+
+                            /*
                             self.enter_block(
                                 label,
                                 fr,
@@ -976,10 +1049,25 @@ impl Engine {
                                 &block_instructions_branch_1,
                                 ip,
                                 Instruction::EXIT_BLOCK,
-                            )?;
+                            )?;*/
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
+                            let outcome = self.run_instructions(fr, &block_instructions_branch_2)?;
+
+                            match outcome {
+                                InstructionOutcome::BRANCH(0) => {}
+                                InstructionOutcome::BRANCH(x) => {
+                                    self.exit_block()?;
+                                    return Ok(InstructionOutcome::BRANCH(x - 1));
+                                }
+                                InstructionOutcome::RETURN => {
+                                    return Ok((InstructionOutcome::RETURN));
+                                }
+                                InstructionOutcome::EXIT => {}
+                            }
+
+                            /*
                             self.enter_block(
                                 label,
                                 fr,
@@ -988,14 +1076,20 @@ impl Engine {
                                 ip,
                                 Instruction::EXIT_BLOCK,
                             )?;
+                            */
                         }
+                        
+                        self.exit_block()?;
                     } else {
                         panic!("Value must be i32.const");
                     }
                 }
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
-                    self.do_branch(label_idx, &mut ip)?;
+
+                    return Ok(InstructionOutcome::BRANCH(label_idx));
+
+                    //self.do_branch(label_idx, &mut ip)?;
                 }
                 Ctrl(OP_BR_IF(label_idx)) => {
                     debug!("OP_BR_IF {}", label_idx);
@@ -1003,7 +1097,8 @@ impl Engine {
                         debug!("c is {}", c);
                         if c != 0 {
                             debug!("Branching to {}", label_idx);
-                            self.do_branch(label_idx, &mut ip)?;
+                            return Ok(InstructionOutcome::BRANCH(label_idx));
+                        //self.do_branch(label_idx, &mut ip)?;
                         } else {
                             debug!("Not Branching to {}", label_idx);
                         }
@@ -1028,7 +1123,7 @@ impl Engine {
                 }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
-                    return Ok(());
+                    return Ok(InstructionOutcome::RETURN);
                 }
                 Ctrl(OP_NOP) => {}
                 EXIT_BLOCK => {
@@ -1052,7 +1147,7 @@ impl Engine {
             debug!("stack {:#?}", self.store.stack);
         }
 
-        Ok(())
+        Ok(InstructionOutcome::EXIT)
     }
 
     /// Get the frame at the top of the stack
@@ -1425,6 +1520,7 @@ mod tests {
     fn test_function_block_br() {
         let mut e = empty_engine();
 
+        //env_logger::init();
         let code = vec![Ctrl(OP_BLOCK(
             BlockType::Empty,
             vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],

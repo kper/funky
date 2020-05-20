@@ -497,6 +497,8 @@ fn test_run_as_loop_first_br_if_1() {
         (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
       )
     */
+
+    //env_logger::init();
     let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(0)]);
     assert_eq!(
         Some(&StackContent::Value(I32(2))),
