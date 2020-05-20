@@ -1,7 +1,6 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::cell::RefCell;
-use std::convert::TryInto;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use std::rc::{Rc, Weak};
