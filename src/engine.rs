@@ -594,7 +594,7 @@ impl Engine {
 
         debug!("frame {:#?}", fr);
 
-        let mut instructions = f.code.clone();
+        let mut instructions = f.code;
         self.run_instructions(&mut fr, &mut instructions)?;
 
         // implicit return
@@ -1133,7 +1133,7 @@ impl Engine {
             let labels = r.iter().collect::<Vec<_>>();
             let labels_len = labels.len();
 
-            assert!(label_idx + 1 <= labels_len as u32);
+            assert!(label_idx < labels_len as u32);
 
             // Get the last label + label_idx
             let label = labels
@@ -1154,7 +1154,7 @@ impl Engine {
         } else {
             *ip = label.ip_before; //Jump to the first instruction of the loop
             // this is a hack
-            self.store.stack.push(StackContent::Label(label.clone())); // duplicate because later removed
+            self.store.stack.push(StackContent::Label(label)); // duplicate because later removed
         }
 
         debug!("Iterating to {}", ip);
