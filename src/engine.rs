@@ -999,6 +999,39 @@ impl Engine {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, F64, f64);
                 }
+
+                Num(OP_F32_CONVERT_I32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, F32, f32);
+                }
+                Num(OP_F64_CONVERT_I32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, F64, f64);
+                }
+                Num(OP_F32_CONVERT_I64_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, F32, f32);
+                }
+                Num(OP_F64_CONVERT_I64_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, F32, f32);
+                }
+                Num(OP_F32_CONVERT_I32_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, F32, f32, u32);
+                }
+                Num(OP_F64_CONVERT_I32_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, F64, f64, u32);
+                }
+                Num(OP_F32_CONVERT_I64_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, F32, f32, u64);
+                }
+                Num(OP_F64_CONVERT_I64_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, F32, f32, u64);
+                }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
                     let k = self.store.stack.pop();
@@ -2127,5 +2160,37 @@ mod tests {
         e.run_function(0).unwrap();
         // float got demoted - we loose precision
         assert_eq!(Value(F32(1.1234568357467651)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_convert_s() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_S)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(F32(-1.0)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_convert_u() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_U)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(F32(u32::MAX as f32)), e.store.stack.pop().unwrap());
     }
 }
