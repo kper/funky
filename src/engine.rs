@@ -959,6 +959,38 @@ impl Engine {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, I64, i64, u32);
                 }
+                Num(OP_I64_TRUNC_F32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F32, I64, i64);
+                }
+                Num(OP_I64_TRUNC_F64_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F64, I64, i64);
+                }
+                Num(OP_I64_TRUNC_F32_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F32, I64, i64, u64);
+                }
+                Num(OP_I64_TRUNC_F64_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F64, I64, i64, u64);
+                }
+                Num(OP_I32_TRUNC_F32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F32, I32, i32);
+                }
+                Num(OP_I32_TRUNC_F64_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F64, I32, i32);
+                }
+                Num(OP_I32_TRUNC_F32_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F32, I32, i32, u32);
+                }
+                Num(OP_I32_TRUNC_F64_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F64, I32, i32, u32);
+                }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
                     let k = self.store.stack.pop();
@@ -2032,5 +2064,21 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!(Value(I64(u32::MAX as i64)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_trunc_s() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_F32_CONST(234.923)), Num(OP_I32_TRUNC_F32_S)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I32(234)), e.store.stack.pop().unwrap());
     }
 }
