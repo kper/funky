@@ -242,8 +242,6 @@ pub enum Limits {
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
-    EXIT_BLOCK,
-    REPEAT_LOOP(usize), //usize is the instruction pointer
     Ctrl(CtrlInstructions),
     Param(ParamInstructions),
     Var(VarInstructions),
