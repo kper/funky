@@ -1,6 +1,7 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use std::cell::RefCell;
+use std::convert::TryInto;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use std::rc::{Rc, Weak};
@@ -928,6 +929,13 @@ impl Engine {
                 Num(OP_F32_MAX) | Num(OP_F64_MAX) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(max(v1, v2)))
+                }
+                Num(OP_I32_WRAP_I64) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    match v1 {
+                        I64(i) => self.store.stack.push(Value(I32(i as i32))),
+                        _ => panic!("Expectd I64 on top of stack"),
+                    }
                 }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
@@ -1892,5 +1900,84 @@ mod tests {
             (4.1 as f64).to_le_bytes(),
             e.store.memory[0].data.as_slice()
         );
+    }
+
+    #[test]
+    fn test_num_store_f64() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 8].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_F64_CONST(4.1)),
+                Mem(OP_F64_STORE(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(
+            (4.1 as f64).to_le_bytes(),
+            e.store.memory[0].data.as_slice()
+        );
+    }
+
+    #[test]
+    fn test_num_wrap_i64_max() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I64_CONST(i32::MAX as i64)), Num(OP_I32_WRAP_I64)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I32(i32::MAX)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_wrap_i64_min() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I64_CONST(i32::MIN as i64)), Num(OP_I32_WRAP_I64)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I32(i32::MIN)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_wrap_i64_overflow() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I64_CONST((i32::MAX as i64) + 50)),
+                Num(OP_I32_WRAP_I64),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        // account for 0 value
+        assert_eq!(Value(I32(i32::MIN + 49)), e.store.stack.pop().unwrap());
     }
 }
