@@ -501,7 +501,7 @@ impl Engine {
 
         debug!("Exports {:#?}", k);
 
-        let _ = match k {
+        match k {
             ExternalKindType::Function { ty } => {
                 let func_addr = *self
                     .module
@@ -515,7 +515,7 @@ impl Engine {
             _ => {
                 panic!("Exported function not found");
             }
-        };
+        }
     }
 
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
@@ -629,6 +629,7 @@ impl Engine {
         Ok(())
     }
 
+    #[allow(clippy::cognitive_complexity)]
     fn run_instructions(
         &mut self,
         fr: &mut Frame,
