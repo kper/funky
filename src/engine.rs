@@ -515,6 +515,24 @@ macro_rules! store_memoryN {
     };
 }
 
+macro_rules! convert {
+    ($self:expr, $val:ident, $from_ctr:ident, $to_ctr:ident, $to:ident) => {
+        match $val {
+            $from_ctr(i) => $self.store.stack.push(Value($to_ctr(i as $to))),
+            x => panic!("Expected $from_ctr on stack but found {:?}", x),
+        }
+    };
+    ($self:expr, $val:ident, $from_ctr:ident, $to_ctr:ident, $to:ident, $intermediate:ident) => {
+        match $val {
+            $from_ctr(i) => $self
+                .store
+                .stack
+                .push(Value($to_ctr(i as $intermediate as $to))),
+            x => panic!("Expected $from_ctr on stack but found {:?}", x),
+        }
+    };
+}
+
 impl ModuleInstance {
     pub fn new(m: &Module) -> Self {
         let mut mi = ModuleInstance {
@@ -930,11 +948,16 @@ impl Engine {
                     self.store.stack.push(Value(max(v1, v2)))
                 }
                 Num(OP_I32_WRAP_I64) => {
-                    let v1 = fetch_unop!(self.store.stack);
-                    match v1 {
-                        I64(i) => self.store.stack.push(Value(I32(i as i32))),
-                        _ => panic!("Expectd I64 on top of stack"),
-                    }
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, I32, i32);
+                }
+                Num(OP_I64_EXTEND_I32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, I64, i64);
+                }
+                Num(OP_I64_EXTEND_I32_U) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, I64, i64, u32);
                 }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
@@ -1978,5 +2001,36 @@ mod tests {
         e.run_function(0).unwrap();
         // account for 0 value
         assert_eq!(Value(I32(i32::MIN + 49)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_extend_s() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_S)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I64(-1)), e.store.stack.pop().unwrap());
+    }
+    #[test]
+    fn test_num_extend_u() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_U)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I64(u32::MAX as i64)), e.store.stack.pop().unwrap());
     }
 }
