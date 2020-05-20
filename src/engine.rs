@@ -991,6 +991,14 @@ impl Engine {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, I32, i32, u32);
                 }
+                Num(OP_F32_DEMOTE_F64) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F64, F32, f32);
+                }
+                Num(OP_F64_PROMOTE_F32) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, F32, F64, f64);
+                }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
                     let k = self.store.stack.pop();
@@ -2080,5 +2088,44 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!(Value(I32(234)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_promote() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_F32_CONST(1.1234568357467651)),
+                Num(OP_F64_PROMOTE_F32),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(F64(1.1234568357467651)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_demote() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_F64_CONST(1.1234568357467651420)),
+                Num(OP_F32_DEMOTE_F64),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        // float got demoted - we loose precision
+        assert_eq!(Value(F32(1.1234568357467651)), e.store.stack.pop().unwrap());
     }
 }
