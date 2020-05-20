@@ -655,17 +655,65 @@ fn test_run_br_if4() {
     )
 }
 
-/*
-//#[test] I think the test is wrong
-fn test_run_loop() {
-    env_logger::init();
+#[test] 
+fn test_run_loop1() {
+    //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 0, vec![]);
     assert_eq!(
         Some(&StackContent::Value(I32(5))),
         engine.store.stack.last()
     )
 }
-*/
+
+#[test] 
+fn test_run_loop2() {
+    //env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 1, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(8))),
+        engine.store.stack.last()
+    )
+}
+
+#[test] 
+fn test_run_loop3() {
+    //env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 2, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(1))),
+        engine.store.stack.last()
+    )
+}
+
+#[test] 
+fn test_run_loop4() {
+    //env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 3, vec![I32(8)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(16))),
+        engine.store.stack.last()
+    )
+}
+
+#[test] 
+fn test_run_loop5() {
+    //env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 4, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(2))),
+        engine.store.stack.last()
+    )
+}
+
+#[test] 
+fn test_run_loop6() {
+    //env_logger::init();
+    let engine = test_run_engine!("loop.wasm", 5, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(3))),
+        engine.store.stack.last()
+    )
+}
 
 /*
 (func (export "as-loop-mid") (param i32) (result i32)

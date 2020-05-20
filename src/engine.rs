@@ -1130,18 +1130,18 @@ impl Engine {
     }
 
     fn get_label(&self, label_idx: u32) -> Result<Label, InstructionError> {
-            let r = self.get_labels()?;
-            let labels = r.iter().collect::<Vec<_>>();
-            let labels_len = labels.len();
+        let r = self.get_labels()?;
+        let labels = r.iter().collect::<Vec<_>>();
+        let labels_len = labels.len();
 
-            assert!(label_idx < labels_len as u32);
+        assert!(label_idx < labels_len as u32);
 
-            // Get the last label + label_idx
-            let label = labels
-                .get(labels.len() - 1 - label_idx as usize)
-                .expect("No label found");
+        // Get the last label + label_idx
+        let label = labels
+            .get(labels.len() - 1 - label_idx as usize)
+            .expect("No label found");
 
-            Ok(***label)
+        Ok(***label)
     }
 
     fn do_branch(&mut self, label_idx: u32, ip: &mut usize) -> Result<(), InstructionError> {
@@ -1154,21 +1154,28 @@ impl Engine {
             *ip = label.ip_after; //Jump after the block
         } else {
             *ip = label.ip_before; //Jump to the first instruction of the loop
-            // this is a hack
+                                   // this is a hack
             self.store.stack.push(StackContent::Label(label)); // duplicate because later removed
         }
 
         debug!("Iterating to {}", ip);
 
-        let content = self.get_content_from_stack(label.arity)?;
-        debug!("content {:?}", content);
-        for i in content.iter() {
-            if let StackContent::Value(_) = i {
-                // ok
-            } else {
-                panic!("Expected value");
+        // If we branch in LOOP to reiterate, then we have no arity
+        let content = match label.is_loop {
+            true => Vec::new(),
+            false => {
+                let c = self.get_content_from_stack(label.arity)?;
+                debug!("content {:?}", c);
+                for i in c.iter() {
+                    if let StackContent::Value(_) = i {
+                        // ok
+                    } else {
+                        panic!("Expected value");
+                    }
+                }
+                c
             }
-        }
+        };
 
         debug!("Range {:?}", 0..label_idx);
         for _ in 0..(label_idx + 1) {
