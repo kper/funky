@@ -13,6 +13,8 @@ use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
+const PAGE_SIZE: usize = 65536;
+
 #[derive(Debug)]
 pub struct Engine {
     pub module: Rc<RefCell<ModuleInstance>>, //TODO rename to `module_instance`
@@ -997,6 +999,15 @@ impl Engine {
                 Mem(OP_I64_STORE_32(arg)) => {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
+                Mem(OP_MEMORY_SIZE) => {
+                    let module = &self.module.borrow();
+                    let addr = module.memaddrs.get(0).expect("No memory address found");
+                    let instance = &self.store.memory[*addr as usize];
+
+                    let sz = instance.data.len() / PAGE_SIZE;
+
+                    self.store.stack.push(Value(I32(sz as i32)));
+                }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
                     debug!("OP_BLOCK {:?}", ty);
 
@@ -1776,8 +1787,6 @@ mod tests {
         assert_eq!((9 as i16).to_le_bytes(), e.store.memory[0].data.as_slice());
     }
 
-
-
     #[test]
     fn test_memory_store_i64() {
         let mut e = empty_engine();
@@ -1847,7 +1856,10 @@ mod tests {
             ],
         }];
         e.run_function(0).unwrap();
-        assert_eq!(((i64::MAX % 2_i64.pow(32)) as i32).to_le_bytes(), e.store.memory[0].data.as_slice());
+        assert_eq!(
+            ((i64::MAX % 2_i64.pow(32)) as i32).to_le_bytes(),
+            e.store.memory[0].data.as_slice()
+        );
     }
 
     #[test]
