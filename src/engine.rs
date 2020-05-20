@@ -296,9 +296,6 @@ pub enum StackContent {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Label {
     arity: Arity,
-    ip_before: usize,
-    ip_after: usize,
-    is_loop: bool,
 }
 
 #[derive(Debug)]
@@ -620,14 +617,6 @@ impl Engine {
         self.check_parameters_of_function(idx, &args);
 
         let len = args.len() as u32;
-
-        /*
-        self.store.stack.push(Label(Label {
-            arity: len,
-            ip_before: 0,
-            ip_after: self.module.borrow().code[idx as usize].code.len(),
-        }));
-        */
 
         self.store.stack.push(Frame(Frame {
             arity: len,
@@ -1016,9 +1005,6 @@ impl Engine {
 
                     let label = Label {
                         arity: arity as u32,
-                        ip_before: ip,
-                        ip_after: ip,
-                        is_loop: false,
                     };
 
                     self.store.stack.push(StackContent::Label(label));
@@ -1045,9 +1031,6 @@ impl Engine {
 
                     let label = Label {
                         arity: arity as u32,
-                        ip_before: ip,
-                        ip_after: ip,
-                        is_loop: true,
                     };
 
                     self.store.stack.push(StackContent::Label(label));
@@ -1090,9 +1073,6 @@ impl Engine {
 
                             let label = Label {
                                 arity: arity as u32,
-                                ip_before: ip,
-                                ip_after: ip,
-                                is_loop: false,
                             };
 
                             self.store.stack.push(StackContent::Label(label));
@@ -1131,9 +1111,6 @@ impl Engine {
 
                         let label = Label {
                             arity: arity as u32,
-                            ip_before: ip,
-                            ip_after: ip,
-                            is_loop: false,
                         };
 
                         self.store.stack.push(StackContent::Label(label));
