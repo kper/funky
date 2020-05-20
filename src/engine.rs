@@ -447,7 +447,8 @@ macro_rules! load_memory {
             assert!(b.len() == $size);
 
             unsafe {
-                let c = std::mem::transmute::<&[u8], &[$ty]>(b.as_slice());
+                //Convert [u8] to number
+                let c = &*(b.as_slice() as *const [u8] as *const [$ty]);
 
                 assert!(c.len() == 1);
 
@@ -691,8 +692,8 @@ impl Engine {
 
         debug!("frame {:#?}", fr);
 
-        let mut instructions = f.code;
-        self.run_instructions(&mut fr, &mut instructions)?;
+        let instructions = f.code;
+        self.run_instructions(&mut fr, &instructions)?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -730,7 +731,7 @@ impl Engine {
     fn run_instructions(
         &mut self,
         fr: &mut Frame,
-        instructions: &Vec<Instruction>,
+        instructions: &[Instruction],
     ) -> Result<InstructionOutcome, InstructionError> {
         let mut ip = 0;
         while ip < instructions.len() {
