@@ -1275,6 +1275,21 @@ impl Engine {
                         }
                     }
                 }
+                Ctrl(OP_BR_TABLE(table, default)) => {
+                    debug!("OP_BR_TABLE {:?}, {:?}", table, default);
+                    let ival = fetch_unop!(self.store.stack);
+                    if let I32(index) = ival {
+                        let label_idx = if (index as usize) < table.len() {
+                            table[index as usize]
+                        } else {
+                            debug!("Using default case");
+                            default
+                        };
+                        return Ok(InstructionOutcome::BRANCH(label_idx));
+                    } else {
+                        panic!("invalid index type: {:?}", ival);
+                    }
+                }
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 

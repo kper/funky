@@ -352,10 +352,7 @@ fn test_run_gcd_recursive2() {
 fn test_run_incr_counter() {
     //env_logger::init();
     let engine = test_run_engine!("incr_counter.wasm", 0, vec![]);
-    assert_eq!(
-        None,
-        engine.store.stack.last()
-    )
+    assert_eq!(None, engine.store.stack.last())
 }
 
 #[test]
@@ -394,29 +391,29 @@ fn test_run_sub2() {
     )
 }
 
-    /*
-     (module
-  (func (export "type-local-i32") (result i32) (local i32) (local.tee 0 (i32.const 0)))
-  (func (export "type-local-i64") (result i64) (local i64) (local.tee 0 (i64.const 0)))
-  (func (export "type-local-f32") (result f32) (local f32) (local.tee 0 (f32.const 0)))
-  (func (export "type-local-f64") (result f64) (local f64) (local.tee 0 (f64.const 0)))
+/*
+   (module
+(func (export "type-local-i32") (result i32) (local i32) (local.tee 0 (i32.const 0)))
+(func (export "type-local-i64") (result i64) (local i64) (local.tee 0 (i64.const 0)))
+(func (export "type-local-f32") (result f32) (local f32) (local.tee 0 (f32.const 0)))
+(func (export "type-local-f64") (result f64) (local f64) (local.tee 0 (f64.const 0)))
 
-  (func (export "type-param-i32") (param i32) (result i32) (local.tee 0 (i32.const 10)))
-  (func (export "type-param-i64") (param i64) (result i64) (local.tee 0 (i64.const 11)))
-  (func (export "type-param-f32") (param f32) (result f32) (local.tee 0 (f32.const 11.1)))
-  (func (export "type-param-f64") (param f64) (result f64) (local.tee 0 (f64.const 12.2)))
+(func (export "type-param-i32") (param i32) (result i32) (local.tee 0 (i32.const 10)))
+(func (export "type-param-i64") (param i64) (result i64) (local.tee 0 (i64.const 11)))
+(func (export "type-param-f32") (param f32) (result f32) (local.tee 0 (f32.const 11.1)))
+(func (export "type-param-f64") (param f64) (result f64) (local.tee 0 (f64.const 12.2)))
 
-  (func (export "type-mixed") (param i64 f32 f64 i32 i32) (local f32 i64 i64 f64)
-    (drop (i64.eqz (local.tee 0 (i64.const 0))))
-    (drop (f32.neg (local.tee 1 (f32.const 0))))
-    (drop (f64.neg (local.tee 2 (f64.const 0))))
-    (drop (i32.eqz (local.tee 3 (i32.const 0))))
-    (drop (i32.eqz (local.tee 4 (i32.const 0))))
-    (drop (f32.neg (local.tee 5 (f32.const 0))))
-    (drop (i64.eqz (local.tee 6 (i64.const 0))))
-    (drop (i64.eqz (local.tee 7 (i64.const 0))))
-    (drop (f64.neg (local.tee 8 (f64.const 0))))
-  ))*/
+(func (export "type-mixed") (param i64 f32 f64 i32 i32) (local f32 i64 i64 f64)
+  (drop (i64.eqz (local.tee 0 (i64.const 0))))
+  (drop (f32.neg (local.tee 1 (f32.const 0))))
+  (drop (f64.neg (local.tee 2 (f64.const 0))))
+  (drop (i32.eqz (local.tee 3 (i32.const 0))))
+  (drop (i32.eqz (local.tee 4 (i32.const 0))))
+  (drop (f32.neg (local.tee 5 (f32.const 0))))
+  (drop (i64.eqz (local.tee 6 (i64.const 0))))
+  (drop (i64.eqz (local.tee 7 (i64.const 0))))
+  (drop (f64.neg (local.tee 8 (f64.const 0))))
+))*/
 
 #[test]
 fn test_run_local_tee() {
@@ -506,7 +503,6 @@ fn test_run_as_loop_first_br_if_1() {
     )
 }
 
-
 #[test]
 fn test_run_as_loop_first_br_if_2() {
     /*
@@ -514,7 +510,7 @@ fn test_run_as_loop_first_br_if_2() {
         (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
       )
     */
-//    env_logger::init();
+    //    env_logger::init();
     let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(1)]);
     assert_eq!(
         Some(&StackContent::Value(I32(3))),
@@ -657,7 +653,7 @@ fn test_run_br_if4() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop1() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 0, vec![]);
@@ -667,7 +663,7 @@ fn test_run_loop1() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop2() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 1, vec![]);
@@ -677,7 +673,7 @@ fn test_run_loop2() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop3() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 2, vec![]);
@@ -687,7 +683,7 @@ fn test_run_loop3() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop4() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 3, vec![I32(8)]);
@@ -697,7 +693,7 @@ fn test_run_loop4() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop5() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 4, vec![]);
@@ -707,7 +703,7 @@ fn test_run_loop5() {
     )
 }
 
-#[test] 
+#[test]
 fn test_run_loop6() {
     //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 5, vec![]);
@@ -748,10 +744,7 @@ fn test_run_as_loop_mid_br2() {
 fn test_run_if_empty() {
     //env_logger::init();
     let engine = test_run_engine!("if.wasm", 0, vec![I32(0)]);
-    assert_eq!(
-        None,
-        engine.store.stack.last()
-    )
+    assert_eq!(None, engine.store.stack.last())
 }
 
 #[test]
@@ -764,6 +757,40 @@ fn test_run_if_singular() {
     )
 }
 
+#[test]
+fn test_run_br_table() {
+    //env_logger::init();
+    let mut engine = test_run_engine!("br_table.wasm", 0, vec![I32(0)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(103))),
+        engine.store.stack.last()
+    );
+    engine = test_run_engine!("br_table.wasm", 0, vec![I32(1)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(102))),
+        engine.store.stack.last()
+    );
+    engine = test_run_engine!("br_table.wasm", 0, vec![I32(2)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(101))),
+        engine.store.stack.last()
+    );
+    engine = test_run_engine!("br_table.wasm", 0, vec![I32(3)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(100))),
+        engine.store.stack.last()
+    );
+    engine = test_run_engine!("br_table.wasm", 0, vec![I32(4)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(104))),
+        engine.store.stack.last()
+    );
+    engine = test_run_engine!("br_table.wasm", 0, vec![I32(-4)]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(104))),
+        engine.store.stack.last()
+    );
+}
 
 /*
 #[test]

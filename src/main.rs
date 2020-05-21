@@ -4,11 +4,11 @@ extern crate env_logger;
 extern crate funky;
 
 use docopt::Docopt;
+use funky::engine::Value::*;
 use funky::engine::{Engine, ModuleInstance};
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
-use funky::engine::Value::*;
 
 const USAGE: &str = "
 Funky - a WebAssembly Interpreter
@@ -68,8 +68,8 @@ fn main() {
 
     e.instantiation(&module);
 
-    info!("Invoking function {:?}", 2);
+    info!("Invoking function {:?}", 0);
     //e.invoke_function(0, vec![I32(2), I32(10)]);
-    e.invoke_exported_function(2, vec![I32(50), I32(10)]);
+    e.invoke_exported_function(0, vec![I32(4)]);
     eprintln!("Last value on stack was: {:?}", e.store.stack.last())
 }
