@@ -1307,6 +1307,38 @@ impl Engine {
 
                     self.invoke_function(idx, args);
                 }
+                Ctrl(OP_CALL_INDIRECT(idx)) => {
+                    debug!("OP_CALL_INDIRECT {:?}", idx);
+                    let ta = self.module.borrow().tableaddrs[0];
+                    let tab = &self.store.tables[ta as usize];
+                    // TODO: implement ft_expect and ft_actual check
+                    let i = match fetch_unop!(self.store.stack) {
+                        I32(x) => x,
+                        x => panic!("invalid index type: {:?}", x),
+                    };
+                    if (i as usize) >= tab.elem.len() {
+                        panic!("Attempt to perform indirect call to index larger than the table")
+                    }
+                    trace!("Table: {:#?}", tab.elem);
+                    match tab.elem[i as usize] {
+                        Some(funcidx) => {
+                            let t = self.module.borrow().fn_types[funcidx as usize].clone();
+                            let args = self
+                                .store
+                                .stack
+                                .split_off(self.store.stack.len() - t.param_types.len())
+                                .into_iter()
+                                .map(|x| match x {
+                                    Value(v) => v,
+                                    other => panic!("Expected value but found {:?}", other),
+                                })
+                                .collect();
+
+                            self.invoke_function(funcidx as u32, args);
+                        }
+                        None => panic!("Table not initilized at index {}", i),
+                    }
+                }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
                     return Ok(InstructionOutcome::RETURN);
