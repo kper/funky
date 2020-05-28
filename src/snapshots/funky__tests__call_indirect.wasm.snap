@@ -1,0 +1,124 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                306,
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Ctrl(
+                            OP_CALL_INDIRECT(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+            funcaddrs: [
+                0,
+                1,
+            ],
+            tableaddrs: [
+                0,
+            ],
+            memaddrs: [],
+            globaladdrs: [],
+            exports: [
+                ExportInstance {
+                    name: "type-i32",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+            ],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                306,
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Ctrl(
+                            OP_CALL_INDIRECT(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [
+            TableInstance {
+                elem: [
+                    None,
+                ],
+                max: Some(
+                    1,
+                ),
+            },
+        ],
+        memory: [],
+        stack: [],
+        globals: [],
+    },
+}

@@ -792,6 +792,16 @@ fn test_run_br_table() {
     );
 }
 
+#[test]
+fn test_call_indirect() {
+    //env_logger::init();
+    let engine = test_run_engine!("call_indirect.wasm", 0, vec![]);
+    assert_eq!(
+        Some(&StackContent::Value(I32(0x132))),
+        engine.store.stack.last()
+    )
+}
+
 /*
 #[test]
 fn test_run_call_indirect() {
