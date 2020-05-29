@@ -439,15 +439,20 @@ macro_rules! load_memory {
 
             let instance = &$self.store.memory[*addr as usize];
 
-            let mut b = Vec::new();
+            debug!("instance {:?}", instance);
+            debug!("Range {:?}", ea..ea + $size);
+            debug!("part {:?}", &instance.data[ea..ea + $size]);
+
+            let mut b = vec![0; $size];
             b.copy_from_slice(&instance.data[ea..ea + $size]);
             assert!(b.len() == $size);
+
+            debug!("b {:?}", b);
 
             unsafe {
                 //Convert [u8] to number
                 let c = &*(b.as_slice() as *const [u8] as *const [$ty]);
-
-                assert!(c.len() == 1);
+                debug!("c is {:?}", c);
 
                 $self.store.stack.push(StackContent::Value($variant(c[0])));
             }
@@ -1877,6 +1882,30 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!((4 as i32).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+    #[test]
+    fn test_memory_load_i32() {
+        env_logger::init();
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 10].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Mem(OP_I32_LOAD(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Some(&StackContent::Value(I32(0))),e.store.stack.last());
     }
 
     #[test]
