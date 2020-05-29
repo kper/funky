@@ -85,9 +85,9 @@ fn main() {
 fn parse_args(args: Vec<String>) -> Vec<Value> {
     let matchers = &[
         r"I32\(([0-9]+)\)",
-        r"I64\([0-9]+\)",
-        r"F32\([0-9]+\.[0-9]+\)",
-        r"F64\([0-9]+\.[0-9]+\)",
+        r"I64\(([0-9]+)\)",
+        r"F32\(([0-9]+\.[0-9]+)\)",
+        r"F64\(([0-9]+\.[0-9]+)\)",
     ];
     let set = RegexSet::new(matchers).unwrap();
     args.iter()
