@@ -1307,56 +1307,6 @@ impl Engine {
 
                     self.invoke_function(idx, args);
                 }
-                Ctrl(OP_CALL_INDIRECT(idx)) => {
-                    debug!("OP_CALL_INDIRECT {:?}", idx);
-
-                    let table_addr = self.module.borrow().tableaddrs[0].clone();
-                    let table = self
-                        .store
-                        .tables
-                        .get(table_addr as usize)
-                        .expect("no table");
-
-                    //TODO check ty with the type of `f`
-                    let ty = self.module.borrow().fn_types[idx as usize].clone();
-
-                    let ival = fetch_unop!(self.store.stack);
-
-                    if let I32(v) = ival {
-                        assert!(v < table.elem.len() as i32);
-
-                        println!("table {:?}", table);
-
-                        let a = table
-                            .elem
-                            .get(v as usize)
-                            .expect("Table elem is does not exist")
-                            .expect("Table elem is uninitialized");
-
-                        let f = self
-                            .store
-                            .funcs
-                            .get(a as usize)
-                            .expect("No function was found");
-
-                        assert!(f.ty == ty);
-
-                        let args = self
-                            .store
-                            .stack
-                            .split_off(self.store.stack.len() - ty.param_types.len())
-                            .into_iter()
-                            .map(|x| match x {
-                                Value(v) => v,
-                                other => panic!("Expected value but found {:?}", other),
-                            })
-                            .collect();
-
-                        self.invoke_function(a, args);
-                    } else {
-                        panic!("Expected I32");
-                    }
-                }
                 Ctrl(OP_RETURN) | Ctrl(OP_END) => {
                     debug!("Return");
                     return Ok(InstructionOutcome::RETURN);
