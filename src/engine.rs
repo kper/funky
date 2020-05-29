@@ -638,6 +638,17 @@ impl Engine {
         }
     }
 
+    pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) {
+        let idx = self
+            .module
+            .borrow()
+            .exports
+            .iter()
+            .position(|e| e.name == name)
+            .expect("Function not found");
+        self.invoke_exported_function(idx as u32, args);
+    }
+
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         self.check_parameters_of_function(idx, &args);
 
@@ -1330,8 +1341,11 @@ impl Engine {
 
                     match tab.elem[i as usize] {
                         Some(a) => {
-
-                            let f = self.store.funcs.get(a as usize).expect("No function in store");
+                            let f = self
+                                .store
+                                .funcs
+                                .get(a as usize)
+                                .expect("No function in store");
 
                             {
                                 // Compare types
@@ -1905,7 +1919,7 @@ mod tests {
             ],
         }];
         e.run_function(0).unwrap();
-        assert_eq!(Some(&StackContent::Value(I32(0))),e.store.stack.last());
+        assert_eq!(Some(&StackContent::Value(I32(0))), e.store.stack.last());
     }
 
     #[test]

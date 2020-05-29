@@ -23,12 +23,14 @@ Options:
   --version     Show version.
   --stage0      Stop at Parser
   --stage1      Stop at Validation
+  --spec        Format output to be compliant for spec tests
 ";
 
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_stage0: bool,
     flag_stage1: bool,
+    flag_spec: bool,
     arg_input: String,
 }
 
@@ -70,7 +72,6 @@ fn main() {
 
     info!("Invoking function {:?}", 0);
     //e.invoke_function(0, vec![I32(2), I32(10)]);
-    e.invoke_exported_function(42, vec![]);
-    e.invoke_exported_function(51, vec![]);
-    eprintln!("Last value on stack was: {:?}", e.store.stack.last())
+    e.invoke_exported_function_by_name("odd", vec![I32(6)]);
+    println!("Last value on stack was: {:?}", e.store.stack.last())
 }
