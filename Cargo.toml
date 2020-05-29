@@ -25,6 +25,7 @@ env_logger = "0.7"
 log = "*"
 docopt = "1"
 serde = { version = "1", features = ["derive"] }
+regex = "1"
 
 [dev-dependencies]
 insta = "*"

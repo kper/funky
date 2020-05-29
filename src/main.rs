@@ -2,10 +2,14 @@
 extern crate log;
 extern crate env_logger;
 extern crate funky;
+extern crate regex;
 
 use docopt::Docopt;
+use funky::engine::Value;
 use funky::engine::Value::*;
 use funky::engine::{Engine, ModuleInstance};
+use regex::Regex;
+use regex::RegexSet;
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
@@ -14,7 +18,7 @@ const USAGE: &str = "
 Funky - a WebAssembly Interpreter
 
 Usage:
-  ./funky <input> [--stage0 | --stage1]
+  ./funky <input> <function> [<args>...] [--stage0 | --stage1]
   ./funky (-h | --help)
   ./funky --version
 
@@ -32,6 +36,8 @@ struct Args {
     flag_stage1: bool,
     flag_spec: bool,
     arg_input: String,
+    arg_function: String,
+    arg_args: Vec<String>,
 }
 
 fn main() {
@@ -71,7 +77,42 @@ fn main() {
     e.instantiation(&module);
 
     info!("Invoking function {:?}", 0);
-    //e.invoke_function(0, vec![I32(2), I32(10)]);
-    e.invoke_exported_function_by_name("odd", vec![I32(6)]);
+    let inv_args = parse_args(args.arg_args);
+    e.invoke_exported_function_by_name(&args.arg_function, inv_args);
     println!("Last value on stack was: {:?}", e.store.stack.last())
+}
+
+fn parse_args(args: Vec<String>) -> Vec<Value> {
+    let matchers = &[
+        r"I32\(([0-9]+)\)",
+        r"I64\([0-9]+\)",
+        r"F32\([0-9]+\.[0-9]+\)",
+        r"F64\([0-9]+\.[0-9]+\)",
+    ];
+    let set = RegexSet::new(matchers).unwrap();
+    args.iter()
+        .map(|a| {
+            let matches = set.matches(a);
+            debug!("matches: {:?}", matches);
+            if matches.matched(0) {
+                let re = Regex::new(matchers[0]).unwrap();
+                let caps = re.captures(a).unwrap();
+                I32(caps[1].parse::<i32>().unwrap())
+            } else if matches.matched(1) {
+                let re = Regex::new(matchers[1]).unwrap();
+                let caps = re.captures(a).unwrap();
+                I64(caps[1].parse::<i64>().unwrap())
+            } else if matches.matched(2) {
+                let re = Regex::new(matchers[2]).unwrap();
+                let caps = re.captures(a).unwrap();
+                F32(caps[1].parse::<f32>().unwrap())
+            } else if matches.matched(3) {
+                let re = Regex::new(matchers[3]).unwrap();
+                let caps = re.captures(a).unwrap();
+                F64(caps[1].parse::<f64>().unwrap())
+            } else {
+                panic!("Invalid parameter type specified");
+            }
+        })
+        .collect()
 }

@@ -130,6 +130,7 @@ dependencies = [
  "env_logger",
  "insta",
  "log",
+ "regex",
  "serde",
  "validation",
  "wasm-parser",
