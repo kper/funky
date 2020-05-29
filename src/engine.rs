@@ -571,7 +571,9 @@ impl Engine {
             },
         };
 
+        debug!("before allocate {:#?}", e);
         e.allocate(module);
+        debug!("after allocate {:#?}", e);
 
         e
     }
@@ -1311,7 +1313,7 @@ impl Engine {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
                     let ta = self.module.borrow().tableaddrs[0];
                     let tab = &self.store.tables[ta as usize];
-                    // TODO: implement ft_expect and ft_actual check
+
                     let i = match fetch_unop!(self.store.stack) {
                         I32(x) => x,
                         x => panic!("invalid index type: {:?}", x),
@@ -1319,14 +1321,24 @@ impl Engine {
                     if (i as usize) >= tab.elem.len() {
                         panic!("Attempt to perform indirect call to index larger than the table")
                     }
-                    trace!("Table: {:#?}", tab.elem);
+                    trace!("Table: {:?}", tab.elem);
+
                     match tab.elem[i as usize] {
-                        Some(funcidx) => {
-                            let t = self.module.borrow().fn_types[funcidx as usize].clone();
+                        Some(a) => {
+
+                            let f = self.store.funcs.get(a as usize).expect("No function in store");
+
+                            {
+                                // Compare types
+                                let m = self.module.borrow();
+                                let ty = m.fn_types.get(idx as usize);
+                                assert!(&f.ty == ty.expect("No type found"));
+                            }
+
                             let args = self
                                 .store
                                 .stack
-                                .split_off(self.store.stack.len() - t.param_types.len())
+                                .split_off(self.store.stack.len() - f.ty.param_types.len())
                                 .into_iter()
                                 .map(|x| match x {
                                     Value(v) => v,
@@ -1334,7 +1346,7 @@ impl Engine {
                                 })
                                 .collect();
 
-                            self.invoke_function(funcidx as u32, args);
+                            self.invoke_function(a as u32, args);
                         }
                         None => panic!("Table not initilized at index {}", i),
                     }
