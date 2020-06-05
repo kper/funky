@@ -1,0 +1,356 @@
+---
+source: src/tests.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: RefCell {
+        value: ModuleInstance {
+            start: 0,
+            code: [
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                2,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                65536,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                65536,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                3,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Mem(
+                            OP_MEMORY_GROW,
+                        ),
+                    ],
+                },
+                FunctionBody {
+                    locals: [],
+                    code: [
+                        Mem(
+                            OP_MEMORY_SIZE,
+                        ),
+                    ],
+                },
+            ],
+            fn_types: [
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+            ],
+            funcaddrs: [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+            ],
+            tableaddrs: [],
+            memaddrs: [
+                0,
+            ],
+            globaladdrs: [],
+            exports: [
+                ExportInstance {
+                    name: "load_at_zero",
+                    value: Function {
+                        ty: 0,
+                    },
+                },
+                ExportInstance {
+                    name: "store_at_zero",
+                    value: Function {
+                        ty: 1,
+                    },
+                },
+                ExportInstance {
+                    name: "load_at_page_size",
+                    value: Function {
+                        ty: 2,
+                    },
+                },
+                ExportInstance {
+                    name: "store_at_page_size",
+                    value: Function {
+                        ty: 3,
+                    },
+                },
+                ExportInstance {
+                    name: "grow",
+                    value: Function {
+                        ty: 4,
+                    },
+                },
+                ExportInstance {
+                    name: "size",
+                    value: Function {
+                        ty: 5,
+                    },
+                },
+            ],
+        },
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                2,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                65536,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Num(
+                            OP_I32_CONST(
+                                65536,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                3,
+                            ),
+                        ),
+                        Mem(
+                            OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Mem(
+                            OP_MEMORY_GROW,
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                module: (Weak),
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Mem(
+                            OP_MEMORY_SIZE,
+                        ),
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 0,
+                max: None,
+            },
+        ],
+        stack: [],
+        globals: [],
+    },
+}

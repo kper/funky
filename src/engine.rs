@@ -289,6 +289,34 @@ fn reinterpret(v: Value) -> Value {
     }
 }
 
+/// Returns Err when paging failed
+/// Ok, if resized memory by n * PAGE_SIZE
+/// https://webassembly.github.io/spec/core/exec/modules.html#growing-memories
+fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<(), ()> {
+    let len = (n + instance.data.len()) / PAGE_SIZE;
+
+    match instance.max {
+        None => {
+            if len > 2u32.pow(16) as usize {
+                error!("Length exceeded 2^16");
+                return Err(());
+            }
+        }
+        Some(max) => {
+            if len > max as usize {
+                error!("Memory growing failed. Limit exceded");
+                return Err(());
+            }
+        }
+    }
+
+    instance
+        .data
+        .resize(instance.data.len() + (n as usize) * PAGE_SIZE, 0u8);
+
+    Ok(())
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
@@ -1134,6 +1162,38 @@ impl Engine {
 
                     self.store.stack.push(Value(I32(sz as i32)));
                 }
+                Mem(OP_MEMORY_GROW) => {
+                    let module = &self.module.borrow();
+                    let addr = module.memaddrs.get(0).expect("No memory address found");
+                    let instance = &mut self.store.memory[*addr as usize];
+                    let sz = instance.data.len() / PAGE_SIZE;
+
+                    if let Some(Value(I32(n))) = self.store.stack.pop() {
+                        assert!(n > 0);
+
+                        /*
+
+                        if let Some(max) = instance.max {
+                            if err > max {
+                                error!("Memory growing failed. Limit exceded");
+                                self.store.stack.push(Value(I32(err as i32)));
+                                continue;
+                            }
+                        }
+                        */
+
+                        if let Err(()) = grow_memory(instance, n as usize) {
+                            error!("Memory growing failed because paging failed.");
+                            let err = (i32::MAX - 1) as u32;
+                            self.store.stack.push(Value(I32(err as i32)));
+                        }
+                        else {
+                            self.store.stack.push(Value(I32(sz as i32)));
+                        }
+                    } else {
+                        panic!("Unexpected stack element. Expected I32");
+                    }
+                }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
                     debug!("OP_BLOCK {:?}", ty);
 
@@ -1915,7 +1975,7 @@ mod tests {
 
     #[test]
     fn test_memory_load_i32() {
-        env_logger::init();
+        //env_logger::init();
         let mut e = empty_engine();
         e.module.borrow_mut().memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
@@ -2373,5 +2433,41 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!(Value(I64(1)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_memory_grow() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 10].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(1)), Mem(OP_MEMORY_GROW)],
+        }];
+
+        e.run_function(0).unwrap();
+        assert_eq!(e.store.memory[0].data.len(), PAGE_SIZE + 10);
+    }
+
+    #[test]
+    fn test_memory_grow_with_max() {
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 10].to_vec(),
+            max: Some(11),
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(i32::MAX)), Mem(OP_MEMORY_GROW)],
+        }];
+
+        e.run_function(0).unwrap();
+        assert_eq!(Some(&Value(I32(i32::MAX - 1))), e.store.stack.last());
     }
 }
