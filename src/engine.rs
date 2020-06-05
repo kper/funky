@@ -280,6 +280,15 @@ fn eqz(left: Value) -> Value {
     }
 }
 
+fn reinterpret(v: Value) -> Value {
+    match v {
+        I32(k) => F32(k as f32),
+        I64(k) => F64(k as f64),
+        F32(k) => I32(k as i32),
+        F64(k) => I64(k as i64),
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
@@ -1017,7 +1026,6 @@ impl Engine {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, F64, f64);
                 }
-
                 Num(OP_F32_CONVERT_I32_S) => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F32, f32);
@@ -1049,6 +1057,13 @@ impl Engine {
                 Num(OP_F64_CONVERT_I64_U) => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F32, f32, u64);
+                }
+                Num(OP_I32_REINTERPRET_F32)
+                | Num(OP_I64_REINTERPRET_F64)
+                | Num(OP_F32_REINTERPRET_I32)
+                | Num(OP_F64_REINTERPRET_I64) => {
+                    let v = fetch_unop!(self.store.stack);
+                    self.store.stack.push(Value(reinterpret(v)));
                 }
                 Param(OP_DROP) => {
                     debug!("OP_DROP");
@@ -2294,5 +2309,69 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!(Value(F32(u32::MAX as f32)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_reinterpret_i32() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I32_CONST(-1)), Num(OP_I32_REINTERPRET_F32)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(F32(-1f32)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_reinterpret_i64() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_I64_CONST(-1)), Num(OP_I64_REINTERPRET_F64)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(F64(-1f64)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_reinterpret_f32() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_F32_CONST(1.01)), Num(OP_F32_REINTERPRET_I32)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I32(1)), e.store.stack.pop().unwrap());
+    }
+
+    #[test]
+    fn test_num_reinterpret_f64() {
+        let mut e = empty_engine();
+        e.store.stack = vec![Frame(Frame {
+            arity: 1,
+            locals: vec![],
+            module_instance: e.downgrade_mod_instance(),
+        })];
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![Num(OP_F64_CONST(1.00001)), Num(OP_F64_REINTERPRET_I64)],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!(Value(I64(1)), e.store.stack.pop().unwrap());
     }
 }
