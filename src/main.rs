@@ -18,7 +18,7 @@ const USAGE: &str = "
 Funky - a WebAssembly Interpreter
 
 Usage:
-  ./funky <input> <function> [<args>...] [--stage0 | --stage1]
+  ./funky <input> <function> [<args>...] [--stage0 | --stage1] [--spec]
   ./funky (-h | --help)
   ./funky --version
 
@@ -79,7 +79,11 @@ fn main() {
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
     e.invoke_exported_function_by_name(&args.arg_function, inv_args);
-    println!("Last value on stack was: {:?}", e.store.stack.last())
+    if args.flag_spec {
+        println!("{:?}", e.store.stack.last())
+    } else {
+        println!("Last value on stack was: {:?}", e.store.stack.last())
+    }
 }
 
 fn parse_args(args: Vec<String>) -> Vec<Value> {
