@@ -12,7 +12,12 @@ rm -rf testsuite.zip
 
 echo "[*] Download finished"
 
-cd testsuite-master;
+cd testsuite-master
 for f in *.wast; do
-    wast2json $f
-done;
+    wast2json "$f"
+done
+cd ..
+
+for f in testsuite-master/*.json; do
+    ./run_spec_tests.py "$f"
+done
