@@ -733,14 +733,17 @@ impl Engine {
             .ty
             .param_types;
 
-        if fn_types
-            != &args
-                .iter()
-                .cloned()
-                .map(|w| w.into())
-                .collect::<Vec<ValueType>>()
-        {
-            panic!("Function expected different parameters");
+        let argtypes = &args
+            .iter()
+            .cloned()
+            .map(|w| w.into())
+            .collect::<Vec<ValueType>>();
+
+        if fn_types != argtypes {
+            panic!(
+                "Function expected different parameters! Expected {:?} got {:?}",
+                fn_types, argtypes
+            );
         }
     }
 
@@ -1186,8 +1189,7 @@ impl Engine {
                             error!("Memory growing failed because paging failed.");
                             let err = (i32::MAX - 1) as u32;
                             self.store.stack.push(Value(I32(err as i32)));
-                        }
-                        else {
+                        } else {
                             self.store.stack.push(Value(I32(sz as i32)));
                         }
                     } else {
