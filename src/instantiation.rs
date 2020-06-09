@@ -104,7 +104,7 @@ fn instantiate_elements<'a>(
                     .get(*funcindex as usize)
                     .ok_or("No function with funcindex")?;
 
-                replace(
+                let _ = replace(
                     &mut table_inst.elem[table_index as usize + j],
                     Some(*funcaddr),
                 );
@@ -159,7 +159,7 @@ fn instantiate_data<'a>(
 
             use std::mem::replace;
             for (j, b) in data.init.iter().enumerate() {
-                replace(&mut mem_inst.data[mem_idx as usize + j], *b);
+                let _ = replace(&mut mem_inst.data[mem_idx as usize + j], *b);
             }
         }
     }
