@@ -55,6 +55,27 @@ impl Into<ValueType> for Value {
     }
 }
 
+impl Value {
+    fn convert(self, vt: ValueType) -> Value {
+        trace!("Convert {:?} to {:?}", self, vt);
+        match (self, vt) {
+            (Value::I32(v), ValueType::I64) => Value::I64(v as i64),
+            (Value::I32(v), ValueType::F32) => Value::F32(v as f32),
+            (Value::I32(v), ValueType::F64) => Value::F64(v as f64),
+            (Value::I64(v), ValueType::I32) => Value::I32(v as i32),
+            (Value::I64(v), ValueType::F32) => Value::F32(v as f32),
+            (Value::I64(v), ValueType::F64) => Value::F64(v as f64),
+            (Value::F32(v), ValueType::F64) => Value::F64(v as f64),
+            (Value::F32(v), ValueType::I32) => Value::I32(v as i32),
+            (Value::F32(v), ValueType::I64) => Value::I64(v as i64),
+            (Value::F64(v), ValueType::F32) => Value::F32(v as f32),
+            (Value::F64(v), ValueType::I32) => Value::I32(v as i32),
+            (Value::F64(v), ValueType::I64) => Value::I64(v as i64),
+            _ => self,
+        }
+    }
+}
+
 impl Add for Value {
     type Output = Self;
     fn add(self, other: Self) -> Self {
@@ -952,22 +973,30 @@ impl Engine {
                 Num(OP_I32_LT_S) | Num(OP_I64_LT_S) | Num(OP_F32_LT) | Num(OP_F64_LT)
                 | Num(OP_I32_LT_U) | Num(OP_I64_LT_U) => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(lt(v1, v2)))
+                    self.store
+                        .stack
+                        .push(Value(lt(v1, v2).convert(ValueType::I32)))
                 }
                 Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT)
                 | Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(gt(v1, v2)))
+                    self.store
+                        .stack
+                        .push(Value(gt(v1, v2).convert(ValueType::I32)))
                 }
                 Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE)
                 | Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(le(v1, v2)))
+                    self.store
+                        .stack
+                        .push(Value(le(v1, v2).convert(ValueType::I32)))
                 }
                 Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE)
                 | Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(ge(v1, v2)))
+                    self.store
+                        .stack
+                        .push(Value(ge(v1, v2).convert(ValueType::I32)))
                 }
                 Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
                     let v1 = fetch_unop!(self.store.stack);
