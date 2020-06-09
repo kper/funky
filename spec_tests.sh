@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+fold_start() {
+  echo -e "travis_fold:start:$1\033[33;1m$2\033[0m"
+}
+
+fold_end() {
+  echo -e "\ntravis_fold:end:$1\r"
+}
+
 
 echo "[*] Downloading test-suite"
 
@@ -19,5 +27,12 @@ done
 cd ..
 
 for f in testsuite-master/*.json; do
-    ./run_spec_tests.py "$f"
+    fold_start "$f" "$f"
+    echo "--- Running $f ---"
+    if timeout 120 ./run_spec_tests.py "$f"; then
+        echo "--- Finished $f ---"
+    else
+        echo "--- !Timeout during $f! ---"
+    fi
+    fold_end "$f"
 done

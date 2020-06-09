@@ -54,9 +54,11 @@ for case in cases:
     if result != format_output(case['expected']):
         failures.append(case)
         print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) ")
-        print('[!] Assertion failed: {} != {}'.format(result, format_output(case['expected'])))
+        print('[FAILED]: Assertion failed!')
+        print(f'[FAILED]: Expected:\t{format_output(case["expected"])}')
+        print(f'[FAILED]: Actual:\t{result}')
         if out.stderr:
-            print('[!] Encountered error:')
+            print('\tEncountered error:')
             print(out.stderr.decode('utf-8'))
     else:
         if verbose:

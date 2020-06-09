@@ -10,3 +10,4 @@ script:
   - cargo test --verbose --all
   - cargo clippy --all-features -- -D warnings
   - cargo audit -D
+  - ./spec_tests.sh
