@@ -80,8 +80,8 @@ impl Add for Value {
     type Output = Self;
     fn add(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 + v2),
-            (I64(v1), I64(v2)) => I64(v1 + v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_add(v2)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_add(v2)),
             (F32(v1), F32(v2)) => F32(v1 + v2),
             (F64(v1), F64(v2)) => F64(v1 + v2),
             _ => panic!("Type missmatch during addition"),
@@ -93,8 +93,8 @@ impl Sub for Value {
     type Output = Self;
     fn sub(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 - v2),
-            (I64(v1), I64(v2)) => I64(v1 - v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_sub(v2)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_sub(v2)),
             (F32(v1), F32(v2)) => F32(v1 - v2),
             (F64(v1), F64(v2)) => F64(v1 - v2),
             _ => panic!("Type missmatch during subtraction"),
@@ -106,8 +106,8 @@ impl Mul for Value {
     type Output = Self;
     fn mul(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 * v2),
-            (I64(v1), I64(v2)) => I64(v1 * v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_mul(v2)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_mul(v2)),
             (F32(v1), F32(v2)) => F32(v1 * v2),
             (F64(v1), F64(v2)) => F64(v1 * v2),
             _ => panic!("Type missmatch during subtraction"),

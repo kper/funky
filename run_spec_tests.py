@@ -22,7 +22,14 @@ successes = 0
 
 
 def format_val(arg):
-    return "{}({})".format(arg['type'].upper(), arg['value'])
+    if arg['type'][0] == 'f':
+        if arg['value'][0:3] == 'nan':
+            return "{}(NaN)".format(arg['type'].upper())
+        if arg['value'] == '2147483648':
+            return "{}(-0)".format(arg['type'].upper())
+        return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
+    else:
+        return "{}({})".format(arg['type'].upper(), arg['value'])
 
 def format_output(val):
     return 'Some(Value({}))'.format(val)
@@ -47,13 +54,14 @@ with open(path, "r") as read_file:
                 'name': command['action']['field']
             })
 
+idx = 1
 for case in cases:
     args = [binary,module_file,case['name']] + case['args'] + ['--spec']
     out = subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     result = out.stdout.decode("utf-8").rstrip()
     if result != format_output(case['expected']):
         failures.append(case)
-        print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) ")
+        print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) @{idx}")
         print('[FAILED]: Assertion failed!')
         print(f'[FAILED]: Expected:\t{format_output(case["expected"])}')
         print(f'[FAILED]: Actual:\t{result}')
@@ -64,6 +72,7 @@ for case in cases:
         if verbose:
             print(f"[OK]: {case['name']}({' '.join(case['args'])}) ")
         successes += 1
+    idx += 1
 
 print(f"--- {path} ---")
 if len(cases) > 0:

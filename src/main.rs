@@ -101,11 +101,17 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
             if matches.matched(0) {
                 let re = Regex::new(matchers[0]).unwrap();
                 let caps = re.captures(a).unwrap();
-                I32(caps[1].parse::<i32>().unwrap())
+                match caps[1].parse::<i32>() {
+                    Ok(x) => I32(x),
+                    _ => I32(caps[1].parse::<u32>().unwrap() as i32),
+                }
             } else if matches.matched(1) {
                 let re = Regex::new(matchers[1]).unwrap();
                 let caps = re.captures(a).unwrap();
-                I64(caps[1].parse::<i64>().unwrap())
+                match caps[1].parse::<i64>() {
+                    Ok(x) => I64(x),
+                    _ => I64(caps[1].parse::<u64>().unwrap() as i64),
+                }
             } else if matches.matched(2) {
                 let re = Regex::new(matchers[2]).unwrap();
                 let caps = re.captures(a).unwrap();
