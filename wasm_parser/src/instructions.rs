@@ -378,6 +378,11 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
             i,
             Instruction::Num(NumericInstructions::OP_F64_REINTERPRET_I64),
         ),
+        0xc0 => (i, Instruction::Num(NumericInstructions::OP_I32_EXTEND8_S)),
+        0xc1 => (i, Instruction::Num(NumericInstructions::OP_I32_EXTEND16_S)),
+        0xc2 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND8_S)),
+        0xc3 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND16_S)),
+        0xc4 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND32_S)),
         _ => panic!("unknown instruction {}", instr[0]),
     };
 

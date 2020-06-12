@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub type FuncIdx = u32; 
+pub type FuncIdx = u32;
 pub type TableIdx = u32;
 pub type MemoryIdx = u32;
 pub type GlobalIdx = u32;
@@ -41,7 +41,7 @@ pub enum BlockType {
     Empty,
     ValueType(ValueType),
     ValueTypeTy(i64),
-//    S33(i64), //actually signed 33
+    //    S33(i64), //actually signed 33
 }
 
 /*
@@ -80,7 +80,8 @@ pub enum ImportDesc {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Copy)]
-pub enum ExternalKindType { //TODO refactor to tuple construct?
+pub enum ExternalKindType {
+    //TODO refactor to tuple construct?
     Function { ty: u32 },
     Table { ty: u32 },
     Memory { ty: u32 },
@@ -168,7 +169,7 @@ pub struct DataSection {
 pub struct NameSection {
     pub name_type: u8,
     pub name_payload_len: u32,
-    pub name_payload_data: Vec<u8>
+    pub name_payload_data: Vec<u8>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -226,7 +227,7 @@ pub struct FunctionBody {
     pub code: Expr,
 }
 
-#[derive(Debug, Clone, PartialEq,  Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,
@@ -238,7 +239,6 @@ pub enum Limits {
     One(u32, u32),
 }
 
-
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {
@@ -248,7 +248,6 @@ pub enum Instruction {
     Mem(MemoryInstructions),
     Num(NumericInstructions),
 }
-
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
@@ -460,6 +459,12 @@ pub enum NumericInstructions {
     OP_I64_REINTERPRET_F64,
     OP_F32_REINTERPRET_I32,
     OP_F64_REINTERPRET_I64,
+
+    OP_I32_EXTEND8_S,
+    OP_I32_EXTEND16_S,
+    OP_I64_EXTEND8_S,
+    OP_I64_EXTEND16_S,
+    OP_I64_EXTEND32_S,
 }
 
 /*
@@ -487,7 +492,7 @@ impl std::convert::From<u8> for SectionType {
 impl std::convert::From<u8> for ValueType {
     fn from(item: u8) -> Self {
         use log::debug;
-        
+
         debug!("convert value type {:X}", item);
         match item {
             0x7F => Self::I32,
