@@ -22,7 +22,7 @@ echo "[*] Download finished"
 
 cd testsuite-master
 for f in *.wast; do
-    wast2json "$f"
+    wast2json --no-check "$f"
 done
 cd ..
 
