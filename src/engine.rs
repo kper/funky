@@ -165,8 +165,8 @@ impl Shl for Value {
     type Output = Self;
     fn shl(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 << v2),
-            (I64(v1), I64(v2)) => I64(v1 << v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_shl(v2 as u32)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_shl(v2 as u32)),
             _ => panic!("Type missmatch during shift left"),
         }
     }
@@ -176,8 +176,8 @@ impl Shr for Value {
     type Output = Self;
     fn shr(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 >> v2),
-            (I64(v1), I64(v2)) => I64(v1 >> v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_shr(v2 as u32)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_shr(v2 as u32)),
             _ => panic!("Type missmatch during shift right"),
         }
     }
@@ -296,7 +296,7 @@ impl_two_op_float!(max, |left: f64, right: f64| left.max(right));
 fn eqz(left: Value) -> Value {
     match left {
         I32(v1) => I32((v1 == 0_i32) as i32),
-        I64(v1) => I64((v1 == 0_i64) as i64),
+        I64(v1) => I32((v1 == 0_i64) as i32),
         _ => panic!("Type missmatch during eqz"),
     }
 }
