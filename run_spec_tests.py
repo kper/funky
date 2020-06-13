@@ -20,16 +20,23 @@ cases = []
 failures = []
 successes = 0
 
+def force_signed(val, bits):
+    return (val & ((1 << bits-1) - 1)) - (val & (1 << bits-1))
+
 
 def format_val(arg):
+    if arg['type'] == 'i32':
+        val = force_signed(int(arg['value']),32)
+        return f"I32({val})"
+    if arg['type'] == 'i64':
+        val = force_signed(int(arg['value']),64)
+        return f"I64({val})"
     if arg['type'][0] == 'f':
         if arg['value'][0:3] == 'nan':
             return "{}(NaN)".format(arg['type'].upper())
         if arg['value'] == '2147483648':
             return "{}(-0)".format(arg['type'].upper())
         return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
-    else:
-        return "{}({})".format(arg['type'].upper(), arg['value'])
 
 def format_output(val):
     return 'Some(Value({}))'.format(val)
@@ -81,3 +88,4 @@ if len(cases) > 0:
     print(f"Success rate: {((successes/len(cases))*100):.2f}%")
 else:
     print("No testcases found")
+
