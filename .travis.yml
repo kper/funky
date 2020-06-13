@@ -10,4 +10,6 @@ script:
   - cargo test --verbose --all
   - cargo clippy --all-features -- -D warnings
   - cargo audit -D
-  - ./spec_tests.sh
+  - wget https://github.com/WebAssembly/wabt/releases/download/1.0.15/wabt-1.0.15-linux.tar.gz
+  - tar -xzf wabt-1.0.15-linux.tar.gz
+  - PATH=$PWD/wabt-1.0.15:$PATH ./spec_tests.sh
