@@ -899,7 +899,7 @@ impl Engine {
                 Num(OP_I32_DIV_U) | Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_I64_DIV_U)
                 | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 * v2))
+                    self.store.stack.push(Value(v1 / v2))
                 }
                 Num(OP_I32_REM_U) | Num(OP_I64_REM_U) | Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
