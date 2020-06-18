@@ -119,8 +119,8 @@ impl Div for Value {
     type Output = Self;
     fn div(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 / v2),
-            (I64(v1), I64(v2)) => I64(v1 / v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_div(v2)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_div(v2)),
             (F32(v1), F32(v2)) => F32(v1 / v2),
             (F64(v1), F64(v2)) => F64(v1 / v2),
             _ => panic!("Type missmatch during division"),
@@ -187,8 +187,8 @@ impl Rem for Value {
     type Output = Self;
     fn rem(self, other: Self) -> Self {
         match (self, other) {
-            (I32(v1), I32(v2)) => I32(v1 % v2),
-            (I64(v1), I64(v2)) => I64(v1 % v2),
+            (I32(v1), I32(v2)) => I32(v1.wrapping_rem(v2)),
+            (I64(v1), I64(v2)) => I64(v1.wrapping_rem(v2)),
             (F32(v1), F32(v2)) => F32(v1 % v2),
             (F64(v1), F64(v2)) => F64(v1 % v2),
             _ => panic!("Type missmatch during remainder"),
@@ -896,14 +896,41 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
-                Num(OP_I32_DIV_U) | Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_I64_DIV_U)
-                | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
+                Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 / v2))
                 }
-                Num(OP_I32_REM_U) | Num(OP_I64_REM_U) | Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
+                Num(OP_I32_DIV_U) | Num(OP_I64_DIV_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) / (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I64(((x1 as u64) / (x2 as u64)) as i64))),
+                        _ => panic!("Invalid types for DIV_U"),
+                    }
+                }
+                Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 % v2))
+                }
+                Num(OP_I32_REM_U) | Num(OP_I64_REM_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) % (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I64(((x1 as u64) % (x2 as u64)) as i64))),
+                        _ => panic!("Invalid types for REM_U"),
+                    }
                 }
                 Num(OP_I32_AND) | Num(OP_I64_AND) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -921,9 +948,29 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 << v2))
                 }
-                Num(OP_I32_SHR_U) | Num(OP_I64_SHR_U) | Num(OP_I32_SHR_S) | Num(OP_I64_SHR_S) => {
+                Num(OP_I32_SHR_S) | Num(OP_I64_SHR_S) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 >> v2))
+                }
+                Num(OP_I32_SHR_U) | Num(OP_I64_SHR_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => {
+                            let k = x2 as u32 % 32;
+                            self.store
+                                .stack
+                                .push(Value(I32(((x1 as u32).checked_shr(k)).unwrap_or(0) as i32)));
+                        }
+                        (I64(x1), I64(x2)) => {
+                            let k = x2 as u64 % 64;
+                            self.store
+                                .stack
+                                .push(Value(I64(
+                                    ((x1 as u64).checked_shr(k as u32)).unwrap_or(0) as i64
+                                )));
+                        }
+                        _ => panic!("Invalid types for SHR_U"),
+                    }
                 }
                 Num(OP_I32_ROTL) | Num(OP_I64_ROTL) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -970,33 +1017,89 @@ impl Engine {
                         self.store.stack.push(StackContent::Value(Value::I32(0)))
                     }
                 }
-                Num(OP_I32_LT_S) | Num(OP_I64_LT_S) | Num(OP_F32_LT) | Num(OP_F64_LT)
-                | Num(OP_I32_LT_U) | Num(OP_I64_LT_U) => {
-                    let (v1, v2) = fetch_binop!(self.store.stack);
+                Num(OP_I32_LT_S) | Num(OP_I64_LT_S) | Num(OP_F32_LT) | Num(OP_F64_LT) => {
+                    // switch ordering because of stack layout
+                    let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(lt(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT)
-                | Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
+                Num(OP_I32_LT_U) | Num(OP_I64_LT_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) < (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u64) < (x2 as u64)) as i32))),
+                        _ => panic!("Invalid types for LT_U comparison"),
+                    }
+                }
+                Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT) => {
+                    // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(gt(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE)
-                | Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
+                Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) > (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u64) > (x2 as u64)) as i32))),
+                        _ => panic!("Invalid types for GT_U comparison"),
+                    }
+                }
+                Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE) => {
+                    // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(le(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE)
-                | Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
+                Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) <= (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u64) <= (x2 as u64)) as i32))),
+                        _ => panic!("Invalid types for LE_U comparison"),
+                    }
+                }
+                Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE) => {
+                    // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(ge(v1, v2).convert(ValueType::I32)))
+                }
+                Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
+                    let (v2, v1) = fetch_binop!(self.store.stack);
+                    match (v1, v2) {
+                        (I32(x1), I32(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u32) >= (x2 as u32)) as i32))),
+                        (I64(x1), I64(x2)) => self
+                            .store
+                            .stack
+                            .push(Value(I32(((x1 as u64) >= (x2 as u64)) as i32))),
+                        _ => panic!("Invalid types for GE_U comparison"),
+                    }
                 }
                 Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
                     let v1 = fetch_unop!(self.store.stack);
@@ -1117,6 +1220,26 @@ impl Engine {
                 Num(OP_F64_CONVERT_I64_U) => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F32, f32, u64);
+                }
+                Num(OP_I32_EXTEND8_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, I32, i32, i8);
+                }
+                Num(OP_I32_EXTEND16_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I32, I32, i32, i16);
+                }
+                Num(OP_I64_EXTEND8_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, I64, i64, i8);
+                }
+                Num(OP_I64_EXTEND16_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, I64, i64, i16);
+                }
+                Num(OP_I64_EXTEND32_S) => {
+                    let v = fetch_unop!(self.store.stack);
+                    convert!(self, v, I64, I64, i64, i32);
                 }
                 Num(OP_I32_REINTERPRET_F32)
                 | Num(OP_I64_REINTERPRET_F64)
