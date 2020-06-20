@@ -139,7 +139,7 @@ fn instantiate_data<'a>(
             let borrow = mod_instance.borrow();
             let mem_addr = borrow
                 .memaddrs
-                .get(mem_idx as usize)
+                .get(0)
                 .ok_or("Memory index does not exists")?;
 
             debug!("Memory addr is {}", mem_addr);

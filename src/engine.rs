@@ -469,7 +469,7 @@ macro_rules! fetch_unop {
         debug!("Popping {:?}", $stack.last());
         let v1 = match $stack.pop().unwrap() {
             Value(v) => v,
-            x => panic!("Top of stack was not of type $v_ty: {:?}", x),
+            x => panic!("Top of stack was not a value: {:?}", x),
         };
         (v1)
     }};
@@ -610,8 +610,12 @@ impl ModuleInstance {
         };
         for section in m.sections.iter() {
             match section {
-                Section::Code(CodeSection { entries: x }) => mi.code = x.clone(),
-                Section::Type(TypeSection { entries: x }) => mi.fn_types = x.clone(),
+                Section::Code(CodeSection { entries: x }) => {
+                    mi.code = x.clone();
+                }
+                Section::Type(TypeSection { entries: x }) => {
+                    mi.fn_types = x.clone();
+                }
                 _ => {}
             }
         }
@@ -1540,7 +1544,8 @@ impl Engine {
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
-                    let t = self.module.borrow().fn_types[idx as usize].clone();
+                    trace!("fn_types: {:#?}", self.module.borrow().fn_types);
+                    let t = self.store.funcs[idx as usize].ty.clone();
                     let args = self
                         .store
                         .stack
