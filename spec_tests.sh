@@ -26,6 +26,8 @@ for f in *.wast; do
 done
 cd ..
 
+rm -f report.csv
+echo "Path,Status,Case,Args" > report.csv
 for f in testsuite-master/*.json; do
     fold_start "$f" "$f"
     echo "--- Running $f ---"
