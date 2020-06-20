@@ -92,6 +92,12 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
         r"I64\((-?[0-9]+)\)",
         r"F32\(([0-9]+(\.[0-9]+)?)\)",
         r"F64\(([0-9]+(\.[0-9]+)?)\)",
+        r"F32\(inf\)",
+        r"F32\(-inf\)",
+        r"F64\(inf\)",
+        r"F64\(-inf\)",
+        r"F32\(NAN\)",
+        r"F64\(NAN\)",
     ];
     let set = RegexSet::new(matchers).unwrap();
     args.iter()
@@ -120,6 +126,14 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
                 let re = Regex::new(matchers[3]).unwrap();
                 let caps = re.captures(a).unwrap();
                 F64(caps[1].parse::<f64>().unwrap())
+            } else if matches.matched(4) {
+                F32(f32::INFINITY)
+            } else if matches.matched(5) {
+                F32(-f32::INFINITY)
+            } else if matches.matched(6) {
+                F64(f64::INFINITY)
+            } else if matches.matched(7) {
+                F64(-f64::INFINITY)
             } else {
                 panic!("Invalid parameter type specified");
             }

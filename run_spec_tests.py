@@ -32,11 +32,21 @@ def format_val(arg):
     if arg['type'] == 'i64':
         val = force_signed(int(arg['value']),64)
         return f"I64({val})"
-    if arg['type'][0] == 'f':
+    if arg['type'] == 'f32':
         if arg['value'][0:3] == 'nan':
             return "{}(NaN)".format(arg['type'].upper())
-        if arg['value'] == '2147483648':
-            return "{}(-0)".format(arg['type'].upper())
+        if arg['value'] == '4286578688':
+            return "F32(-inf)"
+        if arg['value'] == '2139095040':
+            return "F32(inf)"
+        return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
+    if arg['type'] == 'f64':
+        if arg['value'][0:3] == 'nan':
+            return "{}(NaN)".format(arg['type'].upper())
+        if arg['value'] == '18442240474082181120':
+            return "F64(-inf)"
+        if arg['value'] == '9218868437227405312':
+            return "F64(inf)"
         return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
 
 def format_output(val):
@@ -59,7 +69,8 @@ with open(path, "r") as read_file:
                 'args': list(map(lambda x: format_val(x), command['action']['args'])),
                 # force index 0 here since the current wasm standard only alows for one return element
                 'expected': format_val(command['expected'][0]),
-                'name': command['action']['field']
+                'name': command['action']['field'],
+                'line': command['line']
             })
 
 idx = 1
@@ -71,7 +82,7 @@ for case in cases:
     result = out.stdout.decode("utf-8").rstrip()
     if result != format_output(case['expected']):
         failures.append(case)
-        print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) @{idx}")
+        print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) @{case['line']}")
         print('[FAILED]: Assertion failed!')
         print(f'[FAILED]: Expected:\t{format_output(case["expected"])}')
         print(f'[FAILED]: Actual:\t{result}')

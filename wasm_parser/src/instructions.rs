@@ -383,6 +383,25 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
         0xc2 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND8_S)),
         0xc3 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND16_S)),
         0xc4 => (i, Instruction::Num(NumericInstructions::OP_I64_EXTEND32_S)),
+
+        0xfc => {
+            let (i, m) = take(1u8)(i)?;
+            (
+                i,
+                match m {
+                    [0x00] => Instruction::Num(NumericInstructions::OP_I32_TRUNC_SAT_F32_S),
+                    [0x01] => Instruction::Num(NumericInstructions::OP_I32_TRUNC_SAT_F32_U),
+                    [0x02] => Instruction::Num(NumericInstructions::OP_I32_TRUNC_SAT_F64_S),
+                    [0x03] => Instruction::Num(NumericInstructions::OP_I32_TRUNC_SAT_F64_U),
+
+                    [0x04] => Instruction::Num(NumericInstructions::OP_I64_TRUNC_SAT_F32_S),
+                    [0x05] => Instruction::Num(NumericInstructions::OP_I64_TRUNC_SAT_F32_U),
+                    [0x06] => Instruction::Num(NumericInstructions::OP_I64_TRUNC_SAT_F64_S),
+                    [0x07] => Instruction::Num(NumericInstructions::OP_I64_TRUNC_SAT_F64_U),
+                    _ => panic!("Invalid saturating instruction"),
+                },
+            )
+        }
         _ => panic!("unknown instruction {}", instr[0]),
     };
 
