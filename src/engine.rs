@@ -748,15 +748,15 @@ impl Engine {
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         self.check_parameters_of_function(idx, &args);
 
-        let len = args.len() as u32;
+        let t = self.store.funcs[idx as usize].ty.clone();
 
         self.store.stack.push(Frame(Frame {
-            arity: len,
+            arity: t.return_types.len() as u32,
             locals: args,
             module_instance: Rc::downgrade(&self.module),
         }));
 
-        debug!("stack before invoking {:#?}", self.store.stack);
+        trace!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
         self.run_function(idx).expect("run function failed");
@@ -824,7 +824,7 @@ impl Engine {
 
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
-            debug!("Popping {:?}", self.store.stack.last());
+            trace!("Popping {:?}", self.store.stack.last());
             match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
                 Some(x) => panic!("Expected value but found {:?}", x),
@@ -833,6 +833,7 @@ impl Engine {
         }
         debug!("Popping frames");
         while let Some(Frame(_)) = self.store.stack.last() {
+            debug!("Popping {:?}", self.store.stack.last());
             self.store.stack.pop();
         }
 
@@ -1659,13 +1660,14 @@ impl Engine {
                     return Ok(InstructionOutcome::RETURN);
                 }
                 Ctrl(OP_NOP) => {}
+                Ctrl(OP_UNREACHABLE) => panic!("Reached unreachable => trap!"),
                 x => panic!("Instruction {:?} not implemented", x),
             }
             ip += 1;
 
             debug!("ip is now {}", ip);
 
-            debug!("stack {:#?}", self.store.stack);
+            trace!("stack {:#?}", self.store.stack);
         }
 
         Ok(InstructionOutcome::EXIT)
