@@ -749,10 +749,18 @@ impl Engine {
         self.check_parameters_of_function(idx, &args);
 
         let t = self.store.funcs[idx as usize].ty.clone();
+        let lc = match self.store.funcs[idx as usize].code.locals.get(0) {
+            Some(fb) => fb.count as usize,
+            None => 0,
+        };
+        let mut locals = args.clone();
+        if locals.len() < lc {
+            locals.resize(lc, I32(0));
+        }
 
         self.store.stack.push(Frame(Frame {
             arity: t.return_types.len() as u32,
-            locals: args,
+            locals: locals,
             module_instance: Rc::downgrade(&self.module),
         }));
 
