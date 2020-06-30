@@ -21,7 +21,7 @@ name = "funky"
 validation = { path = "./validation" }
 wasm-parser = { path = "./wasm_parser" }
 env_logger = "0.7"
-log = "*"
+log = { version = "*", features = ["release_max_level_off"] }
 docopt = "1"
 serde = { version = "1", features = ["derive"] }
 regex = "1"
