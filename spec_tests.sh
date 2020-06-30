@@ -10,17 +10,15 @@ fold_end() {
 }
 
 
-echo "[*] Downloading test-suite"
-
-rm -rf testsuite-master
-curl -L -o testsuite.zip https://github.com/WebAssembly/testsuite/archive/master.zip
-
-unzip testsuite.zip >/dev/null
-rm -rf testsuite.zip
+rm -rf testsuite
+git clone https://github.com/WebAssembly/testsuite.git
+cd testsuite
+git checkout 0ef5db9f1914b930e4bff34dc7d425ac259b798a
+cd ..
 
 echo "[*] Download finished"
 
-cd testsuite-master
+cd testsuite
 for f in *.wast; do
     wast2json --no-check "$f"
 done
@@ -28,7 +26,7 @@ cd ..
 
 rm -f report.csv
 echo "Path,Status,Case,Args" > report.csv
-for f in testsuite-master/*.json; do
+for f in testsuite/*.json; do
     fold_start "$f" "$f"
     echo "--- Running $f ---"
     if timeout 120 ./run_spec_tests.py "$f"; then
