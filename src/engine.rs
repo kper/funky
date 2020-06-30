@@ -760,7 +760,7 @@ impl Engine {
 
         self.store.stack.push(Frame(Frame {
             arity: t.return_types.len() as u32,
-            locals: locals,
+            locals,
             module_instance: Rc::downgrade(&self.module),
         }));
 
