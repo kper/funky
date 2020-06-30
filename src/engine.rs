@@ -753,7 +753,9 @@ impl Engine {
             Some(fb) => fb.count as usize,
             None => 0,
         };
-        let mut locals = args.clone();
+
+        let mut locals = args;
+
         if locals.len() < lc {
             locals.resize(lc, I32(0));
         }
