@@ -11,9 +11,7 @@ fn main() {
 }
 
 fn run(s: u64) -> f64 {
-    let v = f64::from_bits(s);
-
-    v
+    f64::from_bits(s)
 }
 
 #[cfg(test)]

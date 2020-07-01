@@ -11,7 +11,5 @@ fn main() {
 }
 
 fn run(s: u32) -> f32 {
-    let v = f32::from_bits(s);
-
-    v
+    f32::from_bits(s)
 }
