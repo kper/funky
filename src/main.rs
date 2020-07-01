@@ -134,6 +134,10 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
                 F64(f64::INFINITY)
             } else if matches.matched(7) {
                 F64(-f64::INFINITY)
+            } else if matches.matched(8) {
+                F32(f32::NAN)
+            } else if matches.matched(9) {
+                F64(f64::NAN)
             } else {
                 panic!("Invalid parameter type specified {}", a);
             }
