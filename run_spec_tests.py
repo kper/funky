@@ -6,6 +6,7 @@ import os
 import subprocess
 import logging
 import csv
+import struct
 
 
 module_file = ''
@@ -39,7 +40,11 @@ def format_val(arg):
             return "F32(-inf)"
         if arg['value'] == '2139095040':
             return "F32(inf)"
-        return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
+
+        r = subprocess.run(['./target/debug/from_bits_f32', arg['value']],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        result = r.stdout.decode("utf-8").rstrip()
+
+        return "{}({:.1f})".format(arg['type'].upper(), float(result))
     if arg['type'] == 'f64':
         if arg['value'][0:3] == 'nan':
             return "{}(NaN)".format(arg['type'].upper())
@@ -47,7 +52,11 @@ def format_val(arg):
             return "F64(-inf)"
         if arg['value'] == '9218868437227405312':
             return "F64(inf)"
-        return "{}({:.1f})".format(arg['type'].upper(), float(arg['value']))
+
+        r = subprocess.run(['./target/debug/from_bits_f64', arg['value']],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        result = r.stdout.decode("utf-8").rstrip()
+
+        return "{}({:.1f})".format(arg['type'].upper(), float(result))
 
 def format_output(val):
     return 'Some(Value({}))'.format(val)

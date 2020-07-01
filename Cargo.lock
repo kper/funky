@@ -117,6 +117,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "from_bits_f32"
+version = "0.1.0"
+
+[[package]]
+name = "from_bits_f64"
+version = "0.1.0"
+
+[[package]]
 name = "funky"
 version = "0.1.0"
 dependencies = [

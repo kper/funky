@@ -90,14 +90,14 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
     let matchers = &[
         r"I32\((-?[0-9]+)\)",
         r"I64\((-?[0-9]+)\)",
-        r"F32\(([0-9]+(\.[0-9]+)?)\)",
-        r"F64\(([0-9]+(\.[0-9]+)?)\)",
+        r"F32\((-?[0-9]+(\.[0-9]+)?)\)",
+        r"F64\((-?[0-9]+(\.[0-9]+)?)\)",
         r"F32\(inf\)",
         r"F32\(-inf\)",
         r"F64\(inf\)",
         r"F64\(-inf\)",
-        r"F32\(NAN\)",
-        r"F64\(NAN\)",
+        r"F32\(nan\)",
+        r"F64\(nan\)",
     ];
     let set = RegexSet::new(matchers).unwrap();
     args.iter()
@@ -135,7 +135,7 @@ fn parse_args(args: Vec<String>) -> Vec<Value> {
             } else if matches.matched(7) {
                 F64(-f64::INFINITY)
             } else {
-                panic!("Invalid parameter type specified");
+                panic!("Invalid parameter type specified {}", a);
             }
         })
         .collect()

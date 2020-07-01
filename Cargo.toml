@@ -7,7 +7,9 @@ edition = "2018"
 [workspace]
 members = [
 	"wasm_parser",
-	"validation"
+	"validation",
+	"from_bits_f64",
+	"from_bits_f32"
 ]
 
 [lib]
@@ -16,6 +18,15 @@ path  = "src/lib.rs"
 [[bin]]
 path = "src/main.rs"
 name = "funky"
+
+[[bin]]
+path = "from_bits_f64/src/main.rs"
+name = "from_bits_f64"
+
+[[bin]]
+path = "from_bits_f32/src/main.rs"
+name = "from_bits_f32"
+
 
 [dependencies]
 validation = { path = "./validation" }
