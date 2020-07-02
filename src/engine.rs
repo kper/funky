@@ -794,24 +794,34 @@ impl Engine {
     }
 
     fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
-        let fn_types = &self
+        let fn_types = self
             .store
             .funcs
             .get(idx as usize)
             .expect("Function not found")
             .ty
-            .param_types;
+            .param_types
+            .iter();
 
-        let argtypes = &args
+        let argtypes = args
             .iter()
-            .cloned()
-            .map(|w| w.into())
-            .collect::<Vec<ValueType>>();
+            //.cloned()
+            .map(|w| match w {
+                &Value::I32(_) => ValueType::I32,
+                &Value::I64(_) => ValueType::I64,
+                &Value::F32(_) => ValueType::F32,
+                &Value::F64(_) => ValueType::F64,
+            });
+        //.collect::<Vec<ValueType>>();
 
-        if fn_types != argtypes {
+        let is_same = fn_types
+            .zip(argtypes)
+            .map(|(x, y)| *x == y)
+            .all(|w| w == true);
+
+        if !is_same {
             panic!(
-                "Function expected different parameters! Expected {:?} got {:?}",
-                fn_types, argtypes
+                "Function expected different parameters!"
             );
         }
     }
