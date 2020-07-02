@@ -811,10 +811,7 @@ impl Engine {
         });
 
         // Check if `fn_types` and `argtypes` are elementwise equal
-        let is_same = fn_types
-            .zip(argtypes)
-            .map(|(x, y)| *x == y)
-            .all(|w| w );
+        let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
 
         if !is_same {
             panic!("Function expected different parameters!");
@@ -875,7 +872,7 @@ impl Engine {
         instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome, InstructionError> {
         let mut ip = 0;
-        while let Some(instruction) = instructions.next() {
+        for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
             match &instruction {
                 Var(OP_LOCAL_GET(idx)) => {
