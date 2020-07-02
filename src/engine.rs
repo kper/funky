@@ -828,7 +828,7 @@ impl Engine {
         debug!("frame {:#?}", fr);
 
         let instructions = &f.code;
-        self.run_instructions(&mut fr, &instructions)?;
+        self.run_instructions(&mut fr, &mut instructions.iter())?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -864,15 +864,15 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_instructions(
+    fn run_instructions<'a>(
         &mut self,
         fr: &mut Frame,
-        instructions: &[Instruction],
+        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome, InstructionError> {
         let mut ip = 0;
-        while ip < instructions.len() {
-            debug!("Evaluating instruction {:?}", &instructions[ip]);
-            match &instructions[ip] {
+        while let Some(instruction) = instructions.next() {
+            debug!("Evaluating instruction {:?}", instruction);
+            match &instruction {
                 Var(OP_LOCAL_GET(idx)) => {
                     self.store.stack.push(Value(fr.locals[*idx as usize]));
                     debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
@@ -1424,7 +1424,7 @@ impl Engine {
                     };
 
                     self.store.stack.push(StackContent::Label(label));
-                    let outcome = self.run_instructions(fr, &block_instructions)?;
+                    let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1452,7 +1452,7 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome = self.run_instructions(fr, &block_instructions)?;
+                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1492,7 +1492,8 @@ impl Engine {
                             };
 
                             self.store.stack.push(StackContent::Label(label));
-                            let outcome = self.run_instructions(fr, &block_instructions_branch)?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1534,7 +1535,7 @@ impl Engine {
                             debug!("C is not zero, therefore branching (1)");
 
                             let outcome =
-                                self.run_instructions(fr, &block_instructions_branch_1)?;
+                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1551,7 +1552,7 @@ impl Engine {
                             debug!("C is zero, therefore branching (2)");
 
                             let outcome =
-                                self.run_instructions(fr, &block_instructions_branch_2)?;
+                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
