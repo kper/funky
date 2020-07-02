@@ -68,7 +68,7 @@ fn allocate_functions(
     debug!("functions extracted {:#?}", ty);
 
     //let rc = Rc::new(mod_instance);
-    let weak = Rc::downgrade(mod_instance);
+    let _weak = Rc::downgrade(mod_instance);
     for (code_index, t) in ty.iter().enumerate() {
         debug!("Function {:#?}", t);
         // Allocate function
@@ -91,7 +91,7 @@ fn allocate_functions(
 
             let instance = FuncInstance {
                 ty: fbody.clone(),
-                module: weak.clone(),
+                //module: weak.clone(),
                 code: fcode.clone(),
             };
 

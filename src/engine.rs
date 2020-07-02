@@ -394,7 +394,7 @@ pub struct Label {
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
-    pub module_instance: Weak<RefCell<ModuleInstance>>,
+    //pub module_instance: Weak<RefCell<ModuleInstance>>,
 }
 
 impl PartialEq for Frame {
@@ -428,7 +428,7 @@ pub struct Store {
 pub struct FuncInstance {
     //FIXME Add HostFunc
     pub ty: FunctionSignature,
-    pub module: Weak<RefCell<ModuleInstance>>,
+    //pub module: Weak<RefCell<ModuleInstance>>,
     pub code: FunctionBody,
 }
 
@@ -763,7 +763,7 @@ impl Engine {
         self.store.stack.push(Frame(Frame {
             arity: t.return_types.len() as u32,
             locals,
-            module_instance: Rc::downgrade(&self.module),
+            //module_instance: Rc::downgrade(&self.module),
         }));
 
         trace!("stack before invoking {:#?}", self.store.stack);
@@ -2650,7 +2650,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],

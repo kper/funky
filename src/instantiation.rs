@@ -23,7 +23,7 @@ pub fn instantiation(
     let frame = Frame {
         locals: Vec::new(),
         arity: 0,
-        module_instance: Rc::downgrade(&mod_instance),
+        //module_instance: Rc::downgrade(&mod_instance),
     };
 
     // Step 8
@@ -45,7 +45,7 @@ pub fn instantiation(
         let frame = Frame {
             locals: Vec::new(),
             arity: 0,
-            module_instance: Rc::downgrade(&mod_instance),
+            //module_instance: Rc::downgrade(&mod_instance),
         };
 
         assert_eq!(frame, f);
