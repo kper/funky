@@ -27,6 +27,8 @@ name = "from_bits_f64"
 path = "from_bits_f32/src/main.rs"
 name = "from_bits_f32"
 
+[profile.release]
+debug = true
 
 [dependencies]
 validation = { path = "./validation" }
