@@ -748,7 +748,7 @@ impl Engine {
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
         self.check_parameters_of_function(idx, &args);
 
-        let t = self.store.funcs[idx as usize].ty.clone();
+        let t = &self.store.funcs[idx as usize].ty;
         let lc = match self.store.funcs[idx as usize].code.locals.get(0) {
             Some(fb) => fb.count as usize,
             None => 0,
@@ -820,13 +820,13 @@ impl Engine {
     fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
         debug!("Running function {:?}", idx);
 
-        let f = self.module.borrow().code[idx as usize].clone(); //TODO maybe remove .clone()
+        let f = &self.module.borrow().code[idx as usize].clone();
 
         let mut fr = self.get_frame();
 
         debug!("frame {:#?}", fr);
 
-        let instructions = f.code;
+        let instructions = &f.code;
         self.run_instructions(&mut fr, &instructions)?;
 
         // implicit return
