@@ -820,6 +820,7 @@ impl Engine {
     fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
         debug!("Running function {:?}", idx);
 
+        //FIXME this `.clone` is extremly expensive!!!
         let f = &self.module.borrow().code[idx as usize].clone();
 
         let mut fr = self.get_frame();
