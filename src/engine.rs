@@ -803,26 +803,21 @@ impl Engine {
             .param_types
             .iter();
 
-        let argtypes = args
-            .iter()
-            //.cloned()
-            .map(|w| match w {
-                &Value::I32(_) => ValueType::I32,
-                &Value::I64(_) => ValueType::I64,
-                &Value::F32(_) => ValueType::F32,
-                &Value::F64(_) => ValueType::F64,
-            });
-        //.collect::<Vec<ValueType>>();
+        let argtypes = args.iter().map(|w| match *w {
+            Value::I32(_) => ValueType::I32,
+            Value::I64(_) => ValueType::I64,
+            Value::F32(_) => ValueType::F32,
+            Value::F64(_) => ValueType::F64,
+        });
 
+        // Check if `fn_types` and `argtypes` are elementwise equal
         let is_same = fn_types
             .zip(argtypes)
             .map(|(x, y)| *x == y)
-            .all(|w| w == true);
+            .all(|w| w );
 
         if !is_same {
-            panic!(
-                "Function expected different parameters!"
-            );
+            panic!("Function expected different parameters!");
         }
     }
 
