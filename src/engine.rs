@@ -772,13 +772,13 @@ impl Engine {
         self.run_function(idx).expect("run function failed");
     }
 
-    fn local_set(&mut self, idx: u32, fr: &mut Frame) -> Result<(), InstructionError> {
+    fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<(), InstructionError> {
         debug!("OP_LOCAL_SET {:?}", idx);
         debug!("locals {:#?}", fr.locals);
 
         match self.store.stack.pop() {
             Some(Value(v)) => {
-                match fr.locals.get_mut(idx as usize) {
+                match fr.locals.get_mut(*idx as usize) {
                     Some(k) => *k = v, //Exists replace
                     None => {
                         //Does not exists; push
@@ -871,10 +871,10 @@ impl Engine {
         let mut ip = 0;
         while ip < instructions.len() {
             debug!("Evaluating instruction {:?}", &instructions[ip]);
-            match instructions[ip].clone() {
+            match &instructions[ip] {
                 Var(OP_LOCAL_GET(idx)) => {
-                    self.store.stack.push(Value(fr.locals[idx as usize]));
-                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[idx as usize]);
+                    self.store.stack.push(Value(fr.locals[*idx as usize]));
+                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
                     debug!("locals {:#?}", fr.locals);
                 }
                 Var(OP_LOCAL_SET(idx)) => {
@@ -901,16 +901,16 @@ impl Engine {
                 Var(OP_GLOBAL_GET(idx)) => {
                     self.store
                         .stack
-                        .push(Value(self.store.globals[idx as usize].val));
+                        .push(Value(self.store.globals[*idx as usize].val));
 
                     debug!("globals {:#?}", self.store.globals);
                 }
                 Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => {
-                        if !self.store.globals[idx as usize].mutable {
+                        if !self.store.globals[*idx as usize].mutable {
                             panic!("Attempting to modify a immutable global")
                         }
-                        self.store.globals[idx as usize].val = v;
+                        self.store.globals[*idx as usize].val = v;
                         debug!("globals {:#?}", self.store.globals);
                     }
                     Some(x) => panic!("Expected value but found {:?}", x),
@@ -918,20 +918,20 @@ impl Engine {
                 },
                 Num(OP_I32_CONST(v)) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I32(v)));
+                    self.store.stack.push(Value(I32(*v)));
                     debug!("stack {:#?}", self.store.stack);
                 }
                 Num(OP_I64_CONST(v)) => {
                     debug!("OP_I64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I64(v)))
+                    self.store.stack.push(Value(I64(*v)))
                 }
                 Num(OP_F32_CONST(v)) => {
                     debug!("OP_F32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F32(v)))
+                    self.store.stack.push(Value(F32(*v)))
                 }
                 Num(OP_F64_CONST(v)) => {
                     debug!("OP_F64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F64(v)))
+                    self.store.stack.push(Value(F64(*v)))
                 }
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -1573,7 +1573,7 @@ impl Engine {
                 Ctrl(OP_BR(label_idx)) => {
                     debug!("OP_BR {}", label_idx);
 
-                    return Ok(InstructionOutcome::BRANCH(label_idx));
+                    return Ok(InstructionOutcome::BRANCH(*label_idx));
                 }
                 Ctrl(OP_BR_IF(label_idx)) => {
                     debug!("OP_BR_IF {}", label_idx);
@@ -1581,7 +1581,7 @@ impl Engine {
                         debug!("c is {}", c);
                         if c != 0 {
                             debug!("Branching to {}", label_idx);
-                            return Ok(InstructionOutcome::BRANCH(label_idx));
+                            return Ok(InstructionOutcome::BRANCH(*label_idx));
                         } else {
                             debug!("Not Branching to {}", label_idx);
                         }
@@ -1595,7 +1595,7 @@ impl Engine {
                             table[index as usize]
                         } else {
                             debug!("Using default case");
-                            default
+                            *default
                         };
                         return Ok(InstructionOutcome::BRANCH(label_idx));
                     } else {
@@ -1606,7 +1606,7 @@ impl Engine {
                     debug!("OP_CALL {:?}", idx);
 
                     trace!("fn_types: {:#?}", self.module.borrow().fn_types);
-                    let t = self.store.funcs[idx as usize].ty.clone();
+                    let t = self.store.funcs[*idx as usize].ty.clone();
                     let args = self
                         .store
                         .stack
@@ -1618,7 +1618,7 @@ impl Engine {
                         })
                         .collect();
 
-                    self.invoke_function(idx, args);
+                    self.invoke_function(*idx, args);
                 }
                 Ctrl(OP_CALL_INDIRECT(idx)) => {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
@@ -1645,7 +1645,7 @@ impl Engine {
                             {
                                 // Compare types
                                 let m = self.module.borrow();
-                                let ty = m.fn_types.get(idx as usize);
+                                let ty = m.fn_types.get(*idx as usize);
                                 assert!(&f.ty == ty.expect("No type found"));
                             }
 
