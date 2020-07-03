@@ -73,7 +73,6 @@ Engine {
                     ],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [

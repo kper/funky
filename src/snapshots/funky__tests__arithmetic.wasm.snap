@@ -321,7 +321,6 @@ Engine {
                     ],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -445,7 +444,6 @@ Engine {
                     ],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -568,7 +566,6 @@ Engine {
                         F64,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [

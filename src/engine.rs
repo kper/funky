@@ -810,10 +810,16 @@ impl Engine {
             Value::F64(_) => ValueType::F64,
         });
 
-        // Check if `fn_types` and `argtypes` are elementwise equal
-        let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
+        let len_1 = fn_types.len();
+        let len_2 = argtypes.len();
 
-        if !is_same {
+        // Check if `fn_types` and `argtypes` are elementwise equal
+        let is_same = fn_types
+            .zip(argtypes)
+            .map(|(x, y)| *x == y)
+            .all(|w| w);
+
+        if !is_same || len_1 != len_2 {
             panic!("Function expected different parameters!");
         }
     }
@@ -1856,7 +1862,7 @@ mod tests {
                 stack: vec![Frame(Frame {
                     arity: 0,
                     locals: Vec::new(),
-                    module_instance: Rc::downgrade(&mi),
+                    //module_instance: Rc::downgrade(&mi),
                 })],
             },
             module: mi,
@@ -1864,8 +1870,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Function expected different parameters")]
-    fn test_invoke_wrong_parameters() {
+    #[should_panic(expected = "Function expected different parameters!")]
+    fn test_invoke_wrong_length_parameters() {
+        //env_logger::init();
         let mut e = empty_engine();
 
         let body = FunctionBody {
@@ -1879,7 +1886,7 @@ mod tests {
                 param_types: vec![ValueType::I32, ValueType::I32],
                 return_types: vec![],
             },
-            module: Rc::downgrade(&e.module),
+            //module: Rc::downgrade(&e.module),
             code: body.clone(),
         }];
 
@@ -1889,12 +1896,38 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Function expected different parameters!")]
+    fn test_invoke_wrong_ty_parameters() {
+        //env_logger::init();
+        let mut e = empty_engine();
+
+        let body = FunctionBody {
+            locals: vec![],
+            code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        };
+
+        // We have 2 parameters, but supply 3
+        e.store.funcs = vec![FuncInstance {
+            ty: FunctionSignature {
+                param_types: vec![ValueType::F32, ValueType::I32],
+                return_types: vec![],
+            },
+            //module: Rc::downgrade(&e.module),
+            code: body.clone(),
+        }];
+
+        e.module.borrow_mut().code = vec![body.clone()];
+
+        e.invoke_function(0, vec![Value::I32(1), Value::I32(2)]);
+    }
+
+    #[test]
     fn test_run_function() {
         let mut e = empty_engine();
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -1909,7 +1942,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: Vec::new(),
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -1931,7 +1964,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -1947,7 +1980,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(1)],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -1973,7 +2006,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 0,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
 
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2000,7 +2033,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 0,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
 
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2019,7 +2052,7 @@ mod tests {
             Frame(Frame {
                 arity: 1,
                 locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
-                module_instance: e.downgrade_mod_instance(),
+                                              //module_instance: e.downgrade_mod_instance(),
             }),
         ];
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2041,7 +2074,7 @@ mod tests {
             Frame(Frame {
                 arity: 1,
                 locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
-                module_instance: e.downgrade_mod_instance(),
+                                              //module_instance: e.downgrade_mod_instance(),
             }),
         ];
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2063,7 +2096,7 @@ mod tests {
             Frame(Frame {
                 arity: 1,
                 locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
-                module_instance: e.downgrade_mod_instance(),
+                                              //module_instance: e.downgrade_mod_instance(),
             }),
         ];
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2089,7 +2122,7 @@ mod tests {
             Frame(Frame {
                 arity: 1,
                 locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
-                module_instance: e.downgrade_mod_instance(),
+                                              //module_instance: e.downgrade_mod_instance(),
             }),
         ];
         e.module.borrow_mut().code = vec![FunctionBody {
@@ -2113,7 +2146,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(4)],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2432,7 +2465,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2448,7 +2481,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2464,7 +2497,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2484,7 +2517,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2499,7 +2532,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2515,7 +2548,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2531,7 +2564,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2550,7 +2583,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2570,7 +2603,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2586,7 +2619,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2602,7 +2635,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2618,7 +2651,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            //module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],
@@ -2634,7 +2667,7 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            module_instance: e.downgrade_mod_instance(),
+            ////module_instance: e.downgrade_mod_instance(),
         })];
         e.module.borrow_mut().code = vec![FunctionBody {
             locals: vec![],

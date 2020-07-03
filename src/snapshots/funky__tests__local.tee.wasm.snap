@@ -460,7 +460,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -489,7 +488,6 @@ Engine {
                         I64,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -518,7 +516,6 @@ Engine {
                         F32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -547,7 +544,6 @@ Engine {
                         F64,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -578,7 +574,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -604,7 +599,6 @@ Engine {
                         I64,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -630,7 +624,6 @@ Engine {
                         F32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -656,7 +649,6 @@ Engine {
                         F64,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -684,7 +676,6 @@ Engine {
                     ],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {

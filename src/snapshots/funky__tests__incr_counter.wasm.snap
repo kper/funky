@@ -113,7 +113,6 @@ Engine {
                     param_types: [],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {

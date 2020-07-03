@@ -68,7 +68,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [

@@ -98,7 +98,6 @@ Engine {
                     param_types: [],
                     return_types: [],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [],
@@ -113,7 +112,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [

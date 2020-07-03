@@ -589,7 +589,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -821,7 +820,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -881,7 +879,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
@@ -953,7 +950,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [
                         LocalEntry {
@@ -1058,7 +1054,6 @@ Engine {
                         I32,
                     ],
                 },
-                module: (Weak),
                 code: FunctionBody {
                     locals: [],
                     code: [
