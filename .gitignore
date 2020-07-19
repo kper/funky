@@ -1,2 +1,8 @@
 /target
 testsuite-master/
+testsuite
+test_results
+test_runner.output
+report.csv
+test_runner
+perf.data*
