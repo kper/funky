@@ -24,15 +24,4 @@ for f in *.wast; do
 done
 cd ..
 
-rm -f report.csv
-echo "Path,Status,Case,Args" > report.csv
-for f in testsuite/*.json; do
-    fold_start "$f" "$f"
-    echo "--- Running $f ---"
-    if timeout 120 ./run_spec_tests.py "$f"; then
-        echo "--- Finished $f ---"
-    else
-        echo "--- !Timeout during $f! ---"
-    fi
-    fold_end "$f"
-done
+cargo run --bin test_runner > test_runner.output

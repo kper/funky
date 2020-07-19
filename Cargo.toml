@@ -8,6 +8,7 @@ edition = "2018"
 members = [
 	"wasm_parser",
 	"validation",
+	"test_runner",
 	"from_bits_f64",
 	"from_bits_f32"
 ]
@@ -26,6 +27,10 @@ name = "from_bits_f64"
 [[bin]]
 path = "from_bits_f32/src/main.rs"
 name = "from_bits_f32"
+
+[[bin]]
+path = "test_runner/src/main.rs"
+name = "test_runner"
 
 [profile.release]
 debug = true

@@ -4,7 +4,7 @@ import json
 import sys
 import os
 import subprocess
-import logging
+import logging 
 import csv
 import struct
 
@@ -64,7 +64,11 @@ def format_output(val):
 if os.path.dirname(path) != '':
     rootdir = os.path.dirname(path)
 
-with open(path, "r") as read_file:
+fullpath = os.getcwd() + "/" + path
+
+#sys.stderr.write(fullpath +"\n")
+
+with open(fullpath) as read_file:
     data = json.load(read_file)
     for command in data['commands']:
         if command['type'] == 'module':
@@ -83,20 +87,22 @@ with open(path, "r") as read_file:
             })
 
 idx = 1
-reportfile = open('report.csv','a')
+reportfile = open('./test_results/' + os.path.basename(path) + '_report.csv', 'x')
 reportwriter = csv.writer(reportfile)
+casefile = open('./test_results/' + os.path.basename(path) + '_cases.output', 'x')
+
 for case in cases:
     args = [binary,module_file,case['name']] + case['args'] + ['--spec']
     out = subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     result = out.stdout.decode("utf-8").rstrip()
     if result != format_output(case['expected']):
         failures.append(case)
-        print(f"[FAILED]: {case['name']}({' '.join(case['args'])}) @{case['line']}")
-        print('[FAILED]: Assertion failed!')
-        print(f'[FAILED]: Expected:\t{format_output(case["expected"])}')
-        print(f'[FAILED]: Actual:\t{result}')
+        casefile.write(f"[FAILED]: {case['name']}({' '.join(case['args'])}) @{case['line']}\n")
+        casefile.write('[FAILED]: Assertion failed!\n')
+        casefile.write(f'[FAILED]: Expected:\t{format_output(case["expected"])}\n')
+        casefile.write(f'[FAILED]: Actual:\t{result}\n\n')
         if out.stderr:
-            print('\tEncountered error:')
+            print('\tEncountered error for ' + path + ' :')
             print(out.stderr.decode('utf-8'))
         reportwriter.writerow([path,'FAIL',case['name'],' '.join(case['args'])])
     else:
@@ -105,6 +111,7 @@ for case in cases:
             print(f"[OK]: {case['name']}({' '.join(case['args'])}) ")
         successes += 1
     idx += 1
+casefile.close()
 reportfile.close()
 
 print(f"--- {path} ---")
