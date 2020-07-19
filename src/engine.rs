@@ -1,7 +1,9 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
+use std::cell::RefCell;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::MemoryInstructions::*;
@@ -15,21 +17,9 @@ const PAGE_SIZE: usize = 65536;
 
 #[derive(Debug)]
 pub struct Engine {
-    //pub module: Rc<RefCell<ModuleInstance>>, //TODO rename to `module_instance`
-    pub module: ModuleInstance, //TODO rename to `module_instance`
+    pub module: Rc<RefCell<ModuleInstance>>, //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
-    pub blocks: Vec<Expr>,
-}
-
-/// Tells us where to find the location of the instructions. This can be a
-/// code function or a branch of an IF, BLOCK, LOOP ... instruction block.
-#[derive(Debug)]
-pub enum CodeLocation {
-    /// Normal function which can be addressed
-    Function(usize),
-    /// Don't address the function, but a block
-    Block(usize),
 }
 
 #[derive(Debug)]
@@ -535,8 +525,7 @@ macro_rules! load_memory {
         if let I32(v) = v1 {
             let ea = (v + $arg.offset as i32) as usize;
 
-            //let module = &$self.module.borrow();
-            let module = &$self.module;
+            let module = &$self.module.borrow();
 
             let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -574,8 +563,7 @@ macro_rules! store_memory {
             if let I32(v) = v1 {
                 let ea = (v + $arg.offset as i32) as usize;
 
-                //let module = &$self.module.borrow();
-                let module = &$self.module;
+                let module = &$self.module.borrow();
 
                 let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -602,8 +590,7 @@ macro_rules! store_memoryN {
             if let I32(v) = v1 {
                 let ea = (v + $arg.offset as i32) as usize;
 
-                //let module = &$self.module.borrow();
-                let module = &$self.module;
+                let module = &$self.module.borrow();
 
                 let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -674,7 +661,7 @@ impl ModuleInstance {
 impl Engine {
     pub fn new(mi: ModuleInstance, module: &Module) -> Self {
         let mut e = Engine {
-            module: mi,
+            module: Rc::new(RefCell::new(mi)),
             started: false,
             store: Store {
                 funcs: Vec::new(),
@@ -683,7 +670,6 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
-            blocks: Vec::new(),
         };
 
         debug!("before allocate {:#?}", e);
@@ -693,11 +679,9 @@ impl Engine {
         e
     }
 
-    /*
     pub fn downgrade_mod_instance(&self) -> Weak<RefCell<ModuleInstance>> {
         Rc::downgrade(&self.module)
     }
-    */
 
     fn allocate(&mut self, m: &Module) {
         info!("Allocation");
@@ -719,7 +703,7 @@ impl Engine {
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) {
         debug!("invoke_exported_function {:?}", idx);
         let k = {
-            let x = self.module;
+            let x = self.module.borrow();
 
             debug!("x's element {:?}", x.exports.get(idx as usize));
 
@@ -737,7 +721,7 @@ impl Engine {
             ExternalKindType::Function { ty } => {
                 let func_addr = *self
                     .module
-                    //.borrow()
+                    .borrow()
                     .funcaddrs
                     .get(ty as usize)
                     .expect("Function not found");
@@ -753,7 +737,7 @@ impl Engine {
     pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) {
         let idx = self
             .module
-            //.borrow()
+            .borrow()
             .exports
             .iter()
             .position(|e| e.name == name)
@@ -785,8 +769,7 @@ impl Engine {
         trace!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
-        self.run_function(CodeLocation::Function(idx as usize))
-            .expect("run function failed");
+        self.run_function(idx).expect("run function failed");
     }
 
     fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<(), InstructionError> {
@@ -831,7 +814,10 @@ impl Engine {
         let len_2 = argtypes.len();
 
         // Check if `fn_types` and `argtypes` are elementwise equal
-        let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
+        let is_same = fn_types
+            .zip(argtypes)
+            .map(|(x, y)| *x == y)
+            .all(|w| w);
 
         if !is_same || len_1 != len_2 {
             panic!("Function expected different parameters!");
@@ -839,19 +825,18 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_function(&mut self, code_location: CodeLocation) -> Result<(), InstructionError> {
-        debug!("Running function {:?}", code_location);
+    fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
+        debug!("Running function {:?}", idx);
 
         //FIXME this `.clone` is extremly expensive!!!
-        //let f = &self.module.borrow().code[idx as usize].clone();
+        let f = &self.module.borrow().code[idx as usize].clone();
 
         let mut fr = self.get_frame();
 
         debug!("frame {:#?}", fr);
 
-        //let instructions = &f.code;
-        //self.run_instructions(&mut fr, &mut instructions.iter())?;
-        self.run_instructions(&mut fr, code_location)?;
+        let instructions = &f.code;
+        self.run_instructions(&mut fr, &mut instructions.iter())?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -886,38 +871,12 @@ impl Engine {
         Ok(())
     }
 
-    /*
-    /// Get the instructions
-    fn get_instructions_by_location<'a, 'b>(
-        &'b self,
-        code_location: CodeLocation,
-    ) -> Result<impl std::iter::Iterator<Item = &'a Instruction>, InstructionError> {
-        match code_location {
-            CodeLocation::Function(idx) => {
-                Ok(self.module.code[idx as usize].code.iter())
-                //Ok(&self.module.borrow().code[idx as usize].iter_mut())
-            }
-            CodeLocation::Block(n) => Ok(self.blocks.get(n).unwrap().iter()),
-        }
-    }
-    */
-
     #[allow(clippy::cognitive_complexity)]
     fn run_instructions<'a>(
         &mut self,
         fr: &mut Frame,
-        code_location: CodeLocation,
-        //instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
+        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome, InstructionError> {
-        //let instructions = self.get_instructions_by_location(code_location)?;
-
-        let instructions = match code_location {
-            CodeLocation::Function(idx) => {
-                self.module.code[idx as usize].code.iter()
-            }
-            CodeLocation::Block(n) => self.blocks.get(n).unwrap().iter(),
-        };
-
         let mut ip = 0;
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
@@ -1424,7 +1383,7 @@ impl Engine {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 Mem(OP_MEMORY_SIZE) => {
-                    let module = &self.module;
+                    let module = &self.module.borrow();
                     let addr = module.memaddrs.get(0).expect("No memory address found");
                     let instance = &self.store.memory[*addr as usize];
 
@@ -1433,7 +1392,7 @@ impl Engine {
                     self.store.stack.push(Value(I32(sz as i32)));
                 }
                 Mem(OP_MEMORY_GROW) => {
-                    let module = &self.module;
+                    let module = &self.module.borrow();
                     let addr = module.memaddrs.get(0).expect("No memory address found");
                     let instance = &mut self.store.memory[*addr as usize];
                     let sz = instance.data.len() / PAGE_SIZE;
@@ -1656,7 +1615,7 @@ impl Engine {
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
-                    trace!("fn_types: {:#?}", self.module.fn_types);
+                    trace!("fn_types: {:#?}", self.module.borrow().fn_types);
                     let t = self.store.funcs[*idx as usize].ty.clone();
                     let args = self
                         .store
@@ -1673,7 +1632,7 @@ impl Engine {
                 }
                 Ctrl(OP_CALL_INDIRECT(idx)) => {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
-                    let ta = self.module.tableaddrs[0];
+                    let ta = self.module.borrow().tableaddrs[0];
                     let tab = &self.store.tables[ta as usize];
 
                     let i = match fetch_unop!(self.store.stack) {
@@ -1695,7 +1654,7 @@ impl Engine {
 
                             {
                                 // Compare types
-                                let m = self.module;
+                                let m = self.module.borrow();
                                 let ty = m.fn_types.get(*idx as usize);
                                 assert!(&f.ty == ty.expect("No type found"));
                             }
@@ -1818,7 +1777,7 @@ impl Engine {
             BlockType::ValueType(_) => 1,
             BlockType::ValueTypeTy(ty) => self
                 .module
-                //.borrow()
+                .borrow()
                 .fn_types
                 .get(*ty as usize)
                 .ok_or(InstructionError::Trap)?
@@ -1907,7 +1866,6 @@ mod tests {
                 })],
             },
             module: mi,
-            blocks: Vec::new(),
         }
     }
 

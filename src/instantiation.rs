@@ -9,7 +9,7 @@ type StartFunctionAddr = u32;
 /// Returns the addr of the start function, which needs to be invoked
 pub fn instantiation(
     m: &Module,
-    mod_instance: &ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<Option<StartFunctionAddr>, ()> {
     // Step 1
@@ -62,7 +62,7 @@ pub fn instantiation(
 
 fn instantiate_elements<'a>(
     m: &Module,
-    mod_instance: &ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<(), &'a str> {
     debug!("instantiate elements");
@@ -76,7 +76,7 @@ fn instantiate_elements<'a>(
         if let Value::I32(table_index) = eoval {
             //table_index = eo_i
 
-            let borrow = mod_instance;
+            let borrow = mod_instance.borrow();
 
             let table_addr = borrow
                 .tableaddrs
@@ -119,7 +119,7 @@ fn instantiate_elements<'a>(
 
 fn instantiate_data<'a>(
     m: &Module,
-    mod_instance: &ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<(), &'a str> {
     debug!("instantiate elements");
@@ -136,7 +136,7 @@ fn instantiate_data<'a>(
             debug!("Memory index is {}", mem_idx);
 
             //mem_idx = do_i
-            let borrow = mod_instance;
+            let borrow = mod_instance.borrow();
             let mem_addr = borrow
                 .memaddrs
                 .get(0)
@@ -169,7 +169,7 @@ fn instantiate_data<'a>(
 
 fn instantiate_start(
     m: &Module,
-    mod_instance: &ModuleInstance,
+    mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
 ) -> Result<Option<u32>, ()> {
     debug!("instantiate start");
@@ -177,7 +177,7 @@ fn instantiate_start(
     if let Some(start_section) = validation::extract::get_start(m).first() {
         debug!("Start section {:#?}", start_section);
 
-        let borrow = mod_instance;
+        let borrow = mod_instance.borrow();
         let func_addr = borrow
             .funcaddrs
             .get((start_section.index) as usize)
