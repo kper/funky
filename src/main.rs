@@ -14,6 +14,7 @@ use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
+
 const USAGE: &str = "
 Funky - a WebAssembly Interpreter
 

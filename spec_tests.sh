@@ -24,4 +24,4 @@ for f in *.wast; do
 done
 cd ..
 
-cargo run --bin test_runner > test_runner.output
+cargo run --bin test_runner
