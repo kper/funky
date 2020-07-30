@@ -2716,6 +2716,6 @@ mod tests {
         assert_eq!(I32(0), trunc_sat_i32_u(F32(-2147483650.0)));
         assert_eq!(I32(i32::MIN), trunc_sat_i32_s(F32(-2147483650.0)));
         assert_eq!(I32(i32::MAX), trunc_sat_i32_s(F32(2147483650.0)));
-        assert_eq!(I32(i32::MIN), trunc_sat_i32_u(F32(2147483650.0)));
+        assert_eq!(I32((i32::MIN + 1) * -1), trunc_sat_i32_u(F32(2147483650.0)));
     }
 }

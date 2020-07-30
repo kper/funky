@@ -188,6 +188,7 @@ impl From<Argument> for Value {
 mod test {
     use super::*;
 
+    /*
     #[test]
     fn parse_file() {
         let data = r#"
@@ -238,6 +239,7 @@ mod test {
         assert_eq!(v, compare);
         */
     }
+    */
 
     #[test]
     fn parse_action() {
