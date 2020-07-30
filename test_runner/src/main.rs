@@ -70,8 +70,9 @@ fn main() {
     assert!(args.len() <= 2); //only two arguments allowed
 
     let paths = match args.get(1) {
+        // Get all files with .json
         Some(test_file) => read_dir("./testsuite")
-            .unwrap()
+            .expect("Cannot read ./testsuite")
             .filter(|w| {
                 w.as_ref()
                     .unwrap()
@@ -84,11 +85,11 @@ fn main() {
                     .unwrap()
                     == "json"
             })
-            .map(|w| w.unwrap())
+            .map(|w| w.expect("Error with DirEntry"))
             .filter(|w| w.path().file_name() == Path::new(test_file).file_name())
             .collect::<Vec<_>>(),
         None => read_dir("./testsuite")
-            .unwrap()
+            .expect("Cannot read ./testsuite")
             .filter(|w| {
                 w.as_ref()
                     .unwrap()
@@ -164,7 +165,10 @@ fn run_spec_test(path: &DirEntry) -> String {
             "./test_results/{}.csv",
             h.file_name().unwrap().to_str().unwrap()
         ))
-        .unwrap();
+        .expect(&format!(
+            "Cannot create ./test_results/{}.csv",
+            h.file_name().unwrap().to_str().unwrap()
+        ));
 
     let mut case_file = OpenOptions::new()
         .create(true)
@@ -173,7 +177,10 @@ fn run_spec_test(path: &DirEntry) -> String {
             "./test_results/{}_cases.output",
             h.file_name().unwrap().to_str().unwrap()
         ))
-        .unwrap();
+        .expect(&format!(
+            "Cannot create ./test_results/{}_cases.output",
+            h.file_name().unwrap().to_str().unwrap()
+        ));
 
     for case in fs.get_cases() {
         let args = case.get_args();
