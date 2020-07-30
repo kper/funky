@@ -4,6 +4,8 @@ use std::rc::Rc;
 //use wasm_parser::core::*;
 use wasm_parser::Module;
 
+use anyhow::{anyhow, Result};
+
 type StartFunctionAddr = u32;
 
 /// Returns the addr of the start function, which needs to be invoked
@@ -11,7 +13,7 @@ pub fn instantiation(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> Result<Option<StartFunctionAddr>, ()> {
+) -> Result<Option<StartFunctionAddr>> {
     // Step 1
 
     // Module is already valid, because checked before
@@ -32,12 +34,12 @@ pub fn instantiation(
 
     // Step 9 and Step 13
     if let Err(err) = instantiate_elements(m, mod_instance, store) {
-        panic!("{}", err);
+        return Err(anyhow!("{}", err));
     }
 
     // Step 10 and Step 14
     if let Err(err) = instantiate_data(m, mod_instance, store) {
-        panic!("{}", err);
+        return Err(anyhow!("{}", err));
     }
 
     // Step 11 and 12
@@ -50,12 +52,12 @@ pub fn instantiation(
 
         assert_eq!(frame, f);
     } else {
-        panic!("No frame on the stack");
+        return Err(anyhow!("No frame on the stack"));
     }
 
     // Step 15
 
-    let start_func = instantiate_start(m, mod_instance, store)?; //TODO needs to be invoked
+    let start_func = instantiate_start(m, mod_instance, store)?;
 
     Ok(start_func)
 }
@@ -64,14 +66,14 @@ fn instantiate_elements<'a>(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> Result<(), &'a str> {
+) -> Result<()> {
     debug!("instantiate elements");
 
     let ty = validation::extract::get_elemens(&m);
 
     for e in ty.iter() {
         let eoval = crate::allocation::get_expr_const_ty_global(&e.offset)
-            .map_err(|_| "Fetching const expr failed")?;
+            .map_err(|_| anyhow!("Fetching const expr failed"))?;
 
         if let Value::I32(table_index) = eoval {
             //table_index = eo_i
@@ -81,17 +83,17 @@ fn instantiate_elements<'a>(
             let table_addr = borrow
                 .tableaddrs
                 .get(table_index as usize)
-                .ok_or("Table index does not exists")?;
+                .ok_or(anyhow!("Table index does not exists"))?;
 
             let table_inst = store
                 .tables
                 .get_mut(*table_addr as usize)
-                .ok_or("Table addr does not exists")?;
+                .ok_or(anyhow!("Table addr does not exists"))?;
 
             let eend = table_index + e.init.len() as i32;
 
             if eend > table_inst.elem.len() as i32 {
-                return Err("eend is larger than table_inst.elem");
+                return Err(anyhow!("eend is larger than table_inst.elem"));
             }
 
             // Step 13
@@ -102,7 +104,7 @@ fn instantiate_elements<'a>(
                 let funcaddr = borrow
                     .funcaddrs
                     .get(*funcindex as usize)
-                    .ok_or("No function with funcindex")?;
+                    .ok_or(anyhow!("No function with funcindex"))?;
 
                 let _ = replace(
                     &mut table_inst.elem[table_index as usize + j],
@@ -121,7 +123,7 @@ fn instantiate_data<'a>(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> Result<(), &'a str> {
+) -> Result<()> {
     debug!("instantiate elements");
 
     let ty = validation::extract::get_data(&m);
@@ -130,7 +132,7 @@ fn instantiate_data<'a>(
         debug!("data offset {:?}", data.offset);
 
         let doval = crate::allocation::get_expr_const_ty_global(&data.offset)
-            .map_err(|_| "Fetching const expr failed")?;
+            .map_err(|_| anyhow!("Fetching const expr failed"))?;
 
         if let Value::I32(mem_idx) = doval {
             debug!("Memory index is {}", mem_idx);
@@ -140,19 +142,19 @@ fn instantiate_data<'a>(
             let mem_addr = borrow
                 .memaddrs
                 .get(0)
-                .ok_or("Memory index does not exists")?;
+                .ok_or(anyhow!("Memory index does not exists"))?;
 
             debug!("Memory addr is {}", mem_addr);
 
             let mem_inst = store
                 .memory
                 .get_mut(*mem_addr as usize)
-                .ok_or("Memory addr does not exists")?;
+                .ok_or(anyhow!("Memory addr does not exists"))?;
 
             let dend = mem_idx + data.init.len() as i32;
 
             if dend > mem_inst.data.len() as i32 {
-                return Err("dend is larger than mem_inst.data");
+                return Err(anyhow!("dend is larger than mem_inst.data"));
             }
 
             // Step 14
@@ -171,7 +173,7 @@ fn instantiate_start(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
-) -> Result<Option<u32>, ()> {
+) -> Result<Option<u32>> {
     debug!("instantiate start");
 
     if let Some(start_section) = validation::extract::get_start(m).first() {
@@ -181,10 +183,13 @@ fn instantiate_start(
         let func_addr = borrow
             .funcaddrs
             .get((start_section.index) as usize)
-            .ok_or(())?;
+            .ok_or(anyhow!("got no func_addr"))?;
 
         // Check if the functions really exists
-        let _func_instance = store.funcs.get(*func_addr as usize).ok_or(())?;
+        let _func_instance = store
+            .funcs
+            .get(*func_addr as usize)
+            .ok_or(anyhow!("Function does not exist"))?;
 
         return Ok(Some(*func_addr));
     } else {

@@ -5,13 +5,13 @@
 #[macro_use]
 extern crate funky;
 
+use std::cell::RefCell;
 use std::fs::{create_dir, read_dir, read_to_string, remove_file, DirEntry, File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
+use std::rc::Rc;
 use std::sync::atomic::AtomicUsize;
 use std::sync::{Arc, Mutex};
-use std::rc::Rc;
-use std::cell::RefCell;
 
 use funky::engine::{Engine, ModuleInstance, StackContent, Value};
 use funky::{parse, read_wasm, validate};
@@ -19,8 +19,7 @@ use funky::{parse, read_wasm, validate};
 use std::collections::HashMap;
 
 use env_logger;
-use log::debug;
-
+use log::{debug, error};
 
 use json::*;
 
@@ -158,18 +157,6 @@ fn run_spec_test(path: &DirEntry) -> String {
     // Index the file handlers by name
     let mut fs_handler = HashMap::new();
 
-    for fs_name in fs_names {
-        let reader = read_wasm!(&format!("testsuite/{}", fs_name));
-        let module = parse(reader).unwrap();
-        let validation = validate(&module);
-        let mi = ModuleInstance::new(&module);
-
-        let mut e = Engine::new(mi, &module);
-        e.instantiation(&module);
-
-        fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));
-    }
-
     let mut report_file = OpenOptions::new()
         .create(true)
         .write(true)
@@ -194,6 +181,21 @@ fn run_spec_test(path: &DirEntry) -> String {
             h.file_name().unwrap().to_str().unwrap()
         ));
 
+    for fs_name in fs_names {
+        let reader = read_wasm!(&format!("testsuite/{}", fs_name));
+        let module = parse(reader).unwrap();
+        let validation = validate(&module);
+        let mi = ModuleInstance::new(&module);
+
+        let mut e = Engine::new(mi, &module);
+
+        if let Err(err) = e.instantiation(&module) {
+
+        }
+
+        fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));
+    }
+
     let mut current_engine = None;
     for case in fs.get_cases() {
         match &case {
@@ -205,16 +207,31 @@ fn run_spec_test(path: &DirEntry) -> String {
                     .borrow_mut();
 
                 let args = case.get_args();
-                
-                engine 
-                    .invoke_exported_function_by_name(&case.action.field, args);
+
+                if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args)
+                {
+                    panic!("Instantation failed for {:?}", current_engine); 
+                }
 
                 let result = engine.store.stack.last();
                 let expected = case.get_expected();
 
                 let r2 = match result {
                     Some(StackContent::Value(v)) => v,
-                    _ => panic!("Executed function did not return a value"),
+                    _ => {
+                        report_fail(
+                            &mut report_file,
+                            &mut case_file,
+                            &case,
+                            p,
+                            expected,
+                            ExecutionResult::NotCompareable,
+                        );
+
+                        error!("Executed function did not return a value");
+
+                        continue;
+                    }
                 };
 
                 let do_match = match expected.get(0) {
@@ -225,7 +242,14 @@ fn run_spec_test(path: &DirEntry) -> String {
                 if do_match {
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                 } else {
-                    report_fail(&mut report_file, &mut case_file, &case, p, expected, r2);
+                    report_fail(
+                        &mut report_file,
+                        &mut case_file,
+                        &case,
+                        p,
+                        expected,
+                        ExecutionResult::Value(r2),
+                    );
                 }
             }
             _ => {} // skip Rest
@@ -263,13 +287,18 @@ fn draw_args(v: Vec<Value>) -> String {
     buffer
 }
 
+enum ExecutionResult<'a> {
+    Value(&'a Value),
+    NotCompareable,
+}
+
 fn report_fail(
     report_file: &mut File,
     case_file: &mut File,
     case: &AssertReturn,
     p: &str,
     expected: Vec<Value>,
-    result: &Value,
+    result: ExecutionResult,
 ) {
     let args = draw_args(case.get_args());
     let expected = draw_args(case.get_expected());
@@ -278,7 +307,15 @@ fn report_fail(
         .write_all(format!("{},FAIL,{},{}", p, case.action.field, expected).as_bytes())
         .unwrap();
 
-    case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
+    match result {
+        ExecutionResult::Value(result) => {
+            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
+        }
+
+        ExecutionResult::NotCompareable => {
+            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}", case.action.field, args, case.line, expected, "not compareable" ).as_bytes()).unwrap();
+        }
+    }
 }
 
 /*

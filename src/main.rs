@@ -75,11 +75,17 @@ fn main() {
 
     debug!("Instantiation engine");
 
-    e.instantiation(&module);
+    if let Err(err) = e.instantiation(&module) {
+        panic!("{}", err);
+    }
 
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
-    e.invoke_exported_function_by_name(&args.arg_function, inv_args);
+
+    if let Err(err) = e.invoke_exported_function_by_name(&args.arg_function, inv_args) {
+        panic!("{}", err);
+    }
+
     if args.flag_spec {
         println!("{:?}", e.store.stack.last())
     } else {

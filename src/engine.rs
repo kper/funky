@@ -1,5 +1,6 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
+use anyhow::{anyhow, Result};
 use std::cell::RefCell;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
@@ -38,11 +39,6 @@ pub enum Value {
 }
 
 type Arity = u32;
-
-#[derive(Debug, PartialEq, Clone)]
-enum InstructionError {
-    Trap,
-}
 
 impl Into<ValueType> for Value {
     fn into(self) -> ValueType {
@@ -688,15 +684,16 @@ impl Engine {
         crate::allocation::allocate(m, &self.module, &mut self.store).expect("Allocation failed");
     }
 
-    pub fn instantiation(&mut self, m: &Module) {
+    pub fn instantiation(&mut self, m: &Module) -> Result<()> {
         info!("Instantiation");
-        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)
-            .expect("Instantiation failed");
+        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)?;
 
         if let Some(func_addr) = start_function {
             debug!("Invoking start function with {:?}", func_addr);
             self.invoke_function(func_addr, vec![]);
         }
+
+        Ok(())
     }
 
     /// Take only exported functions into consideration
@@ -734,7 +731,7 @@ impl Engine {
         }
     }
 
-    pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) {
+    pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
         let idx = self
             .module
             .borrow()
@@ -743,6 +740,8 @@ impl Engine {
             .position(|e| e.name == name)
             .expect("Function not found");
         self.invoke_exported_function(idx as u32, args);
+
+        Ok(())
     }
 
     fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
@@ -772,7 +771,7 @@ impl Engine {
         self.run_function(idx).expect("run function failed");
     }
 
-    fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<(), InstructionError> {
+    fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<()> {
         debug!("OP_LOCAL_SET {:?}", idx);
         debug!("locals {:#?}", fr.locals);
 
@@ -814,10 +813,7 @@ impl Engine {
         let len_2 = argtypes.len();
 
         // Check if `fn_types` and `argtypes` are elementwise equal
-        let is_same = fn_types
-            .zip(argtypes)
-            .map(|(x, y)| *x == y)
-            .all(|w| w);
+        let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
 
         if !is_same || len_1 != len_2 {
             panic!("Function expected different parameters!");
@@ -825,13 +821,13 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_function(&mut self, idx: u32) -> Result<(), InstructionError> {
+    fn run_function(&mut self, idx: u32) -> Result<()> {
         debug!("Running function {:?}", idx);
 
         //FIXME this `.clone` is extremly expensive!!!
         let f = &self.module.borrow().code[idx as usize].clone();
 
-        let mut fr = self.get_frame();
+        let mut fr = self.get_frame()?;
 
         debug!("frame {:#?}", fr);
 
@@ -846,7 +842,9 @@ impl Engine {
             trace!("Popping {:?}", self.store.stack.last());
             match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
-                Some(x) => panic!("Expected value but found {:?}", x),
+                Some(x) => {
+                    return Err(anyhow!("Expected value but found {:?}", x));
+                }
                 None => {} //None => panic!("Unexpected empty stack!"),
             }
         }
@@ -876,7 +874,7 @@ impl Engine {
         &mut self,
         fr: &mut Frame,
         instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
-    ) -> Result<InstructionOutcome, InstructionError> {
+    ) -> Result<InstructionOutcome> {
         let mut ip = 0;
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
@@ -895,8 +893,12 @@ impl Engine {
 
                     let value = match self.store.stack.pop() {
                         Some(StackContent::Value(v)) => v,
-                        Some(x) => panic!("Expected value but found {:?}", x),
-                        None => panic!("Empty stack during local.tee"),
+                        Some(x) => {
+                            return Err(anyhow!("Expected value but found {:?}", x));
+                        }
+                        None => {
+                            return Err(anyhow!("Empty stack during local.tee"));
+                        }
                     };
 
                     self.store.stack.push(StackContent::Value(value));
@@ -917,13 +919,17 @@ impl Engine {
                 Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
                     Some(Value(v)) => {
                         if !self.store.globals[*idx as usize].mutable {
-                            panic!("Attempting to modify a immutable global")
+                            return Err(anyhow!("Attempting to modify a immutable global"));
                         }
                         self.store.globals[*idx as usize].val = v;
                         debug!("globals {:#?}", self.store.globals);
                     }
-                    Some(x) => panic!("Expected value but found {:?}", x),
-                    None => panic!("Empty stack during local.set"),
+                    Some(x) => {
+                        return Err(anyhow!("Expected value but found {:?}", x));
+                    }
+                    None => {
+                        return Err(anyhow!("Empty stack during local.tee"));
+                    }
                 },
                 Num(OP_I32_CONST(v)) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
@@ -969,7 +975,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I64(((x1 as u64) / (x2 as u64)) as i64))),
-                        _ => panic!("Invalid types for DIV_U"),
+                        _ => return Err(anyhow!("Invalid types for DIV_U")),
                     }
                 }
                 Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
@@ -1027,7 +1033,7 @@ impl Engine {
                                     ((x1 as u64).checked_shr(k as u32)).unwrap_or(0) as i64
                                 )));
                         }
-                        _ => panic!("Invalid types for SHR_U"),
+                        _ => return Err(anyhow!("Invalid types for SHR_U")),
                     }
                 }
                 Num(OP_I32_ROTL) | Num(OP_I64_ROTL) => {
@@ -1093,7 +1099,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I32(((x1 as u64) < (x2 as u64)) as i32))),
-                        _ => panic!("Invalid types for LT_U comparison"),
+                        _ => return Err(anyhow!("Invalid types for LT_U comparison")),
                     }
                 }
                 Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT) => {
@@ -1114,7 +1120,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I32(((x1 as u64) > (x2 as u64)) as i32))),
-                        _ => panic!("Invalid types for GT_U comparison"),
+                        _ => return Err(anyhow!("Invalid types for GT_U comparison")),
                     }
                 }
                 Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE) => {
@@ -1135,7 +1141,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I32(((x1 as u64) <= (x2 as u64)) as i32))),
-                        _ => panic!("Invalid types for LE_U comparison"),
+                        _ => return Err(anyhow!("Invalid types for LE_U comparison")),
                     }
                 }
                 Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE) => {
@@ -1156,7 +1162,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I32(((x1 as u64) >= (x2 as u64)) as i32))),
-                        _ => panic!("Invalid types for GE_U comparison"),
+                        _ => return Err(anyhow!("Invalid types for GE_U comparison")),
                     }
                 }
                 Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
@@ -1332,7 +1338,7 @@ impl Engine {
                     debug!("Popping {:?}", self.store.stack.last());
                     let c = match self.store.stack.pop() {
                         Some(Value(I32(x))) => x,
-                        _ => panic!("Expected I32 on top of stack"),
+                        _ => return Err(anyhow!("Expected I32 on top of stack")),
                     };
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     if c != 0 {
@@ -1398,7 +1404,9 @@ impl Engine {
                     let sz = instance.data.len() / PAGE_SIZE;
 
                     if let Some(Value(I32(n))) = self.store.stack.pop() {
-                        assert!(n > 0);
+                        if n <= 0 {
+                            return Err(anyhow!("Memory grow expected n > 0, got {}", n));
+                        }
 
                         /*
 
@@ -1419,7 +1427,7 @@ impl Engine {
                             self.store.stack.push(Value(I32(sz as i32)));
                         }
                     } else {
-                        panic!("Unexpected stack element. Expected I32");
+                        return Err(anyhow!("Unexpected stack element. Expected I32"));
                     }
                 }
                 Ctrl(OP_BLOCK(ty, block_instructions)) => {
@@ -1617,16 +1625,14 @@ impl Engine {
 
                     trace!("fn_types: {:#?}", self.module.borrow().fn_types);
                     let t = self.store.funcs[*idx as usize].ty.clone();
+
                     let args = self
                         .store
                         .stack
                         .split_off(self.store.stack.len() - t.param_types.len())
                         .into_iter()
-                        .map(|x| match x {
-                            Value(v) => v,
-                            other => panic!("Expected value but found {:?}", other),
-                        })
-                        .collect();
+                        .map(Engine::map_stackcontent_to_value)
+                        .collect::<Result<_>>()?;
 
                     self.invoke_function(*idx, args);
                 }
@@ -1637,10 +1643,12 @@ impl Engine {
 
                     let i = match fetch_unop!(self.store.stack) {
                         I32(x) => x,
-                        x => panic!("invalid index type: {:?}", x),
+                        x => return Err(anyhow!("invalid index type: {:?}", x)),
                     };
                     if (i as usize) >= tab.elem.len() {
-                        panic!("Attempt to perform indirect call to index larger than the table")
+                        return Err(anyhow!(
+                            "Attempt to perform indirect call to index larger than the table"
+                        ));
                     }
                     trace!("Table: {:?}", tab.elem);
 
@@ -1664,11 +1672,8 @@ impl Engine {
                                 .stack
                                 .split_off(self.store.stack.len() - f.ty.param_types.len())
                                 .into_iter()
-                                .map(|x| match x {
-                                    Value(v) => v,
-                                    other => panic!("Expected value but found {:?}", other),
-                                })
-                                .collect();
+                                .map(Engine::map_stackcontent_to_value)
+                                .collect::<Result<_>>()?;
 
                             self.invoke_function(a as u32, args);
                         }
@@ -1680,8 +1685,8 @@ impl Engine {
                     return Ok(InstructionOutcome::RETURN);
                 }
                 Ctrl(OP_NOP) => {}
-                Ctrl(OP_UNREACHABLE) => panic!("Reached unreachable => trap!"),
-                x => panic!("Instruction {:?} not implemented", x),
+                Ctrl(OP_UNREACHABLE) => return Err(anyhow!("Reached unreachable => trap!")),
+                x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
             ip += 1;
 
@@ -1694,16 +1699,16 @@ impl Engine {
     }
 
     /// Get the frame at the top of the stack
-    fn get_frame(&mut self) -> Frame {
+    fn get_frame(&mut self) -> Result<Frame> {
         debug!("get_frame");
         match self.store.stack.pop() {
-            Some(Frame(fr)) => fr,
-            Some(x) => panic!("Expected frame but found {:?}", x),
-            None => panic!("Empty stack on function call"),
+            Some(Frame(fr)) => Ok(fr),
+            Some(x) => return Err(anyhow!("Expected frame but found {:?}", x)),
+            None => return Err(anyhow!("Empty stack on function call")),
         }
     }
 
-    fn exit_block(&mut self) -> Result<(), InstructionError> {
+    fn exit_block(&mut self) -> Result<()> {
         debug!("exit_block");
 
         let mut val_m = Vec::new();
@@ -1714,64 +1719,22 @@ impl Engine {
 
         debug!("values {:?}", val_m);
 
-        assert!(self
+        if !self
             .store
             .stack
             .pop()
-            .expect("Expected Label, but found nothing")
-            .is_label());
+            .ok_or(anyhow!("Expected Label, but found nothing"))?
+            .is_label()
+        {
+            return Err(anyhow!("Expected label, but it's not a label"));
+        }
 
         self.store.stack.append(&mut val_m);
 
         Ok(())
     }
 
-    /*
-    fn get_label(&self, label_idx: u32) -> Result<Label, InstructionError> {
-        let r = self.get_labels()?;
-        let labels = r.iter().collect::<Vec<_>>();
-        let labels_len = labels.len();
-
-        assert!(label_idx < labels_len as u32);
-
-        // Get the last label + label_idx
-        let label = labels
-            .get(labels.len() - 1 - label_idx as usize)
-            .expect("No label found");
-
-        Ok(***label)
-    }
-
-    /// Gets the labels of the stack
-    fn get_labels<'a>(&'a self) -> Result<Vec<&'a Label>, InstructionError> {
-        Ok(self
-            .store
-            .stack
-            .iter()
-            .filter_map(|w| {
-                if let StackContent::Label(x) = w {
-                    Some(x)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>())
-    }
-
-    /// Pops `arity` times off the stack and returns it
-    fn get_content_from_stack(
-        &mut self,
-        arity: u32,
-    ) -> Result<Vec<StackContent>, InstructionError> {
-        let mut v = Vec::with_capacity(arity as usize);
-        for _ in 0..arity {
-            v.push(self.store.stack.pop().expect("Not expecting None"));
-        }
-
-        Ok(v)
-    }*/
-
-    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize, InstructionError> {
+    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize> {
         Ok(match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,
@@ -1780,61 +1743,19 @@ impl Engine {
                 .borrow()
                 .fn_types
                 .get(*ty as usize)
-                .ok_or(InstructionError::Trap)?
+                .ok_or(anyhow!("Trap"))?
                 .return_types
                 .len(),
         })
     }
 
-    /*
-    fn get_block_params(
-        &mut self,
-        block_ty: &BlockType,
-    ) -> Result<(usize, Vec<Value>), InstructionError> {
-        let (arity, args) = match block_ty {
-            BlockType::Empty => (0, vec![]),
-            BlockType::ValueType(v) => (1, vec![self.store.stack.pop()]),
-            BlockType::ValueTypeTy(ty) => {
-                let m = self
-                    .module
-                    .borrow()
-                    .fn_types
-                    .get(*ty as usize)
-                    .ok_or(InstructionError::Trap)?
-                    .param_types
-                    .len();
-
-                let n = self
-                    .module
-                    .borrow()
-                    .fn_types
-                    .get(*ty as usize)
-                    .ok_or(InstructionError::Trap)?
-                    .return_types
-                    .len();
-
-                let mut v = Vec::with_capacity(m);
-                for _ in 0..m {
-                    v.push(self.store.stack.pop());
-                }
-
-                (n, v)
-            }
-        };
-
-        debug!("args {:#?}", args);
-
-        Ok((
-            arity,
-            args.iter()
-                .map(|w| match w.as_ref().expect("Cannot be None") {
-                    StackContent::Value(v) => v,
-                    _ => panic!("Something was messed up"),
-                })
-                .collect(),
-        ))
+    /// Maps `StackContent` to `Value`
+    fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
+        match x {
+            Value(v) => Ok(v),
+            other => return Err(anyhow!("Expected value but found {:?}", other)),
+        }
     }
-    */
 }
 
 #[cfg(test)]
