@@ -8,15 +8,19 @@ extern crate funky;
 use std::fs::{create_dir, read_dir, read_to_string, remove_file, DirEntry, File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
-use std::process::Command;
 use std::sync::atomic::AtomicUsize;
 use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use funky::engine::{Engine, ModuleInstance, StackContent, Value};
 use funky::{parse, read_wasm, validate};
 
+use std::collections::HashMap;
+
 use env_logger;
 use log::debug;
+
 
 use json::*;
 
@@ -148,15 +152,23 @@ fn run_spec_test(path: &DirEntry) -> String {
     let fs: TestFile = serde_json::from_str(&buffer).unwrap();
     let count = fs.get_len_cases();
 
-    let fs_name = fs.get_fs_name();
+    // WASM modules are splitted across multiple files
+    let fs_names = fs.get_fs_names();
 
-    let reader = read_wasm!(&format!("testsuite/{}", fs_name));
-    let module = parse(reader).unwrap();
-    let validation = validate(&module);
-    let mi = ModuleInstance::new(&module);
+    // Index the file handlers by name
+    let mut fs_handler = HashMap::new();
 
-    let mut e = Engine::new(mi, &module);
-    e.instantiation(&module);
+    for fs_name in fs_names {
+        let reader = read_wasm!(&format!("testsuite/{}", fs_name));
+        let module = parse(reader).unwrap();
+        let validation = validate(&module);
+        let mi = ModuleInstance::new(&module);
+
+        let mut e = Engine::new(mi, &module);
+        e.instantiation(&module);
+
+        fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));
+    }
 
     let mut report_file = OpenOptions::new()
         .create(true)
@@ -182,27 +194,41 @@ fn run_spec_test(path: &DirEntry) -> String {
             h.file_name().unwrap().to_str().unwrap()
         ));
 
+    let mut current_engine = None;
     for case in fs.get_cases() {
-        let args = case.get_args();
-        e.invoke_exported_function_by_name(&case.action.field, args);
+        match &case {
+            // Replace `current_engine` with next WASM module
+            &Command::Module(m) => current_engine = fs_handler.get(&m.filename),
+            &Command::AssertReturn(case) => {
+                let mut engine = current_engine
+                    .expect("No WASM module was initialized")
+                    .borrow_mut();
 
-        let result = e.store.stack.last();
-        let expected = case.get_expected();
+                let args = case.get_args();
+                
+                engine 
+                    .invoke_exported_function_by_name(&case.action.field, args);
 
-        let r2 = match result {
-            Some(StackContent::Value(v)) => v,
-            _ => panic!("Did not get a value"),
-        };
+                let result = engine.store.stack.last();
+                let expected = case.get_expected();
 
-        let do_match = match expected.get(0) {
-            Some(r1) => r1 == r2,
-            None => result.is_none(),
-        };
+                let r2 = match result {
+                    Some(StackContent::Value(v)) => v,
+                    _ => panic!("Executed function did not return a value"),
+                };
 
-        if do_match {
-            report_ok(&mut report_file, &mut case_file, case, p, expected);
-        } else {
-            report_fail(&mut report_file, &mut case_file, case, p, expected, r2);
+                let do_match = match expected.get(0) {
+                    Some(r1) => *r1 == *r2,
+                    None => result.is_none(),
+                };
+
+                if do_match {
+                    report_ok(&mut report_file, &mut case_file, &case, p, expected);
+                } else {
+                    report_fail(&mut report_file, &mut case_file, &case, p, expected, r2);
+                }
+            }
+            _ => {} // skip Rest
         }
     }
 

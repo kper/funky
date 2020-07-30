@@ -18,26 +18,25 @@ impl TestFile {
             .count()
     }
 
-    pub fn get_cases(&self) -> impl Iterator<Item = &AssertReturn> {
-        self.commands.iter().filter_map(|x| match x {
-            Command::AssertReturn(w) => Some(w),
-            _ => None,
+    pub fn get_cases(&self) -> impl Iterator<Item = &Command> {
+        self.commands.iter().filter(|x| match x {
+            Command::Module(m) => true,
+            Command::AssertReturn(w) => true,
+            _ => false,
         })
     }
 
-    pub fn get_fs_name(&self) -> String {
+    pub fn get_fs_names(&self) -> Vec<&String> {
         let m = self
             .commands
             .iter()
             .filter_map(|x| match x {
-                Command::Module(w) => Some(w),
+                Command::Module(w) => Some(&w.filename),
                 _ => None,
             })
             .collect::<Vec<_>>();
 
-        assert!(m.len() == 1);
-
-        m.get(0).unwrap().filename.clone()
+        m
     }
 }
 
@@ -50,6 +49,20 @@ pub(crate) enum Command {
     AssertReturn(AssertReturn),
     #[serde(rename = "assert_invalid")]
     AssertInvalid(AssertInvalid),
+    #[serde(rename = "assert_trap")]
+    AssertTrap, //TODO
+    #[serde(rename = "assert_malformed")]
+    AssertMalformed, //TODO
+    #[serde(rename = "register")]
+    Register, //TODO
+    #[serde(rename = "assert_unlinkable")]
+    AssertUnlinkable, //TODO
+    #[serde(rename = "assert_exhaustion")]
+    AssertExhaustion, //TODO
+    #[serde(rename = "action")]
+    Action, //TODO
+    #[serde(rename = "assert_uninstantiable")]
+    AssertUninstantiable, //TODO
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -63,7 +76,7 @@ pub(crate) struct AssertInvalid {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub(crate) struct Module {
     line: usize,
-    filename: String,
+    pub filename: String,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -93,6 +106,7 @@ impl AssertReturn {
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub(crate) struct Action {
     pub field: String,
+    #[serde(default = "Vec::new")]
     args: Vec<Argument>,
 }
 
