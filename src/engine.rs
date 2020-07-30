@@ -538,7 +538,7 @@ macro_rules! load_memory {
             debug!("b {:?}", b);
 
             unsafe {
-                //Convert [u8] to number
+                //Convert [u8] to [number]
                 let c = &*(b.as_slice() as *const [u8] as *const [$ty]);
                 debug!("c is {:?}", c);
 
@@ -550,8 +550,8 @@ macro_rules! load_memory {
     };
 }
 
-macro_rules! load_memoryU {
-    ($self:expr, $arg:expr, $size:expr, $ty:ty, $variant:expr, $cast_ty:ty, $N:expr) => {
+macro_rules! load_memorySX {
+    ($self:expr, $arg:expr, $size:expr, $ty:ty, $variant:expr, $cast_ty:ty) => {
         let v1 = fetch_unop!($self.store.stack);
 
         if let I32(v) = v1 {
@@ -568,19 +568,26 @@ macro_rules! load_memoryU {
             debug!("part {:?}", &instance.data[ea..ea + $size]);
 
             let mut b = vec![0; $size];
-            b.copy_from_slice(&instance.data[ea..(ea + $size / ($N as usize))]);
+            b.copy_from_slice(&instance.data[ea..ea + $size]);
             assert!(b.len() == $size);
 
             debug!("b {:?}", b);
 
             unsafe {
-                //Convert [u8] to number
+                // Convert [u8] to [number]
                 let c = &*(b.as_slice() as *const [u8] as *const [$ty]);
                 debug!("c is {:?}", c);
 
+                // THIS IS DIFFERENT THAN `load_memory!`
+
                 let c2 = c[0] as $cast_ty;
 
-                $self.store.stack.push(StackContent::Value($variant(c2 as $ty)));
+                $self
+                    .store
+                    .stack
+                    .push(StackContent::Value($variant(c2.into())));
+
+                // END
             }
         } else {
             panic!("Expected I32, found something else");
@@ -1388,10 +1395,16 @@ impl Engine {
                     }
                 }
                 Mem(OP_I32_LOAD_8_u(arg)) => {
-                    load_memoryU!(self, arg, 4, i32, I32, u32, 8);
+                    load_memorySX!(self, arg, 4, i32, I32, u8);
                 }
                 Mem(OP_I32_LOAD_16_u(arg)) => {
-                    load_memoryU!(self, arg, 4, i32, I32, u32, 16);
+                    load_memorySX!(self, arg, 4, i32, I32, u16);
+                }
+                Mem(OP_I32_LOAD_8_s(arg)) => {
+                    load_memorySX!(self, arg, 4, i32, I32, i8);
+                }
+                Mem(OP_I32_LOAD_16_s(arg)) => {
+                    load_memorySX!(self, arg, 4, i32, I32, i16);
                 }
                 Mem(OP_I32_LOAD(arg)) => {
                     load_memory!(self, arg, 4, i32, I32);
@@ -1400,13 +1413,22 @@ impl Engine {
                     load_memory!(self, arg, 8, i64, I64);
                 }
                 Mem(OP_I64_LOAD_8_u(arg)) => {
-                    load_memoryU!(self, arg, 8, i64, I64, u64, 8);
+                    load_memorySX!(self, arg, 8, i64, I64, u8);
                 }
                 Mem(OP_I64_LOAD_16_u(arg)) => {
-                    load_memoryU!(self, arg, 8, i64, I64, u64, 16);
+                    load_memorySX!(self, arg, 8, i64, I64, u16);
                 }
                 Mem(OP_I64_LOAD_32_u(arg)) => {
-                    load_memoryU!(self, arg, 8, i64, I64, u64, 32);
+                    load_memorySX!(self, arg, 8, i64, I64, u32);
+                }
+                Mem(OP_I64_LOAD_8_s(arg)) => {
+                    load_memorySX!(self, arg, 8, i64, I64, i8);
+                }
+                Mem(OP_I64_LOAD_16_s(arg)) => {
+                    load_memorySX!(self, arg, 8, i64, I64, i16);
+                }
+                Mem(OP_I64_LOAD_32_s(arg)) => {
+                    load_memorySX!(self, arg, 8, i64, I64, i32);
                 }
                 Mem(OP_F32_LOAD(arg)) => {
                     load_memory!(self, arg, 4, f32, F32);
@@ -2251,6 +2273,40 @@ mod tests {
         }];
         e.run_function(0).unwrap();
         assert_eq!((4 as i8).to_le_bytes(), e.store.memory[0].data.as_slice());
+    }
+
+    #[test]
+    fn test_memory_load_i32_of_u8() {
+        //env_logger::init();
+        let mut e = empty_engine();
+        e.module.borrow_mut().memaddrs.push(0);
+        e.store.memory = vec![MemoryInstance {
+            data: [0; 4].to_vec(),
+            max: None,
+        }];
+
+        e.module.borrow_mut().code = vec![FunctionBody {
+            locals: vec![],
+            code: vec![
+                Num(OP_I32_CONST(0)),
+                Num(OP_I32_CONST(4)),
+                Mem(OP_I32_STORE_8(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+                Num(OP_I32_CONST(0)),
+                Mem(OP_I32_LOAD_8_u(MemArg {
+                    offset: 0,
+                    align: 1,
+                })),
+            ],
+        }];
+        e.run_function(0).unwrap();
+        assert_eq!((4 as i32).to_le_bytes(), e.store.memory[0].data.as_slice());
+        assert_eq!(
+            Some(StackContent::Value(I32(4 as i32))),
+            e.store.stack.pop()
+        );
     }
 
     #[test]
