@@ -152,7 +152,17 @@ fn main() {
         }
     }
 
-    println!("{}", stdouts.lock().unwrap().join("\n"));
+    let stdout_guard = stdouts.lock().unwrap();
+
+    println!(
+        "{}",
+        stdout_guard
+            .iter()
+            .filter(|x| x != &"")
+            .map(|w| w.clone())
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 
     println!("Reporting total:");
 
@@ -161,8 +171,11 @@ fn main() {
     println!("Total: {}", total);
     println!("Ok: {}", reported_ok);
     println!("Failed: {}", total - reported_ok);
-    println!("Ok %: {:2}", reported_ok / total);
-    println!("Failed %: {:2}", (total - reported_ok) / total);
+    println!("Ok %: {:#2}", reported_ok as f64 / total as f64);
+    println!(
+        "Failed %: {:#2}",
+        (total - reported_ok) as f64 / total as f64
+    );
 }
 
 fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
@@ -201,10 +214,12 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
             "./test_results/{}_cases.output",
             h.file_name().unwrap().to_str().unwrap()
         ))
-        .unwrap_or_else(|_| panic!(
-            "Cannot create ./test_results/{}_cases.output",
-            h.file_name().unwrap().to_str().unwrap()
-        ));
+        .unwrap_or_else(|_| {
+            panic!(
+                "Cannot create ./test_results/{}_cases.output",
+                h.file_name().unwrap().to_str().unwrap()
+            )
+        });
 
     for fs_name in fs_names {
         let reader = read_wasm!(&format!("testsuite/{}", fs_name));
