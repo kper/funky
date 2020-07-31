@@ -86,9 +86,8 @@ fn main() {
                     .unwrap()
                     .file_name()
                     .into_string()
-                    .clone()
                     .unwrap()
-                    .split(".")
+                    .split('.')
                     .last()
                     .unwrap()
                     == "json"
@@ -103,9 +102,8 @@ fn main() {
                     .unwrap()
                     .file_name()
                     .into_string()
-                    .clone()
                     .unwrap()
-                    .split(".")
+                    .split('.')
                     .last()
                     .unwrap()
                     == "json"
@@ -141,27 +139,30 @@ fn main() {
 
                 let c = counter.load(std::sync::atomic::Ordering::Relaxed);
                 println!("Finished {:.2}%", c as f32 / length as f32 * 100.0);
-            }).expect("Cannot spawn thread");
+            })
+            .expect("Cannot spawn thread");
 
         handlers.push(handler);
     }
 
     for h in handlers {
-        if let Err(_) = h.join() {
+        if h.join().is_err() {
             eprintln!("Error appeared");
             //println!("{}", stdouts.clone().lock().unwrap().join("\n"));
         }
     }
 
-    println!("{}", stdouts.clone().lock().unwrap().join("\n"));
+    println!("{}", stdouts.lock().unwrap().join("\n"));
 
     println!("Reporting total:");
-    
+
     let total = total_stat.clone().total_count.load(Ordering::Relaxed);
     let reported_ok = total_stat.clone().reported_ok.load(Ordering::Relaxed);
     println!("Total: {}", total);
     println!("Ok: {}", reported_ok);
-    println!("Failed: {:2}", total - reported_ok);
+    println!("Failed: {}", total - reported_ok);
+    println!("Ok %: {:2}", reported_ok / total);
+    println!("Failed %: {:2}", (total - reported_ok) / total);
 }
 
 fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
@@ -186,10 +187,12 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
             "./test_results/{}.csv",
             h.file_name().unwrap().to_str().unwrap()
         ))
-        .expect(&format!(
-            "Cannot create ./test_results/{}.csv",
-            h.file_name().unwrap().to_str().unwrap()
-        ));
+        .unwrap_or_else(|_| {
+            panic!(
+                "Cannot create ./test_results/{}.csv",
+                h.file_name().unwrap().to_str().unwrap()
+            )
+        });
 
     let mut case_file = OpenOptions::new()
         .create(true)
@@ -198,7 +201,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
             "./test_results/{}_cases.output",
             h.file_name().unwrap().to_str().unwrap()
         ))
-        .expect(&format!(
+        .unwrap_or_else(|_| panic!(
             "Cannot create ./test_results/{}_cases.output",
             h.file_name().unwrap().to_str().unwrap()
         ));
@@ -220,10 +223,10 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
     let mut counter = 0;
     let mut reported_ok = 0;
     for case in fs.get_cases() {
-        match &case {
+        match case {
             // Replace `current_engine` with next WASM module
-            &Command::Module(m) => current_engine = fs_handler.get(&m.filename),
-            &Command::AssertReturn(case) => {
+            Command::Module(m) => current_engine = fs_handler.get(&m.filename),
+            Command::AssertReturn(case) => {
                 counter += 1;
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
 
@@ -250,7 +253,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                 debug!("expected {:?}", expected);
 
                 // If nothing is expected and no error occurred then ok
-                if expected.len() == 0 {
+                if expected.is_empty() {
                     reported_ok += 1;
                     total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
