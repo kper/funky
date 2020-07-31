@@ -62,7 +62,7 @@ pub fn instantiation(
     Ok(start_func)
 }
 
-fn instantiate_elements<'a>(
+fn instantiate_elements(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
@@ -83,12 +83,12 @@ fn instantiate_elements<'a>(
             let table_addr = borrow
                 .tableaddrs
                 .get(table_index as usize)
-                .ok_or(anyhow!("Table index does not exists"))?;
+                .ok_or_else(|| anyhow!("Table index does not exists"))?;
 
             let table_inst = store
                 .tables
                 .get_mut(*table_addr as usize)
-                .ok_or(anyhow!("Table addr does not exists"))?;
+                .ok_or_else(|| anyhow!("Table addr does not exists"))?;
 
             let eend = table_index + e.init.len() as i32;
 
@@ -104,7 +104,7 @@ fn instantiate_elements<'a>(
                 let funcaddr = borrow
                     .funcaddrs
                     .get(*funcindex as usize)
-                    .ok_or(anyhow!("No function with funcindex"))?;
+                    .ok_or_else(|| anyhow!("No function with funcindex"))?;
 
                 let _ = replace(
                     &mut table_inst.elem[table_index as usize + j],
@@ -142,14 +142,14 @@ fn instantiate_data<'a>(
             let mem_addr = borrow
                 .memaddrs
                 .get(0)
-                .ok_or(anyhow!("Memory index does not exists"))?;
+                .ok_or_else(|| anyhow!("Memory index does not exists"))?;
 
             debug!("Memory addr is {}", mem_addr);
 
             let mem_inst = store
                 .memory
                 .get_mut(*mem_addr as usize)
-                .ok_or(anyhow!("Memory addr does not exists"))?;
+                .ok_or_else(|| anyhow!("Memory addr does not exists"))?;
 
             let dend = mem_idx + data.init.len() as i32;
 
@@ -183,13 +183,13 @@ fn instantiate_start(
         let func_addr = borrow
             .funcaddrs
             .get((start_section.index) as usize)
-            .ok_or(anyhow!("got no func_addr"))?;
+            .ok_or_else(|| anyhow!("got no func_addr"))?;
 
         // Check if the functions really exists
         let _func_instance = store
             .funcs
             .get(*func_addr as usize)
-            .ok_or(anyhow!("Function does not exist"))?;
+            .ok_or_else(|| anyhow!("Function does not exist"))?;
 
         return Ok(Some(*func_addr));
     } else {

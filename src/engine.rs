@@ -1486,7 +1486,7 @@ impl Engine {
                     let addr = module
                         .memaddrs
                         .get(0)
-                        .ok_or(anyhow!("No memory address found"))?;
+                        .ok_or_else(|| anyhow!("No memory address found"))?;
                     let instance = &self.store.memory[*addr as usize];
 
                     let sz = instance.data.len() / PAGE_SIZE;
@@ -1498,7 +1498,7 @@ impl Engine {
                     let addr = module
                         .memaddrs
                         .get(0)
-                        .ok_or(anyhow!("No memory address found"))?;
+                        .ok_or_else(|| anyhow!("No memory address found"))?;
                     let instance = &mut self.store.memory[*addr as usize];
                     let _sz = instance.data.len() / PAGE_SIZE;
 
@@ -1827,7 +1827,7 @@ impl Engine {
             .store
             .stack
             .pop()
-            .ok_or(anyhow!("Expected Label, but found nothing"))?
+            .ok_or_else(|| anyhow!("Expected Label, but found nothing"))?
             .is_label()
         {
             return Err(anyhow!("Expected label, but it's not a label"));
@@ -1847,7 +1847,7 @@ impl Engine {
                 .borrow()
                 .fn_types
                 .get(*ty as usize)
-                .ok_or(anyhow!("Trap"))?
+                .ok_or_else(|| anyhow!("Trap"))?
                 .return_types
                 .len(),
         })
