@@ -807,7 +807,7 @@ fn test_run_memory_grow() {
     //env_logger::init();
     let engine = test_run_engine!("memory.wasm", 4, vec![I32(1)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(0))),
+        Some(&StackContent::Value(I32(1))),
         engine.store.stack.last()
     );
 }

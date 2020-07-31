@@ -1500,7 +1500,7 @@ impl Engine {
                         .get(0)
                         .ok_or(anyhow!("No memory address found"))?;
                     let instance = &mut self.store.memory[*addr as usize];
-                    let sz = instance.data.len() / PAGE_SIZE;
+                    let _sz = instance.data.len() / PAGE_SIZE;
 
                     if let Some(Value(I32(n))) = self.store.stack.pop() {
                         if n < 0 {
@@ -2785,7 +2785,7 @@ mod tests {
         }];
 
         e.run_function(0).unwrap();
-        assert_eq!(Some(&Value(I32(i32::MAX - 1))), e.store.stack.last());
+        assert_eq!(Some(&Value(I32(-1))), e.store.stack.last());
     }
 
     #[test]
