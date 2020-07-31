@@ -197,11 +197,15 @@ fn run_spec_test(path: &DirEntry) -> String {
     }
 
     let mut current_engine = None;
+    let mut counter = 0;
+    let mut reported_ok = 0;
     for case in fs.get_cases() {
         match &case {
             // Replace `current_engine` with next WASM module
             &Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             &Command::AssertReturn(case) => {
+                counter += 1;
+
                 let mut engine = current_engine
                     .expect("No WASM module was initialized")
                     .borrow_mut();
@@ -210,11 +214,28 @@ fn run_spec_test(path: &DirEntry) -> String {
 
                 if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args)
                 {
-                    panic!("Instantation failed for {:?}", current_engine); 
+                        report_fail(
+                            &mut report_file,
+                            &mut case_file,
+                            &case,
+                            p,
+                            vec![],
+                            ExecutionResult::NotCompareable,
+                        );
+                }
+
+                let expected = case.get_expected();
+
+                debug!("expected {:?}", expected);
+
+                // If nothing is expected and no error occurred then ok
+                if expected.len() == 0 {
+                    reported_ok += 1;
+                    report_ok(&mut report_file, &mut case_file, &case, p, expected);
+                    continue;
                 }
 
                 let result = engine.store.stack.last();
-                let expected = case.get_expected();
 
                 let r2 = match result {
                     Some(StackContent::Value(v)) => v,
@@ -240,6 +261,7 @@ fn run_spec_test(path: &DirEntry) -> String {
                 };
 
                 if do_match {
+                    reported_ok += 1;
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                 } else {
                     report_fail(
@@ -255,6 +277,8 @@ fn run_spec_test(path: &DirEntry) -> String {
             _ => {} // skip Rest
         }
     }
+
+    println!("Summary {} total {} where {} ok and {} failed", p, counter, reported_ok, counter - reported_ok);
 
     "".to_string()
 }
@@ -273,7 +297,7 @@ fn report_ok(
     }
 
     report_file
-        .write_all(format!("{},OK,{},{}", p, case.action.field, buffer).as_bytes())
+        .write_all(format!("{},OK,{}(),{}\n", p, case.action.field, buffer).as_bytes())
         .unwrap();
 }
 
@@ -304,12 +328,12 @@ fn report_fail(
     let expected = draw_args(case.get_expected());
 
     report_file
-        .write_all(format!("{},FAIL,{},{}", p, case.action.field, expected).as_bytes())
+        .write_all(format!("{},FAIL,{},{}\n", p, case.action.field, expected).as_bytes())
         .unwrap();
 
     match result {
         ExecutionResult::Value(result) => {
-            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
+            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}\n\n", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
         }
 
         ExecutionResult::NotCompareable => {

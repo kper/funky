@@ -341,31 +341,49 @@ fn reinterpret(v: Value) -> Value {
 }
 
 /// Returns Err when paging failed
-/// Ok, if resized memory by n * PAGE_SIZE
+/// Returns new length in pages
 /// https://webassembly.github.io/spec/core/exec/modules.html#growing-memories
-fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<(), ()> {
-    let len = (n + instance.data.len()) / PAGE_SIZE;
+fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<usize, ()> {
+    if n == 0 {
+        return Ok(instance.data.len() / PAGE_SIZE);
+    }
+
+    let len = n + instance.data.len();
 
     match instance.max {
         None => {
-            if len > 2u32.pow(16) as usize {
-                error!("Length exceeded 2^16");
+            if len / PAGE_SIZE > PAGE_SIZE * PAGE_SIZE as usize {
+                error!("Length exceeded. Too many memory pages");
                 return Err(());
             }
         }
         Some(max) => {
-            if len > max as usize {
+            debug!("Checking limit len {} < max {}", len / PAGE_SIZE, max);
+            if len / PAGE_SIZE > max as usize {
+                error!("Memory growing failed. Limit exceded");
+                return Err(());
+            }
+
+            debug!(
+                "Checking limit len {} + n {} < max {}",
+                len / PAGE_SIZE,
+                n,
+                max
+            );
+            if len / PAGE_SIZE + n > max as usize {
                 error!("Memory growing failed. Limit exceded");
                 return Err(());
             }
         }
     }
 
-    instance
-        .data
-        .resize(instance.data.len() + (n as usize) * PAGE_SIZE, 0u8);
+    let new_length = instance.data.len() + (n as usize) * PAGE_SIZE;
+    debug!("Resize by {} bytes", new_length);
 
-    Ok(())
+    instance.data.resize(new_length, 0u8);
+    //.resize(instance.data.len() + (n as usize) * PAGE_SIZE, 0u8);
+
+    Ok(new_length / PAGE_SIZE)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1465,7 +1483,10 @@ impl Engine {
                 }
                 Mem(OP_MEMORY_SIZE) => {
                     let module = &self.module.borrow();
-                    let addr = module.memaddrs.get(0).expect("No memory address found");
+                    let addr = module
+                        .memaddrs
+                        .get(0)
+                        .ok_or(anyhow!("No memory address found"))?;
                     let instance = &self.store.memory[*addr as usize];
 
                     let sz = instance.data.len() / PAGE_SIZE;
@@ -1474,12 +1495,15 @@ impl Engine {
                 }
                 Mem(OP_MEMORY_GROW) => {
                     let module = &self.module.borrow();
-                    let addr = module.memaddrs.get(0).expect("No memory address found");
+                    let addr = module
+                        .memaddrs
+                        .get(0)
+                        .ok_or(anyhow!("No memory address found"))?;
                     let instance = &mut self.store.memory[*addr as usize];
                     let sz = instance.data.len() / PAGE_SIZE;
 
                     if let Some(Value(I32(n))) = self.store.stack.pop() {
-                        if n <= 0 {
+                        if n < 0 {
                             return Err(anyhow!("Memory grow expected n > 0, got {}", n));
                         }
 
@@ -1494,12 +1518,17 @@ impl Engine {
                         }
                         */
 
-                        if let Err(()) = grow_memory(instance, n as usize) {
-                            error!("Memory growing failed because paging failed.");
-                            let err = (i32::MAX - 1) as u32;
-                            self.store.stack.push(Value(I32(err as i32)));
-                        } else {
-                            self.store.stack.push(Value(I32(sz as i32)));
+                        match grow_memory(instance, n as usize) {
+                            Err(()) => {
+                                error!("Memory growing failed because paging failed.");
+                                let err = u32::MAX;
+                                debug!("New memory size {}", err);
+                                self.store.stack.push(Value(I32(err as i32)));
+                            }
+                            Ok(_new_sz) => {
+                                debug!("Old memory size {} pages", _new_sz);
+                                self.store.stack.push(Value(I32(_new_sz as i32)));
+                            }
                         }
                     } else {
                         return Err(anyhow!("Unexpected stack element. Expected I32"));
