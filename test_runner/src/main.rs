@@ -116,18 +116,21 @@ fn main() {
     for path in paths {
         let st = stdouts.clone();
         let counter = counter.clone();
-        let handler = std::thread::spawn(move || {
-            println!("--- Running {} ---", path.file_name().to_str().unwrap());
+        let handler = std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024 * 64)
+            .spawn(move || {
+                println!("--- Running {} ---", path.file_name().to_str().unwrap());
 
-            let stdout = run_spec_test(&path);
+                let stdout = run_spec_test(&path);
 
-            st.lock().unwrap().push(stdout);
+                st.lock().unwrap().push(stdout);
 
-            counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
-            let c = counter.load(std::sync::atomic::Ordering::Relaxed);
-            println!("Finished {:.2}%", c as f32 / length as f32 * 100.0);
-        });
+                let c = counter.load(std::sync::atomic::Ordering::Relaxed);
+                println!("Finished {:.2}%", c as f32 / length as f32 * 100.0);
+            }).expect("Cannot spawn thread");
+
         handlers.push(handler);
     }
 
@@ -188,9 +191,7 @@ fn run_spec_test(path: &DirEntry) -> String {
 
         let mut e = Engine::new(mi, &module);
 
-        if let Err(err) = e.instantiation(&module) {
-
-        }
+        if let Err(err) = e.instantiation(&module) {}
 
         fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));
     }
@@ -213,14 +214,14 @@ fn run_spec_test(path: &DirEntry) -> String {
 
                 if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args)
                 {
-                        report_fail(
-                            &mut report_file,
-                            &mut case_file,
-                            &case,
-                            p,
-                            vec![],
-                            ExecutionResult::NotCompareable,
-                        );
+                    report_fail(
+                        &mut report_file,
+                        &mut case_file,
+                        &case,
+                        p,
+                        vec![],
+                        ExecutionResult::NotCompareable,
+                    );
                 }
 
                 let expected = case.get_expected();
@@ -279,7 +280,13 @@ fn run_spec_test(path: &DirEntry) -> String {
         }
     }
 
-    println!("Summary {} total {} where {} ok and {} failed", p, counter, reported_ok, counter - reported_ok);
+    println!(
+        "Summary {} total {} where {} ok and {} failed",
+        p,
+        counter,
+        reported_ok,
+        counter - reported_ok
+    );
 
     "".to_string()
 }
