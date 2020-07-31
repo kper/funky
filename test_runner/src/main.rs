@@ -10,7 +10,7 @@ use std::fs::{create_dir, read_dir, read_to_string, remove_file, DirEntry, File,
 use std::io::Write;
 use std::path::Path;
 use std::rc::Rc;
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use funky::engine::{Engine, ModuleInstance, StackContent, Value};
@@ -23,6 +23,12 @@ use log::{debug, error};
 use json::*;
 
 mod json;
+
+#[derive(Default)]
+struct Stats {
+    reported_ok: AtomicUsize,
+    total_count: AtomicUsize,
+}
 
 macro_rules! remove_test_results_with_ending {
     ($ending:expr) => {
@@ -111,17 +117,23 @@ fn main() {
     let mut handlers = Vec::new();
     let stdouts = Arc::new(Mutex::new(Vec::new()));
     let length = paths.len();
+
+    // Percentage
     let counter = Arc::new(AtomicUsize::new(0));
+
+    let total_stat = Arc::new(Stats::default());
 
     for path in paths {
         let st = stdouts.clone();
         let counter = counter.clone();
+        let total_stat = total_stat.clone();
+
         let handler = std::thread::Builder::new()
             .stack_size(32 * 1024 * 1024 * 64)
             .spawn(move || {
                 println!("--- Running {} ---", path.file_name().to_str().unwrap());
 
-                let stdout = run_spec_test(&path);
+                let stdout = run_spec_test(&path, total_stat);
 
                 st.lock().unwrap().push(stdout);
 
@@ -142,9 +154,17 @@ fn main() {
     }
 
     println!("{}", stdouts.clone().lock().unwrap().join("\n"));
+
+    println!("Reporting total:");
+    
+    let total = total_stat.clone().total_count.load(Ordering::Relaxed);
+    let reported_ok = total_stat.clone().reported_ok.load(Ordering::Relaxed);
+    println!("Total: {}", total);
+    println!("Ok: {}", reported_ok);
+    println!("Failed: {:2}", total - reported_ok);
 }
 
-fn run_spec_test(path: &DirEntry) -> String {
+fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
     //let fs = File::open(path.path().to_str().unwrap()).unwrap();
     let h = path.path();
     let p = h.to_str().unwrap();
@@ -205,6 +225,7 @@ fn run_spec_test(path: &DirEntry) -> String {
             &Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             &Command::AssertReturn(case) => {
                 counter += 1;
+                total_stats.total_count.fetch_add(1, Ordering::Relaxed);
 
                 let mut engine = current_engine
                     .expect("No WASM module was initialized")
@@ -231,6 +252,7 @@ fn run_spec_test(path: &DirEntry) -> String {
                 // If nothing is expected and no error occurred then ok
                 if expected.len() == 0 {
                     reported_ok += 1;
+                    total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                     continue;
                 }
@@ -264,6 +286,7 @@ fn run_spec_test(path: &DirEntry) -> String {
 
                 if do_match {
                     reported_ok += 1;
+                    total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                 } else {
                     report_fail(
