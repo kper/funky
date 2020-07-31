@@ -18,7 +18,6 @@ use funky::{parse, read_wasm, validate};
 
 use std::collections::HashMap;
 
-use env_logger;
 use log::{debug, error};
 
 use json::*;

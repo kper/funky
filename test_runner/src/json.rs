@@ -27,16 +27,14 @@ impl TestFile {
     }
 
     pub fn get_fs_names(&self) -> Vec<&String> {
-        let m = self
+        self
             .commands
             .iter()
             .filter_map(|x| match x {
                 Command::Module(w) => Some(&w.filename),
                 _ => None,
             })
-            .collect::<Vec<_>>();
-
-        m
+            .collect::<Vec<_>>()
     }
 }
 
@@ -125,16 +123,6 @@ fn from_bits_f32(s: u32) -> f32 {
     f32::from_bits(s)
 }
 
-fn force_signed_i32(val: u32) -> i32 {
-    let bits = 32;
-    ((val & ((1 << bits - 1) - 1)) - (val & (1 << bits - 1))) as i32
-}
-
-fn force_signed_i64(val: u64) -> i64 {
-    let bits = 64;
-    ((val & ((1 << bits - 1) - 1)) - (val & (1 << bits - 1))) as i64
-}
-
 impl From<Argument> for Value {
     fn from(e: Argument) -> Value {
         use log::debug;
@@ -142,10 +130,6 @@ impl From<Argument> for Value {
         debug!("Parsing Value {} {:?}", e.ty, e.value);
 
         match e.ty.as_str() {
-            /*
-            "i32" => Value::I32(force_signed_i32(e.value.parse().unwrap())),
-            "i64" => Value::I64(force_signed_i64(e.value.parse().unwrap())),
-            */
             "i32" => Value::I32((e.value.parse::<u32>().unwrap()) as i32),
             "i64" => Value::I64((e.value.parse::<u64>().unwrap()) as i64),
             "f32" => {
