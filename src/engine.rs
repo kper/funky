@@ -1807,8 +1807,8 @@ impl Engine {
         debug!("get_frame");
         match self.store.stack.pop() {
             Some(Frame(fr)) => Ok(fr),
-            Some(x) => return Err(anyhow!("Expected frame but found {:?}", x)),
-            None => return Err(anyhow!("Empty stack on function call")),
+            Some(x) => Err(anyhow!("Expected frame but found {:?}", x)),
+            None => Err(anyhow!("Empty stack on function call")),
         }
     }
 
@@ -1857,7 +1857,7 @@ impl Engine {
     fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
         match x {
             Value(v) => Ok(v),
-            other => return Err(anyhow!("Expected value but found {:?}", other)),
+            other => Err(anyhow!("Expected value but found {:?}", other)),
         }
     }
 }
