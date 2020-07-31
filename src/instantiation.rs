@@ -119,7 +119,7 @@ fn instantiate_elements(
     Ok(())
 }
 
-fn instantiate_data<'a>(
+fn instantiate_data(
     m: &Module,
     mod_instance: &Rc<RefCell<ModuleInstance>>,
     store: &mut Store,
