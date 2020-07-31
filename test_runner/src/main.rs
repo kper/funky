@@ -255,6 +255,8 @@ fn run_spec_test(path: &DirEntry) -> String {
                     }
                 };
 
+                debug!("Actual {:?}", r2);
+
                 let do_match = match expected.get(0) {
                     Some(r1) => *r1 == *r2,
                     None => result.is_none(),
