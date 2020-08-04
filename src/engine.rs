@@ -254,10 +254,13 @@ macro_rules! impl_one_op_float_closure {
     };
 }
 
-macro_rules! impl_two_op_float {
+// Special behavior if one of operands are NAN then return NAN
+macro_rules! impl_two_op_float_with_NAN {
     ($f:ident, $k:expr) => {
         fn $f(left: Value, right: Value) -> Value {
             match (left, right) {
+                (F32(v1), F32(v2)) if v1.is_nan() || v2.is_nan() => F32(f32::NAN),
+                (F64(v1), F64(v2)) if v1.is_nan() || v2.is_nan() => F64(f64::NAN),
                 (F32(v1), F32(v2)) => F32($k(v1.into(), v2.into()) as f32),
                 (F64(v1), F64(v2)) => F64($k(v1, v2) as f64),
                 _ => panic!("Type mismatch during {}", stringify!($f)),
@@ -320,8 +323,8 @@ impl_trunc_sat!(i64, i64, I64, trunc_sat_i64_s);
 impl_trunc_sat!(u32, i32, I32, trunc_sat_i32_u);
 impl_trunc_sat!(u64, i64, I64, trunc_sat_i64_u);
 
-impl_two_op_float!(min, |left: f64, right: f64| left.min(right));
-impl_two_op_float!(max, |left: f64, right: f64| left.max(right));
+impl_two_op_float_with_NAN!(min, |left: f64, right: f64| left.min(right));
+impl_two_op_float_with_NAN!(max, |left: f64, right: f64| left.max(right));
 
 fn eqz(left: Value) -> Value {
     match left {
