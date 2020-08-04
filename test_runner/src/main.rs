@@ -126,28 +126,34 @@ fn main() {
         let counter = counter.clone();
         let total_stat = total_stat.clone();
 
-        let handler = std::thread::Builder::new()
-            .stack_size(32 * 1024 * 1024 * 64)
-            .spawn(move || {
-                println!("--- Running {} ---", path.file_name().to_str().unwrap());
+        let fancy_path = path.file_name().to_str().unwrap().to_string();
+        let copy_path = fancy_path.clone();
 
+        let handler = std::thread::Builder::new()
+            .stack_size(32 * 1024 * 1024 * 64) // some tests require large stack size
+            .spawn(move || {
+                println!("--- Running {} ---", fancy_path);
+
+                // Running the spec test
                 let stdout = run_spec_test(&path, total_stat);
 
                 st.lock().unwrap().push(stdout);
 
+                // Adding 1 to total counter
                 counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
+                // Reporting progress
                 let c = counter.load(std::sync::atomic::Ordering::Relaxed);
                 println!("Finished {:.2}%", c as f32 / length as f32 * 100.0);
             })
             .expect("Cannot spawn thread");
 
-        handlers.push(handler);
+        handlers.push((handler, copy_path));
     }
 
-    for h in handlers {
+    for (h, p) in handlers {
         if h.join().is_err() {
-            eprintln!("Error appeared");
+            eprintln!("Exit status reported error for {}", p);
             //println!("{}", stdouts.clone().lock().unwrap().join("\n"));
         }
     }
