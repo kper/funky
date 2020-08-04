@@ -159,15 +159,15 @@ fn main() {
         stdout_guard
             .iter()
             .filter(|x| x != &"")
-            .map(|w| w.clone())
+            .cloned()
             .collect::<Vec<_>>()
             .join("\n")
     );
 
     println!("Reporting total:");
 
-    let total = total_stat.clone().total_count.load(Ordering::Relaxed);
-    let reported_ok = total_stat.clone().reported_ok.load(Ordering::Relaxed);
+    let total = total_stat.total_count.load(Ordering::Relaxed);
+    let reported_ok = total_stat.reported_ok.load(Ordering::Relaxed);
     println!("Total: {}", total);
     println!("Ok: {}", reported_ok);
     println!("Failed: {}", total - reported_ok);
