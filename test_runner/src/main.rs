@@ -33,7 +33,7 @@ struct Stats {
 macro_rules! remove_test_results_with_ending {
     ($ending:expr) => {
         read_dir("./test_results")
-            .unwrap()
+            .expect("No ./test_results directory found. Please create one")
             .filter(|w| {
                 w.as_ref()
                     .unwrap()
