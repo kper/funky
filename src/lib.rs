@@ -12,6 +12,9 @@ pub use wasm_parser::read_wasm;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod spec_unit_tests;
+
 use engine::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -45,16 +48,30 @@ pub(crate) fn empty_engine() -> Engine {
 }
 
 #[allow(unused_macros)]
+#[macro_export]
 macro_rules! construct_engine {
-    ($body:expr, $params:expr, $return:expr) => {{
-        let mut e = empty_engine();
+    ($body:expr, $params:expr, $returns:expr) => {{
+        use wasm_parser::core::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::CtrlInstructions::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::Instruction::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::MemoryInstructions::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::NumericInstructions::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::ParamInstructions::*;
+        #[allow(unused_imports)]
+        use wasm_parser::core::VarInstructions::*;
+
+        let mut e = crate::empty_engine();
 
         let body = FunctionBody {
             locals: vec![],
             code: $body,
         };
 
-        // We have 2 parameters, but supply 3
         e.store.funcs = vec![FuncInstance {
             ty: FunctionSignature {
                 param_types: $params,
@@ -63,8 +80,17 @@ macro_rules! construct_engine {
             code: body.clone(),
         }];
 
+
+        // Set the code section 
         e.module.borrow_mut().code = vec![body.clone()];
 
+        // Export the function
+        e.module.borrow_mut().funcaddrs.push(0);
+        e.module.borrow_mut().exports = vec![ExportInstance {
+            name: "test".to_string(),
+            value: ExternalKindType::Function { ty : 0 }
+        }];
+
         e
-    }}
+    }};
 }

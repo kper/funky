@@ -283,8 +283,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
 
                 let result = engine.store.stack.last();
 
-                let r2 = match result {
-                    Some(StackContent::Value(v)) => v,
+                let actual_result = match result {
+                    Some(StackContent::Value(v)) => Some(v),
                     _ => {
                         report_fail(
                             &mut report_file,
@@ -301,11 +301,26 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                     }
                 };
 
-                debug!("Actual {:?}", r2);
+                debug!("Actual {:?}", actual_result);
 
+                /*
                 let do_match = match expected.get(0) {
                     Some(r1) => *r1 == *r2,
+                    Some(Value::F32(f)) => f.is_nan() &&
                     None => result.is_none(),
+                };
+                */
+
+                let do_match = match (actual_result, expected.get(0)) {
+                    (Some(Value::F32(f1)), Some(Value::F32(f2))) if f1.is_nan() && f2.is_nan() => {
+                        true
+                    }
+                    (Some(Value::F64(f1)), Some(Value::F64(f2))) if f1.is_nan() && f2.is_nan() => {
+                        true
+                    }
+                    (Some(f1), Some(f2)) => f1 == f2,
+                    (None, None) => true,
+                    _ => false,
                 };
 
                 if do_match {
@@ -319,7 +334,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                         &case,
                         p,
                         expected,
-                        ExecutionResult::Value(r2),
+                        ExecutionResult::Value(actual_result.unwrap()),
                     );
                 }
             }

@@ -517,7 +517,7 @@ macro_rules! fetch_unop {
         debug!("Popping {:?}", $stack.last());
         let v1 = match $stack.pop().unwrap() {
             Value(v) => v,
-            x => panic!("Top of stack was not a value: {:?}", x),
+            x => panic!("Top of stack was not a value, but instead {:?}", x),
         };
         (v1)
     }};
