@@ -42,3 +42,33 @@ fn test_f32_min_minus_0_and_nan() {
         panic!("Not NAN");
     }
 }
+
+#[test]
+fn test_f32_nearest_minus_0point5() {
+    // nearest(-0.5) = -0.0
+
+    let mut engine = construct_engine!(
+        vec![Var(OP_LOCAL_GET(0)), Num(OP_F32_NEAREST)],
+        vec![ValueType::F32],
+        vec![ValueType::F32]
+    );
+
+    engine.invoke_exported_function(0, vec![Value::F32(-0.5)]);
+
+    assert_eq!(Some(StackContent::Value(Value::F32(-0.0))), engine.store.stack.pop());
+}
+
+#[test]
+fn test_f32_nearest_minus_1() {
+    // nearest(-1.0) = -1.0
+
+    let mut engine = construct_engine!(
+        vec![Var(OP_LOCAL_GET(0)), Num(OP_F32_NEAREST)],
+        vec![ValueType::F32],
+        vec![ValueType::F32]
+    );
+
+    engine.invoke_exported_function(0, vec![Value::F32(-1.0)]);
+
+    assert_eq!(Some(StackContent::Value(Value::F32(-1.0))), engine.store.stack.pop());
+}

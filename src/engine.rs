@@ -314,7 +314,8 @@ impl_one_op_float!(abs);
 impl_one_op_float_closure!(neg, |w: f64| -w);
 impl_one_op_float!(ceil);
 impl_one_op_float!(floor);
-impl_one_op_float!(round);
+//impl_one_op_float!(round);
+//impl_one_op_float!(nearest);
 impl_one_op_float!(sqrt);
 impl_one_op_float!(trunc);
 
@@ -330,7 +331,49 @@ fn eqz(left: Value) -> Value {
     match left {
         I32(v1) => I32((v1 == 0_i32) as i32),
         I64(v1) => I32((v1 == 0_i64) as i32),
-        _ => panic!("Type missmatch during eqz"),
+        _ => panic!("Type mismatch during eqz"),
+    }
+}
+
+fn nearest(v: Value) -> Value {
+    match v {
+        F32(v1) if v1.is_nan() => F32(f32::NAN),
+        F64(v1) if v1.is_nan() => F64(f64::NAN),
+        F32(v1) => {
+            let fract = v1.fract().abs(); 
+
+            let round = v1.round();
+            if fract != 0.5 {
+                F32(round)
+            }
+            else {
+                if round.rem(2.0) == 1.0 {
+                    F32(v1.floor())
+                } else if round.rem(2.0) == -1.0 {
+                    F32(v1.ceil())
+                } else {
+                    F32(round)
+                }
+            }
+        }
+        F64(v1) => {
+            let fract = v1.fract().abs(); 
+
+            let round = v1.round();
+            if fract == 0.5 {
+                F64(round)
+            }
+            else {
+                if round.rem(2.0) == 1.0 {
+                    F64(v1.floor())
+                } else if round.rem(2.0) == -1.0 {
+                    F64(v1.ceil())
+                } else {
+                    F64(round)
+                }
+            }
+        }
+        _ => panic!("Type mismatch during round"),
     }
 }
 
@@ -1269,7 +1312,7 @@ impl Engine {
                 }
                 Num(OP_F32_NEAREST) | Num(OP_F64_NEAREST) => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(round(v1)))
+                    self.store.stack.push(Value(nearest(v1)))
                 }
                 Num(OP_F32_SQRT) | Num(OP_F64_SQRT) => {
                     let v1 = fetch_unop!(self.store.stack);
