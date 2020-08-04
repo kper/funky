@@ -1865,34 +1865,7 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn empty_engine() -> Engine {
-        let mi = Rc::new(RefCell::new(ModuleInstance {
-            start: 0,
-            code: Vec::new(),
-            fn_types: Vec::new(),
-            funcaddrs: Vec::new(),
-            tableaddrs: Vec::new(),
-            memaddrs: Vec::new(),
-            globaladdrs: Vec::new(),
-            exports: Vec::new(),
-        }));
-        Engine {
-            started: true,
-            store: Store {
-                funcs: Vec::new(),
-                tables: Vec::new(),
-                globals: Vec::new(),
-                memory: Vec::new(),
-                stack: vec![Frame(Frame {
-                    arity: 0,
-                    locals: Vec::new(),
-                    //module_instance: Rc::downgrade(&mi),
-                })],
-            },
-            module: mi,
-        }
-    }
+    use crate::empty_engine;
 
     #[test]
     #[should_panic(expected = "Function expected different parameters!")]
