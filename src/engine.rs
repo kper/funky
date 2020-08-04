@@ -340,37 +340,31 @@ fn nearest(v: Value) -> Value {
         F32(v1) if v1.is_nan() => F32(f32::NAN),
         F64(v1) if v1.is_nan() => F64(f64::NAN),
         F32(v1) => {
-            let fract = v1.fract().abs(); 
+            let fract = v1.fract().abs();
 
             let round = v1.round();
             if fract != 0.5 {
                 F32(round)
-            }
-            else {
-                if round.rem(2.0) == 1.0 {
-                    F32(v1.floor())
-                } else if round.rem(2.0) == -1.0 {
-                    F32(v1.ceil())
-                } else {
-                    F32(round)
-                }
+            } else if round.rem(2.0) == 1.0 {
+                F32(v1.floor())
+            } else if round.rem(2.0) == -1.0 {
+                F32(v1.ceil())
+            } else {
+                F32(round)
             }
         }
         F64(v1) => {
-            let fract = v1.fract().abs(); 
+            let fract = v1.fract().abs();
 
             let round = v1.round();
             if fract == 0.5 {
                 F64(round)
-            }
-            else {
-                if round.rem(2.0) == 1.0 {
-                    F64(v1.floor())
-                } else if round.rem(2.0) == -1.0 {
-                    F64(v1.ceil())
-                } else {
-                    F64(round)
-                }
+            } else if round.rem(2.0) == 1.0 {
+                F64(v1.floor())
+            } else if round.rem(2.0) == -1.0 {
+                F64(v1.ceil())
+            } else {
+                F64(round)
             }
         }
         _ => panic!("Type mismatch during round"),
