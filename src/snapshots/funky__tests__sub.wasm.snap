@@ -3,55 +3,53 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_I32_SUB,
-                        ),
-                    ],
+                    ),
+                    Num(
+                        OP_I32_SUB,
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "sub",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "sub",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {

@@ -16,12 +16,10 @@ mod tests;
 mod spec_unit_tests;
 
 use engine::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 #[allow(dead_code)]
 pub(crate) fn empty_engine() -> Engine {
-    let mi = Rc::new(RefCell::new(ModuleInstance {
+    let mi = ModuleInstance {
         start: 0,
         code: Vec::new(),
         fn_types: Vec::new(),
@@ -30,7 +28,8 @@ pub(crate) fn empty_engine() -> Engine {
         memaddrs: Vec::new(),
         globaladdrs: Vec::new(),
         exports: Vec::new(),
-    }));
+    };
+
     Engine {
         started: true,
         store: Store {
@@ -82,11 +81,11 @@ macro_rules! construct_engine {
 
 
         // Set the code section 
-        e.module.borrow_mut().code = vec![body.clone()];
+        e.module.code = vec![body.clone()];
 
         // Export the function
-        e.module.borrow_mut().funcaddrs.push(0);
-        e.module.borrow_mut().exports = vec![ExportInstance {
+        e.module.funcaddrs.push(0);
+        e.module.exports = vec![ExportInstance {
             name: "test".to_string(),
             value: ExternalKindType::Function { ty : 0 }
         }];

@@ -3,91 +3,104 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                Empty,
-                                [
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_BLOCK(
                                             Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        Empty,
-                                                        [
-                                                            Ctrl(
-                                                                OP_BLOCK(
-                                                                    Empty,
-                                                                    [
-                                                                        Ctrl(
-                                                                            OP_BLOCK(
-                                                                                Empty,
-                                                                                [
-                                                                                    Var(
-                                                                                        OP_LOCAL_GET(
-                                                                                            0,
-                                                                                        ),
-                                                                                    ),
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Ctrl(
+                                                        OP_BLOCK(
+                                                            Empty,
+                                                            CodeBlock {
+                                                                id: 1,
+                                                                instructions: [
+                                                                    Ctrl(
+                                                                        OP_BLOCK(
+                                                                            Empty,
+                                                                            CodeBlock {
+                                                                                id: 1,
+                                                                                instructions: [
                                                                                     Ctrl(
-                                                                                        OP_BR_TABLE(
-                                                                                            [
-                                                                                                3,
-                                                                                                2,
-                                                                                                1,
-                                                                                                0,
-                                                                                            ],
-                                                                                            4,
+                                                                                        OP_BLOCK(
+                                                                                            Empty,
+                                                                                            CodeBlock {
+                                                                                                id: 1,
+                                                                                                instructions: [
+                                                                                                    Var(
+                                                                                                        OP_LOCAL_GET(
+                                                                                                            0,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    Ctrl(
+                                                                                                        OP_BR_TABLE(
+                                                                                                            [
+                                                                                                                3,
+                                                                                                                2,
+                                                                                                                1,
+                                                                                                                0,
+                                                                                                            ],
+                                                                                                            4,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    Num(
+                                                                                                        OP_I32_CONST(
+                                                                                                            99,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    Ctrl(
+                                                                                                        OP_RETURN,
+                                                                                                    ),
+                                                                                                ],
+                                                                                            },
                                                                                         ),
                                                                                     ),
                                                                                     Num(
                                                                                         OP_I32_CONST(
-                                                                                            99,
+                                                                                            100,
                                                                                         ),
                                                                                     ),
                                                                                     Ctrl(
                                                                                         OP_RETURN,
                                                                                     ),
                                                                                 ],
-                                                                            ),
+                                                                            },
                                                                         ),
-                                                                        Num(
-                                                                            OP_I32_CONST(
-                                                                                100,
-                                                                            ),
+                                                                    ),
+                                                                    Num(
+                                                                        OP_I32_CONST(
+                                                                            101,
                                                                         ),
-                                                                        Ctrl(
-                                                                            OP_RETURN,
-                                                                        ),
-                                                                    ],
-                                                                ),
-                                                            ),
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    101,
-                                                                ),
-                                                            ),
-                                                            Ctrl(
-                                                                OP_RETURN,
-                                                            ),
-                                                        ],
+                                                                    ),
+                                                                    Ctrl(
+                                                                        OP_RETURN,
+                                                                    ),
+                                                                ],
+                                                            },
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        102,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            102,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_RETURN,
-                                                ),
-                                            ],
+                                                    Ctrl(
+                                                        OP_RETURN,
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -99,47 +112,47 @@ Engine {
                                         OP_RETURN,
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                104,
-                            ),
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            104,
                         ),
-                    ],
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "multiple",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
+            },
+            ExportInstance {
+                name: "br_table",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "multiple",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-                ExportInstance {
-                    name: "br_table",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -159,92 +172,107 @@ Engine {
                         Ctrl(
                             OP_BLOCK(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        Empty,
-                                                        [
-                                                            Ctrl(
-                                                                OP_BLOCK(
-                                                                    Empty,
-                                                                    [
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Ctrl(
+                                                            OP_BLOCK(
+                                                                Empty,
+                                                                CodeBlock {
+                                                                    id: 1,
+                                                                    instructions: [
                                                                         Ctrl(
                                                                             OP_BLOCK(
                                                                                 Empty,
-                                                                                [
-                                                                                    Var(
-                                                                                        OP_LOCAL_GET(
-                                                                                            0,
+                                                                                CodeBlock {
+                                                                                    id: 1,
+                                                                                    instructions: [
+                                                                                        Ctrl(
+                                                                                            OP_BLOCK(
+                                                                                                Empty,
+                                                                                                CodeBlock {
+                                                                                                    id: 1,
+                                                                                                    instructions: [
+                                                                                                        Var(
+                                                                                                            OP_LOCAL_GET(
+                                                                                                                0,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        Ctrl(
+                                                                                                            OP_BR_TABLE(
+                                                                                                                [
+                                                                                                                    3,
+                                                                                                                    2,
+                                                                                                                    1,
+                                                                                                                    0,
+                                                                                                                ],
+                                                                                                                4,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        Num(
+                                                                                                            OP_I32_CONST(
+                                                                                                                99,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        Ctrl(
+                                                                                                            OP_RETURN,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                            ),
                                                                                         ),
-                                                                                    ),
-                                                                                    Ctrl(
-                                                                                        OP_BR_TABLE(
-                                                                                            [
-                                                                                                3,
-                                                                                                2,
-                                                                                                1,
-                                                                                                0,
-                                                                                            ],
-                                                                                            4,
+                                                                                        Num(
+                                                                                            OP_I32_CONST(
+                                                                                                100,
+                                                                                            ),
                                                                                         ),
-                                                                                    ),
-                                                                                    Num(
-                                                                                        OP_I32_CONST(
-                                                                                            99,
+                                                                                        Ctrl(
+                                                                                            OP_RETURN,
                                                                                         ),
-                                                                                    ),
-                                                                                    Ctrl(
-                                                                                        OP_RETURN,
-                                                                                    ),
-                                                                                ],
+                                                                                    ],
+                                                                                },
                                                                             ),
                                                                         ),
                                                                         Num(
                                                                             OP_I32_CONST(
-                                                                                100,
+                                                                                101,
                                                                             ),
                                                                         ),
                                                                         Ctrl(
                                                                             OP_RETURN,
                                                                         ),
                                                                     ],
-                                                                ),
+                                                                },
                                                             ),
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    101,
-                                                                ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                102,
                                                             ),
-                                                            Ctrl(
-                                                                OP_RETURN,
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        102,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_RETURN,
-                                                ),
-                                            ],
+                                                        ),
+                                                        Ctrl(
+                                                            OP_RETURN,
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            103,
+                                        Num(
+                                            OP_I32_CONST(
+                                                103,
+                                            ),
                                         ),
-                                    ),
-                                    Ctrl(
-                                        OP_RETURN,
-                                    ),
-                                ],
+                                        Ctrl(
+                                            OP_RETURN,
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         Num(

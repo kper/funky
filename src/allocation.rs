@@ -1,6 +1,4 @@
 use crate::engine::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
@@ -75,7 +73,7 @@ fn allocate_functions(
         // Allocate function
 
         {
-            let borrow = mod_instance.borrow();
+            let borrow = &mod_instance;
             let fbody = match borrow.fn_types.get(**t as usize) {
                 Some(fbody) => fbody,
                 None => {
@@ -100,7 +98,6 @@ fn allocate_functions(
         }
 
         mod_instance
-            .borrow_mut()
             .funcaddrs
             .push(store.funcs.len() as u32 - 1);
     }
@@ -134,13 +131,12 @@ fn allocate_tables(
         };
 
         mod_instance
-            .borrow_mut()
             .tableaddrs
             .push(store.tables.len() as u32);
         store.tables.push(instance);
     }
 
-    debug!("Tables in mod_i {:?}", mod_instance.borrow().tableaddrs);
+    debug!("Tables in mod_i {:?}", mod_instance.tableaddrs);
     debug!("Tables in store {:#?}", store.tables);
 
     Ok(())
@@ -169,13 +165,12 @@ fn allocate_memories(
         };
 
         mod_instance
-            .borrow_mut()
             .memaddrs
             .push(store.memory.len() as u32);
         store.memory.push(instance);
     }
 
-    debug!("Memories in mod_i {:?}", mod_instance.borrow().memaddrs);
+    debug!("Memories in mod_i {:?}", mod_instance.memaddrs);
     debug!("Memories in store {:#?}", store.memory);
 
     Ok(())
@@ -201,13 +196,12 @@ fn allocate_globals(
         };
 
         mod_instance
-            .borrow_mut()
             .globaladdrs
             .push(store.globals.len() as u32);
         store.globals.push(instance);
     }
 
-    debug!("Globals in mod_i {:?}", mod_instance.borrow().globaladdrs);
+    debug!("Globals in mod_i {:?}", mod_instance.globaladdrs);
     debug!("Globals in store {:#?}", store.globals);
 
     Ok(())
@@ -226,10 +220,10 @@ fn allocate_exports(
     for export in ty.into_iter() {
         debug!("Export {:?}", export);
 
-        mod_instance.borrow_mut().exports.push(export.into());
+        mod_instance.exports.push(export.into());
     }
 
-    debug!("Exports in mod_i {:?}", mod_instance.borrow().exports);
+    debug!("Exports in mod_i {:?}", mod_instance.exports);
 
     Ok(())
 }

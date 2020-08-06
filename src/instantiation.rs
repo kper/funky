@@ -1,7 +1,4 @@
 use crate::engine::*;
-use std::cell::RefCell;
-use std::rc::Rc;
-//use wasm_parser::core::*;
 use wasm_parser::Module;
 
 use anyhow::{anyhow, Result};
@@ -78,7 +75,7 @@ fn instantiate_elements(
         if let Value::I32(table_index) = eoval {
             //table_index = eo_i
 
-            let borrow = mod_instance.borrow();
+            let borrow = &mod_instance;
 
             let table_addr = borrow
                 .tableaddrs
@@ -138,7 +135,7 @@ fn instantiate_data(
             debug!("Memory index is {}", mem_idx);
 
             //mem_idx = do_i
-            let borrow = mod_instance.borrow();
+            let borrow = &mod_instance;
             let mem_addr = borrow
                 .memaddrs
                 .get(0)
@@ -179,7 +176,7 @@ fn instantiate_start(
     if let Some(start_section) = validation::extract::get_start(m).first() {
         debug!("Start section {:#?}", start_section);
 
-        let borrow = mod_instance.borrow();
+        let borrow = &mod_instance;
         let func_addr = borrow
             .funcaddrs
             .get((start_section.index) as usize)

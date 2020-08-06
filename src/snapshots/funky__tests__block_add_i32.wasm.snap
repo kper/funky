@@ -3,19 +3,20 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Var(
                                         OP_LOCAL_GET(
                                             0,
@@ -30,30 +31,30 @@ Engine {
                                         OP_I32_ADD,
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
-                },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [],
-        },
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [],
     },
     started: false,
     store: Store {
@@ -76,21 +77,24 @@ Engine {
                                 ValueType(
                                     I32,
                                 ),
-                                [
-                                    Var(
-                                        OP_LOCAL_GET(
-                                            0,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Var(
+                                            OP_LOCAL_GET(
+                                                0,
+                                            ),
                                         ),
-                                    ),
-                                    Var(
-                                        OP_LOCAL_GET(
-                                            1,
+                                        Var(
+                                            OP_LOCAL_GET(
+                                                1,
+                                            ),
                                         ),
-                                    ),
-                                    Num(
-                                        OP_I32_ADD,
-                                    ),
-                                ],
+                                        Num(
+                                            OP_I32_ADD,
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                     ],

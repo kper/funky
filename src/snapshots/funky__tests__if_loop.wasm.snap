@@ -3,122 +3,126 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [
-                        LocalEntry {
-                            count: 1,
-                            ty: I32,
-                        },
-                    ],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I32,
+                    },
+                ],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Num(
-                            OP_I32_MUL,
+                    ),
+                    Num(
+                        OP_I32_MUL,
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Param(
+                        OP_SELECT,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Param(
-                            OP_SELECT,
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_LOOP(
                                             Empty,
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        -1,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            -1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_ADD,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_TEE(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_ADD,
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_TEE(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [
+            0,
+        ],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "memory",
+                value: Memory {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
+            },
+            ExportInstance {
+                name: "my_loop",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [
-                0,
-            ],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "memory",
-                    value: Memory {
-                        ty: 0,
-                    },
-                },
-                ExportInstance {
-                    name: "my_loop",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -174,38 +178,44 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_LOOP(
-                                            Empty,
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        -1,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_ADD,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_TEE(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                -1,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_ADD,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_TEE(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR_IF(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                    ],
+                                },
                             ),
                         ),
                     ],

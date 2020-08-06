@@ -3,78 +3,82 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                Empty,
-                                [
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_LOOP(
                                             Empty,
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        1,
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            2,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_RETURN,
-                                                ),
-                                            ],
+                                                    Ctrl(
+                                                        OP_RETURN,
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                3,
-                            ),
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            3,
                         ),
-                    ],
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "as-loop-first",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "as-loop-first",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -94,33 +98,39 @@ Engine {
                         Ctrl(
                             OP_BLOCK(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_LOOP(
-                                            Empty,
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_RETURN,
-                                                ),
-                                            ],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR_IF(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                2,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_RETURN,
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                    ],
+                                },
                             ),
                         ),
                         Num(

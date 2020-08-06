@@ -3,63 +3,61 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Num(
-                            OP_I32_CONST(
-                                42,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Num(
+                        OP_I32_CONST(
+                            42,
                         ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_CALL(
-                                0,
-                            ),
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_CALL(
+                            0,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                1,
-                            ),
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            1,
                         ),
-                        Num(
-                            OP_I32_ADD,
-                        ),
-                    ],
+                    ),
+                    Num(
+                        OP_I32_ADD,
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+            1,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "getAnswerPlus1",
+                value: Function {
+                    ty: 1,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-            funcaddrs: [
-                0,
-                1,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "getAnswerPlus1",
-                    value: Function {
-                        ty: 1,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {

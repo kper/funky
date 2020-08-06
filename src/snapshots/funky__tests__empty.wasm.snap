@@ -3,63 +3,61 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_I32_ADD,
-                        ),
-                    ],
+                    ),
+                    Num(
+                        OP_I32_ADD,
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+        ],
+        tableaddrs: [],
+        memaddrs: [
+            0,
+        ],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "memory",
+                value: Memory {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
+            },
+            ExportInstance {
+                name: "add",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            funcaddrs: [
-                0,
-            ],
-            tableaddrs: [],
-            memaddrs: [
-                0,
-            ],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "memory",
-                    value: Memory {
-                        ty: 0,
-                    },
-                },
-                ExportInstance {
-                    name: "add",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {

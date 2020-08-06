@@ -1,10 +1,8 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use anyhow::{anyhow, Result};
-use std::cell::RefCell;
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
-use std::rc::{Rc, Weak};
 use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::MemoryInstructions::*;
@@ -18,7 +16,7 @@ const PAGE_SIZE: usize = 65536;
 
 #[derive(Debug)]
 pub struct Engine {
-    pub module: Rc<RefCell<ModuleInstance>>, //TODO rename to `module_instance`
+    pub module: ModuleInstance, //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
 }
@@ -426,12 +424,6 @@ fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<usize, ()> {
     Ok(new_length / PAGE_SIZE)
 }
 
-struct Record<'a, 'b> {
-    frame: &'a mut Frame,
-    /// iterator of instructions to execute
-    block: Box<dyn std::iter::Iterator<Item = &'b Instruction>>,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
@@ -585,7 +577,7 @@ macro_rules! load_memory {
         if let I32(v) = v1 {
             let ea = (v + $arg.offset as i32) as usize;
 
-            let module = &$self.module.borrow();
+            let module = &$self.module;
 
             let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -621,7 +613,7 @@ macro_rules! load_memorySX {
         if let I32(v) = v1 {
             let ea = (v + $arg.offset as i32) as usize;
 
-            let module = &$self.module.borrow();
+            let module = &$self.module;
 
             let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -668,7 +660,7 @@ macro_rules! store_memory {
             if let I32(v) = v1 {
                 let ea = (v + $arg.offset as i32) as usize;
 
-                let module = &$self.module.borrow();
+                let module = &$self.module;
 
                 let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -695,7 +687,7 @@ macro_rules! store_memoryN {
             if let I32(v) = v1 {
                 let ea = (v + $arg.offset as i32) as usize;
 
-                let module = &$self.module.borrow();
+                let module = &$self.module;
 
                 let addr = module.memaddrs.get(0).expect("No memory address found");
 
@@ -766,7 +758,7 @@ impl ModuleInstance {
 impl Engine {
     pub fn new(mi: ModuleInstance, module: &Module) -> Self {
         let mut e = Engine {
-            module: Rc::new(RefCell::new(mi)),
+            module: mi,
             started: false,
             store: Store {
                 funcs: Vec::new(),
@@ -784,13 +776,10 @@ impl Engine {
         e
     }
 
-    pub fn downgrade_mod_instance(&self) -> Weak<RefCell<ModuleInstance>> {
-        Rc::downgrade(&self.module)
-    }
-
     fn allocate(&mut self, m: &Module) {
         info!("Allocation");
-        crate::allocation::allocate(m, &self.module, &mut self.store).expect("Allocation failed");
+        crate::allocation::allocate(m, &mut self.module, &mut self.store)
+            .expect("Allocation failed");
     }
 
     pub fn instantiation(&mut self, m: &Module) -> Result<()> {
@@ -809,7 +798,7 @@ impl Engine {
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) {
         debug!("invoke_exported_function {:?}", idx);
         let k = {
-            let x = self.module.borrow();
+            let x = &self.module;
 
             debug!("x's element {:?}", x.exports.get(idx as usize));
 
@@ -827,7 +816,6 @@ impl Engine {
             ExternalKindType::Function { ty } => {
                 let func_addr = *self
                     .module
-                    .borrow()
                     .funcaddrs
                     .get(ty as usize)
                     .expect("Function not found");
@@ -843,7 +831,6 @@ impl Engine {
     pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
         let idx = self
             .module
-            .borrow()
             .exports
             .iter()
             .position(|e| e.name == name)
@@ -934,21 +921,16 @@ impl Engine {
         debug!("Running function {:?}", idx);
 
         //FIXME this `.clone` is extremly expensive!!!
-        let f = &self.module.borrow().code[idx as usize];
+        // But there is a problem
+        // Because, we iterate over the borrowed iterator,
+        // we cannot easily run the block
+        let f = &self.module.code[idx as usize].clone();
 
         let mut fr = self.get_frame()?;
 
         debug!("frame {:#?}", fr);
 
-        let instructions = &f.code;
-
-        let record = Record {
-            frame: &mut fr,
-            block: Box::new(instructions.iter()),
-        };
-
-        //self.run_instructions(&mut fr, &mut instructions.iter())?;
-        self.run_instructions(record)?;
+        self.run_instructions(&mut fr, &mut f.code.iter())?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -986,15 +968,11 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_instructions(
+    fn run_instructions<'a>(
         &mut self,
-        record: Record<'_, 'static>,
-        //fr: &mut Frame,
-        //instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
+        fr: &mut Frame,
+        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome> {
-        let fr = record.frame;
-        let instructions = record.block;
-
         let mut ip = 0;
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
@@ -1539,7 +1517,7 @@ impl Engine {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 Mem(OP_MEMORY_SIZE) => {
-                    let module = &self.module.borrow();
+                    let module = &self.module;
                     let addr = module
                         .memaddrs
                         .get(0)
@@ -1551,7 +1529,7 @@ impl Engine {
                     self.store.stack.push(Value(I32(sz as i32)));
                 }
                 Mem(OP_MEMORY_GROW) => {
-                    let module = &self.module.borrow();
+                    let module = &self.module;
                     let addr = module
                         .memaddrs
                         .get(0)
@@ -1602,12 +1580,7 @@ impl Engine {
 
                     self.store.stack.push(StackContent::Label(label));
 
-                    let record = Record {
-                            frame: fr,
-                            block: Box::new(block_instructions.iter()),
-                        };
-
-                    let outcome = self.run_instructions(record)?;
+                    let outcome = self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1635,12 +1608,7 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let record = Record {
-                            frame: fr,
-                            block: Box::new(block_instructions.iter()),
-                        };
-
-                        let outcome = self.run_instructions(record)?;
+                        let outcome = self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1667,10 +1635,7 @@ impl Engine {
                     debug!("Popping value {:?}", element);
 
                     if let Some(StackContent::Value(Value::I32(v))) = element {
-                        //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
-
-                        //TODO do something with the args
 
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
@@ -1681,12 +1646,8 @@ impl Engine {
 
                             self.store.stack.push(StackContent::Label(label));
 
-                            let record = Record {
-                                frame: fr,
-                                block: Box::new(block_instructions_branch.iter()),
-                            };
-
-                            let outcome = self.run_instructions(record)?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch.instructions.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1727,12 +1688,10 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let record = Record {
-                                frame: fr,
-                                block: Box::new(block_instructions_branch_1.iter()),
-                            };
-
-                            let outcome = self.run_instructions(record)?;
+                            let outcome = self.run_instructions(
+                                fr,
+                                &mut block_instructions_branch_1.instructions.iter(),
+                            )?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1748,12 +1707,10 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let record = Record {
-                                frame: fr,
-                                block: Box::new(block_instructions_branch_2.iter()),
-                            };
-
-                            let outcome = self.run_instructions(record)?;
+                            let outcome = self.run_instructions(
+                                fr,
+                                &mut block_instructions_branch_2.instructions.iter(),
+                            )?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1808,7 +1765,7 @@ impl Engine {
                 Ctrl(OP_CALL(idx)) => {
                     debug!("OP_CALL {:?}", idx);
 
-                    trace!("fn_types: {:#?}", self.module.borrow().fn_types);
+                    trace!("fn_types: {:#?}", self.module.fn_types);
                     let t = self.store.funcs[*idx as usize].ty.clone();
 
                     let args = self
@@ -1823,7 +1780,7 @@ impl Engine {
                 }
                 Ctrl(OP_CALL_INDIRECT(idx)) => {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
-                    let ta = self.module.borrow().tableaddrs[0];
+                    let ta = self.module.tableaddrs[0];
                     let tab = &self.store.tables[ta as usize];
 
                     let i = match fetch_unop!(self.store.stack) {
@@ -1847,7 +1804,7 @@ impl Engine {
 
                             {
                                 // Compare types
-                                let m = self.module.borrow();
+                                let m = &self.module;
                                 let ty = m.fn_types.get(*idx as usize);
                                 assert!(&f.ty == ty.expect("No type found"));
                             }
@@ -1925,7 +1882,6 @@ impl Engine {
             BlockType::ValueType(_) => 1,
             BlockType::ValueTypeTy(ty) => self
                 .module
-                .borrow()
                 .fn_types
                 .get(*ty as usize)
                 .ok_or_else(|| anyhow!("Trap"))?
@@ -1969,7 +1925,7 @@ mod tests {
             code: body.clone(),
         }];
 
-        e.module.borrow_mut().code = vec![body.clone()];
+        e.module.code = vec![body.clone()];
 
         e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]);
     }
@@ -1995,7 +1951,7 @@ mod tests {
             code: body.clone(),
         }];
 
-        e.module.borrow_mut().code = vec![body.clone()];
+        e.module.code = vec![body.clone()];
 
         e.invoke_function(0, vec![Value::I32(1), Value::I32(2)]);
     }
@@ -2008,7 +1964,7 @@ mod tests {
             locals: Vec::new(),
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(42)),
@@ -2023,7 +1979,7 @@ mod tests {
             locals: Vec::new(),
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I64_CONST(32)),
@@ -2045,7 +2001,7 @@ mod tests {
             locals: vec![I32(1), I32(4)],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
         }];
@@ -2061,11 +2017,14 @@ mod tests {
             locals: vec![I32(1), I32(1)],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Ctrl(OP_BLOCK(
                 BlockType::ValueType(ValueType::I32),
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                CodeBlock::with(
+                    0,
+                    vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                ),
             ))],
         }];
         e.run_function(0).unwrap();
@@ -2079,7 +2038,10 @@ mod tests {
         //env_logger::init();
         let code = vec![Ctrl(OP_BLOCK(
             BlockType::Empty,
-            vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(1))]))],
+            CodeBlock::with(
+                0,
+                vec![Ctrl(OP_BLOCK(BlockType::Empty, CodeBlock::with(1, vec![Ctrl(OP_BR(1))])))],
+            ),
         ))];
 
         e.store.stack = vec![Frame(Frame {
@@ -2088,7 +2050,7 @@ mod tests {
             //module_instance: e.downgrade_mod_instance(),
         })];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: code,
         }];
@@ -2103,10 +2065,19 @@ mod tests {
         //env_logger::init();
         let code = vec![Ctrl(OP_BLOCK(
             BlockType::Empty,
-            vec![Ctrl(OP_BLOCK(
-                BlockType::Empty,
-                vec![Ctrl(OP_BLOCK(BlockType::Empty, vec![Ctrl(OP_BR(2))]))],
-            ))],
+            CodeBlock::with(
+                0,
+                vec![Ctrl(OP_BLOCK(
+                    BlockType::Empty,
+                    CodeBlock::with(
+                        1,
+                        vec![Ctrl(OP_BLOCK(
+                            BlockType::Empty,
+                            CodeBlock::with(2, vec![Ctrl(OP_BR(2))]),
+                        ))],
+                    ),
+                ))],
+            ),
         ))];
 
         e.store.stack = vec![Frame(Frame {
@@ -2115,7 +2086,7 @@ mod tests {
             //module_instance: e.downgrade_mod_instance(),
         })];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code,
         }];
@@ -2134,11 +2105,11 @@ mod tests {
                                               //module_instance: e.downgrade_mod_instance(),
             }),
         ];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Ctrl(OP_IF(
                 BlockType::ValueType(ValueType::I32),
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                CodeBlock::with(0, vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)]),
             ))],
         }];
         e.run_function(0).unwrap();
@@ -2156,11 +2127,11 @@ mod tests {
                                               //module_instance: e.downgrade_mod_instance(),
             }),
         ];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Ctrl(OP_IF(
                 BlockType::ValueType(ValueType::I32),
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                CodeBlock::with(0, vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)]),
             ))],
         }];
         e.run_function(0).unwrap();
@@ -2178,12 +2149,12 @@ mod tests {
                                               //module_instance: e.downgrade_mod_instance(),
             }),
         ];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Ctrl(OP_IF_AND_ELSE(
                 BlockType::ValueType(ValueType::I32),
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
-                vec![Num(OP_I32_CONST(-1000))],
+                CodeBlock::with(0, vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)]),
+                CodeBlock::with(1, vec![Num(OP_I32_CONST(-1000))]),
             ))],
         }];
         e.run_function(0).unwrap();
@@ -2204,12 +2175,12 @@ mod tests {
                                               //module_instance: e.downgrade_mod_instance(),
             }),
         ];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Ctrl(OP_IF_AND_ELSE(
                 BlockType::ValueType(ValueType::I32),
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
-                vec![Num(OP_I32_CONST(-1000))],
+                CodeBlock::with(0, vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)]),
+                CodeBlock::with(1, vec![Num(OP_I32_CONST(-1000))]),
             ))],
         }];
         e.run_function(0).unwrap();
@@ -2227,7 +2198,7 @@ mod tests {
             locals: vec![I32(1), I32(4)],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_LOCAL_GET(0)),
@@ -2250,7 +2221,7 @@ mod tests {
             mutable: true,
             val: I32(69),
         }];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Var(OP_GLOBAL_GET(0)),
@@ -2270,7 +2241,7 @@ mod tests {
             mutable: true,
             val: I32(20),
         }];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(1)),
@@ -2289,13 +2260,13 @@ mod tests {
     #[test]
     fn test_memory_store_i32() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 4].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2314,13 +2285,13 @@ mod tests {
     fn test_memory_load_i32() {
         //env_logger::init();
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 10].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2337,13 +2308,13 @@ mod tests {
     #[test]
     fn test_memory_store_i32_in_i8() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 1].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2362,13 +2333,13 @@ mod tests {
     fn test_memory_load_i32_of_u8() {
         //env_logger::init();
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 4].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2395,13 +2366,13 @@ mod tests {
     #[test]
     fn test_memory_store_i32_in_i16() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 2].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2419,13 +2390,13 @@ mod tests {
     #[test]
     fn test_memory_store_i64() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 8].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2443,13 +2414,13 @@ mod tests {
     #[test]
     fn test_memory_store_i64_in_i16() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 2].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2467,13 +2438,13 @@ mod tests {
     #[test]
     fn test_memory_store_i64_in_i32() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 4].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2494,13 +2465,13 @@ mod tests {
     #[test]
     fn test_memory_store_f32() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 4].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2521,13 +2492,13 @@ mod tests {
     #[test]
     fn test_memory_store_f64() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 8].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2548,13 +2519,13 @@ mod tests {
     #[test]
     fn test_num_store_f64() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 8].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I32_CONST(0)),
@@ -2580,7 +2551,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I64_CONST(i32::MAX as i64)), Num(OP_I32_WRAP_I64)],
         }];
@@ -2596,7 +2567,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I64_CONST(i32::MIN as i64)), Num(OP_I32_WRAP_I64)],
         }];
@@ -2612,7 +2583,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_I64_CONST((i32::MAX as i64) + 50)),
@@ -2632,7 +2603,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_S)],
         }];
@@ -2647,7 +2618,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_U)],
         }];
@@ -2663,7 +2634,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_F32_CONST(234.923)), Num(OP_I32_TRUNC_F32_S)],
         }];
@@ -2679,7 +2650,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_F32_CONST(1.1234568357467651)),
@@ -2698,7 +2669,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![
                 Num(OP_F64_CONST(1.1234568357467651420)),
@@ -2718,7 +2689,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_S)],
         }];
@@ -2734,7 +2705,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_U)],
         }];
@@ -2750,7 +2721,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(-1)), Num(OP_I32_REINTERPRET_F32)],
         }];
@@ -2764,9 +2735,8 @@ mod tests {
         e.store.stack = vec![Frame(Frame {
             arity: 1,
             locals: vec![],
-            //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I64_CONST(-1)), Num(OP_I64_REINTERPRET_F64)],
         }];
@@ -2782,7 +2752,7 @@ mod tests {
             locals: vec![],
             ////module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_F32_CONST(1.01)), Num(OP_F32_REINTERPRET_I32)],
         }];
@@ -2798,7 +2768,7 @@ mod tests {
             locals: vec![],
             //module_instance: e.downgrade_mod_instance(),
         })];
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_F64_CONST(1.00001)), Num(OP_F64_REINTERPRET_I64)],
         }];
@@ -2809,13 +2779,13 @@ mod tests {
     #[test]
     fn test_memory_grow() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 10].to_vec(),
             max: None,
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(1)), Mem(OP_MEMORY_GROW)],
         }];
@@ -2827,13 +2797,13 @@ mod tests {
     #[test]
     fn test_memory_grow_with_max() {
         let mut e = empty_engine();
-        e.module.borrow_mut().memaddrs.push(0);
+        e.module.memaddrs.push(0);
         e.store.memory = vec![MemoryInstance {
             data: [0; 10].to_vec(),
             max: Some(11),
         }];
 
-        e.module.borrow_mut().code = vec![FunctionBody {
+        e.module.code = vec![FunctionBody {
             locals: vec![],
             code: vec![Num(OP_I32_CONST(i32::MAX)), Mem(OP_MEMORY_GROW)],
         }];

@@ -3,95 +3,99 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [
-                        LocalEntry {
-                            count: 1,
-                            ty: I32,
-                        },
-                    ],
-                    code: [
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I32,
+                    },
+                ],
+                code: [
+                    Num(
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_SET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_SET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                    ),
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_BLOCK(
                                             Empty,
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        0,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_OR,
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            2,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                    Num(
+                                                        OP_I32_OR,
+                                                    ),
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Ctrl(
@@ -99,31 +103,34 @@ Engine {
                                             ValueType(
                                                 I32,
                                             ),
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        4,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            4,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_OR,
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -162,31 +169,34 @@ Engine {
                                             ValueType(
                                                 I32,
                                             ),
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        16,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            16,
+                                                        ),
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Num(
+                                                        OP_I32_OR,
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -226,36 +236,42 @@ Engine {
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_BLOCK(
                                             ValueType(
                                                 I32,
                                             ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR(
-                                                        0,
+                                                    Ctrl(
+                                                        OP_BR(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -277,19 +293,22 @@ Engine {
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Num(
                                         OP_I32_CONST(
                                             1,
@@ -298,40 +317,46 @@ Engine {
                                     Ctrl(
                                         OP_IF(
                                             Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        ValueType(
-                                                            I32,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Ctrl(
+                                                        OP_BLOCK(
+                                                            ValueType(
+                                                                I32,
+                                                            ),
+                                                            CodeBlock {
+                                                                id: 1,
+                                                                instructions: [
+                                                                    Num(
+                                                                        OP_I32_CONST(
+                                                                            1,
+                                                                        ),
+                                                                    ),
+                                                                    Ctrl(
+                                                                        OP_BR(
+                                                                            0,
+                                                                        ),
+                                                                    ),
+                                                                ],
+                                                            },
                                                         ),
-                                                        [
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    1,
-                                                                ),
-                                                            ),
-                                                            Ctrl(
-                                                                OP_BR(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                        ],
                                                     ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        1,
+                                                    Ctrl(
+                                                        OP_BR_IF(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Param(
-                                                    OP_DROP,
-                                                ),
-                                            ],
+                                                    Param(
+                                                        OP_DROP,
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -340,46 +365,52 @@ Engine {
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [
-                        LocalEntry {
-                            count: 1,
-                            ty: I32,
-                        },
-                    ],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I32,
+                    },
+                ],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_BLOCK(
                                             ValueType(
                                                 I32,
                                             ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            1,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Ctrl(
@@ -387,23 +418,26 @@ Engine {
                                             ValueType(
                                                 I32,
                                             ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            2,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_SET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
+                                                    Var(
+                                                        OP_LOCAL_GET(
+                                                            0,
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Ctrl(
@@ -420,35 +454,38 @@ Engine {
                                         ),
                                     ),
                                 ],
+                            },
+                        ),
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            0,
+                        ),
+                    ),
+                    Num(
+                        OP_I32_ADD,
+                    ),
+                    Param(
+                        OP_DROP,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
+                        ),
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Ctrl(
+                        OP_BLOCK(
+                            ValueType(
+                                I32,
                             ),
-                        ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_ADD,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Num(
                                         OP_I32_CONST(
                                             1,
@@ -457,63 +494,78 @@ Engine {
                                     Ctrl(
                                         OP_IF_AND_ELSE(
                                             Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        ValueType(
-                                                            I32,
-                                                        ),
-                                                        [
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    1,
-                                                                ),
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    Ctrl(
+                                                        OP_BLOCK(
+                                                            ValueType(
+                                                                I32,
                                                             ),
-                                                            Ctrl(
-                                                                OP_BR(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR(
-                                                        1,
-                                                    ),
-                                                ),
-                                            ],
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        Empty,
-                                                        [
-                                                            Ctrl(
-                                                                OP_BLOCK(
-                                                                    ValueType(
-                                                                        I32,
+                                                            CodeBlock {
+                                                                id: 1,
+                                                                instructions: [
+                                                                    Num(
+                                                                        OP_I32_CONST(
+                                                                            1,
+                                                                        ),
                                                                     ),
-                                                                    [
-                                                                        Num(
-                                                                            OP_I32_CONST(
-                                                                                1,
-                                                                            ),
+                                                                    Ctrl(
+                                                                        OP_BR(
+                                                                            0,
                                                                         ),
-                                                                        Ctrl(
-                                                                            OP_BR(
-                                                                                0,
-                                                                            ),
-                                                                        ),
-                                                                    ],
-                                                                ),
-                                                            ),
-                                                            Param(
-                                                                OP_DROP,
-                                                            ),
-                                                        ],
+                                                                    ),
+                                                                ],
+                                                            },
+                                                        ),
                                                     ),
-                                                ),
-                                            ],
+                                                    Ctrl(
+                                                        OP_BR(
+                                                            1,
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
+                                            CodeBlock {
+                                                id: 2,
+                                                instructions: [
+                                                    Ctrl(
+                                                        OP_BLOCK(
+                                                            Empty,
+                                                            CodeBlock {
+                                                                id: 1,
+                                                                instructions: [
+                                                                    Ctrl(
+                                                                        OP_BLOCK(
+                                                                            ValueType(
+                                                                                I32,
+                                                                            ),
+                                                                            CodeBlock {
+                                                                                id: 1,
+                                                                                instructions: [
+                                                                                    Num(
+                                                                                        OP_I32_CONST(
+                                                                                            1,
+                                                                                        ),
+                                                                                    ),
+                                                                                    Ctrl(
+                                                                                        OP_BR(
+                                                                                            0,
+                                                                                        ),
+                                                                                    ),
+                                                                                ],
+                                                                            },
+                                                                        ),
+                                                                    ),
+                                                                    Param(
+                                                                        OP_DROP,
+                                                                    ),
+                                                                ],
+                                                            },
+                                                        ),
+                                                    ),
+                                                ],
+                                            },
                                         ),
                                     ),
                                     Num(
@@ -522,62 +574,62 @@ Engine {
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+            1,
+            2,
+            3,
+            4,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "br_if0",
+                value: Function {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [],
-                    return_types: [
-                        I32,
-                    ],
+            },
+            ExportInstance {
+                name: "br_if1",
+                value: Function {
+                    ty: 1,
                 },
-            ],
-            funcaddrs: [
-                0,
-                1,
-                2,
-                3,
-                4,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "br_if0",
-                    value: Function {
-                        ty: 0,
-                    },
+            },
+            ExportInstance {
+                name: "br_if2",
+                value: Function {
+                    ty: 2,
                 },
-                ExportInstance {
-                    name: "br_if1",
-                    value: Function {
-                        ty: 1,
-                    },
+            },
+            ExportInstance {
+                name: "br_if3",
+                value: Function {
+                    ty: 3,
                 },
-                ExportInstance {
-                    name: "br_if2",
-                    value: Function {
-                        ty: 2,
-                    },
+            },
+            ExportInstance {
+                name: "br",
+                value: Function {
+                    ty: 4,
                 },
-                ExportInstance {
-                    name: "br_if3",
-                    value: Function {
-                        ty: 3,
-                    },
-                },
-                ExportInstance {
-                    name: "br",
-                    value: Function {
-                        ty: 4,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -612,332 +664,359 @@ Engine {
                                 ValueType(
                                     I32,
                                 ),
-                                [
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            Empty,
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            ValueType(
-                                                I32,
-                                            ),
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        4,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            0,
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_BR_IF(
-                                            0,
-                                        ),
-                                    ),
-                                    Param(
-                                        OP_DROP,
-                                    ),
-                                    Var(
-                                        OP_LOCAL_GET(
-                                            0,
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            8,
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_OR,
-                                    ),
-                                    Var(
-                                        OP_LOCAL_SET(
-                                            0,
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            ValueType(
-                                                I32,
-                                            ),
-                                            [
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        16,
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_OR,
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            1,
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_BR_IF(
-                                            0,
-                                        ),
-                                    ),
-                                    Param(
-                                        OP_DROP,
-                                    ),
-                                    Var(
-                                        OP_LOCAL_GET(
-                                            0,
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            32,
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_OR,
-                                    ),
-                                    Var(
-                                        OP_LOCAL_SET(
-                                            0,
-                                        ),
-                                    ),
-                                    Var(
-                                        OP_LOCAL_GET(
-                                            0,
-                                        ),
-                                    ),
-                                ],
-                            ),
-                        ),
-                    ],
-                },
-            },
-            FuncInstance {
-                ty: FunctionSignature {
-                    param_types: [],
-                    return_types: [
-                        I32,
-                    ],
-                },
-                code: FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            ValueType(
-                                                I32,
-                                            ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
-                                        ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            1,
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_BR_IF(
-                                            0,
-                                        ),
-                                    ),
-                                    Param(
-                                        OP_DROP,
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            0,
-                                        ),
-                                    ),
-                                ],
-                            ),
-                        ),
-                    ],
-                },
-            },
-            FuncInstance {
-                ty: FunctionSignature {
-                    param_types: [],
-                    return_types: [
-                        I32,
-                    ],
-                },
-                code: FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
-                                    Num(
-                                        OP_I32_CONST(
-                                            1,
-                                        ),
-                                    ),
-                                    Ctrl(
-                                        OP_IF(
-                                            Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        ValueType(
-                                                            I32,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                0,
+                                                            ),
                                                         ),
-                                                        [
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    1,
-                                                                ),
+                                                        Ctrl(
+                                                            OP_BR_IF(
+                                                                0,
                                                             ),
-                                                            Ctrl(
-                                                                OP_BR(
-                                                                    0,
-                                                                ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
                                                             ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR_IF(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Param(
-                                                    OP_DROP,
-                                                ),
-                                            ],
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_OR,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR_IF(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                2,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_OR,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            0,
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                4,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_OR,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                        Num(
+                                            OP_I32_CONST(
+                                                0,
+                                            ),
+                                        ),
+                                        Ctrl(
+                                            OP_BR_IF(
+                                                0,
+                                            ),
+                                        ),
+                                        Param(
+                                            OP_DROP,
+                                        ),
+                                        Var(
+                                            OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                8,
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_OR,
+                                        ),
+                                        Var(
+                                            OP_LOCAL_SET(
+                                                0,
+                                            ),
+                                        ),
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                16,
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_OR,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                1,
+                                            ),
+                                        ),
+                                        Ctrl(
+                                            OP_BR_IF(
+                                                0,
+                                            ),
+                                        ),
+                                        Param(
+                                            OP_DROP,
+                                        ),
+                                        Var(
+                                            OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                32,
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_OR,
+                                        ),
+                                        Var(
+                                            OP_LOCAL_SET(
+                                                0,
+                                            ),
+                                        ),
+                                        Var(
+                                            OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_BLOCK(
+                                ValueType(
+                                    I32,
+                                ),
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                1,
+                                            ),
+                                        ),
+                                        Ctrl(
+                                            OP_BR_IF(
+                                                0,
+                                            ),
+                                        ),
+                                        Param(
+                                            OP_DROP,
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                0,
+                                            ),
+                                        ),
+                                    ],
+                                },
+                            ),
+                        ),
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        Ctrl(
+                            OP_BLOCK(
+                                ValueType(
+                                    I32,
+                                ),
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Num(
+                                            OP_I32_CONST(
+                                                1,
+                                            ),
+                                        ),
+                                        Ctrl(
+                                            OP_IF(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Ctrl(
+                                                            OP_BLOCK(
+                                                                ValueType(
+                                                                    I32,
+                                                                ),
+                                                                CodeBlock {
+                                                                    id: 1,
+                                                                    instructions: [
+                                                                        Num(
+                                                                            OP_I32_CONST(
+                                                                                1,
+                                                                            ),
+                                                                        ),
+                                                                        Ctrl(
+                                                                            OP_BR(
+                                                                                0,
+                                                                            ),
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        ),
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR_IF(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Param(
+                                                            OP_DROP,
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
+                                        ),
+                                        Num(
+                                            OP_I32_CONST(
+                                                0,
+                                            ),
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                     ],
@@ -963,69 +1042,78 @@ Engine {
                                 ValueType(
                                     I32,
                                 ),
-                                [
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            ValueType(
-                                                I32,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
                                             ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        1,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
                                         ),
-                                    ),
-                                    Ctrl(
-                                        OP_BLOCK(
-                                            ValueType(
-                                                I32,
+                                        Ctrl(
+                                            OP_BLOCK(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                2,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
                                             ),
-                                            [
-                                                Num(
-                                                    OP_I32_CONST(
-                                                        2,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_SET(
-                                                        0,
-                                                    ),
-                                                ),
-                                                Var(
-                                                    OP_LOCAL_GET(
-                                                        0,
-                                                    ),
-                                                ),
-                                            ],
                                         ),
-                                    ),
-                                    Ctrl(
-                                        OP_BR_IF(
-                                            0,
+                                        Ctrl(
+                                            OP_BR_IF(
+                                                0,
+                                            ),
                                         ),
-                                    ),
-                                    Param(
-                                        OP_DROP,
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            0,
+                                        Param(
+                                            OP_DROP,
                                         ),
-                                    ),
-                                ],
+                                        Num(
+                                            OP_I32_CONST(
+                                                0,
+                                            ),
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         Num(
@@ -1062,52 +1150,28 @@ Engine {
                                 ValueType(
                                     I32,
                                 ),
-                                [
-                                    Num(
-                                        OP_I32_CONST(
-                                            1,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Num(
+                                            OP_I32_CONST(
+                                                1,
+                                            ),
                                         ),
-                                    ),
-                                    Ctrl(
-                                        OP_IF_AND_ELSE(
-                                            Empty,
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        ValueType(
-                                                            I32,
-                                                        ),
-                                                        [
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    1,
+                                        Ctrl(
+                                            OP_IF_AND_ELSE(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        Ctrl(
+                                                            OP_BLOCK(
+                                                                ValueType(
+                                                                    I32,
                                                                 ),
-                                                            ),
-                                                            Ctrl(
-                                                                OP_BR(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    ),
-                                                ),
-                                                Ctrl(
-                                                    OP_BR(
-                                                        1,
-                                                    ),
-                                                ),
-                                            ],
-                                            [
-                                                Ctrl(
-                                                    OP_BLOCK(
-                                                        Empty,
-                                                        [
-                                                            Ctrl(
-                                                                OP_BLOCK(
-                                                                    ValueType(
-                                                                        I32,
-                                                                    ),
-                                                                    [
+                                                                CodeBlock {
+                                                                    id: 1,
+                                                                    instructions: [
                                                                         Num(
                                                                             OP_I32_CONST(
                                                                                 1,
@@ -1119,23 +1183,65 @@ Engine {
                                                                             ),
                                                                         ),
                                                                     ],
-                                                                ),
+                                                                },
                                                             ),
-                                                            Param(
-                                                                OP_DROP,
+                                                        ),
+                                                        Ctrl(
+                                                            OP_BR(
+                                                                1,
                                                             ),
-                                                        ],
-                                                    ),
-                                                ),
-                                            ],
+                                                        ),
+                                                    ],
+                                                },
+                                                CodeBlock {
+                                                    id: 2,
+                                                    instructions: [
+                                                        Ctrl(
+                                                            OP_BLOCK(
+                                                                Empty,
+                                                                CodeBlock {
+                                                                    id: 1,
+                                                                    instructions: [
+                                                                        Ctrl(
+                                                                            OP_BLOCK(
+                                                                                ValueType(
+                                                                                    I32,
+                                                                                ),
+                                                                                CodeBlock {
+                                                                                    id: 1,
+                                                                                    instructions: [
+                                                                                        Num(
+                                                                                            OP_I32_CONST(
+                                                                                                1,
+                                                                                            ),
+                                                                                        ),
+                                                                                        Ctrl(
+                                                                                            OP_BR(
+                                                                                                0,
+                                                                                            ),
+                                                                                        ),
+                                                                                    ],
+                                                                                },
+                                                                            ),
+                                                                        ),
+                                                                        Param(
+                                                                            OP_DROP,
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                },
+                                            ),
                                         ),
-                                    ),
-                                    Num(
-                                        OP_I32_CONST(
-                                            1,
+                                        Num(
+                                            OP_I32_CONST(
+                                                1,
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                    ],
+                                },
                             ),
                         ),
                     ],

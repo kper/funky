@@ -3,136 +3,137 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [
-                        LocalEntry {
-                            count: 1,
-                            ty: I64,
-                        },
-                    ],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I64,
+                    },
+                ],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                3,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            3,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                    ),
+                    Num(
+                        OP_I64_EXTEND_I32_U,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            4,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                4,
-                            ),
+                    ),
+                    Num(
+                        OP_I64_EXTEND_I32_U,
+                    ),
+                    Num(
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                    ),
+                    Num(
+                        OP_I64_SHL,
+                    ),
+                    Num(
+                        OP_I64_OR,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
+                    ),
+                    Num(
+                        OP_I64_EXTEND_I32_U,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            2,
                         ),
-                        Num(
-                            OP_I64_SHL,
+                    ),
+                    Num(
+                        OP_I64_EXTEND_I32_U,
+                    ),
+                    Num(
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_OR,
+                    ),
+                    Num(
+                        OP_I64_SHL,
+                    ),
+                    Num(
+                        OP_I64_OR,
+                    ),
+                    Num(
+                        OP_I64_ADD,
+                    ),
+                    Var(
+                        OP_LOCAL_TEE(
+                            5,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                    ),
+                    Mem(
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                2,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            5,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                    ),
+                    Num(
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
+                    ),
+                    Num(
+                        OP_I64_SHR_U,
+                    ),
+                    Mem(
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 4,
+                            },
                         ),
-                        Num(
-                            OP_I64_SHL,
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Num(
-                            OP_I64_OR,
-                        ),
-                        Num(
-                            OP_I64_ADD,
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                5,
-                            ),
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                5,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_SHR_U,
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 4,
-                                },
-                            ),
-                        ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                        Num(
-                            OP_I32_EQZ,
-                        ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [
+                    ),
+                    Num(
+                        OP_I32_EQZ,
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Num(
                                         OP_I32_CONST(
                                             0,
@@ -142,76 +143,79 @@ Engine {
                                         OP_RETURN,
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Ctrl(
-                            OP_LOOP(
-                                Empty,
-                                [
+                    ),
+                    Ctrl(
+                        OP_LOOP(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_BR(
                                             0,
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Ctrl(
-                            OP_UNREACHABLE,
-                        ),
-                    ],
+                    ),
+                    Ctrl(
+                        OP_UNREACHABLE,
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                    I32,
+                    I32,
+                    I32,
+                    I32,
+                ],
+                return_types: [],
+            },
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+            1,
+        ],
+        tableaddrs: [],
+        memaddrs: [
+            0,
+        ],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "memory",
+                value: Memory {
+                    ty: 0,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                        I32,
-                        I32,
-                        I32,
-                        I32,
-                    ],
-                    return_types: [],
+            },
+            ExportInstance {
+                name: "block",
+                value: Function {
+                    ty: 0,
                 },
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
+            },
+            ExportInstance {
+                name: "my_loop",
+                value: Function {
+                    ty: 1,
                 },
-            ],
-            funcaddrs: [
-                0,
-                1,
-            ],
-            tableaddrs: [],
-            memaddrs: [
-                0,
-            ],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "memory",
-                    value: Memory {
-                        ty: 0,
-                    },
-                },
-                ExportInstance {
-                    name: "block",
-                    value: Function {
-                        ty: 0,
-                    },
-                },
-                ExportInstance {
-                    name: "my_loop",
-                    value: Function {
-                        ty: 1,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -362,28 +366,34 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [
-                                    Num(
-                                        OP_I32_CONST(
-                                            0,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Num(
+                                            OP_I32_CONST(
+                                                0,
+                                            ),
                                         ),
-                                    ),
-                                    Ctrl(
-                                        OP_RETURN,
-                                    ),
-                                ],
+                                        Ctrl(
+                                            OP_RETURN,
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         Ctrl(
                             OP_LOOP(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_BR(
-                                            0,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_BR(
+                                                0,
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                    ],
+                                },
                             ),
                         ),
                         Ctrl(

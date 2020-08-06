@@ -3,173 +3,198 @@ source: src/tests.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
-    module: RefCell {
-        value: ModuleInstance {
-            start: 0,
-            code: [
-                FunctionBody {
-                    locals: [],
-                    code: [],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [],
-                            ),
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [],
+                            },
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [],
-                            ),
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [],
+                            },
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [],
-                            ),
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [],
+                            },
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [],
-                            ),
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [],
+                            },
                         ),
-                    ],
-                },
-                FunctionBody {
-                    locals: [],
-                    code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF(
-                                Empty,
-                                [
+                    ),
+                    Ctrl(
+                        OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_NOP,
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF_AND_ELSE(
-                                Empty,
-                                [
+                    ),
+                    Ctrl(
+                        OP_IF_AND_ELSE(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Ctrl(
                                         OP_NOP,
                                     ),
                                 ],
-                                [
+                            },
+                            CodeBlock {
+                                id: 2,
+                                instructions: [
                                     Ctrl(
                                         OP_NOP,
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Ctrl(
-                            OP_IF_AND_ELSE(
-                                ValueType(
-                                    I32,
-                                ),
-                                [
+                    ),
+                    Ctrl(
+                        OP_IF_AND_ELSE(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
                                     Num(
                                         OP_I32_CONST(
                                             7,
                                         ),
                                     ),
                                 ],
-                                [
+                            },
+                            CodeBlock {
+                                id: 2,
+                                instructions: [
                                     Num(
                                         OP_I32_CONST(
                                             8,
                                         ),
                                     ),
                                 ],
-                            ),
+                            },
                         ),
-                    ],
+                    ),
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [],
+                return_types: [],
+            },
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [],
+            },
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+            1,
+            2,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "empty",
+                value: Function {
+                    ty: 1,
                 },
-            ],
-            fn_types: [
-                FunctionSignature {
-                    param_types: [],
-                    return_types: [],
+            },
+            ExportInstance {
+                name: "singular",
+                value: Function {
+                    ty: 2,
                 },
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [],
-                },
-                FunctionSignature {
-                    param_types: [
-                        I32,
-                    ],
-                    return_types: [
-                        I32,
-                    ],
-                },
-            ],
-            funcaddrs: [
-                0,
-                1,
-                2,
-            ],
-            tableaddrs: [],
-            memaddrs: [],
-            globaladdrs: [],
-            exports: [
-                ExportInstance {
-                    name: "empty",
-                    value: Function {
-                        ty: 1,
-                    },
-                },
-                ExportInstance {
-                    name: "singular",
-                    value: Function {
-                        ty: 2,
-                    },
-                },
-            ],
-        },
+            },
+        ],
     },
     started: false,
     store: Store {
@@ -202,7 +227,10 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [],
+                                },
                             ),
                         ),
                         Var(
@@ -213,7 +241,10 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [],
+                                },
                             ),
                         ),
                         Var(
@@ -224,7 +255,10 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [],
+                                },
                             ),
                         ),
                         Var(
@@ -235,7 +269,10 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [],
+                                },
                             ),
                         ),
                     ],
@@ -261,11 +298,14 @@ Engine {
                         Ctrl(
                             OP_IF(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_NOP,
-                                    ),
-                                ],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_NOP,
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         Var(
@@ -276,16 +316,22 @@ Engine {
                         Ctrl(
                             OP_IF_AND_ELSE(
                                 Empty,
-                                [
-                                    Ctrl(
-                                        OP_NOP,
-                                    ),
-                                ],
-                                [
-                                    Ctrl(
-                                        OP_NOP,
-                                    ),
-                                ],
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_NOP,
+                                        ),
+                                    ],
+                                },
+                                CodeBlock {
+                                    id: 2,
+                                    instructions: [
+                                        Ctrl(
+                                            OP_NOP,
+                                        ),
+                                    ],
+                                },
                             ),
                         ),
                         Var(
@@ -298,20 +344,26 @@ Engine {
                                 ValueType(
                                     I32,
                                 ),
-                                [
-                                    Num(
-                                        OP_I32_CONST(
-                                            7,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        Num(
+                                            OP_I32_CONST(
+                                                7,
+                                            ),
                                         ),
-                                    ),
-                                ],
-                                [
-                                    Num(
-                                        OP_I32_CONST(
-                                            8,
+                                    ],
+                                },
+                                CodeBlock {
+                                    id: 2,
+                                    instructions: [
+                                        Num(
+                                            OP_I32_CONST(
+                                                8,
+                                            ),
                                         ),
-                                    ),
-                                ],
+                                    ],
+                                },
                             ),
                         ),
                     ],
