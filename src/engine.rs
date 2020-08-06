@@ -343,11 +343,11 @@ fn nearest(v: Value) -> Value {
             let fract = v1.fract().abs();
 
             let round = v1.round();
-            if fract != 0.5 {
+            if (fract - 0.5).abs() > f32::EPSILON {
                 F32(round)
-            } else if round.rem(2.0) == 1.0 {
+            } else if (round.rem(2.0) - 1.0).abs() < f32::EPSILON {
                 F32(v1.floor())
-            } else if round.rem(2.0) == -1.0 {
+            } else if (round.rem(2.0) - -1.0).abs() < f32::EPSILON {
                 F32(v1.ceil())
             } else {
                 F32(round)
@@ -357,17 +357,17 @@ fn nearest(v: Value) -> Value {
             let fract = v1.fract().abs();
 
             let round = v1.round();
-            if fract == 0.5 {
+            if (fract - 0.5).abs() > f64::EPSILON {
                 F64(round)
-            } else if round.rem(2.0) == 1.0 {
+            } else if (round.rem(2.0) - 1.0).abs() < f64::EPSILON {
                 F64(v1.floor())
-            } else if round.rem(2.0) == -1.0 {
+            } else if (round.rem(2.0) - -1.0).abs() < f64::EPSILON {
                 F64(v1.ceil())
             } else {
                 F64(round)
             }
         }
-        _ => panic!("Type mismatch during round"),
+        _ => panic!("Type mismatch during nearest"),
     }
 }
 
