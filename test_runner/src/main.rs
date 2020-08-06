@@ -281,49 +281,65 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                     continue;
                 }
 
-                let result = engine.store.stack.last();
+                // Get the actual results based on the count how many results we expect
+                let actuals: Vec<_> = engine
+                    .store
+                    .stack
+                    .iter()
+                    .rev()
+                    .take(expected.len())
+                    .collect();
 
-                let actual_result = match result {
-                    Some(StackContent::Value(v)) => Some(v),
-                    _ => {
-                        report_fail(
-                            &mut report_file,
-                            &mut case_file,
-                            &case,
-                            p,
-                            expected,
-                            ExecutionResult::NotCompareable,
-                        );
+                if !actuals.iter().all(|x| x.is_value()) {
+                    report_fail(
+                        &mut report_file,
+                        &mut case_file,
+                        &case,
+                        p,
+                        expected,
+                        ExecutionResult::NotCompareable,
+                    );
 
-                        error!("Executed function did not return a value");
+                    error!("Executed function did not return a value");
 
-                        continue;
-                    }
-                };
+                    continue;
+                }
 
-                debug!("Actual {:?}", actual_result);
+                let actuals: Vec<_> = actuals
+                    .into_iter()
+                    .filter_map(|w| match w {
+                        StackContent::Value(v) => Some(v),
+                        _ => { None }
+                    })
+                    .rev()
+                    .collect();
 
-                /*
-                let do_match = match expected.get(0) {
-                    Some(r1) => *r1 == *r2,
-                    Some(Value::F32(f)) => f.is_nan() &&
-                    None => result.is_none(),
-                };
-                */
+                debug!("Actual {:?}", actuals);
 
-                let do_match = match (actual_result, expected.get(0)) {
-                    (Some(Value::F32(f1)), Some(Value::F32(f2))) if f1.is_nan() && f2.is_nan() => {
-                        true
-                    }
-                    (Some(Value::F64(f1)), Some(Value::F64(f2))) if f1.is_nan() && f2.is_nan() => {
-                        true
-                    }
-                    (Some(f1), Some(f2)) => f1 == f2,
-                    (None, None) => true,
-                    _ => false,
-                };
+                assert!(actuals.len() == expected.len());
 
-                if do_match {
+                let mut total_do_match = true;
+                for i in 0..actuals.len() {
+                    let do_match = match (actuals.get(i), expected.get(i)) {
+                        (Some(Value::F32(f1)), Some(Value::F32(f2)))
+                            if f1.is_nan() && f2.is_nan() =>
+                        {
+                            true
+                        }
+                        (Some(Value::F64(f1)), Some(Value::F64(f2)))
+                            if f1.is_nan() && f2.is_nan() =>
+                        {
+                            true
+                        }
+                        (Some(f1), Some(f2)) => *f1 == f2,
+                        (None, None) => true,
+                        _ => false,
+                    };
+
+                    total_do_match &= do_match;
+                }
+
+                if total_do_match {
                     reported_ok += 1;
                     total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
@@ -334,7 +350,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                         &case,
                         p,
                         expected,
-                        ExecutionResult::Value(actual_result.unwrap()),
+                        ExecutionResult::Values(actuals),
                     );
                 }
             }
@@ -382,7 +398,7 @@ fn draw_args(v: Vec<Value>) -> String {
 }
 
 enum ExecutionResult<'a> {
-    Value(&'a Value),
+    Values(Vec<&'a Value>),
     NotCompareable,
 }
 
@@ -402,7 +418,7 @@ fn report_fail(
         .unwrap();
 
     match result {
-        ExecutionResult::Value(result) => {
+        ExecutionResult::Values(result) => {
             case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}\n\n", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
         }
 
