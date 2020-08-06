@@ -250,14 +250,58 @@ pub enum Instruction {
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct Counter {
+    value: usize,
+}
+
+impl Counter {
+    pub fn new() -> Counter {
+        Self {
+            value: 0,
+        }
+    }
+
+    fn inc(&mut self) {
+        self.value += 1;
+    }
+
+    pub fn get_value(&mut self) -> usize {
+        self.inc();
+        self.value
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct CodeBlock {
+    id: usize,
+    instructions: Vec<Instruction>,
+}
+
+impl CodeBlock {
+    pub fn new(counter: &mut Counter, instructions: Vec<Instruction>) -> Self {
+        Self {
+            id: counter.get_value(),
+            instructions,
+        }
+    }
+
+    pub fn with(id: usize, instructions: Vec<Instruction>) -> Self {
+        Self {
+            id,
+            instructions,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum CtrlInstructions {
     OP_UNREACHABLE,
     OP_NOP,
-    OP_BLOCK(BlockType, Vec<Instruction>),
-    OP_LOOP(BlockType, Vec<Instruction>),
-    OP_IF(BlockType, Vec<Instruction>),
-    OP_IF_AND_ELSE(BlockType, Vec<Instruction>, Vec<Instruction>),
+    OP_BLOCK(BlockType, CodeBlock),
+    OP_LOOP(BlockType, CodeBlock),
+    OP_IF(BlockType, CodeBlock),
+    OP_IF_AND_ELSE(BlockType, CodeBlock, CodeBlock),
     OP_BR(LabelIdx),    //label_id
     OP_BR_IF(LabelIdx), //label_id
     OP_BR_TABLE(Vec<LabelIdx>, LabelIdx),

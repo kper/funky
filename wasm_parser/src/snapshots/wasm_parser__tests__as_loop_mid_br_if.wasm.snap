@@ -55,38 +55,44 @@ Module {
                             Ctrl(
                                 OP_BLOCK(
                                     Empty,
-                                    [
-                                        Ctrl(
-                                            OP_LOOP(
-                                                Empty,
-                                                [
-                                                    Ctrl(
-                                                        OP_CALL(
-                                                            0,
-                                                        ),
-                                                    ),
-                                                    Var(
-                                                        OP_LOCAL_GET(
-                                                            0,
-                                                        ),
-                                                    ),
-                                                    Ctrl(
-                                                        OP_BR_IF(
-                                                            1,
-                                                        ),
-                                                    ),
-                                                    Num(
-                                                        OP_I32_CONST(
-                                                            2,
-                                                        ),
-                                                    ),
-                                                    Ctrl(
-                                                        OP_RETURN,
-                                                    ),
-                                                ],
+                                    CodeBlock {
+                                        id: 1,
+                                        instructions: [
+                                            Ctrl(
+                                                OP_LOOP(
+                                                    Empty,
+                                                    CodeBlock {
+                                                        id: 1,
+                                                        instructions: [
+                                                            Ctrl(
+                                                                OP_CALL(
+                                                                    0,
+                                                                ),
+                                                            ),
+                                                            Var(
+                                                                OP_LOCAL_GET(
+                                                                    0,
+                                                                ),
+                                                            ),
+                                                            Ctrl(
+                                                                OP_BR_IF(
+                                                                    1,
+                                                                ),
+                                                            ),
+                                                            Num(
+                                                                OP_I32_CONST(
+                                                                    2,
+                                                                ),
+                                                            ),
+                                                            Ctrl(
+                                                                OP_RETURN,
+                                                            ),
+                                                        ],
+                                                    },
+                                                ),
                                             ),
-                                        ),
-                                    ],
+                                        ],
+                                    },
                                 ),
                             ),
                             Num(

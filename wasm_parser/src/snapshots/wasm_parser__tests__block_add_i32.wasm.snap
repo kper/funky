@@ -37,21 +37,24 @@ Module {
                                     ValueType(
                                         I32,
                                     ),
-                                    [
-                                        Var(
-                                            OP_LOCAL_GET(
-                                                0,
+                                    CodeBlock {
+                                        id: 1,
+                                        instructions: [
+                                            Var(
+                                                OP_LOCAL_GET(
+                                                    0,
+                                                ),
                                             ),
-                                        ),
-                                        Var(
-                                            OP_LOCAL_GET(
-                                                1,
+                                            Var(
+                                                OP_LOCAL_GET(
+                                                    1,
+                                                ),
                                             ),
-                                        ),
-                                        Num(
-                                            OP_I32_ADD,
-                                        ),
-                                    ],
+                                            Num(
+                                                OP_I32_ADD,
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                         ],

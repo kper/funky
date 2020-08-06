@@ -199,28 +199,34 @@ Module {
                             Ctrl(
                                 OP_IF(
                                     Empty,
-                                    [
-                                        Num(
-                                            OP_I32_CONST(
-                                                0,
+                                    CodeBlock {
+                                        id: 1,
+                                        instructions: [
+                                            Num(
+                                                OP_I32_CONST(
+                                                    0,
+                                                ),
                                             ),
-                                        ),
-                                        Ctrl(
-                                            OP_RETURN,
-                                        ),
-                                    ],
+                                            Ctrl(
+                                                OP_RETURN,
+                                            ),
+                                        ],
+                                    },
                                 ),
                             ),
                             Ctrl(
                                 OP_LOOP(
                                     Empty,
-                                    [
-                                        Ctrl(
-                                            OP_BR(
-                                                0,
+                                    CodeBlock {
+                                        id: 1,
+                                        instructions: [
+                                            Ctrl(
+                                                OP_BR(
+                                                    0,
+                                                ),
                                             ),
-                                        ),
-                                    ],
+                                        ],
+                                    },
                                 ),
                             ),
                             Ctrl(

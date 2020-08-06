@@ -16,12 +16,14 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     debug!("HEAD {:x?}", instr);
     debug!("i {:x?}", i);
 
+    let mut counter = Counter::new();
+
     let (i, expr) = match instr[0] {
         0x00 => (i, Instruction::Ctrl(CtrlInstructions::OP_UNREACHABLE)),
         0x01 => (i, Instruction::Ctrl(CtrlInstructions::OP_NOP)),
-        0x02 => take_block(i)?,
-        0x03 => take_loop(i)?,
-        0x04 => take_conditional(i)?,
+        0x02 => take_block(i, &mut counter)?,
+        0x03 => take_loop(i, &mut counter)?,
+        0x04 => take_conditional(i, &mut counter)?,
         0x0C => take_br(i)?,
         0x0D => take_br_if(i)?,
         0x0E => take_br_table(i)?,
@@ -410,7 +412,7 @@ pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
     Ok((i, expr))
 }
 
-fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
+fn take_block<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8], Instruction> {
     let (mut i, block_ty) = take_blocktype(i)?;
 
     //let (i, instructions) = take_expr(i)?;
@@ -433,12 +435,15 @@ fn take_block(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(block_ty, instructions));
+    let block = Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+        block_ty,
+        CodeBlock::new(counter, instructions),
+    ));
 
     Ok((i, block))
 }
 
-fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
+fn take_loop<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8], Instruction> {
     let (mut i, block_ty) = take_blocktype(i)?;
 
     let mut instructions = Vec::new();
@@ -460,12 +465,18 @@ fn take_loop(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(block_ty, instructions));
+    let block = Instruction::Ctrl(CtrlInstructions::OP_LOOP(
+        block_ty,
+        CodeBlock::new(counter, instructions),
+    ));
 
     Ok((i, block))
 }
 
-fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
+fn take_conditional<'a, 'b>(
+    i: &'b [u8],
+    counter: &'a mut Counter,
+) -> IResult<&'b [u8], Instruction> {
     debug!("take_conditional");
 
     //unreachable!("not correctly implemented!");
@@ -490,9 +501,6 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
     let (mut i, k) = take(1u8)(i)?; //0x0B or 0x05
 
     if k == END_IF_BLOCK {
-        //let (mut i, x) = take(1u8)(i)?; //0x05
-        //assert_eq!(x, END_IF_BLOCK);
-
         //THIS IS THE ELSE BLOCK
         loop {
             let (_, k) = take(1u8)(i)?; //0x0B
@@ -513,15 +521,18 @@ fn take_conditional(i: &[u8]) -> IResult<&[u8], Instruction> {
             i,
             Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 blockty,
-                instructions,
-                else_instructions,
+                CodeBlock::new(counter, instructions),
+                CodeBlock::new(counter, else_instructions),
             )),
         ));
     }
 
     Ok((
         i,
-        Instruction::Ctrl(CtrlInstructions::OP_IF(blockty, instructions)),
+        Instruction::Ctrl(CtrlInstructions::OP_IF(
+            blockty,
+            CodeBlock::new(counter, instructions),
+        )),
     ))
 }
 
@@ -599,17 +610,19 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_block(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
         assert_eq!(
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                vec![
+                CodeBlock::with(0, vec![
                     Instruction::Ctrl(CtrlInstructions::OP_NOP),
                     Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ]
+                ])
             ))
         );
     }
@@ -625,7 +638,9 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_block(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
         assert_eq!(0, instructions.0.len());
 
@@ -633,10 +648,13 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::ValueType(ValueType::F64),
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ]
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                    ]
+                )
             ))
         );
     }
@@ -653,7 +671,9 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_block(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
         assert_eq!(0, instructions.0.len());
 
@@ -661,10 +681,13 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::ValueTypeTy(-128),
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ]
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                    ]
+                )
             ))
         );
     }
@@ -683,22 +706,27 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_block(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
         assert_eq!(
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
-                        BlockType::Empty,
-                        vec![Instruction::Ctrl(CtrlInstructions::OP_NOP),]
-                    )),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                ]
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                            BlockType::Empty,
+                            CodeBlock::with(1, vec![Instruction::Ctrl(CtrlInstructions::OP_NOP),])
+                        )),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                    ]
+                )
             ))
         );
     }
@@ -716,20 +744,28 @@ mod test {
         payload.push(0x0B); //end
         payload.push(0x0B); //end
 
-        let instructions = take_block(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
         assert_eq!(
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                 BlockType::Empty,
-                vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
-                    BlockType::Empty,
+                CodeBlock::with(
+                    0,
                     vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
                         BlockType::Empty,
-                        vec![]
+                        CodeBlock::with(
+                            1,
+                            vec![Instruction::Ctrl(CtrlInstructions::OP_BLOCK(
+                                BlockType::Empty,
+                                CodeBlock::with(2, vec![])
+                            ))]
+                        )
                     ))]
-                ))]
+                )
             ))
         );
     }
@@ -745,7 +781,9 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_conditional(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_conditional(&payload, &mut counter).unwrap();
 
         //debug!("{:?}", instructions);
         assert!(instructions.0 != [11]);
@@ -754,10 +792,13 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_IF(
                 BlockType::Empty,
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ]
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                    ]
+                )
             ))
         );
     }
@@ -774,7 +815,9 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_conditional(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_conditional(&payload, &mut counter).unwrap();
 
         //debug!("{:?}", instructions);
         assert!(instructions.0 != [11]);
@@ -783,8 +826,8 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_IF_AND_ELSE(
                 BlockType::Empty,
-                vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)],
-                vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)]
+                CodeBlock::with(0, vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)]),
+                CodeBlock::with(1, vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)])
             ))
         );
     }
@@ -798,7 +841,9 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let instructions = take_loop(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_loop(&payload, &mut counter).unwrap();
 
         assert!(instructions.0 != [11]);
 
@@ -806,10 +851,13 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_LOOP(
                 BlockType::Empty,
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                ],
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                    ]
+                ),
             ))
         );
     }
@@ -828,7 +876,9 @@ mod test {
         payload.push(0x0B); //end
         payload.push(0x0B); //end
 
-        let instructions = take_loop(&payload).unwrap();
+        let mut counter = Counter::new();
+
+        let instructions = take_loop(&payload, &mut counter).unwrap();
 
         assert!(instructions.0 != [11]);
 
@@ -836,17 +886,23 @@ mod test {
             instructions.1,
             Instruction::Ctrl(CtrlInstructions::OP_LOOP(
                 BlockType::Empty,
-                vec![
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                    Instruction::Ctrl(CtrlInstructions::OP_LOOP(
-                        BlockType::Empty,
-                        vec![
-                            Instruction::Ctrl(CtrlInstructions::OP_NOP),
-                            Instruction::Ctrl(CtrlInstructions::OP_NOP)
-                        ],
-                    ))
-                ],
+                CodeBlock::with(
+                    0,
+                    vec![
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                        Instruction::Ctrl(CtrlInstructions::OP_LOOP(
+                            BlockType::Empty,
+                            CodeBlock::with(
+                                1,
+                                vec![
+                                    Instruction::Ctrl(CtrlInstructions::OP_NOP),
+                                    Instruction::Ctrl(CtrlInstructions::OP_NOP)
+                                ]
+                            ),
+                        ))
+                    ]
+                ),
             ))
         );
     }
