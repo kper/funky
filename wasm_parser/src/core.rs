@@ -273,8 +273,8 @@ impl Counter {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CodeBlock {
-    id: usize,
-    instructions: Vec<Instruction>,
+    pub id: usize,
+    pub instructions: Vec<Instruction>,
 }
 
 impl CodeBlock {
