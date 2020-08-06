@@ -426,6 +426,12 @@ fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<usize, ()> {
     Ok(new_length / PAGE_SIZE)
 }
 
+struct Record<'a, 'b> {
+    frame: &'a mut Frame,
+    /// iterator of instructions to execute
+    block: Box<dyn std::iter::Iterator<Item = &'b Instruction>>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
@@ -928,14 +934,21 @@ impl Engine {
         debug!("Running function {:?}", idx);
 
         //FIXME this `.clone` is extremly expensive!!!
-        let f = &self.module.borrow().code[idx as usize].clone();
+        let f = &self.module.borrow().code[idx as usize];
 
         let mut fr = self.get_frame()?;
 
         debug!("frame {:#?}", fr);
 
         let instructions = &f.code;
-        self.run_instructions(&mut fr, &mut instructions.iter())?;
+
+        let record = Record {
+            frame: &mut fr,
+            block: Box::new(instructions.iter()),
+        };
+
+        //self.run_instructions(&mut fr, &mut instructions.iter())?;
+        self.run_instructions(record)?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -973,11 +986,15 @@ impl Engine {
     }
 
     #[allow(clippy::cognitive_complexity)]
-    fn run_instructions<'a>(
+    fn run_instructions(
         &mut self,
-        fr: &mut Frame,
-        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
+        record: Record<'_, 'static>,
+        //fr: &mut Frame,
+        //instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome> {
+        let fr = record.frame;
+        let instructions = record.block;
+
         let mut ip = 0;
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
@@ -1584,7 +1601,13 @@ impl Engine {
                     };
 
                     self.store.stack.push(StackContent::Label(label));
-                    let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
+
+                    let record = Record {
+                            frame: fr,
+                            block: Box::new(block_instructions.iter()),
+                        };
+
+                    let outcome = self.run_instructions(record)?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1612,7 +1635,12 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
+                        let record = Record {
+                            frame: fr,
+                            block: Box::new(block_instructions.iter()),
+                        };
+
+                        let outcome = self.run_instructions(record)?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1652,8 +1680,13 @@ impl Engine {
                             };
 
                             self.store.stack.push(StackContent::Label(label));
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
+
+                            let record = Record {
+                                frame: fr,
+                                block: Box::new(block_instructions_branch.iter()),
+                            };
+
+                            let outcome = self.run_instructions(record)?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1694,8 +1727,12 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
+                            let record = Record {
+                                frame: fr,
+                                block: Box::new(block_instructions_branch_1.iter()),
+                            };
+
+                            let outcome = self.run_instructions(record)?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1711,8 +1748,12 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
+                            let record = Record {
+                                frame: fr,
+                                block: Box::new(block_instructions_branch_2.iter()),
+                            };
+
+                            let outcome = self.run_instructions(record)?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
