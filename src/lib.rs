@@ -12,9 +12,6 @@ pub use wasm_parser::read_wasm;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod spec_unit_tests;
-
 use engine::*;
 
 #[allow(dead_code)]

@@ -1,5 +1,5 @@
 ---
-source: src/tests.rs
+source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
@@ -14,13 +14,18 @@ Engine {
                             0,
                         ),
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            1,
+                    Num(
+                        OP_I64_CONST(
+                            -1000,
                         ),
                     ),
-                    Num(
-                        OP_I32_ADD,
+                    Mem(
+                        OP_I64_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
+                        ),
                     ),
                 ],
             },
@@ -29,22 +34,27 @@ Engine {
             FunctionSignature {
                 param_types: [
                     I32,
-                    I32,
                 ],
-                return_types: [
-                    I32,
-                ],
+                return_types: [],
             },
         ],
         funcaddrs: [
             0,
         ],
         tableaddrs: [],
-        memaddrs: [],
+        memaddrs: [
+            0,
+        ],
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "add",
+                name: "memory",
+                value: Memory {
+                    ty: 0,
+                },
+            },
+            ExportInstance {
+                name: "is_greater",
                 value: Function {
                     ty: 0,
                 },
@@ -58,11 +68,8 @@ Engine {
                 ty: FunctionSignature {
                     param_types: [
                         I32,
-                        I32,
                     ],
-                    return_types: [
-                        I32,
-                    ],
+                    return_types: [],
                 },
                 code: FunctionBody {
                     locals: [],
@@ -72,20 +79,30 @@ Engine {
                                 0,
                             ),
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
+                        Num(
+                            OP_I64_CONST(
+                                -1000,
                             ),
                         ),
-                        Num(
-                            OP_I32_ADD,
+                        Mem(
+                            OP_I64_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
                         ),
                     ],
                 },
             },
         ],
         tables: [],
-        memory: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
         stack: [],
         globals: [],
     },

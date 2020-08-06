@@ -1,5 +1,5 @@
 ---
-source: src/tests.rs
+source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
@@ -9,23 +9,13 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            42,
-                        ),
-                    ),
-                ],
-            },
-            FunctionBody {
-                locals: [],
-                code: [
-                    Ctrl(
-                        OP_CALL(
+                    Var(
+                        OP_LOCAL_GET(
                             0,
                         ),
                     ),
-                    Num(
-                        OP_I32_CONST(
+                    Var(
+                        OP_LOCAL_GET(
                             1,
                         ),
                     ),
@@ -37,7 +27,10 @@ Engine {
         ],
         fn_types: [
             FunctionSignature {
-                param_types: [],
+                param_types: [
+                    I32,
+                    I32,
+                ],
                 return_types: [
                     I32,
                 ],
@@ -45,16 +38,23 @@ Engine {
         ],
         funcaddrs: [
             0,
-            1,
         ],
         tableaddrs: [],
-        memaddrs: [],
+        memaddrs: [
+            0,
+        ],
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "getAnswerPlus1",
+                name: "memory",
+                value: Memory {
+                    ty: 0,
+                },
+            },
+            ExportInstance {
+                name: "add",
                 value: Function {
-                    ty: 1,
+                    ty: 0,
                 },
             },
         ],
@@ -64,7 +64,10 @@ Engine {
         funcs: [
             FuncInstance {
                 ty: FunctionSignature {
-                    param_types: [],
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
                     return_types: [
                         I32,
                     ],
@@ -72,31 +75,13 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                42,
-                            ),
-                        ),
-                    ],
-                },
-            },
-            FuncInstance {
-                ty: FunctionSignature {
-                    param_types: [],
-                    return_types: [
-                        I32,
-                    ],
-                },
-                code: FunctionBody {
-                    locals: [],
-                    code: [
-                        Ctrl(
-                            OP_CALL(
+                        Var(
+                            OP_LOCAL_GET(
                                 0,
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
+                        Var(
+                            OP_LOCAL_GET(
                                 1,
                             ),
                         ),
@@ -108,7 +93,12 @@ Engine {
             },
         ],
         tables: [],
-        memory: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
         stack: [],
         globals: [],
     },

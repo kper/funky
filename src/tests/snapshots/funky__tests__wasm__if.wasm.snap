@@ -1,5 +1,5 @@
 ---
-source: src/tests.rs
+source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {

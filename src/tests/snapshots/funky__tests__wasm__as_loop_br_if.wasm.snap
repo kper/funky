@@ -1,15 +1,11 @@
 ---
-source: src/tests.rs
+source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module: ModuleInstance {
         start: 0,
         code: [
-            FunctionBody {
-                locals: [],
-                code: [],
-            },
             FunctionBody {
                 locals: [],
                 code: [
@@ -25,11 +21,6 @@ Engine {
                                             CodeBlock {
                                                 id: 1,
                                                 instructions: [
-                                                    Ctrl(
-                                                        OP_CALL(
-                                                            0,
-                                                        ),
-                                                    ),
                                                     Var(
                                                         OP_LOCAL_GET(
                                                             0,
@@ -58,17 +49,13 @@ Engine {
                     ),
                     Num(
                         OP_I32_CONST(
-                            4,
+                            3,
                         ),
                     ),
                 ],
             },
         ],
         fn_types: [
-            FunctionSignature {
-                param_types: [],
-                return_types: [],
-            },
             FunctionSignature {
                 param_types: [
                     I32,
@@ -80,16 +67,15 @@ Engine {
         ],
         funcaddrs: [
             0,
-            1,
         ],
         tableaddrs: [],
         memaddrs: [],
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "as-loop-mid",
+                name: "as-loop-first",
                 value: Function {
-                    ty: 1,
+                    ty: 0,
                 },
             },
         ],
@@ -97,16 +83,6 @@ Engine {
     started: false,
     store: Store {
         funcs: [
-            FuncInstance {
-                ty: FunctionSignature {
-                    param_types: [],
-                    return_types: [],
-                },
-                code: FunctionBody {
-                    locals: [],
-                    code: [],
-                },
-            },
             FuncInstance {
                 ty: FunctionSignature {
                     param_types: [
@@ -131,11 +107,6 @@ Engine {
                                                 CodeBlock {
                                                     id: 1,
                                                     instructions: [
-                                                        Ctrl(
-                                                            OP_CALL(
-                                                                0,
-                                                            ),
-                                                        ),
                                                         Var(
                                                             OP_LOCAL_GET(
                                                                 0,
@@ -164,7 +135,7 @@ Engine {
                         ),
                         Num(
                             OP_I32_CONST(
-                                4,
+                                3,
                             ),
                         ),
                     ],

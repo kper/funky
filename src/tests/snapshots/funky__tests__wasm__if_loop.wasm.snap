@@ -1,5 +1,5 @@
 ---
-source: src/tests.rs
+source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
@@ -7,10 +7,46 @@ Engine {
         start: 0,
         code: [
             FunctionBody {
-                locals: [],
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I32,
+                    },
+                ],
                 code: [
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
+                        ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
+                        ),
+                    ),
+                    Num(
+                        OP_I32_MUL,
+                    ),
+                    Num(
+                        OP_I32_CONST(
+                            0,
+                        ),
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
+                        ),
+                    ),
+                    Param(
+                        OP_SELECT,
+                    ),
+                    Var(
+                        OP_LOCAL_GET(
+                            0,
+                        ),
+                    ),
                     Ctrl(
-                        OP_BLOCK(
+                        OP_IF(
                             Empty,
                             CodeBlock {
                                 id: 1,
@@ -26,18 +62,23 @@ Engine {
                                                             0,
                                                         ),
                                                     ),
-                                                    Ctrl(
-                                                        OP_BR_IF(
-                                                            1,
+                                                    Num(
+                                                        OP_I32_CONST(
+                                                            -1,
                                                         ),
                                                     ),
                                                     Num(
-                                                        OP_I32_CONST(
-                                                            2,
+                                                        OP_I32_ADD,
+                                                    ),
+                                                    Var(
+                                                        OP_LOCAL_TEE(
+                                                            0,
                                                         ),
                                                     ),
                                                     Ctrl(
-                                                        OP_RETURN,
+                                                        OP_BR_IF(
+                                                            0,
+                                                        ),
                                                     ),
                                                 ],
                                             },
@@ -45,11 +86,6 @@ Engine {
                                     ),
                                 ],
                             },
-                        ),
-                    ),
-                    Num(
-                        OP_I32_CONST(
-                            3,
                         ),
                     ),
                 ],
@@ -69,11 +105,19 @@ Engine {
             0,
         ],
         tableaddrs: [],
-        memaddrs: [],
+        memaddrs: [
+            0,
+        ],
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "as-loop-first",
+                name: "memory",
+                value: Memory {
+                    ty: 0,
+                },
+            },
+            ExportInstance {
+                name: "my_loop",
                 value: Function {
                     ty: 0,
                 },
@@ -93,10 +137,46 @@ Engine {
                     ],
                 },
                 code: FunctionBody {
-                    locals: [],
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I32,
+                        },
+                    ],
                     code: [
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Num(
+                            OP_I32_MUL,
+                        ),
+                        Num(
+                            OP_I32_CONST(
+                                0,
+                            ),
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
+                        Param(
+                            OP_SELECT,
+                        ),
+                        Var(
+                            OP_LOCAL_GET(
+                                0,
+                            ),
+                        ),
                         Ctrl(
-                            OP_BLOCK(
+                            OP_IF(
                                 Empty,
                                 CodeBlock {
                                     id: 1,
@@ -112,18 +192,23 @@ Engine {
                                                                 0,
                                                             ),
                                                         ),
-                                                        Ctrl(
-                                                            OP_BR_IF(
-                                                                1,
+                                                        Num(
+                                                            OP_I32_CONST(
+                                                                -1,
                                                             ),
                                                         ),
                                                         Num(
-                                                            OP_I32_CONST(
-                                                                2,
+                                                            OP_I32_ADD,
+                                                        ),
+                                                        Var(
+                                                            OP_LOCAL_TEE(
+                                                                0,
                                                             ),
                                                         ),
                                                         Ctrl(
-                                                            OP_RETURN,
+                                                            OP_BR_IF(
+                                                                0,
+                                                            ),
                                                         ),
                                                     ],
                                                 },
@@ -133,17 +218,17 @@ Engine {
                                 },
                             ),
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                3,
-                            ),
-                        ),
                     ],
                 },
             },
         ],
         tables: [],
-        memory: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
         stack: [],
         globals: [],
     },
