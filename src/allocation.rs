@@ -6,7 +6,7 @@ use wasm_parser::Module;
 
 pub fn allocate(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate");
@@ -55,7 +55,7 @@ fn get_extern_values_in_imports<'a>(m: &'a Module) -> Result<Vec<&'a ImportDesc>
 
 fn allocate_functions(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate function");
@@ -68,7 +68,8 @@ fn allocate_functions(
     debug!("functions extracted {:#?}", ty);
 
     //let rc = Rc::new(mod_instance);
-    let _weak = Rc::downgrade(mod_instance);
+    //let _weak = Rc::downgrade(mod_instance);
+
     for (code_index, t) in ty.iter().enumerate() {
         debug!("Function {:#?}", t);
         // Allocate function
@@ -111,7 +112,7 @@ fn allocate_functions(
 
 fn allocate_tables(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate tables");
@@ -147,7 +148,7 @@ fn allocate_tables(
 
 fn allocate_memories(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate memories");
@@ -182,7 +183,7 @@ fn allocate_memories(
 
 fn allocate_globals(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate globals");
@@ -214,7 +215,7 @@ fn allocate_globals(
 
 fn allocate_exports(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &mut ModuleInstance,
     _store: &mut Store,
 ) -> Result<(), ()> {
     debug!("allocate exports");

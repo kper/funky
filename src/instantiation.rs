@@ -11,7 +11,7 @@ type StartFunctionAddr = u32;
 /// Returns the addr of the start function, which needs to be invoked
 pub fn instantiation(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &ModuleInstance,
     store: &mut Store,
 ) -> Result<Option<StartFunctionAddr>> {
     // Step 1
@@ -64,7 +64,7 @@ pub fn instantiation(
 
 fn instantiate_elements(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &ModuleInstance,
     store: &mut Store,
 ) -> Result<()> {
     debug!("instantiate elements");
@@ -121,7 +121,7 @@ fn instantiate_elements(
 
 fn instantiate_data(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &ModuleInstance,
     store: &mut Store,
 ) -> Result<()> {
     debug!("instantiate elements");
@@ -171,7 +171,7 @@ fn instantiate_data(
 
 fn instantiate_start(
     m: &Module,
-    mod_instance: &Rc<RefCell<ModuleInstance>>,
+    mod_instance: &ModuleInstance,
     store: &mut Store,
 ) -> Result<Option<u32>> {
     debug!("instantiate start");
