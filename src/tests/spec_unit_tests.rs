@@ -143,3 +143,21 @@ fn test_as_mixed_operands() {
         e.store.stack.pop()
     );
 }
+
+#[test]
+fn test_type_local_i64() {
+    env_logger::init();
+
+    let mut engine = construct_engine!(
+        vec![Var(OP_LOCAL_GET(0))],
+        vec![ValueType::I64],
+        vec![ValueType::I64]
+    );
+
+    engine.invoke_exported_function(0, vec![]);
+
+    assert_eq!(
+        Some(StackContent::Value(Value::I64(0))),
+        engine.store.stack.pop()
+    );
+}

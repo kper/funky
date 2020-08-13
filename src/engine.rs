@@ -1,6 +1,6 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, Context};
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use wasm_parser::core::CtrlInstructions::*;
@@ -717,7 +717,7 @@ macro_rules! convert {
     ($self:expr, $val:ident, $from_ctr:ident, $to_ctr:ident, $to:ident) => {
         match $val {
             $from_ctr(i) => $self.store.stack.push(Value($to_ctr(i as $to))),
-            x => panic!("Expected $from_ctr on stack but found {:?}", x),
+            x => return Err(anyhow!("Expected $from_ctr on stack but found {:?}", x)),
         }
     };
     ($self:expr, $val:ident, $from_ctr:ident, $to_ctr:ident, $to:ident, $intermediate:ident) => {
@@ -726,7 +726,7 @@ macro_rules! convert {
                 .store
                 .stack
                 .push(Value($to_ctr(i as $intermediate as $to))),
-            x => panic!("Expected $from_ctr on stack but found {:?}", x),
+            x => return Err(anyhow!("Expected $from_ctr on stack but found {:?}", x)),
         }
     };
 }
@@ -792,14 +792,14 @@ impl Engine {
 
         if let Some(func_addr) = start_function {
             debug!("Invoking start function with {:?}", func_addr);
-            self.invoke_function(func_addr, vec![]);
+            self.invoke_function(func_addr, vec![])?;
         }
 
         Ok(())
     }
 
     /// Take only exported functions into consideration
-    pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) {
+    pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
         debug!("invoke_exported_function {:?}", idx);
         let k = {
             let x = &self.module;
@@ -822,14 +822,16 @@ impl Engine {
                     .module
                     .funcaddrs
                     .get(ty as usize)
-                    .expect("Function not found");
+                    .ok_or_else(|| anyhow!("Function not found"))?;
 
-                self.invoke_function(func_addr, args);
+                self.invoke_function(func_addr, args)?;
             }
             _ => {
-                panic!("Exported function not found");
+                return Err(anyhow!("Exported function not found"));
             }
         }
+
+        Ok(())
     }
 
     pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
@@ -839,12 +841,12 @@ impl Engine {
             .iter()
             .position(|e| e.name == name)
             .expect("Function not found");
-        self.invoke_exported_function(idx as u32, args);
+        self.invoke_exported_function(idx as u32, args)?;
 
         Ok(())
     }
 
-    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) {
+    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
         self.check_parameters_of_function(idx, &args);
 
         let t = &self.store.funcs[idx as usize].ty;
@@ -868,7 +870,10 @@ impl Engine {
         trace!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
-        self.run_function(idx).expect("run function failed");
+        self.run_function(idx)
+            .with_context(|| format!("Function with id {} failed", idx))?;
+
+        Ok(())
     }
 
     fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<()> {
@@ -979,9 +984,17 @@ impl Engine {
             debug!("Evaluating instruction {:?}", instruction);
             match &instruction {
                 Var(OP_LOCAL_GET(idx)) => {
-                    self.store.stack.push(Value(fr.locals[*idx as usize]));
-                    debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
-                    debug!("locals {:#?}", fr.locals);
+                    if let Some(val) = fr.locals.get(*idx as usize) {
+                        self.store.stack.push(Value(val.clone()));
+                        debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
+                        debug!("locals {:#?}", fr.locals);
+                    } else {
+                        return Err(anyhow!(
+                            "Trying to access locals ({}), but out of bounds (length {})",
+                            idx,
+                            fr.locals.len()
+                        ));
+                    }
                 }
                 Var(OP_LOCAL_SET(idx)) => {
                     self.local_set(idx, fr)?;
@@ -1781,7 +1794,7 @@ impl Engine {
                         .map(Engine::map_stackcontent_to_value)
                         .collect::<Result<_>>()?;
 
-                    self.invoke_function(*idx, args);
+                    self.invoke_function(*idx, args)?;
                 }
                 Ctrl(OP_CALL_INDIRECT(idx)) => {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
@@ -1822,7 +1835,7 @@ impl Engine {
                                 .map(Engine::map_stackcontent_to_value)
                                 .collect::<Result<_>>()?;
 
-                            self.invoke_function(a as u32, args);
+                            self.invoke_function(a as u32, args)?;
                         }
                         None => panic!("Table not initilized at index {}", i),
                     }
