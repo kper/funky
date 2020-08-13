@@ -939,9 +939,11 @@ impl Engine {
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
 
+        debug!("Stack before function return {:#?}", self.store.stack);
+
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
-            trace!("Popping {:?}", self.store.stack.last());
+            debug!("Popping {:?}", self.store.stack.last());
             match self.store.stack.pop() {
                 Some(Value(v)) => ret.push(Value(v)),
                 Some(x) => {
@@ -950,21 +952,16 @@ impl Engine {
                 None => {} //None => panic!("Unexpected empty stack!"),
             }
         }
+
         debug!("Popping frames");
         while let Some(Frame(_)) = self.store.stack.last() {
-            debug!("Popping {:?}", self.store.stack.last());
+            debug!("Removing {:?}", self.store.stack.last());
             self.store.stack.pop();
         }
 
-        /*
-        debug!("Popping labels");
-        while let Some(Label(_)) = self.store.stack.last() {
-            debug!("Pop label");
-            self.store.stack.pop();
+        while let Some(val) = ret.pop() {
+            self.store.stack.push(val);
         }
-        */
-
-        self.store.stack.append(&mut ret);
 
         debug!("Stack after function return {:#?}", self.store.stack);
 

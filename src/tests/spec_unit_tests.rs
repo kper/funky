@@ -81,11 +81,13 @@ fn test_f32_nearest_minus_1() {
 fn test_as_mixed_operands() {
     use wasm_parser::core::CtrlInstructions::*;
     use wasm_parser::core::Instruction::*;
-    use wasm_parser::core::MemoryInstructions::*;
+    //use wasm_parser::core::MemoryInstructions::*;
     use wasm_parser::core::NumericInstructions::*;
-    use wasm_parser::core::ParamInstructions::*;
+    //use wasm_parser::core::ParamInstructions::*;
     use wasm_parser::core::VarInstructions::*;
     use wasm_parser::core::*;
+
+    //env_logger::init();
 
     let mut e = crate::empty_engine();
 
