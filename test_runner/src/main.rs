@@ -56,6 +56,10 @@ macro_rules! remove_test_results_with_ending {
 fn main() {
     env_logger::init();
 
+    let cmd_arguments: Vec<_> = std::env::args().collect();
+
+    debug!("Cmd arguments {:?}", cmd_arguments);
+
     remove_file("./report.csv");
     //remove_file("./test_results/*.csv");
 
@@ -75,7 +79,7 @@ fn main() {
 
     let args = ::std::env::args().collect::<Vec<_>>();
 
-    assert!(args.len() <= 2); //only two arguments allowed
+    //assert!(args.len() <= 2); //only two arguments allowed
 
     let paths = match args.get(1) {
         // Get all files with .json
@@ -129,13 +133,15 @@ fn main() {
         let fancy_path = path.file_name().to_str().unwrap().to_string();
         let copy_path = fancy_path.clone();
 
+        let cmd_arguments = cmd_arguments.clone();
+
         let handler = std::thread::Builder::new()
             .stack_size(32 * 1024 * 1024 * 64) // some tests require large stack size
             .spawn(move || {
                 println!("--- Running {} ---", fancy_path);
 
                 // Running the spec test
-                let stdout = run_spec_test(&path, total_stat);
+                let stdout = run_spec_test(&path, total_stat, &cmd_arguments);
 
                 st.lock().unwrap().push(stdout);
 
@@ -184,7 +190,8 @@ fn main() {
     );
 }
 
-fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
+/// `cmd_arguments` are function name which we filter (just for `assert_return`)
+fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<String>) -> String {
     //let fs = File::open(path.path().to_str().unwrap()).unwrap();
     let h = path.path();
     let p = h.to_str().unwrap();
@@ -249,6 +256,19 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
             // Replace `current_engine` with next WASM module
             Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             Command::AssertReturn(case) => {
+
+                if cmd_arguments.len() > 2 {
+                    if cmd_arguments
+                        .iter()
+                        .filter(|x| x.contains(&case.action.field))
+                        .count()
+                        == 0
+                    {
+                        log::info!("Skipping {} because not matched", case.action.field);
+                        continue;
+                    }
+                }
+
                 counter += 1;
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
 
@@ -258,9 +278,12 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
 
                 let args = case.get_args();
 
-                println!("Running function {} with {:?}", case.action.field, case.action.args);
+                println!(
+                    "Running function {} with {:?}",
+                    case.action.field, case.action.args
+                );
 
-                if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args)
+                if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args.clone())
                 {
                     report_fail(
                         &mut report_file,
@@ -275,6 +298,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                 let expected = case.get_expected();
 
                 debug!("expected {:?}", expected);
+                debug!("arg into the engine {:?}", args);
+                debug!("store {:?}", engine.store.stack);
 
                 // If nothing is expected and no error occurred then ok
                 if expected.is_empty() {
@@ -312,7 +337,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                     .into_iter()
                     .filter_map(|w| match w {
                         StackContent::Value(v) => Some(v),
-                        _ => { None }
+                        _ => None,
                     })
                     .rev()
                     .collect();
