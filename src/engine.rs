@@ -418,7 +418,11 @@ fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<usize, ()> {
     let new_length = instance.data.len() + (n as usize) * PAGE_SIZE;
     debug!("Resize by {} bytes", new_length);
 
-    instance.data.resize(new_length, 0u8);
+    let extension = vec![0u8; (n as usize) * PAGE_SIZE];
+
+    instance.data.extend_from_slice(&extension);
+
+    //instance.data.resize(new_length, 0u8);
     //.resize(instance.data.len() + (n as usize) * PAGE_SIZE, 0u8);
 
     Ok(new_length / PAGE_SIZE)
