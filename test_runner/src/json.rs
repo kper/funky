@@ -105,7 +105,7 @@ impl AssertReturn {
 pub(crate) struct Action {
     pub field: String,
     #[serde(default = "Vec::new")]
-    args: Vec<Argument>,
+    pub args: Vec<Argument>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]

@@ -227,6 +227,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
             )
         });
 
+    // Saves the handler of the engine TODO better explaination
     for fs_name in fs_names {
         let reader = read_wasm!(&format!("testsuite/{}", fs_name));
         let module = parse(reader).unwrap();
@@ -256,6 +257,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>) -> String {
                     .borrow_mut();
 
                 let args = case.get_args();
+
+                println!("Running function {} with {:?}", case.action.field, case.action.args);
 
                 if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args)
                 {
