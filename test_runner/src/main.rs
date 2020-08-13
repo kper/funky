@@ -291,7 +291,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                         &case,
                         p,
                         vec![],
-                        ExecutionResult::NotCompareable,
+                        ExecutionResult::NotComparable,
                     );
                 }
 
@@ -325,7 +325,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                         &case,
                         p,
                         expected,
-                        ExecutionResult::NotCompareable,
+                        ExecutionResult::NotComparable,
                     );
 
                     error!("Executed function did not return a value");
@@ -427,7 +427,7 @@ fn draw_args(v: Vec<Value>) -> String {
 
 enum ExecutionResult<'a> {
     Values(Vec<&'a Value>),
-    NotCompareable,
+    NotComparable,
 }
 
 fn report_fail(
@@ -450,8 +450,8 @@ fn report_fail(
             case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}\n\n", case.action.field, args, case.line, expected, result ).as_bytes()).unwrap();
         }
 
-        ExecutionResult::NotCompareable => {
-            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}", case.action.field, args, case.line, expected, "not compareable" ).as_bytes()).unwrap();
+        ExecutionResult::NotComparable => {
+            case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}\n", case.action.field, args, case.line, expected, "not comparable" ).as_bytes()).unwrap();
         }
     }
 }
