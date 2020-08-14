@@ -127,9 +127,7 @@ impl From<Argument> for Value {
     fn from(e: Argument) -> Value {
         use log::debug;
 
-        debug!("Parsing Value {} {:?}", e.ty, e.value);
-
-        match e.ty.as_str() {
+        let w = match e.ty.as_str() {
             "i32" => Value::I32((e.value.parse::<u32>().unwrap()) as i32),
             "i64" => Value::I64((e.value.parse::<u64>().unwrap()) as i64),
             "f32" => {
@@ -164,7 +162,11 @@ impl From<Argument> for Value {
                 Value::F64(from_bits_f64(e.value.parse().unwrap()))
             }
             _ => panic!(""),
-        }
+        };
+
+        debug!("Parsing Value {} {:?} = {:?}", e.ty, e.value, w);
+
+        w
     }
 }
 

@@ -121,13 +121,11 @@ fn main() {
     let length = paths.len();
 
     // Percentage
-    let counter = Arc::new(AtomicUsize::new(0));
-
     let total_stat = Arc::new(Stats::default());
 
     for path in paths {
         let st = stdouts.clone();
-        let counter = counter.clone();
+        //let counter = counter.clone();
         let total_stat = total_stat.clone();
 
         let fancy_path = path.file_name().to_str().unwrap().to_string();
@@ -144,13 +142,6 @@ fn main() {
                 let stdout = run_spec_test(&path, total_stat, &cmd_arguments);
 
                 st.lock().unwrap().push(stdout);
-
-                // Adding 1 to total counter
-                counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-
-                // Reporting progress
-                let c = counter.load(std::sync::atomic::Ordering::Relaxed);
-                println!("Finished {:.2}%", c as f32 / length as f32 * 100.0);
             })
             .expect("Cannot spawn thread");
 
@@ -183,16 +174,19 @@ fn main() {
     println!("Total: {}", total);
     println!("Ok: {}", reported_ok);
     println!("Failed: {}", total - reported_ok);
-    println!("Ok %: {:#2}", reported_ok as f64 / total as f64);
+    println!("Ok %: {:#.2}", reported_ok as f64 / total as f64);
     println!(
-        "Failed %: {:#2}",
+        "Failed %: {:#.2}",
         (total - reported_ok) as f64 / total as f64
     );
 }
 
 /// `cmd_arguments` are function name which we filter (just for `assert_return`)
 fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<String>) -> String {
-    //let fs = File::open(path.path().to_str().unwrap()).unwrap();
+
+    let case_stats = Stats::default();
+
+
     let h = path.path();
     let p = h.to_str().unwrap();
     let mut buffer = read_to_string(p).unwrap();
@@ -249,8 +243,6 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
     }
 
     let mut current_engine = None;
-    let mut counter = 0;
-    let mut reported_ok = 0;
     for case in fs.get_cases() {
         match case {
             // Replace `current_engine` with next WASM module
@@ -269,8 +261,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                     }
                 }
 
-                counter += 1;
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
+                case_stats.total_count.fetch_add(1, Ordering::Relaxed);
 
                 let mut engine = current_engine
                     .expect("No WASM module was initialized")
@@ -303,8 +295,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
 
                 // If nothing is expected and no error occurred then ok
                 if expected.is_empty() {
-                    reported_ok += 1;
                     total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
+                    case_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                     continue;
                 }
@@ -368,8 +360,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                 }
 
                 if total_do_match {
-                    reported_ok += 1;
                     total_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
+                    case_stats.reported_ok.fetch_add(1, Ordering::Relaxed);
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                 } else {
                     report_fail(
@@ -389,9 +381,9 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
     println!(
         "Summary {} total {} where {} ok and {} failed",
         p,
-        counter,
-        reported_ok,
-        counter - reported_ok
+        case_stats.total_count.load(Ordering::Relaxed),
+        case_stats.reported_ok.load(Ordering::Relaxed),
+        case_stats.total_count.load(Ordering::Relaxed) - case_stats.reported_ok.load(Ordering::Relaxed)
     );
 
     "".to_string()
