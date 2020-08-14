@@ -1390,18 +1390,22 @@ impl Engine {
                     convert!(self, v, I32, F64, f64);
                 }
                 Num(OP_F32_CONVERT_I64_S) => {
+                    // Convert I64_S to F32
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F32, f32);
                 }
                 Num(OP_F64_CONVERT_I64_S) => {
+                    // Convert I64_S to F64
                     let v = fetch_unop!(self.store.stack);
-                    convert!(self, v, I64, F32, f32);
+                    convert!(self, v, I64, F64, f64);
                 }
                 Num(OP_F32_CONVERT_I32_U) => {
+                    // Convert I32_S to F32
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F32, f32, u32);
                 }
                 Num(OP_F64_CONVERT_I32_U) => {
+                    // Convert I32_S to F64
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F64, f64, u32);
                 }

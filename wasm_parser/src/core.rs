@@ -489,8 +489,8 @@ pub enum NumericInstructions {
     OP_I64_TRUNC_F32_U,
     OP_I64_TRUNC_F64_S,
     OP_I64_TRUNC_F64_U,
-    OP_F32_CONVERT_I32_S,
-    OP_F32_CONVERT_I32_U,
+    OP_F32_CONVERT_I32_S, // Converts work opposite
+    OP_F32_CONVERT_I32_U, // convert I32_U to F32
     OP_F32_CONVERT_I64_S,
     OP_F32_CONVERT_I64_U,
     OP_F32_DEMOTE_F64,
