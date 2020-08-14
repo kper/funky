@@ -1,6 +1,6 @@
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
-use anyhow::{anyhow, Result, Context};
+use anyhow::{anyhow, Context, Result};
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use wasm_parser::core::CtrlInstructions::*;
@@ -373,8 +373,8 @@ fn reinterpret(v: Value) -> Value {
     match v {
         I32(k) => F32(f32::from_bits(k as u32)),
         I64(k) => F64(f64::from_bits(k as u64)),
-        F32(k) => I32(k as i32),
-        F64(k) => I64(k as i64),
+        F32(k) => I32(i32::from_le(k.to_bits() as i32)),
+        F64(k) => I64(i64::from_le(k.to_bits() as i64)),
     }
 }
 
