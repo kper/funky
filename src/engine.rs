@@ -371,8 +371,8 @@ fn nearest(v: Value) -> Value {
 
 fn reinterpret(v: Value) -> Value {
     match v {
-        I32(k) => F32(k as f32),
-        I64(k) => F64(k as f64),
+        I32(k) => F32(f32::from_bits(k as u32)),
+        I64(k) => F64(f64::from_bits(k as u64)),
         F32(k) => I32(k as i32),
         F64(k) => I64(k as i64),
     }
