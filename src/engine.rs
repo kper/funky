@@ -1415,7 +1415,7 @@ impl Engine {
                 }
                 Num(OP_F64_CONVERT_I64_U) => {
                     let v = fetch_unop!(self.store.stack);
-                    convert!(self, v, I64, F32, f32, u64);
+                    convert!(self, v, I64, F64, f64, u64);
                 }
                 Num(OP_I32_EXTEND8_S) => {
                     let v = fetch_unop!(self.store.stack);
