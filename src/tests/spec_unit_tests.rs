@@ -13,7 +13,9 @@ fn test_f32_add_minus_0_and_nan() {
         vec![ValueType::F32]
     );
 
-    engine.invoke_exported_function(0, vec![Value::F32(-0.0), Value::F32(f32::NAN)]);
+    engine
+        .invoke_exported_function(0, vec![Value::F32(-0.0), Value::F32(f32::NAN)])
+        .unwrap();
 
     if let Some(StackContent::Value(Value::F32(f1))) = engine.store.stack.pop() {
         assert!(f1.is_nan());
@@ -32,7 +34,9 @@ fn test_f32_min_minus_0_and_nan() {
         vec![ValueType::F32]
     );
 
-    engine.invoke_exported_function(0, vec![Value::F32(-0.0), Value::F32(f32::NAN)]);
+    engine
+        .invoke_exported_function(0, vec![Value::F32(-0.0), Value::F32(f32::NAN)])
+        .unwrap();
 
     if let Some(StackContent::Value(Value::F32(f1))) = engine.store.stack.pop() {
         assert!(f1.is_nan());
@@ -51,7 +55,9 @@ fn test_f32_nearest_minus_0point5() {
         vec![ValueType::F32]
     );
 
-    engine.invoke_exported_function(0, vec![Value::F32(-0.5)]);
+    engine
+        .invoke_exported_function(0, vec![Value::F32(-0.5)])
+        .unwrap();
 
     assert_eq!(
         Some(StackContent::Value(Value::F32(-0.0))),
@@ -69,7 +75,9 @@ fn test_f32_nearest_minus_1() {
         vec![ValueType::F32]
     );
 
-    engine.invoke_exported_function(0, vec![Value::F32(-1.0)]);
+    engine
+        .invoke_exported_function(0, vec![Value::F32(-1.0)])
+        .unwrap();
 
     assert_eq!(
         Some(StackContent::Value(Value::F32(-1.0))),
@@ -136,7 +144,7 @@ fn test_as_mixed_operands() {
         value: ExternalKindType::Function { ty: 0 },
     }];
 
-    e.invoke_exported_function(0, vec![]);
+    e.invoke_exported_function(0, vec![]).unwrap();
 
     assert_eq!(
         Some(StackContent::Value(Value::I32(32))),
@@ -145,19 +153,70 @@ fn test_as_mixed_operands() {
 }
 
 #[test]
-fn test_type_local_i64() {
+fn test_local_set_write() {
     env_logger::init();
 
+    use wasm_parser::core::ValueType::*;
+
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0))],
-        vec![ValueType::I64],
-        vec![ValueType::I64]
+        vec![
+            Num(OP_F32_CONST(-0.3)),
+            Var(OP_LOCAL_SET(1)),
+            Num(OP_I32_CONST(40)),
+            Var(OP_LOCAL_SET(3)),
+            Num(OP_I32_CONST(-7)),
+            Var(OP_LOCAL_SET(4)),
+            Num(OP_F32_CONST(5.5)),
+            Var(OP_LOCAL_SET(5)),
+            Num(OP_I64_CONST(6)),
+            Var(OP_LOCAL_SET(6)),
+            Num(OP_F64_CONST(8.0)),
+            Var(OP_LOCAL_SET(8)),
+            Var(OP_LOCAL_GET(0)),
+            Num(OP_F64_CONVERT_I64_U),
+            Var(OP_LOCAL_GET(1)),
+            Num(OP_F64_PROMOTE_F32),
+            Var(OP_LOCAL_GET(2)),
+            Var(OP_LOCAL_GET(3)),
+            Num(OP_F64_CONVERT_I32_U),
+            Var(OP_LOCAL_GET(4)),
+            Num(OP_F64_CONVERT_I32_S),
+            Var(OP_LOCAL_GET(5)),
+            Num(OP_F64_PROMOTE_F32),
+            Var(OP_LOCAL_GET(6)),
+            Num(OP_F64_CONVERT_I64_U),
+            Var(OP_LOCAL_GET(7)),
+            Num(OP_F64_CONVERT_I64_U),
+            Var(OP_LOCAL_GET(8)),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_F64_ADD),
+            Num(OP_I64_TRUNC_F64_S)
+        ],
+        vec![I64, F32, F64, I32, I32],
+        vec![I64]
     );
 
-    engine.invoke_exported_function(0, vec![]);
+    engine
+        .invoke_exported_function(
+            0,
+            vec![
+                Value::I64(1),
+                Value::F32(2.0),
+                Value::F64(3.3),
+                Value::I32(4),
+                Value::I32(5),
+            ],
+        )
+        .unwrap();
 
     assert_eq!(
-        Some(StackContent::Value(Value::I64(0))),
+        Some(StackContent::Value(Value::I64(56))),
         engine.store.stack.pop()
     );
 }

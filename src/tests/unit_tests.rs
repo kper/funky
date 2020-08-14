@@ -852,69 +852,6 @@ fn test_num_convert_u() {
 }
 
 #[test]
-fn test_num_reinterpret_i32() {
-    let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
-        arity: 1,
-        locals: vec![],
-        //module_instance: e.downgrade_mod_instance(),
-    })];
-    e.module.code = vec![FunctionBody {
-        locals: vec![],
-        code: vec![Num(OP_I32_CONST(-1)), Num(OP_I32_REINTERPRET_F32)],
-    }];
-    e.run_function(0).unwrap();
-    assert_eq!(StackContent::Value(F32(-1f32)), e.store.stack.pop().unwrap());
-}
-
-#[test]
-fn test_num_reinterpret_i64() {
-    let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
-        arity: 1,
-        locals: vec![],
-    })];
-    e.module.code = vec![FunctionBody {
-        locals: vec![],
-        code: vec![Num(OP_I64_CONST(-1)), Num(OP_I64_REINTERPRET_F64)],
-    }];
-    e.run_function(0).unwrap();
-    assert_eq!(StackContent::Value(F64(-1f64)), e.store.stack.pop().unwrap());
-}
-
-#[test]
-fn test_num_reinterpret_f32() {
-    let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
-        arity: 1,
-        locals: vec![],
-        ////module_instance: e.downgrade_mod_instance(),
-    })];
-    e.module.code = vec![FunctionBody {
-        locals: vec![],
-        code: vec![Num(OP_F32_CONST(1.01)), Num(OP_F32_REINTERPRET_I32)],
-    }];
-    e.run_function(0).unwrap();
-    assert_eq!(StackContent::Value(I32(1)), e.store.stack.pop().unwrap());
-}
-
-#[test]
-fn test_num_reinterpret_f64() {
-    let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
-        arity: 1,
-        locals: vec![],
-        //module_instance: e.downgrade_mod_instance(),
-    })];
-    e.module.code = vec![FunctionBody {
-        locals: vec![],
-        code: vec![Num(OP_F64_CONST(1.00001)), Num(OP_F64_REINTERPRET_I64)],
-    }];
-    e.run_function(0).unwrap();
-    assert_eq!(StackContent::Value(I64(1)), e.store.stack.pop().unwrap());
-}
-
-#[test]
 fn test_memory_grow() {
     let mut e = empty_engine();
     e.module.memaddrs.push(0);
