@@ -68,6 +68,20 @@ impl Value {
             _ => self,
         }
     }
+
+    pub fn is_f32(&self) -> bool {
+        match self {
+            Value::F32(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_f64(&self) -> bool {
+        match self {
+            Value::F64(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Add for Value {
@@ -267,8 +281,33 @@ macro_rules! impl_two_op_float_with_NAN {
     };
 }
 
-macro_rules! impl_trunc_sat {
-    ($bits:ident, $target:ident, $ret:ident, $fn:ident) => {
+macro_rules! impl_trunc_sat_u {
+    (@from $from_ty:ident @to $target:ident @but $cast:ident, $ret:ident, $fn:ident) => {
+        pub(crate) fn $fn(f: Value) -> Value {
+            let val = match f {
+                $from_ty(v) => v,
+                _ => panic!("Truncation only works on floats"),
+            };
+
+            if val.is_nan() {
+                return $ret(0);
+            }
+
+            if val.is_infinite() {
+                if val.is_sign_negative() {
+                    return $ret(0);
+                } else {
+                    return $ret($target::MAX as $cast);
+                }
+            }
+
+            return $ret(val.trunc() as $target as $cast);
+        }
+    };
+}
+
+macro_rules! impl_trunc_sat_s {
+    (@from $bits:ident @to $target:ident, $ret:ident, $fn:ident) => {
         pub(crate) fn $fn(f: Value) -> Value {
             let val = match f {
                 F32(v) => v as f64,
@@ -278,6 +317,7 @@ macro_rules! impl_trunc_sat {
             if val.is_nan() {
                 return $ret(0);
             }
+
             if val.is_infinite() {
                 if val.is_sign_negative() {
                     return $ret($bits::MIN as $target);
@@ -285,6 +325,7 @@ macro_rules! impl_trunc_sat {
                     return $ret($bits::MAX as $target);
                 }
             }
+
             if val < $bits::MIN as f64 {
                 return $ret($bits::MIN as $target);
             }
@@ -317,10 +358,12 @@ impl_one_op_float!(floor);
 impl_one_op_float!(sqrt);
 impl_one_op_float!(trunc);
 
-impl_trunc_sat!(i32, i32, I32, trunc_sat_i32_s);
-impl_trunc_sat!(i64, i64, I64, trunc_sat_i64_s);
-impl_trunc_sat!(u32, i32, I32, trunc_sat_i32_u);
-impl_trunc_sat!(u64, i64, I64, trunc_sat_i64_u);
+impl_trunc_sat_s!(@from i32 @to i32, I32, trunc_sat_i32_s);
+impl_trunc_sat_s!(@from i64 @to i64, I64, trunc_sat_i64_s);
+impl_trunc_sat_u!(@from F32 @to u32 @but i32, I32, trunc_sat_from_f32_to_i32_u);
+impl_trunc_sat_u!(@from F64 @to u32 @but i32, I32, trunc_sat_from_f64_to_i32_u);
+impl_trunc_sat_u!(@from F32 @to u64 @but i64, I64, trunc_sat_from_f32_to_i64_u);
+impl_trunc_sat_u!(@from F64 @to u64 @but i64, I64, trunc_sat_from_f64_to_i64_u);
 
 impl_two_op_float_with_NAN!(min, |left: f64, right: f64| left.min(right));
 impl_two_op_float_with_NAN!(max, |left: f64, right: f64| left.max(right));
@@ -1305,13 +1348,29 @@ impl Engine {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(trunc_sat_i64_s(v1)))
                 }
-                Num(OP_I32_TRUNC_SAT_F32_U) | Num(OP_I32_TRUNC_SAT_F64_U) => {
+                Num(OP_I32_TRUNC_SAT_F32_U) => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trunc_sat_i32_u(v1)))
+                    self.store
+                        .stack
+                        .push(Value(trunc_sat_from_f32_to_i32_u(v1)))
                 }
-                Num(OP_I64_TRUNC_SAT_F32_U) | Num(OP_I64_TRUNC_SAT_F64_U) => {
+                Num(OP_I32_TRUNC_SAT_F64_U) => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trunc_sat_i64_u(v1)))
+                    self.store
+                        .stack
+                        .push(Value(trunc_sat_from_f64_to_i32_u(v1)))
+                }
+                Num(OP_I64_TRUNC_SAT_F32_U) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store
+                        .stack
+                        .push(Value(trunc_sat_from_f32_to_i64_u(v1)))
+                }
+                Num(OP_I64_TRUNC_SAT_F64_U) => {
+                    let v1 = fetch_unop!(self.store.stack);
+                    self.store
+                        .stack
+                        .push(Value(trunc_sat_from_f64_to_i64_u(v1)))
                 }
                 Num(OP_F32_NEAREST) | Num(OP_F64_NEAREST) => {
                     let v1 = fetch_unop!(self.store.stack);
