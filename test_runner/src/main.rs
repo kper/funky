@@ -174,9 +174,9 @@ fn main() {
     println!("Total: {}", total);
     println!("Ok: {}", reported_ok);
     println!("Failed: {}", total - reported_ok);
-    println!("Ok %: {:#.2}", reported_ok as f64 / total as f64);
+    println!("Ok %: {:#.4}", reported_ok as f64 / total as f64);
     println!(
-        "Failed %: {:#.2}",
+        "Failed %: {:#.4}",
         (total - reported_ok) as f64 / total as f64
     );
 }
