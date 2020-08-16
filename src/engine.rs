@@ -69,6 +69,15 @@ impl Value {
         }
     }
 
+    pub fn signum(&self) -> f32 {
+        match self {
+            Value::F32(k) => k.signum() as f32,
+            Value::F64(k) => k.signum() as f32,
+            Value::I32(k) => k.signum() as f32,
+            Value::I64(k) => k.signum() as f32,
+        }
+    }
+
     pub fn is_f32(&self) -> bool {
         match self {
             Value::F32(_) => true,
@@ -266,13 +275,21 @@ macro_rules! impl_one_op_float_closure {
     };
 }
 
-// Special behavior if one of operands are NAN then return NAN
-macro_rules! impl_two_op_float_with_NAN {
-    ($f:ident, $k:expr) => {
+macro_rules! impl_two_op_float {
+    ($f:ident, @nan $k:expr) => {
         fn $f(left: Value, right: Value) -> Value {
             match (left, right) {
                 (F32(v1), F32(v2)) if v1.is_nan() || v2.is_nan() => F32(f32::NAN),
                 (F64(v1), F64(v2)) if v1.is_nan() || v2.is_nan() => F64(f64::NAN),
+                (F32(v1), F32(v2)) => F32($k(v1.into(), v2.into()) as f32),
+                (F64(v1), F64(v2)) => F64($k(v1, v2) as f64),
+                _ => panic!("Type mismatch during {}", stringify!($f)),
+            }
+        }
+    };
+    ($f:ident, $k:expr) => {
+        fn $f(left: Value, right: Value) -> Value {
+            match (left, right) {
                 (F32(v1), F32(v2)) => F32($k(v1.into(), v2.into()) as f32),
                 (F64(v1), F64(v2)) => F64($k(v1, v2) as f64),
                 _ => panic!("Type mismatch during {}", stringify!($f)),
@@ -365,8 +382,10 @@ impl_trunc_sat_u!(@from F64 @to u32 @but i32, I32, trunc_sat_from_f64_to_i32_u);
 impl_trunc_sat_u!(@from F32 @to u64 @but i64, I64, trunc_sat_from_f32_to_i64_u);
 impl_trunc_sat_u!(@from F64 @to u64 @but i64, I64, trunc_sat_from_f64_to_i64_u);
 
-impl_two_op_float_with_NAN!(min, |left: f64, right: f64| left.min(right));
-impl_two_op_float_with_NAN!(max, |left: f64, right: f64| left.max(right));
+impl_two_op_float!(min, @nan |left: f64, right: f64| left.min(right));
+impl_two_op_float!(max, @nan |left: f64, right: f64| left.max(right));
+
+impl_two_op_float!(copysign, |left: f64, right: f64| right.copysign(left));
 
 fn eqz(left: Value) -> Value {
     match left {
@@ -1102,6 +1121,14 @@ impl Engine {
                 Num(OP_F64_CONST(v)) => {
                     debug!("OP_F64_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(F64(*v)))
+                }
+                Num(OP_F32_COPYSIGN) => {
+                    let (z1, z2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(copysign(z1, z2)))
+                }
+                Num(OP_F64_COPYSIGN) => {
+                    let (z1, z2) = fetch_binop!(self.store.stack);
+                    self.store.stack.push(Value(copysign(z1, z2)))
                 }
                 Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -1909,7 +1936,7 @@ impl Engine {
                 }
                 Ctrl(OP_NOP) => {}
                 Ctrl(OP_UNREACHABLE) => return Err(anyhow!("Reached unreachable => trap!")),
-                x => return Err(anyhow!("Instruction {:?} not implemented", x)),
+                //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
             ip += 1;
 

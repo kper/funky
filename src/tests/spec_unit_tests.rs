@@ -220,3 +220,21 @@ fn test_local_set_write() {
         engine.store.stack.pop()
     );
 }
+
+#[test]
+fn test_f32_copy_sign() {
+    let mut engine = construct_engine!(
+        vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_F32_COPYSIGN)],
+        vec![ValueType::F32, ValueType::F32],
+        vec![ValueType::F32]
+    );
+
+    engine
+        .invoke_exported_function(0, vec![Value::F32(-0.0), Value::F32(-0.0)])
+        .unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::F32(-0.0))),
+        engine.store.stack.pop()
+    );
+}
