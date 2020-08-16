@@ -886,19 +886,3 @@ fn test_memory_grow_with_max() {
     e.run_function(0).unwrap();
     assert_eq!(Some(&StackContent::Value(I32(-1))), e.store.stack.last());
 }
-
-#[test]
-fn test_trunc_sat() {
-    assert_eq!(I32(10), trunc_sat_i32_s(F32(10.0)));
-    assert_eq!(I32(0), trunc_sat_i32_s(F32(f32::NAN)));
-    assert_eq!(I32(i32::MAX), trunc_sat_i32_s(F32(f32::INFINITY)));
-    assert_eq!(I32(i32::MIN), trunc_sat_i32_s(F32(-f32::INFINITY)));
-
-    assert_eq!(I32(0), trunc_sat_i32_u(F32(-f32::INFINITY)));
-    assert_eq!(I32(u32::MAX as i32), trunc_sat_i32_u(F32(f32::INFINITY)));
-
-    assert_eq!(I32(0), trunc_sat_i32_u(F32(-2147483650.0)));
-    assert_eq!(I32(i32::MIN), trunc_sat_i32_s(F32(-2147483650.0)));
-    assert_eq!(I32(i32::MAX), trunc_sat_i32_s(F32(2147483650.0)));
-    assert_eq!(I32((i32::MIN + 1) * -1), trunc_sat_i32_u(F32(2147483650.0)));
-}
