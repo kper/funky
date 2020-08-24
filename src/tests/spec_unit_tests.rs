@@ -2,6 +2,7 @@
 /// failed in the `test_runner`.
 use crate::construct_engine;
 use crate::engine::*;
+use wasm_parser::core::ValueType;
 
 #[test]
 fn test_f32_add_minus_0_and_nan() {
@@ -265,6 +266,49 @@ fn test_memory_grow() {
 
     assert_eq!(
         Some(StackContent::Value(Value::I32(-1))),
+        engine.store.stack.pop()
+    );
+}
+
+#[test]
+fn test_br_return() {
+    env_logger::init();
+    let mut engine = construct_engine!(
+        vec![Ctrl(OP_BLOCK(
+            BlockType::ValueTypeTy(0),
+            CodeBlock::with(
+                0,
+                vec![
+                    Num(OP_F64_CONST(4.0)),
+                    Num(OP_F64_CONST(5.0)),
+                    Ctrl(OP_BR(0)),
+                    Num(OP_F64_ADD),
+                    Num(OP_F64_CONST(6.0))
+                ],
+            ),
+        )),],
+        vec![],
+        vec![ValueType::F64, ValueType::F64]
+    );
+
+    let index = engine
+        .module
+        .add_func_type(vec![ValueType::F64, ValueType::F64])
+        .unwrap();
+
+    assert_eq!(
+        index, 0,
+        "Please adjust the index in BlockType::ValueTypeTy with this value"
+    );
+
+    engine.invoke_exported_function(0, vec![]).unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::F64(4.0))),
+        engine.store.stack.pop()
+    );
+    assert_eq!(
+        Some(StackContent::Value(Value::F64(5.0))),
         engine.store.stack.pop()
     );
 }

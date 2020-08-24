@@ -183,9 +183,7 @@ fn main() {
 
 /// `cmd_arguments` are function name which we filter (just for `assert_return`)
 fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<String>) -> String {
-
     let case_stats = Stats::default();
-
 
     let h = path.path();
     let p = h.to_str().unwrap();
@@ -248,7 +246,6 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
             // Replace `current_engine` with next WASM module
             Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             Command::AssertReturn(case) => {
-
                 if cmd_arguments.len() > 2 {
                     if cmd_arguments
                         .iter()
@@ -275,7 +272,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                     case.action.field, case.action.args
                 );
 
-                if let Err(err) = engine.invoke_exported_function_by_name(&case.action.field, args.clone())
+                if let Err(err) =
+                    engine.invoke_exported_function_by_name(&case.action.field, args.clone())
                 {
                     report_fail(
                         &mut report_file,
@@ -383,7 +381,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
         p,
         case_stats.total_count.load(Ordering::Relaxed),
         case_stats.reported_ok.load(Ordering::Relaxed),
-        case_stats.total_count.load(Ordering::Relaxed) - case_stats.reported_ok.load(Ordering::Relaxed)
+        case_stats.total_count.load(Ordering::Relaxed)
+            - case_stats.reported_ok.load(Ordering::Relaxed)
     );
 
     "".to_string()

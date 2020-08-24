@@ -20,7 +20,7 @@ pub(crate) const PAGE_SIZE: usize = 65536;
 struct Page(usize);
 
 impl Page {
-    pub fn new(n : usize) -> Self {
+    pub fn new(n: usize) -> Self {
         Self(n)
     }
 
@@ -498,7 +498,7 @@ fn grow_memory(instance: &mut MemoryInstance, n: Page) -> Result<Page, ()> {
             return Err(());
         }
 
-               /*
+        /*
         if len / PAGE_SIZE + n > max as usize {
             error!("Memory growing failed. Limit exceded");
             return Err(());
@@ -846,6 +846,20 @@ impl ModuleInstance {
         }
 
         mi
+    }
+
+    /// Adding a new function type.
+    /// We need this function to test blocks, with multiple
+    /// return values.
+    pub(crate) fn add_func_type(&mut self, r: Vec<ValueType>) -> Result<usize> {
+        let instance = FunctionSignature {
+            param_types: vec![],
+            return_types: r,
+        };
+
+        self.fn_types.push(instance);
+
+        Ok(self.fn_types.len() - 1)
     }
 }
 
