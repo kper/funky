@@ -3,6 +3,7 @@
 use crate::construct_engine;
 use crate::engine::*;
 use wasm_parser::core::ValueType;
+use crate::value::Value;
 
 
 #[test]

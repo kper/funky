@@ -76,7 +76,7 @@ Module {
                             OP_BLOCK(
                                 Empty,
                                 CodeBlock {
-                                    id: 1,
+                                    id: 3,
                                     instructions: [
                                         OP_LOCAL_GET(
                                             0,
@@ -105,7 +105,7 @@ Module {
                                         OP_LOOP(
                                             Empty,
                                             CodeBlock {
-                                                id: 1,
+                                                id: 2,
                                                 instructions: [
                                                     OP_LOCAL_GET(
                                                         1,
@@ -186,7 +186,7 @@ Module {
                             OP_BLOCK(
                                 Empty,
                                 CodeBlock {
-                                    id: 1,
+                                    id: 6,
                                     instructions: [
                                         OP_LOCAL_GET(
                                             1,
@@ -195,7 +195,7 @@ Module {
                                         OP_IF(
                                             Empty,
                                             CodeBlock {
-                                                id: 1,
+                                                id: 4,
                                                 instructions: [
                                                     OP_LOCAL_GET(
                                                         0,
@@ -212,7 +212,7 @@ Module {
                                         OP_LOOP(
                                             Empty,
                                             CodeBlock {
-                                                id: 1,
+                                                id: 5,
                                                 instructions: [
                                                     OP_LOCAL_GET(
                                                         0,

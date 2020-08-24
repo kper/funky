@@ -9,21 +9,19 @@ use crate::{take_blocktype, take_f32, take_f64, take_leb_i32, take_leb_i64};
 const END_INSTR: &[u8] = &[0x0B];
 const END_IF_BLOCK: &[u8] = &[0x05];
 
-pub(crate) fn parse_instr(i: &[u8]) -> IResult<&[u8], Instruction> {
+pub(crate) fn parse_instr<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], Instruction> {
     debug!("parse_instr");
     debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
     debug!("HEAD {:x?}", instr);
     debug!("i {:x?}", i);
 
-    let mut counter = Counter::new();
-
     let (i, expr) = match instr[0] {
         0x00 => (i, Instruction::OP_UNREACHABLE),
         0x01 => (i, Instruction::OP_NOP),
-        0x02 => take_block(i, &mut counter)?,
-        0x03 => take_loop(i, &mut counter)?,
-        0x04 => take_conditional(i, &mut counter)?,
+        0x02 => take_block(i, counter)?,
+        0x03 => take_loop(i, counter)?,
+        0x04 => take_conditional(i, counter)?,
         0x0C => take_br(i)?,
         0x0D => take_br_if(i)?,
         0x0E => take_br_table(i)?,
@@ -425,7 +423,7 @@ fn take_block<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8]
             break;
         }
 
-        let (w, ii) = parse_instr(i)?;
+        let (w, ii) = parse_instr(i, counter)?;
         i = w;
         instructions.push(ii);
     }
@@ -455,7 +453,7 @@ fn take_loop<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8],
             break;
         }
 
-        let (w, ii) = parse_instr(i)?;
+        let (w, ii) = parse_instr(i, counter)?;
         i = w;
         instructions.push(ii);
     }
@@ -493,7 +491,7 @@ fn take_conditional<'a, 'b>(
             break;
         }
 
-        let (w, ii) = parse_instr(i)?;
+        let (w, ii) = parse_instr(i, counter)?;
         i = w;
         instructions.push(ii);
     }
@@ -509,7 +507,7 @@ fn take_conditional<'a, 'b>(
                 break;
             }
 
-            let (w, ii) = parse_instr(i)?;
+            let (w, ii) = parse_instr(i, counter)?;
             i = w;
             else_instructions.push(ii);
         }
@@ -619,7 +617,7 @@ mod test {
             instructions.1,
             Instruction::OP_BLOCK(
                 BlockType::Empty,
-                CodeBlock::with(0, vec![
+                CodeBlock::with(1, vec![
                     Instruction::OP_NOP,
                     Instruction::OP_NOP
                 ])
@@ -649,7 +647,7 @@ mod test {
             Instruction::OP_BLOCK(
                 BlockType::ValueType(ValueType::F64),
                 CodeBlock::with(
-                    0,
+                    1,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP
@@ -682,7 +680,7 @@ mod test {
             Instruction::OP_BLOCK(
                 BlockType::ValueTypeTy(-128),
                 CodeBlock::with(
-                    0,
+                    1,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP
@@ -716,7 +714,7 @@ mod test {
             Instruction::OP_BLOCK(
                 BlockType::Empty,
                 CodeBlock::with(
-                    0,
+                    2,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP,
@@ -754,14 +752,14 @@ mod test {
             Instruction::OP_BLOCK(
                 BlockType::Empty,
                 CodeBlock::with(
-                    0,
+                    3,
                     vec![Instruction::OP_BLOCK(
                         BlockType::Empty,
                         CodeBlock::with(
-                            1,
+                            2,
                             vec![Instruction::OP_BLOCK(
                                 BlockType::Empty,
-                                CodeBlock::with(2, vec![])
+                                CodeBlock::with(1, vec![])
                             )]
                         )
                     )]
@@ -793,7 +791,7 @@ mod test {
             Instruction::OP_IF(
                 BlockType::Empty,
                 CodeBlock::with(
-                    0,
+                    1,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP
@@ -826,8 +824,8 @@ mod test {
             instructions.1,
             Instruction::OP_IF_AND_ELSE(
                 BlockType::Empty,
-                CodeBlock::with(0, vec![Instruction::OP_NOP]),
-                CodeBlock::with(1, vec![Instruction::OP_NOP])
+                CodeBlock::with(1, vec![Instruction::OP_NOP]),
+                CodeBlock::with(2, vec![Instruction::OP_NOP])
             )
         );
     }
@@ -852,7 +850,7 @@ mod test {
             Instruction::OP_LOOP(
                 BlockType::Empty,
                 CodeBlock::with(
-                    0,
+                    1,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP
@@ -887,7 +885,7 @@ mod test {
             Instruction::OP_LOOP(
                 BlockType::Empty,
                 CodeBlock::with(
-                    0,
+                    2,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP,

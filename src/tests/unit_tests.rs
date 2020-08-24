@@ -1,6 +1,8 @@
 use crate::empty_engine;
-use crate::engine::Value::*;
+use crate::value::Value::*;
+use crate::value::Value;
 use crate::engine::*;
+use crate::PAGE_SIZE;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
 

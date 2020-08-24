@@ -161,7 +161,7 @@ Module {
                             OP_LOOP(
                                 Empty,
                                 CodeBlock {
-                                    id: 1,
+                                    id: 2,
                                     instructions: [
                                         OP_BR(
                                             0,

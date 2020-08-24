@@ -14,7 +14,7 @@ use nom::bytes::complete::take;
 use nom::combinator::complete;
 use nom::multi::{count, many0};
 use nom::IResult;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub const MAGIC_NUMBER: &[u8] = &[0, 97, 115, 109];
 const END_INSTR: &[u8] = &[0x0B];
@@ -71,6 +71,7 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 
     let (i, n) = take(1u8)(i)?;
     let (i, size) = take_leb_u32(i)?;
+    let mut counter = Counter::new();
 
     debug!("SECTION {:?} {:?}", n, size);
 
@@ -83,12 +84,12 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
         3 => parse_function_section(i, size)?,
         4 => parse_table_section(i, size)?,
         5 => parse_memory_section(i, size)?,
-        6 => parse_global_section(i, size)?,
+        6 => parse_global_section(i, size, &mut counter)?,
         7 => parse_export_section(i, size)?,
         8 => parse_start_section(i, size)?,
-        9 => parse_element_section(i, size)?,
-        10 => parse_code_section(i, size)?,
-        11 => parse_data_section(i, size)?,
+        9 => parse_element_section(i, size, &mut counter)?,
+        10 => parse_code_section(i, size, &mut counter)?,
+        11 => parse_data_section(i, size, &mut counter)?,
         _ => panic!("invalid section id"),
     };
 
@@ -113,12 +114,7 @@ fn parse_custom_section(i: &[u8], size: u32) -> IResult<&[u8], Section> {
 
     let (i, _) = take(size as usize - str_len)(k)?; //consume empty bytes
 
-    Ok((
-        i,
-        Section::Custom(CustomSection {
-            name,
-        }),
-    ))
+    Ok((i, Section::Custom(CustomSection { name })))
 }
 
 fn parse_type_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -127,8 +123,7 @@ fn parse_type_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     let (i, times) = take_leb_u32(i)?;
     let (i, vec) = count(take_function_signature, times as usize)(i)?;
 
-    Ok((i, Section::Type(
-                TypeSection{ entries: vec })))
+    Ok((i, Section::Type(TypeSection { entries: vec })))
 }
 
 fn parse_import_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
@@ -163,10 +158,21 @@ fn parse_memory_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Memory(MemorySection { entries: mem })))
 }
 
-fn parse_global_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
+fn parse_global_section<'a, 'b>(
+    i: &'a [u8],
+    _size: u32,
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Section> {
     debug!("parse global function");
-    let (i, times) = take_leb_u32(i)?;
-    let (i, globals) = count(take_global, times as usize)(i)?;
+    let (mut i, times) = take_leb_u32(i)?;
+    //let (i, globals) = count(take_global, times as usize)(i)?;
+    let mut globals = Vec::with_capacity(times as usize);
+
+    for _ in 0..times {
+        let k = take_global(i, counter)?;
+        i = k.0;
+        globals.push(k.1);
+    }
 
     Ok((i, Section::Global(GlobalSection { globals })))
 }
@@ -186,43 +192,76 @@ fn parse_start_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
     Ok((i, Section::Start(StartSection { index: func_idx })))
 }
 
-fn parse_element_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
+fn parse_element_section<'a, 'b>(
+    i: &'a [u8],
+    _size: u32,
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Section> {
     debug!("parse_element_section");
-    let (i, times) = take_leb_u32(i)?;
-    let (i, elements) = count(take_elem, times as usize)(i)?;
+    let (mut i, times) = take_leb_u32(i)?;
+    //let (i, elements) = count(take_elem, times as usize)(i)?;
+    let mut elements = Vec::with_capacity(times as usize);
+
+    for _ in 0..times {
+        let k = take_elem(i, counter)?;
+        i = k.0;
+        elements.push(k.1);
+    }
 
     Ok((i, Section::Element(ElementSection { entries: elements })))
 }
 
-fn parse_data_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
+fn parse_data_section<'a, 'b>(
+    i: &'a [u8],
+    _size: u32,
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Section> {
     debug!("parse_data_section");
-    let (i, times) = take_leb_u32(i)?;
-    let (i, k) = count(take_data, times as usize)(i)?;
+    let (mut i, times) = take_leb_u32(i)?;
+    //let (i, k) = count(take_data, times as usize)(i)?;
 
-    Ok((i, Section::Data(DataSection { entries: k })))
+    let mut entries = Vec::with_capacity(times as usize);
+    for _ in 0..times {
+        let k = take_data(i, counter)?;
+        i = k.0;
+        entries.push(k.1);
+    }
+
+    Ok((i, Section::Data(DataSection { entries })))
 }
 
-fn parse_code_section(i: &[u8], _size: u32) -> IResult<&[u8], Section> {
+fn parse_code_section<'a, 'b>(
+    i: &'a [u8],
+    _size: u32,
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Section> {
     debug!("parse_code_section");
 
-    let (i, times) = take_leb_u32(i)?;
+    let (mut i, times) = take_leb_u32(i)?;
     debug!("times {}", times);
-    let (i, codes) = count(take_code, times as usize)(i)?;
+    //let (i, codes) = count(take_code, times as usize)(i)?;
+
+    let mut codes = Vec::with_capacity(times as usize);
+    for _ in 0..times {
+        let k = take_code(i, counter)?;
+        i = k.0;
+        codes.push(k.1);
+    }
 
     Ok((i, Section::Code(CodeSection { entries: codes })))
 }
 
-fn take_code(i: &[u8]) -> IResult<&[u8], FunctionBody> {
+fn take_code<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], FunctionBody> {
     debug!("parse_code");
 
     let (i, _size) = take_leb_u32(i)?;
     debug!("_size {}", _size);
-    let (i, k) = take_func(i)?;
+    let (i, k) = take_func(i, counter)?;
 
     Ok((i, k))
 }
 
-fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
+fn take_func<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], FunctionBody> {
     debug!("take_func");
 
     let (i, times) = take_leb_u32(i)?;
@@ -231,15 +270,9 @@ fn take_func(i: &[u8]) -> IResult<&[u8], FunctionBody> {
 
     debug!("locals {:?}", locals);
 
-    let (i, code) = take_expr(i)?;
+    let (i, code) = take_expr(i, counter)?;
 
-    Ok((
-        i,
-        FunctionBody {
-            locals,
-            code,
-        },
-    ))
+    Ok((i, FunctionBody { locals, code }))
 }
 
 fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
@@ -253,11 +286,11 @@ fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
     Ok((i, LocalEntry { count: n, ty: t }))
 }
 
-fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
+fn take_data<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], DataSegment> {
     debug!("take_data");
 
     let (i, mem_idx) = take_leb_u32(i)?;
-    let (i, e) = take_expr(i)?;
+    let (i, e) = take_expr(i, counter)?;
 
     let (i, times) = take_leb_u32(i)?;
     let (i, b) = count(take(1u8), times as usize)(i)?;
@@ -272,11 +305,11 @@ fn take_data(i: &[u8]) -> IResult<&[u8], DataSegment> {
     ))
 }
 
-fn take_elem(i: &[u8]) -> IResult<&[u8], ElementSegment> {
+fn take_elem<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], ElementSegment> {
     debug!("take_elem");
 
     let (i, table_idx) = take_leb_u32(i)?;
-    let (i, e) = take_expr(i)?;
+    let (i, e) = take_expr(i, counter)?;
     let (i, times) = take_leb_u32(i)?;
     let (i, y_vec) = count(take_leb_u32, times as usize)(i)?;
 
@@ -296,23 +329,20 @@ fn take_export(i: &[u8]) -> IResult<&[u8], ExportEntry> {
     let (i, name) = take_name(i)?;
     let (i, kind) = take_desc(i)?;
 
-    Ok((
-        i,
-        ExportEntry {
-            name,
-            kind,
-        },
-    ))
+    Ok((i, ExportEntry { name, kind }))
 }
 
-fn take_global(i: &[u8]) -> IResult<&[u8], GlobalVariable> {
+fn take_global<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], GlobalVariable> {
     let (i, ty) = take_globaltype(i)?;
-    let (i, e) = take_expr(i)?;
+    let (i, e) = take_expr(i, counter)?;
 
     Ok((i, GlobalVariable { ty, init: e }))
 }
 
-pub(crate) fn take_expr(mut i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
+pub(crate) fn take_expr<'a, 'b>(
+    mut i: &'a [u8],
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Vec<Instruction>> {
     debug!("take expr");
 
     let mut instructions = Vec::new();
@@ -324,7 +354,7 @@ pub(crate) fn take_expr(mut i: &[u8]) -> IResult<&[u8], Vec<Instruction>> {
             break;
         }
 
-        let (w, ii) = instructions::parse_instr(i)?;
+        let (w, ii) = instructions::parse_instr(i, counter)?;
         instructions.push(ii);
         i = w;
     }

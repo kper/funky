@@ -221,7 +221,7 @@ pub enum Limits {
 
 
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Counter {
     value: usize,
 }

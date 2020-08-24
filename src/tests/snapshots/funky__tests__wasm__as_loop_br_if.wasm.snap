@@ -12,7 +12,7 @@ Engine {
                     OP_BLOCK(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 2,
                             instructions: [
                                 OP_LOOP(
                                     Empty,
@@ -84,7 +84,7 @@ Engine {
                         OP_BLOCK(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 2,
                                 instructions: [
                                     OP_LOOP(
                                         Empty,

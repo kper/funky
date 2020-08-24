@@ -25,14 +25,14 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 3,
                             instructions: [
                                 OP_LOOP(
                                     ValueType(
                                         I32,
                                     ),
                                     CodeBlock {
-                                        id: 1,
+                                        id: 2,
                                         instructions: [
                                             OP_LOCAL_GET(
                                                 0,
@@ -95,14 +95,14 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 7,
                             instructions: [
                                 OP_LOOP(
                                     ValueType(
                                         I32,
                                     ),
                                     CodeBlock {
-                                        id: 1,
+                                        id: 6,
                                         instructions: [
                                             OP_LOCAL_GET(
                                                 0,
@@ -124,7 +124,7 @@ Engine {
                                             OP_IF(
                                                 Empty,
                                                 CodeBlock {
-                                                    id: 1,
+                                                    id: 4,
                                                     instructions: [
                                                         OP_BR(
                                                             1,
@@ -142,7 +142,7 @@ Engine {
                                             OP_IF(
                                                 Empty,
                                                 CodeBlock {
-                                                    id: 1,
+                                                    id: 5,
                                                     instructions: [
                                                         OP_LOCAL_GET(
                                                             0,
@@ -193,14 +193,14 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 10,
                             instructions: [
                                 OP_LOOP(
                                     ValueType(
                                         I32,
                                     ),
                                     CodeBlock {
-                                        id: 1,
+                                        id: 9,
                                         instructions: [
                                             OP_LOCAL_GET(
                                                 0,
@@ -222,7 +222,7 @@ Engine {
                                             OP_IF(
                                                 Empty,
                                                 CodeBlock {
-                                                    id: 1,
+                                                    id: 8,
                                                     instructions: [
                                                         OP_LOCAL_GET(
                                                             0,
@@ -263,14 +263,14 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 13,
                             instructions: [
                                 OP_LOOP(
                                     ValueType(
                                         I32,
                                     ),
                                     CodeBlock {
-                                        id: 1,
+                                        id: 12,
                                         instructions: [
                                             OP_LOCAL_GET(
                                                 1,
@@ -292,7 +292,7 @@ Engine {
                                             OP_IF(
                                                 Empty,
                                                 CodeBlock {
-                                                    id: 1,
+                                                    id: 11,
                                                     instructions: [
                                                         OP_LOCAL_GET(
                                                             1,
@@ -322,7 +322,7 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 14,
                             instructions: [
                                 OP_I32_CONST(
                                     1,
@@ -344,7 +344,7 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 15,
                             instructions: [
                                 OP_I32_CONST(
                                     0,
@@ -456,14 +456,14 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 3,
                                 instructions: [
                                     OP_LOOP(
                                         ValueType(
                                             I32,
                                         ),
                                         CodeBlock {
-                                            id: 1,
+                                            id: 2,
                                             instructions: [
                                                 OP_LOCAL_GET(
                                                     0,
@@ -534,14 +534,14 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 7,
                                 instructions: [
                                     OP_LOOP(
                                         ValueType(
                                             I32,
                                         ),
                                         CodeBlock {
-                                            id: 1,
+                                            id: 6,
                                             instructions: [
                                                 OP_LOCAL_GET(
                                                     0,
@@ -563,7 +563,7 @@ Engine {
                                                 OP_IF(
                                                     Empty,
                                                     CodeBlock {
-                                                        id: 1,
+                                                        id: 4,
                                                         instructions: [
                                                             OP_BR(
                                                                 1,
@@ -581,7 +581,7 @@ Engine {
                                                 OP_IF(
                                                     Empty,
                                                     CodeBlock {
-                                                        id: 1,
+                                                        id: 5,
                                                         instructions: [
                                                             OP_LOCAL_GET(
                                                                 0,
@@ -640,14 +640,14 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 10,
                                 instructions: [
                                     OP_LOOP(
                                         ValueType(
                                             I32,
                                         ),
                                         CodeBlock {
-                                            id: 1,
+                                            id: 9,
                                             instructions: [
                                                 OP_LOCAL_GET(
                                                     0,
@@ -669,7 +669,7 @@ Engine {
                                                 OP_IF(
                                                     Empty,
                                                     CodeBlock {
-                                                        id: 1,
+                                                        id: 8,
                                                         instructions: [
                                                             OP_LOCAL_GET(
                                                                 0,
@@ -720,14 +720,14 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 13,
                                 instructions: [
                                     OP_LOOP(
                                         ValueType(
                                             I32,
                                         ),
                                         CodeBlock {
-                                            id: 1,
+                                            id: 12,
                                             instructions: [
                                                 OP_LOCAL_GET(
                                                     1,
@@ -749,7 +749,7 @@ Engine {
                                                 OP_IF(
                                                     Empty,
                                                     CodeBlock {
-                                                        id: 1,
+                                                        id: 11,
                                                         instructions: [
                                                             OP_LOCAL_GET(
                                                                 1,
@@ -787,7 +787,7 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 14,
                                 instructions: [
                                     OP_I32_CONST(
                                         1,
@@ -817,7 +817,7 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 15,
                                 instructions: [
                                     OP_I32_CONST(
                                         0,

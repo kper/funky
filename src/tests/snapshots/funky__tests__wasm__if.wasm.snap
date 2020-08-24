@@ -29,7 +29,7 @@ Engine {
                     OP_IF(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 2,
                             instructions: [],
                         },
                     ),
@@ -39,7 +39,7 @@ Engine {
                     OP_IF(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 3,
                             instructions: [],
                         },
                     ),
@@ -49,7 +49,7 @@ Engine {
                     OP_IF(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 4,
                             instructions: [],
                         },
                     ),
@@ -64,7 +64,7 @@ Engine {
                     OP_IF(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 5,
                             instructions: [
                                 OP_NOP,
                             ],
@@ -76,13 +76,13 @@ Engine {
                     OP_IF_AND_ELSE(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 6,
                             instructions: [
                                 OP_NOP,
                             ],
                         },
                         CodeBlock {
-                            id: 2,
+                            id: 7,
                             instructions: [
                                 OP_NOP,
                             ],
@@ -96,7 +96,7 @@ Engine {
                             I32,
                         ),
                         CodeBlock {
-                            id: 1,
+                            id: 8,
                             instructions: [
                                 OP_I32_CONST(
                                     7,
@@ -104,7 +104,7 @@ Engine {
                             ],
                         },
                         CodeBlock {
-                            id: 2,
+                            id: 9,
                             instructions: [
                                 OP_I32_CONST(
                                     8,
@@ -197,7 +197,7 @@ Engine {
                         OP_IF(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 2,
                                 instructions: [],
                             },
                         ),
@@ -207,7 +207,7 @@ Engine {
                         OP_IF(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 3,
                                 instructions: [],
                             },
                         ),
@@ -217,7 +217,7 @@ Engine {
                         OP_IF(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 4,
                                 instructions: [],
                             },
                         ),
@@ -242,7 +242,7 @@ Engine {
                         OP_IF(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 5,
                                 instructions: [
                                     OP_NOP,
                                 ],
@@ -254,13 +254,13 @@ Engine {
                         OP_IF_AND_ELSE(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 6,
                                 instructions: [
                                     OP_NOP,
                                 ],
                             },
                             CodeBlock {
-                                id: 2,
+                                id: 7,
                                 instructions: [
                                     OP_NOP,
                                 ],
@@ -274,7 +274,7 @@ Engine {
                                 I32,
                             ),
                             CodeBlock {
-                                id: 1,
+                                id: 8,
                                 instructions: [
                                     OP_I32_CONST(
                                         7,
@@ -282,7 +282,7 @@ Engine {
                                 ],
                             },
                             CodeBlock {
-                                id: 2,
+                                id: 9,
                                 instructions: [
                                     OP_I32_CONST(
                                         8,

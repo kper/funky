@@ -12,22 +12,22 @@ Engine {
                     OP_BLOCK(
                         Empty,
                         CodeBlock {
-                            id: 1,
+                            id: 5,
                             instructions: [
                                 OP_BLOCK(
                                     Empty,
                                     CodeBlock {
-                                        id: 1,
+                                        id: 4,
                                         instructions: [
                                             OP_BLOCK(
                                                 Empty,
                                                 CodeBlock {
-                                                    id: 1,
+                                                    id: 3,
                                                     instructions: [
                                                         OP_BLOCK(
                                                             Empty,
                                                             CodeBlock {
-                                                                id: 1,
+                                                                id: 2,
                                                                 instructions: [
                                                                     OP_BLOCK(
                                                                         Empty,
@@ -136,22 +136,22 @@ Engine {
                         OP_BLOCK(
                             Empty,
                             CodeBlock {
-                                id: 1,
+                                id: 5,
                                 instructions: [
                                     OP_BLOCK(
                                         Empty,
                                         CodeBlock {
-                                            id: 1,
+                                            id: 4,
                                             instructions: [
                                                 OP_BLOCK(
                                                     Empty,
                                                     CodeBlock {
-                                                        id: 1,
+                                                        id: 3,
                                                         instructions: [
                                                             OP_BLOCK(
                                                                 Empty,
                                                                 CodeBlock {
-                                                                    id: 1,
+                                                                    id: 2,
                                                                     instructions: [
                                                                         OP_BLOCK(
                                                                             Empty,
