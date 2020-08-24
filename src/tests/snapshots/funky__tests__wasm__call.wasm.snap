@@ -9,29 +9,21 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            42,
-                        ),
+                    OP_I32_CONST(
+                        42,
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Ctrl(
-                        OP_CALL(
-                            0,
-                        ),
+                    OP_CALL(
+                        0,
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            1,
-                        ),
+                    OP_I32_CONST(
+                        1,
                     ),
-                    Num(
-                        OP_I32_ADD,
-                    ),
+                    OP_I32_ADD,
                 ],
             },
         ],
@@ -72,10 +64,8 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                42,
-                            ),
+                        OP_I32_CONST(
+                            42,
                         ),
                     ],
                 },
@@ -90,19 +80,13 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Ctrl(
-                            OP_CALL(
-                                0,
-                            ),
+                        OP_CALL(
+                            0,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                1,
-                            ),
+                        OP_I32_CONST(
+                            1,
                         ),
-                        Num(
-                            OP_I32_ADD,
-                        ),
+                        OP_I32_ADD,
                     ],
                 },
             },

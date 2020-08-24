@@ -1,12 +1,7 @@
 use crate::empty_engine;
 use crate::engine::Value::*;
 use crate::engine::*;
-use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
-use wasm_parser::core::MemoryInstructions::*;
-use wasm_parser::core::NumericInstructions::*;
-use wasm_parser::core::ParamInstructions::*;
-use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 
 #[test]
@@ -17,7 +12,7 @@ fn test_invoke_wrong_length_parameters() {
 
     let body = FunctionBody {
         locals: vec![],
-        code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        code: vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
     };
 
     // We have 2 parameters, but supply 3
@@ -32,7 +27,8 @@ fn test_invoke_wrong_length_parameters() {
 
     e.module.code = vec![body.clone()];
 
-    e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]).expect("invoke function failed");
+    e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)])
+        .expect("invoke function failed");
 }
 
 #[test]
@@ -43,7 +39,7 @@ fn test_invoke_wrong_ty_parameters() {
 
     let body = FunctionBody {
         locals: vec![],
-        code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        code: vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
     };
 
     // We have 2 parameters, but supply 3
@@ -58,7 +54,8 @@ fn test_invoke_wrong_ty_parameters() {
 
     e.module.code = vec![body.clone()];
 
-    e.invoke_function(0, vec![Value::I32(1), Value::I32(2)]).expect("invoke function failed");
+    e.invoke_function(0, vec![Value::I32(1), Value::I32(2)])
+        .expect("invoke function failed");
 }
 
 #[test]
@@ -71,11 +68,7 @@ fn test_run_function() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![
-            Num(OP_I32_CONST(42)),
-            Num(OP_I32_CONST(42)),
-            Num(OP_I32_ADD),
-        ],
+        code: vec![OP_I32_CONST(42), OP_I32_CONST(42), OP_I32_ADD],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I32(84)), e.store.stack.pop().unwrap());
@@ -87,11 +80,11 @@ fn test_run_function() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I64_CONST(32)),
-            Num(OP_I64_CONST(32)),
-            Num(OP_I64_ADD),
-            Num(OP_I64_CONST(2)),
-            Num(OP_I64_MUL),
+            OP_I64_CONST(32),
+            OP_I64_CONST(32),
+            OP_I64_ADD,
+            OP_I64_CONST(2),
+            OP_I64_MUL,
         ],
     }];
     e.run_function(0).unwrap();
@@ -108,7 +101,7 @@ fn test_function_with_params() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+        code: vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I32(5)), e.store.stack.pop().unwrap());
@@ -124,13 +117,10 @@ fn test_function_block() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Ctrl(OP_BLOCK(
+        code: vec![OP_BLOCK(
             BlockType::ValueType(ValueType::I32),
-            CodeBlock::with(
-                0,
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
-            ),
-        ))],
+            CodeBlock::with(0, vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD]),
+        )],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I32(2)), e.store.stack.pop().unwrap());
@@ -141,16 +131,16 @@ fn test_function_block_br() {
     let mut e = empty_engine();
 
     //env_logger::init();
-    let code = vec![Ctrl(OP_BLOCK(
+    let code = vec![OP_BLOCK(
         BlockType::Empty,
         CodeBlock::with(
             0,
-            vec![Ctrl(OP_BLOCK(
+            vec![OP_BLOCK(
                 BlockType::Empty,
-                CodeBlock::with(1, vec![Ctrl(OP_BR(1))]),
-            ))],
+                CodeBlock::with(1, vec![OP_BR(1)]),
+            )],
         ),
-    ))];
+    )];
 
     e.store.stack = vec![StackContent::Frame(Frame {
         arity: 0,
@@ -171,22 +161,22 @@ fn test_function_block_br_deep() {
     let mut e = empty_engine();
 
     //env_logger::init();
-    let code = vec![Ctrl(OP_BLOCK(
+    let code = vec![OP_BLOCK(
         BlockType::Empty,
         CodeBlock::with(
             0,
-            vec![Ctrl(OP_BLOCK(
+            vec![OP_BLOCK(
                 BlockType::Empty,
                 CodeBlock::with(
                     1,
-                    vec![Ctrl(OP_BLOCK(
+                    vec![OP_BLOCK(
                         BlockType::Empty,
-                        CodeBlock::with(2, vec![Ctrl(OP_BR(2))]),
-                    ))],
+                        CodeBlock::with(2, vec![OP_BR(2)]),
+                    )],
                 ),
-            ))],
+            )],
         ),
-    ))];
+    )];
 
     e.store.stack = vec![StackContent::Frame(Frame {
         arity: 0,
@@ -215,13 +205,10 @@ fn test_function_if() {
     ];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Ctrl(OP_IF(
+        code: vec![OP_IF(
             BlockType::ValueType(ValueType::I32),
-            CodeBlock::with(
-                0,
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
-            ),
-        ))],
+            CodeBlock::with(0, vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD]),
+        )],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I32(2)), e.store.stack.pop().unwrap());
@@ -240,13 +227,13 @@ fn test_function_if_false() {
     ];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Ctrl(OP_IF(
+        code: vec![OP_IF(
             BlockType::ValueType(ValueType::I32),
             CodeBlock::with(
                 0,
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
             ),
-        ))],
+        )],
     }];
     e.run_function(0).unwrap();
     assert_eq!(None, e.store.stack.pop());
@@ -265,14 +252,14 @@ fn test_function_if_else_1() {
     ];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Ctrl(OP_IF_AND_ELSE(
+        code: vec![OP_IF_AND_ELSE(
             BlockType::ValueType(ValueType::I32),
             CodeBlock::with(
                 0,
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
             ),
-            CodeBlock::with(1, vec![Num(OP_I32_CONST(-1000))]),
-        ))],
+            CodeBlock::with(1, vec![OP_I32_CONST(-1000)]),
+        )],
     }];
     e.run_function(0).unwrap();
     assert_eq!(
@@ -294,14 +281,14 @@ fn test_function_if_else_2() {
     ];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Ctrl(OP_IF_AND_ELSE(
+        code: vec![OP_IF_AND_ELSE(
             BlockType::ValueType(ValueType::I32),
             CodeBlock::with(
                 0,
-                vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_I32_ADD)],
+                vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
             ),
-            CodeBlock::with(1, vec![Num(OP_I32_CONST(-1000))]),
-        ))],
+            CodeBlock::with(1, vec![OP_I32_CONST(-1000)]),
+        )],
     }];
     e.run_function(0).unwrap();
     assert_eq!(
@@ -321,13 +308,13 @@ fn test_function_local_set() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Var(OP_LOCAL_GET(0)),
-            Var(OP_LOCAL_GET(1)),
-            Num(OP_I32_ADD),
-            Var(OP_LOCAL_SET(0)),
-            Num(OP_I32_CONST(32)),
-            Var(OP_LOCAL_GET(0)),
-            Num(OP_I32_ADD),
+            OP_LOCAL_GET(0),
+            OP_LOCAL_GET(1),
+            OP_I32_ADD,
+            OP_LOCAL_SET(0),
+            OP_I32_CONST(32),
+            OP_LOCAL_GET(0),
+            OP_I32_ADD,
         ],
     }];
     e.run_function(0).unwrap();
@@ -344,10 +331,10 @@ fn test_function_globals() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Var(OP_GLOBAL_GET(0)),
-            Num(OP_I32_CONST(351)),
-            Num(OP_I32_ADD),
-            Var(OP_GLOBAL_SET(0)),
+            OP_GLOBAL_GET(0),
+            OP_I32_CONST(351),
+            OP_I32_ADD,
+            OP_GLOBAL_SET(0),
         ],
     }];
     e.run_function(0).unwrap();
@@ -364,13 +351,13 @@ fn test_drop_select() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(1)),
-            Num(OP_I32_CONST(2)),
-            Num(OP_I32_CONST(0)),
-            Num(OP_I32_CONST(4)),
-            Param(OP_DROP),
-            Param(OP_SELECT),
-            Var(OP_GLOBAL_SET(0)),
+            OP_I32_CONST(1),
+            OP_I32_CONST(2),
+            OP_I32_CONST(0),
+            OP_I32_CONST(4),
+            OP_DROP,
+            OP_SELECT,
+            OP_GLOBAL_SET(0),
         ],
     }];
     e.run_function(0).unwrap();
@@ -389,12 +376,12 @@ fn test_memory_store_i32() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I32_CONST(4)),
-            Mem(OP_I32_STORE(MemArg {
+            OP_I32_CONST(0),
+            OP_I32_CONST(4),
+            OP_I32_STORE(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -414,11 +401,11 @@ fn test_memory_load_i32() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Mem(OP_I32_LOAD(MemArg {
+            OP_I32_CONST(0),
+            OP_I32_LOAD(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -437,12 +424,12 @@ fn test_memory_store_i32_in_i8() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I32_CONST(4)),
-            Mem(OP_I32_STORE_8(MemArg {
+            OP_I32_CONST(0),
+            OP_I32_CONST(4),
+            OP_I32_STORE_8(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -462,17 +449,17 @@ fn test_memory_load_i32_of_u8() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I32_CONST(4)),
-            Mem(OP_I32_STORE_8(MemArg {
+            OP_I32_CONST(0),
+            OP_I32_CONST(4),
+            OP_I32_STORE_8(MemArg {
                 offset: 0,
                 align: 1,
-            })),
-            Num(OP_I32_CONST(0)),
-            Mem(OP_I32_LOAD_8_u(MemArg {
+            }),
+            OP_I32_CONST(0),
+            OP_I32_LOAD_8_u(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -495,12 +482,12 @@ fn test_memory_store_i32_in_i16() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I32_CONST(9)),
-            Mem(OP_I32_STORE_16(MemArg {
+            OP_I32_CONST(0),
+            OP_I32_CONST(9),
+            OP_I32_STORE_16(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -519,12 +506,12 @@ fn test_memory_store_i64() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I64_CONST(4)),
-            Mem(OP_I64_STORE(MemArg {
+            OP_I32_CONST(0),
+            OP_I64_CONST(4),
+            OP_I64_STORE(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -543,12 +530,12 @@ fn test_memory_store_i64_in_i16() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I64_CONST(9)),
-            Mem(OP_I64_STORE_16(MemArg {
+            OP_I32_CONST(0),
+            OP_I64_CONST(9),
+            OP_I64_STORE_16(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -567,12 +554,12 @@ fn test_memory_store_i64_in_i32() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_I64_CONST(i64::MAX)),
-            Mem(OP_I64_STORE_32(MemArg {
+            OP_I32_CONST(0),
+            OP_I64_CONST(i64::MAX),
+            OP_I64_STORE_32(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -594,12 +581,12 @@ fn test_memory_store_f32() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_F32_CONST(4.1)),
-            Mem(OP_F32_STORE(MemArg {
+            OP_I32_CONST(0),
+            OP_F32_CONST(4.1),
+            OP_F32_STORE(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -621,12 +608,12 @@ fn test_memory_store_f64() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_F64_CONST(4.1)),
-            Mem(OP_F64_STORE(MemArg {
+            OP_I32_CONST(0),
+            OP_F64_CONST(4.1),
+            OP_F64_STORE(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -648,12 +635,12 @@ fn test_num_store_f64() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(0)),
-            Num(OP_F64_CONST(4.1)),
-            Mem(OP_F64_STORE(MemArg {
+            OP_I32_CONST(0),
+            OP_F64_CONST(4.1),
+            OP_F64_STORE(MemArg {
                 offset: 0,
                 align: 1,
-            })),
+            }),
         ],
     }];
     e.run_function(0).unwrap();
@@ -673,7 +660,7 @@ fn test_num_wrap_i64_max() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I64_CONST(i32::MAX as i64)), Num(OP_I32_WRAP_I64)],
+        code: vec![OP_I64_CONST(i32::MAX as i64), OP_I32_WRAP_I64],
     }];
     e.run_function(0).unwrap();
     assert_eq!(
@@ -692,7 +679,7 @@ fn test_num_wrap_i64_min() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I64_CONST(i32::MIN as i64)), Num(OP_I32_WRAP_I64)],
+        code: vec![OP_I64_CONST(i32::MIN as i64), OP_I32_WRAP_I64],
     }];
     e.run_function(0).unwrap();
     assert_eq!(
@@ -712,8 +699,8 @@ fn test_num_wrap_i64_overflow() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I64_CONST((i32::MAX as i64) + 50)),
-            Num(OP_I32_WRAP_I64),
+            OP_I64_CONST((i32::MAX as i64) + 50),
+            OP_I32_WRAP_I64,
         ],
     }];
     e.run_function(0).unwrap();
@@ -734,7 +721,7 @@ fn test_num_extend_s() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_S)],
+        code: vec![OP_I32_CONST(-1), OP_I64_EXTEND_I32_S],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I64(-1)), e.store.stack.pop().unwrap());
@@ -749,7 +736,7 @@ fn test_num_extend_u() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(-1)), Num(OP_I64_EXTEND_I32_U)],
+        code: vec![OP_I32_CONST(-1), OP_I64_EXTEND_I32_U],
     }];
     e.run_function(0).unwrap();
     assert_eq!(
@@ -768,7 +755,7 @@ fn test_num_trunc_s() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_F32_CONST(234.923)), Num(OP_I32_TRUNC_F32_S)],
+        code: vec![OP_F32_CONST(234.923), OP_I32_TRUNC_F32_S],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(I32(234)), e.store.stack.pop().unwrap());
@@ -785,8 +772,8 @@ fn test_num_promote() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_F32_CONST(1.1234568357467651)),
-            Num(OP_F64_PROMOTE_F32),
+            OP_F32_CONST(1.1234568357467651),
+            OP_F64_PROMOTE_F32,
         ],
     }];
     e.run_function(0).unwrap();
@@ -807,8 +794,8 @@ fn test_num_demote() {
     e.module.code = vec![FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_F64_CONST(1.1234568357467651420)),
-            Num(OP_F32_DEMOTE_F64),
+            OP_F64_CONST(1.1234568357467651420),
+            OP_F32_DEMOTE_F64,
         ],
     }];
     e.run_function(0).unwrap();
@@ -829,7 +816,7 @@ fn test_num_convert_s() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_S)],
+        code: vec![OP_I32_CONST(-1), OP_F32_CONVERT_I32_S],
     }];
     e.run_function(0).unwrap();
     assert_eq!(StackContent::Value(F32(-1.0)), e.store.stack.pop().unwrap());
@@ -845,10 +832,13 @@ fn test_num_convert_u() {
     })];
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(-1)), Num(OP_F32_CONVERT_I32_U)],
+        code: vec![OP_I32_CONST(-1), OP_F32_CONVERT_I32_U],
     }];
     e.run_function(0).unwrap();
-    assert_eq!(StackContent::Value(F32(u32::MAX as f32)), e.store.stack.pop().unwrap());
+    assert_eq!(
+        StackContent::Value(F32(u32::MAX as f32)),
+        e.store.stack.pop().unwrap()
+    );
 }
 
 #[test]
@@ -862,7 +852,7 @@ fn test_memory_grow() {
 
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(1)), Mem(OP_MEMORY_GROW)],
+        code: vec![OP_I32_CONST(1), OP_MEMORY_GROW],
     }];
 
     e.run_function(0).unwrap();
@@ -880,7 +870,7 @@ fn test_memory_grow_with_max() {
 
     e.module.code = vec![FunctionBody {
         locals: vec![],
-        code: vec![Num(OP_I32_CONST(i32::MAX)), Mem(OP_MEMORY_GROW)],
+        code: vec![OP_I32_CONST(i32::MAX), OP_MEMORY_GROW],
     }];
 
     e.run_function(0).unwrap();

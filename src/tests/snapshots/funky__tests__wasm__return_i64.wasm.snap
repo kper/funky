@@ -9,23 +9,17 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Num(
-                        OP_I64_CONST(
-                            -1000,
-                        ),
+                    OP_I64_CONST(
+                        -1000,
                     ),
-                    Mem(
-                        OP_I64_STORE(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                    OP_I64_STORE(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
                 ],
             },
@@ -74,23 +68,17 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                -1000,
-                            ),
+                        OP_I64_CONST(
+                            -1000,
                         ),
-                        Mem(
-                            OP_I64_STORE(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                        OP_I64_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
                     ],
                 },

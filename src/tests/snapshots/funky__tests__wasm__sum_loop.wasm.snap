@@ -9,10 +9,8 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            6,
-                        ),
+                    OP_I32_CONST(
+                        6,
                     ),
                 ],
             },
@@ -61,10 +59,8 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                6,
-                            ),
+                        OP_I32_CONST(
+                            6,
                         ),
                     ],
                 },

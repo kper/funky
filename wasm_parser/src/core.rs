@@ -44,26 +44,6 @@ pub enum BlockType {
     //    S33(i64), //actually signed 33
 }
 
-/*
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
-pub struct FuncType {
-    //form: ValueType,
-    //param_count: varuint32,
-    pub param_types: Vec<ValueType>,
-    //return_count: varuint1,
-    pub return_types: Vec<ValueType>,
-}
-
-impl FuncType {
-    pub fn empty() -> Self {
-        FuncType {
-            param_types: vec![],
-            return_types: vec![],
-        }
-    }
-}
-*/
-
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ImportEntry {
     pub module_name: String, //utf8 string
@@ -239,15 +219,7 @@ pub enum Limits {
     One(u32, u32),
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-pub enum Instruction {
-    Ctrl(CtrlInstructions),
-    Param(ParamInstructions),
-    Var(VarInstructions),
-    Mem(MemoryInstructions),
-    Num(NumericInstructions),
-}
+
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Counter {
@@ -295,7 +267,8 @@ impl CodeBlock {
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
-pub enum CtrlInstructions {
+pub enum Instruction {
+    // CTRL
     OP_UNREACHABLE,
     OP_NOP,
     OP_BLOCK(BlockType, CodeBlock),
@@ -308,35 +281,19 @@ pub enum CtrlInstructions {
     OP_RETURN,
     OP_CALL(FuncIdx),
     OP_CALL_INDIRECT(FuncIdx),
-    OP_END,
-}
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-pub enum ParamInstructions {
+    // Param
     OP_DROP,
     OP_SELECT,
-}
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-pub enum VarInstructions {
+    // Var 
     OP_LOCAL_GET(LocalIdx),
     OP_LOCAL_SET(LocalIdx),
     OP_LOCAL_TEE(LocalIdx),
     OP_GLOBAL_GET(LocalIdx),
     OP_GLOBAL_SET(LocalIdx),
-}
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct MemArg {
-    pub align: u32,
-    pub offset: u32,
-}
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-pub enum MemoryInstructions {
+    // Mem
     OP_I32_LOAD(MemArg),
     OP_I64_LOAD(MemArg),
     OP_F32_LOAD(MemArg),
@@ -362,11 +319,9 @@ pub enum MemoryInstructions {
     OP_I64_STORE_32(MemArg),
     OP_MEMORY_SIZE,
     OP_MEMORY_GROW,
-}
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-#[allow(non_camel_case_types)]
-pub enum NumericInstructions {
+    // Num
+
     OP_I32_CONST(i32),
     OP_I64_CONST(i64),
     OP_F32_CONST(f32),
@@ -518,29 +473,14 @@ pub enum NumericInstructions {
     OP_I64_TRUNC_SAT_F32_U,
     OP_I64_TRUNC_SAT_F64_S,
     OP_I64_TRUNC_SAT_F64_U,
+
 }
 
-/*
-impl std::convert::From<u8> for SectionType {
-    fn from(item: u8) -> Self {
-        match item {
-            0 => Self::Custom,
-            1 => Self::Type,
-            2 => Self::Import,
-            3 => Self::Function,
-            4 => Self::Table,
-            5 => Self::Memory,
-            6 => Self::Global,
-            7 => Self::Export,
-            8 => Self::Start,
-            9 => Self::Element,
-            10 => Self::Code,
-            11 => Self::Data,
-            _ => panic!("wrong section id"),
-        }
-    }
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct MemArg {
+    pub align: u32,
+    pub offset: u32,
 }
-*/
 
 impl std::convert::From<u8> for ValueType {
     fn from(item: u8) -> Self {
@@ -556,17 +496,6 @@ impl std::convert::From<u8> for ValueType {
         }
     }
 }
-
-/*
-impl std::convert::From<u8> for BlockType {
-    fn from(item: u8) -> Self {
-        match item {
-            0x40 => Self::Empty,
-            0x7 => Self::ValueType(v.into()),
-        }
-    }
-}
-*/
 
 impl std::convert::From<u8> for Mu {
     fn from(item: u8) -> Self {

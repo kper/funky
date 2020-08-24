@@ -97,9 +97,7 @@ fn allocate_functions(
             store.funcs.push(instance);
         }
 
-        mod_instance
-            .funcaddrs
-            .push(store.funcs.len() as u32 - 1);
+        mod_instance.funcaddrs.push(store.funcs.len() as u32 - 1);
     }
 
     debug!("Functions in store {:#?}", store.funcs);
@@ -130,9 +128,7 @@ fn allocate_tables(
             },
         };
 
-        mod_instance
-            .tableaddrs
-            .push(store.tables.len() as u32);
+        mod_instance.tableaddrs.push(store.tables.len() as u32);
         store.tables.push(instance);
     }
 
@@ -164,9 +160,7 @@ fn allocate_memories(
             },
         };
 
-        mod_instance
-            .memaddrs
-            .push(store.memory.len() as u32);
+        mod_instance.memaddrs.push(store.memory.len() as u32);
         store.memory.push(instance);
     }
 
@@ -195,9 +189,7 @@ fn allocate_globals(
             val: get_expr_const_ty_global(&gl.init)?, //TODO this might be a problem, because we only accept CONST and no other globals
         };
 
-        mod_instance
-            .globaladdrs
-            .push(store.globals.len() as u32);
+        mod_instance.globaladdrs.push(store.globals.len() as u32);
         store.globals.push(instance);
     }
 
@@ -229,7 +221,7 @@ fn allocate_exports(
 }
 
 pub(crate) fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()> {
-    use wasm_parser::core::NumericInstructions::*;
+    use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
         error!("No expr to evaluate");
@@ -237,16 +229,10 @@ pub(crate) fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()
     }
 
     match init.get(0).unwrap() {
-        Instruction::Num(n) => match *n {
-            OP_I32_CONST(v) => Ok(Value::I32(v)),
-            OP_I64_CONST(v) => Ok(Value::I64(v)),
-            OP_F32_CONST(v) => Ok(Value::F32(v)),
-            OP_F64_CONST(v) => Ok(Value::F64(v)),
-            _ => {
-                error!("Expression is not a const");
-                Err(())
-            }
-        },
+        OP_I32_CONST(v) => Ok(Value::I32(*v)),
+        OP_I64_CONST(v) => Ok(Value::I64(*v)),
+        OP_F32_CONST(v) => Ok(Value::F32(*v)),
+        OP_F64_CONST(v) => Ok(Value::F64(*v)),
         _ => {
             error!("Wrong expression");
             Err(())

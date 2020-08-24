@@ -4,12 +4,13 @@ use crate::construct_engine;
 use crate::engine::*;
 use wasm_parser::core::ValueType;
 
+
 #[test]
 fn test_f32_add_minus_0_and_nan() {
     // -0.0 + NaN = NaN
 
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_F32_ADD)],
+        vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_F32_ADD],
         vec![ValueType::F32, ValueType::F32],
         vec![ValueType::F32]
     );
@@ -30,7 +31,7 @@ fn test_f32_min_minus_0_and_nan() {
     // min(-0.0,NaN) = NaN
 
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_F32_MIN)],
+        vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_F32_MIN],
         vec![ValueType::F32, ValueType::F32],
         vec![ValueType::F32]
     );
@@ -51,7 +52,7 @@ fn test_f32_nearest_minus_0point5() {
     // nearest(-0.5) = -0.0
 
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0)), Num(OP_F32_NEAREST)],
+        vec![OP_LOCAL_GET(0), OP_F32_NEAREST],
         vec![ValueType::F32],
         vec![ValueType::F32]
     );
@@ -71,7 +72,7 @@ fn test_f32_nearest_minus_1() {
     // nearest(-1.0) = -1.0
 
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0)), Num(OP_F32_NEAREST)],
+        vec![OP_LOCAL_GET(0), OP_F32_NEAREST],
         vec![ValueType::F32],
         vec![ValueType::F32]
     );
@@ -88,12 +89,7 @@ fn test_f32_nearest_minus_1() {
 
 #[test]
 fn test_as_mixed_operands() {
-    use wasm_parser::core::CtrlInstructions::*;
     use wasm_parser::core::Instruction::*;
-    //use wasm_parser::core::MemoryInstructions::*;
-    use wasm_parser::core::NumericInstructions::*;
-    //use wasm_parser::core::ParamInstructions::*;
-    use wasm_parser::core::VarInstructions::*;
     use wasm_parser::core::*;
 
     //env_logger::init();
@@ -103,18 +99,18 @@ fn test_as_mixed_operands() {
     let mixed = FunctionBody {
         locals: vec![],
         code: vec![
-            Num(OP_I32_CONST(3)),
-            Num(OP_I32_CONST(4)),
-            Ctrl(OP_CALL(1)),
-            Num(OP_I32_CONST(5)),
-            Num(OP_I32_ADD),
-            Num(OP_I32_MUL),
+            OP_I32_CONST(3),
+            OP_I32_CONST(4),
+            OP_CALL(1),
+            OP_I32_CONST(5),
+            OP_I32_ADD,
+            OP_I32_MUL,
         ],
     };
 
     let swap = FunctionBody {
         locals: vec![],
-        code: vec![Var(OP_LOCAL_GET(1)), Var(OP_LOCAL_GET(0))],
+        code: vec![OP_LOCAL_GET(1), OP_LOCAL_GET(0)],
     };
 
     e.store.funcs = vec![
@@ -161,43 +157,43 @@ fn test_local_set_write() {
 
     let mut engine = construct_engine!(
         vec![
-            Num(OP_F32_CONST(-0.3)),
-            Var(OP_LOCAL_SET(1)),
-            Num(OP_I32_CONST(40)),
-            Var(OP_LOCAL_SET(3)),
-            Num(OP_I32_CONST(-7)),
-            Var(OP_LOCAL_SET(4)),
-            Num(OP_F32_CONST(5.5)),
-            Var(OP_LOCAL_SET(5)),
-            Num(OP_I64_CONST(6)),
-            Var(OP_LOCAL_SET(6)),
-            Num(OP_F64_CONST(8.0)),
-            Var(OP_LOCAL_SET(8)),
-            Var(OP_LOCAL_GET(0)),
-            Num(OP_F64_CONVERT_I64_U),
-            Var(OP_LOCAL_GET(1)),
-            Num(OP_F64_PROMOTE_F32),
-            Var(OP_LOCAL_GET(2)),
-            Var(OP_LOCAL_GET(3)),
-            Num(OP_F64_CONVERT_I32_U),
-            Var(OP_LOCAL_GET(4)),
-            Num(OP_F64_CONVERT_I32_S),
-            Var(OP_LOCAL_GET(5)),
-            Num(OP_F64_PROMOTE_F32),
-            Var(OP_LOCAL_GET(6)),
-            Num(OP_F64_CONVERT_I64_U),
-            Var(OP_LOCAL_GET(7)),
-            Num(OP_F64_CONVERT_I64_U),
-            Var(OP_LOCAL_GET(8)),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_F64_ADD),
-            Num(OP_I64_TRUNC_F64_S)
+            OP_F32_CONST(-0.3),
+            OP_LOCAL_SET(1),
+            OP_I32_CONST(40),
+            OP_LOCAL_SET(3),
+            OP_I32_CONST(-7),
+            OP_LOCAL_SET(4),
+            OP_F32_CONST(5.5),
+            OP_LOCAL_SET(5),
+            OP_I64_CONST(6),
+            OP_LOCAL_SET(6),
+            OP_F64_CONST(8.0),
+            OP_LOCAL_SET(8),
+            OP_LOCAL_GET(0),
+            OP_F64_CONVERT_I64_U,
+            OP_LOCAL_GET(1),
+            OP_F64_PROMOTE_F32,
+            OP_LOCAL_GET(2),
+            OP_LOCAL_GET(3),
+            OP_F64_CONVERT_I32_U,
+            OP_LOCAL_GET(4),
+            OP_F64_CONVERT_I32_S,
+            OP_LOCAL_GET(5),
+            OP_F64_PROMOTE_F32,
+            OP_LOCAL_GET(6),
+            OP_F64_CONVERT_I64_U,
+            OP_LOCAL_GET(7),
+            OP_F64_CONVERT_I64_U,
+            OP_LOCAL_GET(8),
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_F64_ADD,
+            OP_I64_TRUNC_F64_S
         ],
         vec![I64, F32, F64, I32, I32],
         vec![I64]
@@ -226,9 +222,9 @@ fn test_local_set_write() {
 fn test_f32_copy_sign() {
     let mut engine = construct_engine!(
         vec![
-            Var(OP_LOCAL_GET(0)),
-            Var(OP_LOCAL_GET(1)),
-            Num(OP_F32_COPYSIGN)
+            OP_LOCAL_GET(0),
+            OP_LOCAL_GET(1),
+            OP_F32_COPYSIGN
         ],
         vec![ValueType::F32, ValueType::F32],
         vec![ValueType::F32]
@@ -249,12 +245,12 @@ fn test_memory_grow() {
     //env_logger::init();
     let mut engine = construct_engine!(
         vec![
-            Num(OP_I32_CONST(3)),
-            Mem(OP_MEMORY_GROW),
-            Num(OP_I32_CONST(2048)),
-            Mem(OP_MEMORY_GROW),
-            Num(OP_I32_CONST(65536)),
-            Mem(OP_MEMORY_GROW),
+            OP_I32_CONST(3),
+            OP_MEMORY_GROW,
+            OP_I32_CONST(2048),
+            OP_MEMORY_GROW,
+            OP_I32_CONST(65536),
+            OP_MEMORY_GROW,
         ],
         vec![],
         vec![ValueType::I32]
@@ -274,19 +270,19 @@ fn test_memory_grow() {
 fn test_br_return() {
     env_logger::init();
     let mut engine = construct_engine!(
-        vec![Ctrl(OP_BLOCK(
+        vec![OP_BLOCK(
             BlockType::ValueTypeTy(0),
             CodeBlock::with(
                 0,
                 vec![
-                    Num(OP_F64_CONST(4.0)),
-                    Num(OP_F64_CONST(5.0)),
-                    Ctrl(OP_BR(0)),
-                    Num(OP_F64_ADD),
-                    Num(OP_F64_CONST(6.0))
+                    OP_F64_CONST(4.0),
+                    OP_F64_CONST(5.0),
+                    OP_BR(0),
+                    OP_F64_ADD,
+                    OP_F64_CONST(6.0)
                 ],
             ),
-        )),],
+        ),],
         vec![],
         vec![ValueType::F64, ValueType::F64]
     );

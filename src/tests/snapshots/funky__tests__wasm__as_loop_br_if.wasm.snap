@@ -9,48 +9,34 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Ctrl(
-                        OP_BLOCK(
-                            Empty,
-                            CodeBlock {
-                                id: 1,
-                                instructions: [
-                                    Ctrl(
-                                        OP_LOOP(
-                                            Empty,
-                                            CodeBlock {
-                                                id: 1,
-                                                instructions: [
-                                                    Var(
-                                                        OP_LOCAL_GET(
-                                                            0,
-                                                        ),
-                                                    ),
-                                                    Ctrl(
-                                                        OP_BR_IF(
-                                                            1,
-                                                        ),
-                                                    ),
-                                                    Num(
-                                                        OP_I32_CONST(
-                                                            2,
-                                                        ),
-                                                    ),
-                                                    Ctrl(
-                                                        OP_RETURN,
-                                                    ),
-                                                ],
-                                            },
-                                        ),
-                                    ),
-                                ],
-                            },
-                        ),
+                    OP_BLOCK(
+                        Empty,
+                        CodeBlock {
+                            id: 1,
+                            instructions: [
+                                OP_LOOP(
+                                    Empty,
+                                    CodeBlock {
+                                        id: 1,
+                                        instructions: [
+                                            OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                            OP_BR_IF(
+                                                1,
+                                            ),
+                                            OP_I32_CONST(
+                                                2,
+                                            ),
+                                            OP_RETURN,
+                                        ],
+                                    },
+                                ),
+                            ],
+                        },
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            3,
-                        ),
+                    OP_I32_CONST(
+                        3,
                     ),
                 ],
             },
@@ -95,48 +81,34 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Ctrl(
-                            OP_BLOCK(
-                                Empty,
-                                CodeBlock {
-                                    id: 1,
-                                    instructions: [
-                                        Ctrl(
-                                            OP_LOOP(
-                                                Empty,
-                                                CodeBlock {
-                                                    id: 1,
-                                                    instructions: [
-                                                        Var(
-                                                            OP_LOCAL_GET(
-                                                                0,
-                                                            ),
-                                                        ),
-                                                        Ctrl(
-                                                            OP_BR_IF(
-                                                                1,
-                                                            ),
-                                                        ),
-                                                        Num(
-                                                            OP_I32_CONST(
-                                                                2,
-                                                            ),
-                                                        ),
-                                                        Ctrl(
-                                                            OP_RETURN,
-                                                        ),
-                                                    ],
-                                                },
-                                            ),
-                                        ),
-                                    ],
-                                },
-                            ),
+                        OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
+                                    OP_LOOP(
+                                        Empty,
+                                        CodeBlock {
+                                            id: 1,
+                                            instructions: [
+                                                OP_LOCAL_GET(
+                                                    0,
+                                                ),
+                                                OP_BR_IF(
+                                                    1,
+                                                ),
+                                                OP_I32_CONST(
+                                                    2,
+                                                ),
+                                                OP_RETURN,
+                                            ],
+                                        },
+                                    ),
+                                ],
+                            },
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                3,
-                            ),
+                        OP_I32_CONST(
+                            3,
                         ),
                     ],
                 },

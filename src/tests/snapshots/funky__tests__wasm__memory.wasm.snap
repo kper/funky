@@ -9,104 +9,78 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            0,
-                        ),
+                    OP_I32_CONST(
+                        0,
                     ),
-                    Mem(
-                        OP_I32_LOAD(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                    OP_I32_LOAD(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            0,
-                        ),
+                    OP_I32_CONST(
+                        0,
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            2,
-                        ),
+                    OP_I32_CONST(
+                        2,
                     ),
-                    Mem(
-                        OP_I32_STORE(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                    OP_I32_STORE(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            65536,
-                        ),
+                    OP_I32_CONST(
+                        65536,
                     ),
-                    Mem(
-                        OP_I32_LOAD(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                    OP_I32_LOAD(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            65536,
-                        ),
+                    OP_I32_CONST(
+                        65536,
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            3,
-                        ),
+                    OP_I32_CONST(
+                        3,
                     ),
-                    Mem(
-                        OP_I32_STORE(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                    OP_I32_STORE(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Mem(
-                        OP_MEMORY_GROW,
-                    ),
+                    OP_MEMORY_GROW,
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Mem(
-                        OP_MEMORY_SIZE,
-                    ),
+                    OP_MEMORY_SIZE,
                 ],
             },
         ],
@@ -195,18 +169,14 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Mem(
-                            OP_I32_LOAD(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                        OP_I32_LOAD(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
                     ],
                 },
@@ -219,23 +189,17 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                2,
-                            ),
+                        OP_I32_CONST(
+                            2,
                         ),
-                        Mem(
-                            OP_I32_STORE(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                        OP_I32_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
                     ],
                 },
@@ -250,18 +214,14 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                65536,
-                            ),
+                        OP_I32_CONST(
+                            65536,
                         ),
-                        Mem(
-                            OP_I32_LOAD(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                        OP_I32_LOAD(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
                     ],
                 },
@@ -274,23 +234,17 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                65536,
-                            ),
+                        OP_I32_CONST(
+                            65536,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                3,
-                            ),
+                        OP_I32_CONST(
+                            3,
                         ),
-                        Mem(
-                            OP_I32_STORE(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                        OP_I32_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
                     ],
                 },
@@ -307,14 +261,10 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Mem(
-                            OP_MEMORY_GROW,
-                        ),
+                        OP_MEMORY_GROW,
                     ],
                 },
             },
@@ -328,9 +278,7 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Mem(
-                            OP_MEMORY_SIZE,
-                        ),
+                        OP_MEMORY_SIZE,
                     ],
                 },
             },

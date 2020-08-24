@@ -14,15 +14,11 @@ Engine {
                     },
                 ],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            0,
-                        ),
+                    OP_I32_CONST(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
@@ -34,15 +30,11 @@ Engine {
                     },
                 ],
                 code: [
-                    Num(
-                        OP_I64_CONST(
-                            0,
-                        ),
+                    OP_I64_CONST(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
@@ -54,15 +46,11 @@ Engine {
                     },
                 ],
                 code: [
-                    Num(
-                        OP_F32_CONST(
-                            0.0,
-                        ),
+                    OP_F32_CONST(
+                        0.0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
@@ -74,75 +62,55 @@ Engine {
                     },
                 ],
                 code: [
-                    Num(
-                        OP_F64_CONST(
-                            0.0,
-                        ),
+                    OP_F64_CONST(
+                        0.0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I32_CONST(
-                            10,
-                        ),
+                    OP_I32_CONST(
+                        10,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_I64_CONST(
-                            11,
-                        ),
+                    OP_I64_CONST(
+                        11,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_F32_CONST(
-                            11.1,
-                        ),
+                    OP_F32_CONST(
+                        11.1,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Num(
-                        OP_F64_CONST(
-                            12.2,
-                        ),
+                    OP_F64_CONST(
+                        12.2,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
                 ],
             },
@@ -162,150 +130,78 @@ Engine {
                     },
                 ],
                 code: [
-                    Num(
-                        OP_I64_CONST(
-                            0,
-                        ),
+                    OP_I64_CONST(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                    OP_LOCAL_TEE(
+                        0,
                     ),
-                    Num(
-                        OP_I64_EQZ,
+                    OP_I64_EQZ,
+                    OP_DROP,
+                    OP_F32_CONST(
+                        0.0,
                     ),
-                    Param(
-                        OP_DROP,
+                    OP_LOCAL_TEE(
+                        1,
                     ),
-                    Num(
-                        OP_F32_CONST(
-                            0.0,
-                        ),
+                    OP_F32_NEG,
+                    OP_DROP,
+                    OP_F64_CONST(
+                        0.0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            1,
-                        ),
+                    OP_LOCAL_TEE(
+                        2,
                     ),
-                    Num(
-                        OP_F32_NEG,
+                    OP_F64_NEG,
+                    OP_DROP,
+                    OP_I32_CONST(
+                        0,
                     ),
-                    Param(
-                        OP_DROP,
+                    OP_LOCAL_TEE(
+                        3,
                     ),
-                    Num(
-                        OP_F64_CONST(
-                            0.0,
-                        ),
+                    OP_I32_EQZ,
+                    OP_DROP,
+                    OP_I32_CONST(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            2,
-                        ),
+                    OP_LOCAL_TEE(
+                        4,
                     ),
-                    Num(
-                        OP_F64_NEG,
+                    OP_I32_EQZ,
+                    OP_DROP,
+                    OP_F32_CONST(
+                        0.0,
                     ),
-                    Param(
-                        OP_DROP,
+                    OP_LOCAL_TEE(
+                        5,
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            0,
-                        ),
+                    OP_F32_NEG,
+                    OP_DROP,
+                    OP_I64_CONST(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            3,
-                        ),
+                    OP_LOCAL_TEE(
+                        6,
                     ),
-                    Num(
-                        OP_I32_EQZ,
+                    OP_I64_EQZ,
+                    OP_DROP,
+                    OP_I64_CONST(
+                        0,
                     ),
-                    Param(
-                        OP_DROP,
+                    OP_LOCAL_TEE(
+                        7,
                     ),
-                    Num(
-                        OP_I32_CONST(
-                            0,
-                        ),
+                    OP_I64_EQZ,
+                    OP_DROP,
+                    OP_F64_CONST(
+                        0.0,
                     ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            4,
-                        ),
+                    OP_LOCAL_TEE(
+                        8,
                     ),
-                    Num(
-                        OP_I32_EQZ,
-                    ),
-                    Param(
-                        OP_DROP,
-                    ),
-                    Num(
-                        OP_F32_CONST(
-                            0.0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            5,
-                        ),
-                    ),
-                    Num(
-                        OP_F32_NEG,
-                    ),
-                    Param(
-                        OP_DROP,
-                    ),
-                    Num(
-                        OP_I64_CONST(
-                            0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            6,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_EQZ,
-                    ),
-                    Param(
-                        OP_DROP,
-                    ),
-                    Num(
-                        OP_I64_CONST(
-                            0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            7,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_EQZ,
-                    ),
-                    Param(
-                        OP_DROP,
-                    ),
-                    Num(
-                        OP_F64_CONST(
-                            0.0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            8,
-                        ),
-                    ),
-                    Num(
-                        OP_F64_NEG,
-                    ),
-                    Param(
-                        OP_DROP,
-                    ),
+                    OP_F64_NEG,
+                    OP_DROP,
                 ],
             },
         ],
@@ -466,15 +362,11 @@ Engine {
                         },
                     ],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -494,15 +386,11 @@ Engine {
                         },
                     ],
                     code: [
-                        Num(
-                            OP_I64_CONST(
-                                0,
-                            ),
+                        OP_I64_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -522,15 +410,11 @@ Engine {
                         },
                     ],
                     code: [
-                        Num(
-                            OP_F32_CONST(
-                                0.0,
-                            ),
+                        OP_F32_CONST(
+                            0.0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -550,15 +434,11 @@ Engine {
                         },
                     ],
                     code: [
-                        Num(
-                            OP_F64_CONST(
-                                0.0,
-                            ),
+                        OP_F64_CONST(
+                            0.0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -575,15 +455,11 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I32_CONST(
-                                10,
-                            ),
+                        OP_I32_CONST(
+                            10,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -600,15 +476,11 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_I64_CONST(
-                                11,
-                            ),
+                        OP_I64_CONST(
+                            11,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -625,15 +497,11 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_F32_CONST(
-                                11.1,
-                            ),
+                        OP_F32_CONST(
+                            11.1,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -650,15 +518,11 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Num(
-                            OP_F64_CONST(
-                                12.2,
-                            ),
+                        OP_F64_CONST(
+                            12.2,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
                     ],
                 },
@@ -690,150 +554,78 @@ Engine {
                         },
                     ],
                     code: [
-                        Num(
-                            OP_I64_CONST(
-                                0,
-                            ),
+                        OP_I64_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                0,
-                            ),
+                        OP_LOCAL_TEE(
+                            0,
                         ),
-                        Num(
-                            OP_I64_EQZ,
+                        OP_I64_EQZ,
+                        OP_DROP,
+                        OP_F32_CONST(
+                            0.0,
                         ),
-                        Param(
-                            OP_DROP,
+                        OP_LOCAL_TEE(
+                            1,
                         ),
-                        Num(
-                            OP_F32_CONST(
-                                0.0,
-                            ),
+                        OP_F32_NEG,
+                        OP_DROP,
+                        OP_F64_CONST(
+                            0.0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                1,
-                            ),
+                        OP_LOCAL_TEE(
+                            2,
                         ),
-                        Num(
-                            OP_F32_NEG,
+                        OP_F64_NEG,
+                        OP_DROP,
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Param(
-                            OP_DROP,
+                        OP_LOCAL_TEE(
+                            3,
                         ),
-                        Num(
-                            OP_F64_CONST(
-                                0.0,
-                            ),
+                        OP_I32_EQZ,
+                        OP_DROP,
+                        OP_I32_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                2,
-                            ),
+                        OP_LOCAL_TEE(
+                            4,
                         ),
-                        Num(
-                            OP_F64_NEG,
+                        OP_I32_EQZ,
+                        OP_DROP,
+                        OP_F32_CONST(
+                            0.0,
                         ),
-                        Param(
-                            OP_DROP,
+                        OP_LOCAL_TEE(
+                            5,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                        OP_F32_NEG,
+                        OP_DROP,
+                        OP_I64_CONST(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                3,
-                            ),
+                        OP_LOCAL_TEE(
+                            6,
                         ),
-                        Num(
-                            OP_I32_EQZ,
+                        OP_I64_EQZ,
+                        OP_DROP,
+                        OP_I64_CONST(
+                            0,
                         ),
-                        Param(
-                            OP_DROP,
+                        OP_LOCAL_TEE(
+                            7,
                         ),
-                        Num(
-                            OP_I32_CONST(
-                                0,
-                            ),
+                        OP_I64_EQZ,
+                        OP_DROP,
+                        OP_F64_CONST(
+                            0.0,
                         ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                4,
-                            ),
+                        OP_LOCAL_TEE(
+                            8,
                         ),
-                        Num(
-                            OP_I32_EQZ,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
-                        Num(
-                            OP_F32_CONST(
-                                0.0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                5,
-                            ),
-                        ),
-                        Num(
-                            OP_F32_NEG,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                6,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_EQZ,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                7,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_EQZ,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
-                        Num(
-                            OP_F64_CONST(
-                                0.0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                8,
-                            ),
-                        ),
-                        Num(
-                            OP_F64_NEG,
-                        ),
-                        Param(
-                            OP_DROP,
-                        ),
+                        OP_F64_NEG,
+                        OP_DROP,
                     ],
                 },
             },

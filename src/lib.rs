@@ -47,19 +47,9 @@ pub(crate) fn empty_engine() -> Engine {
 #[macro_export]
 macro_rules! construct_engine {
     ($body:expr, $params:expr, $returns:expr) => {{
-        use wasm_parser::core::*;
-        #[allow(unused_imports)]
-        use wasm_parser::core::CtrlInstructions::*;
         #[allow(unused_imports)]
         use wasm_parser::core::Instruction::*;
-        #[allow(unused_imports)]
-        use wasm_parser::core::MemoryInstructions::*;
-        #[allow(unused_imports)]
-        use wasm_parser::core::NumericInstructions::*;
-        #[allow(unused_imports)]
-        use wasm_parser::core::ParamInstructions::*;
-        #[allow(unused_imports)]
-        use wasm_parser::core::VarInstructions::*;
+        use wasm_parser::core::*;
 
         let mut e = crate::empty_engine();
 

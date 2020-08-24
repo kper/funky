@@ -231,33 +231,26 @@ fn check_export_names(exports: &[&ExportEntry]) -> IResult<()> {
 
 /// Evalutes the expr `init` and checks if it returns const
 fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<ValueType> {
-    use wasm_parser::core::NumericInstructions::*;
-    use wasm_parser::core::VarInstructions::*;
+    use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
         return Err("No expr to evaluate");
     }
 
     match init.get(0).unwrap() {
-        Instruction::Num(n) => match *n {
-            OP_I32_CONST(_) => Ok(ValueType::I32),
-            OP_I64_CONST(_) => Ok(ValueType::I64),
-            OP_F32_CONST(_) => Ok(ValueType::F32),
-            OP_F64_CONST(_) => Ok(ValueType::F64),
-            _ => Err("Expression is not a const"),
-        },
-        Instruction::Var(n) => match *n {
-            OP_GLOBAL_GET(lidx) => match globals_ty.get(lidx as usize).as_ref() {
-                Some(global) => {
-                    if global.mu == Mu::Var {
-                        return Err("Global var is mutable");
-                    }
-
-                    Ok(global.value_type)
+        OP_I32_CONST(_) => Ok(ValueType::I32),
+        OP_I64_CONST(_) => Ok(ValueType::I64),
+        OP_F32_CONST(_) => Ok(ValueType::F32),
+        OP_F64_CONST(_) => Ok(ValueType::F64),
+        OP_GLOBAL_GET(lidx) => match globals_ty.get(*lidx as usize).as_ref() {
+            Some(global) => {
+                if global.mu == Mu::Var {
+                    return Err("Global var is mutable");
                 }
-                None => Err("Global does not exist"),
-            },
-            _ => Err("Only Global get allowed"),
+
+                Ok(global.value_type)
+            }
+            None => Err("Global does not exist"),
         },
         _ => Err("Wrong expression"),
     }
@@ -281,7 +274,6 @@ fn check_elem_ty(
 
     get_expr_const_i32_ty(offset)?;
 
-
     debug!("defined functions {:#?}", func_ty);
 
     let not_def_funcs: Vec<_> = funcs_idx
@@ -302,18 +294,13 @@ fn check_elem_ty(
 
 /// Evalutes the expr `init` and checks if it returns const and I32
 fn get_expr_const_i32_ty(init: &Expr) -> IResult<ValueType> {
-    use wasm_parser::core::NumericInstructions::*;
-
     if init.is_empty() {
         return Err("No expr to evaluate");
     }
 
     match init.get(0).unwrap() {
-        Instruction::Num(n) => match *n {
-            OP_I32_CONST(_) => Ok(ValueType::I32),
-            _ => Err("Expression is not a I32 const"),
-        },
-        _ => Err("Wrong expression"),
+        Instruction::OP_I32_CONST(_) => Ok(ValueType::I32),
+        _ => Err("Expression is not a I32 const"),
     }
 }
 
@@ -583,7 +570,7 @@ mod tests {
                     value_type: ValueType::I32,
                     mu: Mu::Const,
                 },
-                init: vec![Instruction::Num(NumericInstructions::OP_I32_CONST(1))],
+                init: vec![Instruction::OP_I32_CONST(1)],
             }],
         };
 

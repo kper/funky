@@ -3,6 +3,7 @@ use crate::engine::*;
 use insta::assert_snapshot;
 use validation::validate;
 use wasm_parser::core::*;
+use wasm_parser::core::Instruction::*;
 use wasm_parser::{parse, read_wasm, Module};
 
 macro_rules! test_file_engine {
@@ -61,7 +62,7 @@ fn test_allocation_funcs() {
 
     let body = FunctionBody {
         locals: vec![],
-        code: vec![Instruction::Ctrl(CtrlInstructions::OP_NOP)],
+        code: vec![OP_NOP],
     };
 
     let engine = allocation!(vec![
@@ -183,7 +184,7 @@ fn test_allocation_globals() {
                 value_type: ValueType::I32,
                 mu: Mu::Const
             },
-            init: vec![Instruction::Num(NumericInstructions::OP_I32_CONST(10))]
+            init: vec![OP_I32_CONST(10)]
         }]
     })]);
 

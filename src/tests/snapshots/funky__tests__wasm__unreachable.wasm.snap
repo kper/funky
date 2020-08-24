@@ -9,9 +9,7 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    Ctrl(
-                        OP_UNREACHABLE,
-                    ),
+                    OP_UNREACHABLE,
                 ],
             },
         ],
@@ -63,9 +61,7 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Ctrl(
-                            OP_UNREACHABLE,
-                        ),
+                        OP_UNREACHABLE,
                     ],
                 },
             },

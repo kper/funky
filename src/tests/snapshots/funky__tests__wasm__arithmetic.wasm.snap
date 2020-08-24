@@ -14,106 +14,60 @@ Engine {
                     },
                 ],
                 code: [
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            1,
-                        ),
+                    OP_LOCAL_GET(
+                        1,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        2,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            2,
-                        ),
+                    OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_SHL,
+                    OP_I64_OR,
+                    OP_LOCAL_GET(
+                        3,
                     ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
+                    OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        4,
                     ),
-                    Num(
-                        OP_I64_SHL,
+                    OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_OR,
+                    OP_I64_SHL,
+                    OP_I64_OR,
+                    OP_I64_SUB,
+                    OP_LOCAL_TEE(
+                        5,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            3,
-                        ),
+                    OP_I64_STORE_32(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            4,
-                        ),
+                    OP_LOCAL_GET(
+                        5,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_SHL,
-                    ),
-                    Num(
-                        OP_I64_OR,
-                    ),
-                    Num(
-                        OP_I64_SUB,
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            5,
-                        ),
-                    ),
-                    Mem(
-                        OP_I64_STORE_32(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_GET(
-                            5,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_SHR_U,
-                    ),
-                    Mem(
-                        OP_I64_STORE_32(
-                            MemArg {
-                                align: 2,
-                                offset: 4,
-                            },
-                        ),
+                    OP_I64_SHR_U,
+                    OP_I64_STORE_32(
+                        MemArg {
+                            align: 2,
+                            offset: 4,
+                        },
                     ),
                 ],
             },
@@ -125,125 +79,73 @@ Engine {
                     },
                 ],
                 code: [
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            3,
-                        ),
+                    OP_LOCAL_GET(
+                        3,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        4,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            4,
-                        ),
+                    OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_SHL,
+                    OP_I64_OR,
+                    OP_LOCAL_GET(
+                        1,
                     ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
+                    OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        2,
                     ),
-                    Num(
-                        OP_I64_SHL,
+                    OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_OR,
+                    OP_I64_SHL,
+                    OP_I64_OR,
+                    OP_I64_MUL,
+                    OP_LOCAL_TEE(
+                        5,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            1,
-                        ),
+                    OP_I64_STORE_32(
+                        MemArg {
+                            align: 2,
+                            offset: 0,
+                        },
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            2,
-                        ),
+                    OP_LOCAL_GET(
+                        5,
                     ),
-                    Num(
-                        OP_I64_EXTEND_I32_U,
+                    OP_I64_CONST(
+                        32,
                     ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_SHL,
-                    ),
-                    Num(
-                        OP_I64_OR,
-                    ),
-                    Num(
-                        OP_I64_MUL,
-                    ),
-                    Var(
-                        OP_LOCAL_TEE(
-                            5,
-                        ),
-                    ),
-                    Mem(
-                        OP_I64_STORE_32(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                    ),
-                    Var(
-                        OP_LOCAL_GET(
-                            5,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_CONST(
-                            32,
-                        ),
-                    ),
-                    Num(
-                        OP_I64_SHR_U,
-                    ),
-                    Mem(
-                        OP_I64_STORE_32(
-                            MemArg {
-                                align: 2,
-                                offset: 4,
-                            },
-                        ),
+                    OP_I64_SHR_U,
+                    OP_I64_STORE_32(
+                        MemArg {
+                            align: 2,
+                            offset: 4,
+                        },
                     ),
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    Var(
-                        OP_LOCAL_GET(
-                            0,
-                        ),
+                    OP_LOCAL_GET(
+                        0,
                     ),
-                    Var(
-                        OP_LOCAL_GET(
-                            1,
-                        ),
+                    OP_LOCAL_GET(
+                        1,
                     ),
-                    Num(
-                        OP_F64_DIV,
-                    ),
+                    OP_F64_DIV,
                 ],
             },
         ],
@@ -327,106 +229,60 @@ Engine {
                         },
                     ],
                     code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            2,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                2,
-                            ),
+                        OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_SHL,
+                        OP_I64_OR,
+                        OP_LOCAL_GET(
+                            3,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
+                        OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            4,
                         ),
-                        Num(
-                            OP_I64_SHL,
+                        OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_OR,
+                        OP_I64_SHL,
+                        OP_I64_OR,
+                        OP_I64_SUB,
+                        OP_LOCAL_TEE(
+                            5,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                3,
-                            ),
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                4,
-                            ),
+                        OP_LOCAL_GET(
+                            5,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_SHL,
-                        ),
-                        Num(
-                            OP_I64_OR,
-                        ),
-                        Num(
-                            OP_I64_SUB,
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                5,
-                            ),
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                5,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_SHR_U,
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 4,
-                                },
-                            ),
+                        OP_I64_SHR_U,
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 4,
+                            },
                         ),
                     ],
                 },
@@ -450,106 +306,60 @@ Engine {
                         },
                     ],
                     code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                3,
-                            ),
+                        OP_LOCAL_GET(
+                            3,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            4,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                4,
-                            ),
+                        OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_SHL,
+                        OP_I64_OR,
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
+                        OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            2,
                         ),
-                        Num(
-                            OP_I64_SHL,
+                        OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_OR,
+                        OP_I64_SHL,
+                        OP_I64_OR,
+                        OP_I64_MUL,
+                        OP_LOCAL_TEE(
+                            5,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                2,
-                            ),
+                        OP_LOCAL_GET(
+                            5,
                         ),
-                        Num(
-                            OP_I64_EXTEND_I32_U,
+                        OP_I64_CONST(
+                            32,
                         ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_SHL,
-                        ),
-                        Num(
-                            OP_I64_OR,
-                        ),
-                        Num(
-                            OP_I64_MUL,
-                        ),
-                        Var(
-                            OP_LOCAL_TEE(
-                                5,
-                            ),
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                        ),
-                        Var(
-                            OP_LOCAL_GET(
-                                5,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_CONST(
-                                32,
-                            ),
-                        ),
-                        Num(
-                            OP_I64_SHR_U,
-                        ),
-                        Mem(
-                            OP_I64_STORE_32(
-                                MemArg {
-                                    align: 2,
-                                    offset: 4,
-                                },
-                            ),
+                        OP_I64_SHR_U,
+                        OP_I64_STORE_32(
+                            MemArg {
+                                align: 2,
+                                offset: 4,
+                            },
                         ),
                     ],
                 },
@@ -567,19 +377,13 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        Var(
-                            OP_LOCAL_GET(
-                                0,
-                            ),
+                        OP_LOCAL_GET(
+                            0,
                         ),
-                        Var(
-                            OP_LOCAL_GET(
-                                1,
-                            ),
+                        OP_LOCAL_GET(
+                            1,
                         ),
-                        Num(
-                            OP_F64_DIV,
-                        ),
+                        OP_F64_DIV,
                     ],
                 },
             },

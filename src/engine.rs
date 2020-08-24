@@ -5,12 +5,7 @@ use crate::engine::Value::*;
 use anyhow::{anyhow, Context, Result};
 use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
-use wasm_parser::core::CtrlInstructions::*;
 use wasm_parser::core::Instruction::*;
-use wasm_parser::core::MemoryInstructions::*;
-use wasm_parser::core::NumericInstructions::*;
-use wasm_parser::core::ParamInstructions::*;
-use wasm_parser::core::VarInstructions::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
@@ -485,7 +480,6 @@ fn grow_memory(instance: &mut MemoryInstance, n: Page) -> Result<Page, ()> {
 
     let len = n + Page::from_count(instance.data.len());
 
-    //debug!("{} > {}", len / PAGE_SIZE, PAGE_SIZE);
     if len.pages() > usize::pow(2, 16) {
         error!("Length exceeded. Too many memory pages");
         return Err(());
@@ -497,12 +491,6 @@ fn grow_memory(instance: &mut MemoryInstance, n: Page) -> Result<Page, ()> {
             error!("Memory growing failed. Limit exceded");
             return Err(());
         }
-
-        /*
-        if len / PAGE_SIZE + n > max as usize {
-            error!("Memory growing failed. Limit exceded");
-            return Err(());
-        }*/
     }
 
     let new_length = Page::from_count(instance.data.len()) + n;
@@ -632,17 +620,6 @@ impl Into<ExportInstance> for &ExportEntry {
         }
     }
 }
-
-/*
-#[derive(Debug, Clone)]
-#[allow(dead_code)]
-pub enum ExternalVal {
-    Func(FuncIdx),
-    Table(TableIdx),
-    Mem(MemoryIdx),
-    Global(GlobalIdx),
-}
-*/
 
 macro_rules! fetch_unop {
     ($stack: expr) => {{
@@ -1101,7 +1078,7 @@ impl Engine {
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
             match &instruction {
-                Var(OP_LOCAL_GET(idx)) => {
+                OP_LOCAL_GET(idx) => {
                     if let Some(val) = fr.locals.get(*idx as usize) {
                         self.store.stack.push(Value(val.clone()));
                         debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
@@ -1114,11 +1091,11 @@ impl Engine {
                         ));
                     }
                 }
-                Var(OP_LOCAL_SET(idx)) => {
+                OP_LOCAL_SET(idx) => {
                     self.local_set(idx, fr)?;
                     debug!("locals {:#?}", fr.locals);
                 }
-                Var(OP_LOCAL_TEE(idx)) => {
+                OP_LOCAL_TEE(idx) => {
                     debug!("OP_LOCAL_TEE {:?}", idx);
 
                     let value = match self.store.stack.pop() {
@@ -1139,14 +1116,14 @@ impl Engine {
                     debug!("stack {:?}", self.store.stack);
                     debug!("locals {:#?}", fr.locals);
                 }
-                Var(OP_GLOBAL_GET(idx)) => {
+                OP_GLOBAL_GET(idx) => {
                     self.store
                         .stack
                         .push(Value(self.store.globals[*idx as usize].val));
 
                     debug!("globals {:#?}", self.store.globals);
                 }
-                Var(OP_GLOBAL_SET(idx)) => match self.store.stack.pop() {
+                OP_GLOBAL_SET(idx) => match self.store.stack.pop() {
                     Some(Value(v)) => {
                         if !self.store.globals[*idx as usize].mutable {
                             return Err(anyhow!("Attempting to modify a immutable global"));
@@ -1161,48 +1138,48 @@ impl Engine {
                         return Err(anyhow!("Empty stack during local.tee"));
                     }
                 },
-                Num(OP_I32_CONST(v)) => {
+                OP_I32_CONST(v) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(I32(*v)));
                     debug!("stack {:#?}", self.store.stack);
                 }
-                Num(OP_I64_CONST(v)) => {
+                OP_I64_CONST(v) => {
                     debug!("OP_I64_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(I64(*v)))
                 }
-                Num(OP_F32_CONST(v)) => {
+                OP_F32_CONST(v) => {
                     debug!("OP_F32_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(F32(*v)))
                 }
-                Num(OP_F64_CONST(v)) => {
+                OP_F64_CONST(v) => {
                     debug!("OP_F64_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(F64(*v)))
                 }
-                Num(OP_F32_COPYSIGN) => {
+                OP_F32_COPYSIGN => {
                     let (z1, z2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(copysign(z1, z2)))
                 }
-                Num(OP_F64_COPYSIGN) => {
+                OP_F64_COPYSIGN => {
                     let (z1, z2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(copysign(z1, z2)))
                 }
-                Num(OP_I32_ADD) | Num(OP_I64_ADD) | Num(OP_F32_ADD) | Num(OP_F64_ADD) => {
+                OP_I32_ADD | OP_I64_ADD | OP_F32_ADD | OP_F64_ADD => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 + v2))
                 }
-                Num(OP_I32_SUB) | Num(OP_I64_SUB) | Num(OP_F32_SUB) | Num(OP_F64_SUB) => {
+                OP_I32_SUB | OP_I64_SUB | OP_F32_SUB | OP_F64_SUB => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 - v2))
                 }
-                Num(OP_I32_MUL) | Num(OP_I64_MUL) | Num(OP_F32_MUL) | Num(OP_F64_MUL) => {
+                OP_I32_MUL | OP_I64_MUL | OP_F32_MUL | OP_F64_MUL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 * v2))
                 }
-                Num(OP_I32_DIV_S) | Num(OP_I64_DIV_S) | Num(OP_F32_DIV) | Num(OP_F64_DIV) => {
+                OP_I32_DIV_S | OP_I64_DIV_S | OP_F32_DIV | OP_F64_DIV => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 / v2))
                 }
-                Num(OP_I32_DIV_U) | Num(OP_I64_DIV_U) => {
+                OP_I32_DIV_U | OP_I64_DIV_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1216,11 +1193,11 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for DIV_U")),
                     }
                 }
-                Num(OP_I32_REM_S) | Num(OP_I64_REM_S) => {
+                OP_I32_REM_S | OP_I64_REM_S => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 % v2))
                 }
-                Num(OP_I32_REM_U) | Num(OP_I64_REM_U) => {
+                OP_I32_REM_U | OP_I64_REM_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1234,27 +1211,27 @@ impl Engine {
                         _ => panic!("Invalid types for REM_U"),
                     }
                 }
-                Num(OP_I32_AND) | Num(OP_I64_AND) => {
+                OP_I32_AND | OP_I64_AND => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 & v2))
                 }
-                Num(OP_I32_OR) | Num(OP_I64_OR) => {
+                OP_I32_OR | OP_I64_OR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 | v2))
                 }
-                Num(OP_I32_XOR) | Num(OP_I64_XOR) => {
+                OP_I32_XOR | OP_I64_XOR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 ^ v2))
                 }
-                Num(OP_I32_SHL) | Num(OP_I64_SHL) => {
+                OP_I32_SHL | OP_I64_SHL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 << v2))
                 }
-                Num(OP_I32_SHR_S) | Num(OP_I64_SHR_S) => {
+                OP_I32_SHR_S | OP_I64_SHR_S => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(v1 >> v2))
                 }
-                Num(OP_I32_SHR_U) | Num(OP_I64_SHR_U) => {
+                OP_I32_SHR_U | OP_I64_SHR_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => {
@@ -1274,32 +1251,32 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for SHR_U")),
                     }
                 }
-                Num(OP_I32_ROTL) | Num(OP_I64_ROTL) => {
+                OP_I32_ROTL | OP_I64_ROTL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(rotate_left(v1, v2)))
                 }
-                Num(OP_I32_ROTR) | Num(OP_I64_ROTR) => {
+                OP_I32_ROTR | OP_I64_ROTR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(rotate_right(v1, v2)))
                 }
-                Num(OP_I32_CLZ) | Num(OP_I64_CLZ) => {
+                OP_I32_CLZ | OP_I64_CLZ => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(leading_zeros(v1)))
                 }
-                Num(OP_I32_CTZ) | Num(OP_I64_CTZ) => {
+                OP_I32_CTZ | OP_I64_CTZ => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(trailing_zeros(v1)))
                 }
-                Num(OP_I32_POPCNT) | Num(OP_I64_POPCNT) => {
+                OP_I32_POPCNT | OP_I64_POPCNT => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(count_ones(v1)))
                 }
-                Num(OP_I32_EQZ) | Num(OP_I64_EQZ) => {
+                OP_I32_EQZ | OP_I64_EQZ => {
                     let v1 = fetch_unop!(self.store.stack);
 
                     self.store.stack.push(Value(eqz(v1)))
                 }
-                Num(OP_I32_EQ) | Num(OP_I64_EQ) | Num(OP_F32_EQ) | Num(OP_F64_EQ) => {
+                OP_I32_EQ | OP_I64_EQ | OP_F32_EQ | OP_F64_EQ => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     let res = v1 == v2;
 
@@ -1309,7 +1286,7 @@ impl Engine {
                         self.store.stack.push(StackContent::Value(Value::I32(0)))
                     }
                 }
-                Num(OP_I32_NE) | Num(OP_I64_NE) | Num(OP_F32_NE) | Num(OP_F64_NE) => {
+                OP_I32_NE | OP_I64_NE | OP_F32_NE | OP_F64_NE => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     let res = v1 != v2;
 
@@ -1319,14 +1296,14 @@ impl Engine {
                         self.store.stack.push(StackContent::Value(Value::I32(0)))
                     }
                 }
-                Num(OP_I32_LT_S) | Num(OP_I64_LT_S) | Num(OP_F32_LT) | Num(OP_F64_LT) => {
+                OP_I32_LT_S | OP_I64_LT_S | OP_F32_LT | OP_F64_LT => {
                     // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(lt(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_LT_U) | Num(OP_I64_LT_U) => {
+                OP_I32_LT_U | OP_I64_LT_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1340,14 +1317,14 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for LT_U comparison")),
                     }
                 }
-                Num(OP_I32_GT_S) | Num(OP_I64_GT_S) | Num(OP_F32_GT) | Num(OP_F64_GT) => {
+                OP_I32_GT_S | OP_I64_GT_S | OP_F32_GT | OP_F64_GT => {
                     // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(gt(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_GT_U) | Num(OP_I64_GT_U) => {
+                OP_I32_GT_U | OP_I64_GT_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1361,14 +1338,14 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for GT_U comparison")),
                     }
                 }
-                Num(OP_I32_LE_S) | Num(OP_I64_LE_S) | Num(OP_F32_LE) | Num(OP_F64_LE) => {
+                OP_I32_LE_S | OP_I64_LE_S | OP_F32_LE | OP_F64_LE => {
                     // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(le(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_LE_U) | Num(OP_I64_LE_U) => {
+                OP_I32_LE_U | OP_I64_LE_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1382,14 +1359,14 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for LE_U comparison")),
                     }
                 }
-                Num(OP_I32_GE_S) | Num(OP_I64_GE_S) | Num(OP_F32_GE) | Num(OP_F64_GE) => {
+                OP_I32_GE_S | OP_I64_GE_S | OP_F32_GE | OP_F64_GE => {
                     // switch ordering because of stack layout
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(ge(v1, v2).convert(ValueType::I32)))
                 }
-                Num(OP_I32_GE_U) | Num(OP_I64_GE_U) => {
+                OP_I32_GE_U | OP_I64_GE_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
                         (I32(x1), I32(x2)) => self
@@ -1403,195 +1380,195 @@ impl Engine {
                         _ => return Err(anyhow!("Invalid types for GE_U comparison")),
                     }
                 }
-                Num(OP_F32_ABS) | Num(OP_F64_ABS) => {
+                OP_F32_ABS | OP_F64_ABS => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(abs(v1)))
                 }
-                Num(OP_F32_NEG) | Num(OP_F64_NEG) => {
+                OP_F32_NEG | OP_F64_NEG => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(neg(v1)))
                 }
-                Num(OP_F32_CEIL) | Num(OP_F64_CEIL) => {
+                OP_F32_CEIL | OP_F64_CEIL => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(ceil(v1)))
                 }
-                Num(OP_F32_FLOOR) | Num(OP_F64_FLOOR) => {
+                OP_F32_FLOOR | OP_F64_FLOOR => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(floor(v1)))
                 }
-                Num(OP_F32_TRUNC) | Num(OP_F64_TRUNC) => {
+                OP_F32_TRUNC | OP_F64_TRUNC => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(trunc(v1)))
                 }
-                Num(OP_I32_TRUNC_SAT_F32_S) | Num(OP_I32_TRUNC_SAT_F64_S) => {
+                OP_I32_TRUNC_SAT_F32_S | OP_I32_TRUNC_SAT_F64_S => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(trunc_sat_i32_s(v1)))
                 }
-                Num(OP_I64_TRUNC_SAT_F32_S) | Num(OP_I64_TRUNC_SAT_F64_S) => {
+                OP_I64_TRUNC_SAT_F32_S | OP_I64_TRUNC_SAT_F64_S => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(trunc_sat_i64_s(v1)))
                 }
-                Num(OP_I32_TRUNC_SAT_F32_U) => {
+                OP_I32_TRUNC_SAT_F32_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(trunc_sat_from_f32_to_i32_u(v1)))
                 }
-                Num(OP_I32_TRUNC_SAT_F64_U) => {
+                OP_I32_TRUNC_SAT_F64_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(trunc_sat_from_f64_to_i32_u(v1)))
                 }
-                Num(OP_I64_TRUNC_SAT_F32_U) => {
+                OP_I64_TRUNC_SAT_F32_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(trunc_sat_from_f32_to_i64_u(v1)))
                 }
-                Num(OP_I64_TRUNC_SAT_F64_U) => {
+                OP_I64_TRUNC_SAT_F64_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
                         .push(Value(trunc_sat_from_f64_to_i64_u(v1)))
                 }
-                Num(OP_F32_NEAREST) | Num(OP_F64_NEAREST) => {
+                OP_F32_NEAREST | OP_F64_NEAREST => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(nearest(v1)))
                 }
-                Num(OP_F32_SQRT) | Num(OP_F64_SQRT) => {
+                OP_F32_SQRT | OP_F64_SQRT => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(sqrt(v1)))
                 }
-                Num(OP_F32_MIN) | Num(OP_F64_MIN) => {
+                OP_F32_MIN | OP_F64_MIN => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(min(v1, v2)))
                 }
-                Num(OP_F32_MAX) | Num(OP_F64_MAX) => {
+                OP_F32_MAX | OP_F64_MAX => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
                     self.store.stack.push(Value(max(v1, v2)))
                 }
-                Num(OP_I32_WRAP_I64) => {
+                OP_I32_WRAP_I64 => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, I32, i32);
                 }
-                Num(OP_I64_EXTEND_I32_S) => {
+                OP_I64_EXTEND_I32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, I64, i64);
                 }
-                Num(OP_I64_EXTEND_I32_U) => {
+                OP_I64_EXTEND_I32_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, I64, i64, u32);
                 }
-                Num(OP_I64_TRUNC_F32_S) => {
+                OP_I64_TRUNC_F32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, I64, i64);
                 }
-                Num(OP_I64_TRUNC_F64_S) => {
+                OP_I64_TRUNC_F64_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, I64, i64);
                 }
-                Num(OP_I64_TRUNC_F32_U) => {
+                OP_I64_TRUNC_F32_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, I64, i64, u64);
                 }
-                Num(OP_I64_TRUNC_F64_U) => {
+                OP_I64_TRUNC_F64_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, I64, i64, u64);
                 }
-                Num(OP_I32_TRUNC_F32_S) => {
+                OP_I32_TRUNC_F32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, I32, i32);
                 }
-                Num(OP_I32_TRUNC_F64_S) => {
+                OP_I32_TRUNC_F64_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, I32, i32);
                 }
-                Num(OP_I32_TRUNC_F32_U) => {
+                OP_I32_TRUNC_F32_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, I32, i32, u32);
                 }
-                Num(OP_I32_TRUNC_F64_U) => {
+                OP_I32_TRUNC_F64_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, I32, i32, u32);
                 }
-                Num(OP_F32_DEMOTE_F64) => {
+                OP_F32_DEMOTE_F64 => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F64, F32, f32);
                 }
-                Num(OP_F64_PROMOTE_F32) => {
+                OP_F64_PROMOTE_F32 => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, F32, F64, f64);
                 }
-                Num(OP_F32_CONVERT_I32_S) => {
+                OP_F32_CONVERT_I32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F32, f32);
                 }
-                Num(OP_F64_CONVERT_I32_S) => {
+                OP_F64_CONVERT_I32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F64, f64);
                 }
-                Num(OP_F32_CONVERT_I64_S) => {
+                OP_F32_CONVERT_I64_S => {
                     // Convert I64_S to F32
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F32, f32);
                 }
-                Num(OP_F64_CONVERT_I64_S) => {
+                OP_F64_CONVERT_I64_S => {
                     // Convert I64_S to F64
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F64, f64);
                 }
-                Num(OP_F32_CONVERT_I32_U) => {
+                OP_F32_CONVERT_I32_U => {
                     // Convert I32_S to F32
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F32, f32, u32);
                 }
-                Num(OP_F64_CONVERT_I32_U) => {
+                OP_F64_CONVERT_I32_U => {
                     // Convert I32_S to F64
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, F64, f64, u32);
                 }
-                Num(OP_F32_CONVERT_I64_U) => {
+                OP_F32_CONVERT_I64_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F32, f32, u64);
                 }
-                Num(OP_F64_CONVERT_I64_U) => {
+                OP_F64_CONVERT_I64_U => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, F64, f64, u64);
                 }
-                Num(OP_I32_EXTEND8_S) => {
+                OP_I32_EXTEND8_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, I32, i32, i8);
                 }
-                Num(OP_I32_EXTEND16_S) => {
+                OP_I32_EXTEND16_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I32, I32, i32, i16);
                 }
-                Num(OP_I64_EXTEND8_S) => {
+                OP_I64_EXTEND8_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, I64, i64, i8);
                 }
-                Num(OP_I64_EXTEND16_S) => {
+                OP_I64_EXTEND16_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, I64, i64, i16);
                 }
-                Num(OP_I64_EXTEND32_S) => {
+                OP_I64_EXTEND32_S => {
                     let v = fetch_unop!(self.store.stack);
                     convert!(self, v, I64, I64, i64, i32);
                 }
-                Num(OP_I32_REINTERPRET_F32)
-                | Num(OP_I64_REINTERPRET_F64)
-                | Num(OP_F32_REINTERPRET_I32)
-                | Num(OP_F64_REINTERPRET_I64) => {
+                OP_I32_REINTERPRET_F32
+                | OP_I64_REINTERPRET_F64
+                | OP_F32_REINTERPRET_I32
+                | OP_F64_REINTERPRET_I64 => {
                     let v = fetch_unop!(self.store.stack);
                     self.store.stack.push(Value(reinterpret(v)));
                 }
-                Param(OP_DROP) => {
+                OP_DROP => {
                     debug!("OP_DROP");
                     let k = self.store.stack.pop();
                     debug!("Dropping {:?}", k);
                 }
-                Param(OP_SELECT) => {
+                OP_SELECT => {
                     debug!("OP_SELECT");
                     debug!("Popping {:?}", self.store.stack.last());
                     let c = match self.store.stack.pop() {
@@ -1607,76 +1584,76 @@ impl Engine {
                         self.store.stack.push(Value(v1))
                     }
                 }
-                Mem(OP_I32_LOAD_8_u(arg)) => {
+                OP_I32_LOAD_8_u(arg) => {
                     load_memorySX!(self, arg, 4, i32, I32, u8);
                 }
-                Mem(OP_I32_LOAD_16_u(arg)) => {
+                OP_I32_LOAD_16_u(arg) => {
                     load_memorySX!(self, arg, 4, i32, I32, u16);
                 }
-                Mem(OP_I32_LOAD_8_s(arg)) => {
+                OP_I32_LOAD_8_s(arg) => {
                     load_memorySX!(self, arg, 4, i32, I32, i8);
                 }
-                Mem(OP_I32_LOAD_16_s(arg)) => {
+                OP_I32_LOAD_16_s(arg) => {
                     load_memorySX!(self, arg, 4, i32, I32, i16);
                 }
-                Mem(OP_I32_LOAD(arg)) => {
+                OP_I32_LOAD(arg) => {
                     load_memory!(self, arg, 4, i32, I32);
                 }
-                Mem(OP_I64_LOAD(arg)) => {
+                OP_I64_LOAD(arg) => {
                     load_memory!(self, arg, 8, i64, I64);
                 }
-                Mem(OP_I64_LOAD_8_u(arg)) => {
+                OP_I64_LOAD_8_u(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, u8);
                 }
-                Mem(OP_I64_LOAD_16_u(arg)) => {
+                OP_I64_LOAD_16_u(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, u16);
                 }
-                Mem(OP_I64_LOAD_32_u(arg)) => {
+                OP_I64_LOAD_32_u(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, u32);
                 }
-                Mem(OP_I64_LOAD_8_s(arg)) => {
+                OP_I64_LOAD_8_s(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, i8);
                 }
-                Mem(OP_I64_LOAD_16_s(arg)) => {
+                OP_I64_LOAD_16_s(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, i16);
                 }
-                Mem(OP_I64_LOAD_32_s(arg)) => {
+                OP_I64_LOAD_32_s(arg) => {
                     load_memorySX!(self, arg, 8, i64, I64, i32);
                 }
-                Mem(OP_F32_LOAD(arg)) => {
+                OP_F32_LOAD(arg) => {
                     load_memory!(self, arg, 4, f32, F32);
                 }
-                Mem(OP_F64_LOAD(arg)) => {
+                OP_F64_LOAD(arg) => {
                     load_memory!(self, arg, 8, f64, F64);
                 }
-                Mem(OP_I32_STORE(arg)) => {
+                OP_I32_STORE(arg) => {
                     store_memory!(self, arg, 4, i32, I32);
                 }
-                Mem(OP_I64_STORE(arg)) => {
+                OP_I64_STORE(arg) => {
                     store_memory!(self, arg, 8, i64, I64);
                 }
-                Mem(OP_F32_STORE(arg)) => {
+                OP_F32_STORE(arg) => {
                     store_memory!(self, arg, 4, f32, F32);
                 }
-                Mem(OP_F64_STORE(arg)) => {
+                OP_F64_STORE(arg) => {
                     store_memory!(self, arg, 8, f64, F64);
                 }
-                Mem(OP_I32_STORE_8(arg)) => {
+                OP_I32_STORE_8(arg) => {
                     store_memoryN!(self, arg, 1, i32, I32, i8, 8);
                 }
-                Mem(OP_I32_STORE_16(arg)) => {
+                OP_I32_STORE_16(arg) => {
                     store_memoryN!(self, arg, 2, i32, I32, i16, 16);
                 }
-                Mem(OP_I64_STORE_8(arg)) => {
+                OP_I64_STORE_8(arg) => {
                     store_memoryN!(self, arg, 1, i64, I64, i8, 8);
                 }
-                Mem(OP_I64_STORE_16(arg)) => {
+                OP_I64_STORE_16(arg) => {
                     store_memoryN!(self, arg, 2, i64, I64, i16, 16);
                 }
-                Mem(OP_I64_STORE_32(arg)) => {
+                OP_I64_STORE_32(arg) => {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
-                Mem(OP_MEMORY_SIZE) => {
+                OP_MEMORY_SIZE => {
                     let module = &self.module;
                     let addr = module
                         .memaddrs
@@ -1688,7 +1665,7 @@ impl Engine {
 
                     self.store.stack.push(Value(I32(sz as i32)));
                 }
-                Mem(OP_MEMORY_GROW) => {
+                OP_MEMORY_GROW => {
                     let module = &self.module;
                     let addr = module
                         .memaddrs
@@ -1701,16 +1678,6 @@ impl Engine {
                         if n < 0 {
                             return Err(anyhow!("Memory grow expected n > 0, got {}", n));
                         }
-
-                        /*
-                        if let Some(max) = instance.max {
-                            if err > max {
-                                error!("Memory growing failed. Limit exceded");
-                                self.store.stack.push(Value(I32(err as i32)));
-                                continue;
-                            }
-                        }
-                        */
 
                         match grow_memory(instance, Page(n as usize)) {
                             Err(()) => {
@@ -1726,7 +1693,7 @@ impl Engine {
                         return Err(anyhow!("Unexpected stack element. Expected I32"));
                     }
                 }
-                Ctrl(OP_BLOCK(ty, block_instructions)) => {
+                OP_BLOCK(ty, block_instructions) => {
                     debug!("OP_BLOCK {:?}", ty);
 
                     let arity = self.get_block_ty_arity(&ty)?;
@@ -1754,7 +1721,7 @@ impl Engine {
 
                     self.exit_block()?;
                 }
-                Ctrl(OP_LOOP(ty, block_instructions)) => {
+                OP_LOOP(ty, block_instructions) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
                     let arity = self.get_block_ty_arity(&ty)?;
@@ -1788,7 +1755,7 @@ impl Engine {
 
                     self.exit_block()?;
                 }
-                Ctrl(OP_IF(ty, block_instructions_branch)) => {
+                OP_IF(ty, block_instructions_branch) => {
                     debug!("OP_IF {:?}", ty);
                     let element = self.store.stack.pop();
                     debug!("Popping value {:?}", element);
@@ -1830,11 +1797,7 @@ impl Engine {
                         panic!("Value must be i32.const. Instead {:#?}", element);
                     }
                 }
-                Ctrl(OP_IF_AND_ELSE(
-                    ty,
-                    block_instructions_branch_1,
-                    block_instructions_branch_2,
-                )) => {
+                OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2) => {
                     debug!("OP_IF_AND_ELSE {:?}", ty);
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
                         //let label_idx = self.get_label_count()?;
@@ -1891,12 +1854,12 @@ impl Engine {
                         panic!("Value must be i32.const");
                     }
                 }
-                Ctrl(OP_BR(label_idx)) => {
+                OP_BR(label_idx) => {
                     debug!("OP_BR {}", label_idx);
 
                     return Ok(InstructionOutcome::BRANCH(*label_idx));
                 }
-                Ctrl(OP_BR_IF(label_idx)) => {
+                OP_BR_IF(label_idx) => {
                     debug!("OP_BR_IF {}", label_idx);
                     if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
                         debug!("c is {}", c);
@@ -1908,7 +1871,7 @@ impl Engine {
                         }
                     }
                 }
-                Ctrl(OP_BR_TABLE(table, default)) => {
+                OP_BR_TABLE(table, default) => {
                     debug!("OP_BR_TABLE {:?}, {:?}", table, default);
                     let ival = fetch_unop!(self.store.stack);
                     if let I32(index) = ival {
@@ -1923,7 +1886,7 @@ impl Engine {
                         panic!("invalid index type: {:?}", ival);
                     }
                 }
-                Ctrl(OP_CALL(idx)) => {
+                OP_CALL(idx) => {
                     debug!("OP_CALL {:?}", idx);
 
                     trace!("fn_types: {:#?}", self.module.fn_types);
@@ -1939,7 +1902,7 @@ impl Engine {
 
                     self.invoke_function(*idx, args)?;
                 }
-                Ctrl(OP_CALL_INDIRECT(idx)) => {
+                OP_CALL_INDIRECT(idx) => {
                     debug!("OP_CALL_INDIRECT {:?}", idx);
                     let ta = self.module.tableaddrs[0];
                     let tab = &self.store.tables[ta as usize];
@@ -1983,12 +1946,12 @@ impl Engine {
                         None => panic!("Table not initilized at index {}", i),
                     }
                 }
-                Ctrl(OP_RETURN) | Ctrl(OP_END) => {
+                OP_RETURN => {
                     debug!("Return");
                     return Ok(InstructionOutcome::RETURN);
                 }
-                Ctrl(OP_NOP) => {}
-                Ctrl(OP_UNREACHABLE) => return Err(anyhow!("Reached unreachable => trap!")),
+                OP_NOP => {}
+                OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
                 //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
             ip += 1;
