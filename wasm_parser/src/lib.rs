@@ -71,7 +71,7 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
 
     let (i, n) = take(1u8)(i)?;
     let (i, size) = take_leb_u32(i)?;
-    let mut counter = Counter::new();
+    let mut counter = Counter::default();
 
     debug!("SECTION {:?} {:?}", n, size);
 

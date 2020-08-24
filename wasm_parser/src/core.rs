@@ -219,20 +219,12 @@ pub enum Limits {
     One(u32, u32),
 }
 
-
-
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Counter {
     value: usize,
 }
 
 impl Counter {
-    pub fn new() -> Counter {
-        Self {
-            value: 0,
-        }
-    }
-
     fn inc(&mut self) {
         self.value += 1;
     }
@@ -240,6 +232,12 @@ impl Counter {
     pub fn get_value(&mut self) -> usize {
         self.inc();
         self.value
+    }
+}
+
+impl Default for Counter {
+    fn default() -> Self {
+        Counter { value: 0 }
     }
 }
 
@@ -258,10 +256,7 @@ impl CodeBlock {
     }
 
     pub fn with(id: usize, instructions: Vec<Instruction>) -> Self {
-        Self {
-            id,
-            instructions,
-        }
+        Self { id, instructions }
     }
 }
 
@@ -286,7 +281,7 @@ pub enum Instruction {
     OP_DROP,
     OP_SELECT,
 
-    // Var 
+    // Var
     OP_LOCAL_GET(LocalIdx),
     OP_LOCAL_SET(LocalIdx),
     OP_LOCAL_TEE(LocalIdx),
@@ -321,7 +316,6 @@ pub enum Instruction {
     OP_MEMORY_GROW,
 
     // Num
-
     OP_I32_CONST(i32),
     OP_I64_CONST(i64),
     OP_F32_CONST(f32),
@@ -473,7 +467,6 @@ pub enum Instruction {
     OP_I64_TRUNC_SAT_F32_U,
     OP_I64_TRUNC_SAT_F64_S,
     OP_I64_TRUNC_SAT_F64_U,
-
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
