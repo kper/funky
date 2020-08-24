@@ -13,7 +13,8 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use funky::engine::{Engine, ModuleInstance, StackContent, Value};
+use funky::engine::{Engine, ModuleInstance, StackContent};
+use funky::value::Value;
 use funky::{parse, read_wasm, validate};
 
 use std::collections::HashMap;

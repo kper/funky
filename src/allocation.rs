@@ -1,6 +1,7 @@
 use crate::engine::*;
 use wasm_parser::core::*;
 use wasm_parser::Module;
+use crate::value::Value;
 
 pub fn allocate(
     m: &Module,

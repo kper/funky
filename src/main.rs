@@ -5,9 +5,9 @@ extern crate funky;
 extern crate regex;
 
 use docopt::Docopt;
-use funky::engine::Value;
-use funky::engine::Value::*;
 use funky::engine::{Engine, ModuleInstance};
+use funky::value::Value;
+use funky::value::Value::*;
 use regex::Regex;
 use regex::RegexSet;
 use serde::Deserialize;

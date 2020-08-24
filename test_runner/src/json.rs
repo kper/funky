@@ -1,4 +1,4 @@
-use funky::engine::Value;
+use funky::value::Value;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]

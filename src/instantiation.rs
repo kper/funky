@@ -1,5 +1,6 @@
 use crate::engine::*;
 use wasm_parser::Module;
+use crate::value::Value;
 
 use anyhow::{anyhow, Result};
 

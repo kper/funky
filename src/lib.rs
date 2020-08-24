@@ -4,10 +4,15 @@ extern crate wasm_parser;
 pub mod allocation;
 pub mod engine;
 pub mod instantiation;
+mod page;
+pub mod value;
+mod operations;
 
 pub use validation::validate;
 pub use wasm_parser::parse;
 pub use wasm_parser::read_wasm;
+
+pub(crate) const PAGE_SIZE: usize = 65536;
 
 #[cfg(test)]
 mod tests;
