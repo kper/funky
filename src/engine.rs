@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::engine::StackContent::*;
 use crate::engine::Value::*;
 use anyhow::{anyhow, Context, Result};

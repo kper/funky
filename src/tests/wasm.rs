@@ -29,7 +29,7 @@ macro_rules! test_run_engine {
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
-        engine.invoke_exported_function($num_f, $init);
+        engine.invoke_exported_function($num_f, $init).expect("Invoke exported function failed");
         engine
     }};
 }

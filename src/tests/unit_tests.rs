@@ -32,7 +32,7 @@ fn test_invoke_wrong_length_parameters() {
 
     e.module.code = vec![body.clone()];
 
-    e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]);
+    e.invoke_function(0, vec![Value::I32(1), Value::I32(2), Value::I32(3)]).expect("invoke function failed");
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn test_invoke_wrong_ty_parameters() {
 
     e.module.code = vec![body.clone()];
 
-    e.invoke_function(0, vec![Value::I32(1), Value::I32(2)]);
+    e.invoke_function(0, vec![Value::I32(1), Value::I32(2)]).expect("invoke function failed");
 }
 
 #[test]
