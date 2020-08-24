@@ -22,9 +22,6 @@ name = "funky"
 path = "test_runner/src/main.rs"
 name = "test_runner"
 
-[profile.release]
-debug = true
-
 [dependencies]
 validation = { path = "./validation" }
 wasm-parser = { path = "./wasm_parser" }
