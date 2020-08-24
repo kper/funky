@@ -1665,8 +1665,8 @@ impl Engine {
                                 self.store.stack.push(Value(I32(err as i32)));
                             }
                             Ok(_new_sz) => {
-                                debug!("Old memory size {} pages", _new_sz);
-                                self.store.stack.push(Value(I32(_new_sz as i32)));
+                                //debug!("Old memory size {} pages", _new_sz);
+                                self.store.stack.push(Value(I32(_sz as i32)));
                             }
                         }
                     } else {
