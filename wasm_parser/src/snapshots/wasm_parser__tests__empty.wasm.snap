@@ -61,19 +61,13 @@ Module {
                     FunctionBody {
                         locals: [],
                         code: [
-                            Var(
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
+                            OP_LOCAL_GET(
+                                0,
                             ),
-                            Var(
-                                OP_LOCAL_GET(
-                                    1,
-                                ),
+                            OP_LOCAL_GET(
+                                1,
                             ),
-                            Num(
-                                OP_I32_ADD,
-                            ),
+                            OP_I32_ADD,
                         ],
                     },
                 ],

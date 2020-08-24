@@ -58,10 +58,8 @@ Module {
                     FunctionBody {
                         locals: [],
                         code: [
-                            Num(
-                                OP_I32_CONST(
-                                    -1000,
-                                ),
+                            OP_I32_CONST(
+                                -1000,
                             ),
                         ],
                     },

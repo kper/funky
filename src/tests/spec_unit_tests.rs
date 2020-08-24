@@ -149,7 +149,7 @@ fn test_as_mixed_operands() {
     );
 }
 
-//#[test]
+/*#[test]
 fn test_local_set_write() {
     env_logger::init();
 
@@ -216,7 +216,7 @@ fn test_local_set_write() {
         Some(StackContent::Value(Value::I64(56))),
         engine.store.stack.pop()
     );
-}
+}*/
 
 #[test]
 fn test_f32_copy_sign() {

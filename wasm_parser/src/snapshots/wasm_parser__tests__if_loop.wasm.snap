@@ -65,79 +65,51 @@ Module {
                             },
                         ],
                         code: [
-                            Var(
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
+                            OP_LOCAL_GET(
+                                0,
                             ),
-                            Var(
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
+                            OP_LOCAL_GET(
+                                0,
                             ),
-                            Num(
-                                OP_I32_MUL,
+                            OP_I32_MUL,
+                            OP_I32_CONST(
+                                0,
                             ),
-                            Num(
-                                OP_I32_CONST(
-                                    0,
-                                ),
+                            OP_LOCAL_GET(
+                                0,
                             ),
-                            Var(
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
+                            OP_SELECT,
+                            OP_LOCAL_GET(
+                                0,
                             ),
-                            Param(
-                                OP_SELECT,
-                            ),
-                            Var(
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
-                            ),
-                            Ctrl(
-                                OP_IF(
-                                    Empty,
-                                    CodeBlock {
-                                        id: 1,
-                                        instructions: [
-                                            Ctrl(
-                                                OP_LOOP(
-                                                    Empty,
-                                                    CodeBlock {
-                                                        id: 1,
-                                                        instructions: [
-                                                            Var(
-                                                                OP_LOCAL_GET(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                            Num(
-                                                                OP_I32_CONST(
-                                                                    -1,
-                                                                ),
-                                                            ),
-                                                            Num(
-                                                                OP_I32_ADD,
-                                                            ),
-                                                            Var(
-                                                                OP_LOCAL_TEE(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                            Ctrl(
-                                                                OP_BR_IF(
-                                                                    0,
-                                                                ),
-                                                            ),
-                                                        ],
-                                                    },
-                                                ),
-                                            ),
-                                        ],
-                                    },
-                                ),
+                            OP_IF(
+                                Empty,
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        OP_LOOP(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    OP_LOCAL_GET(
+                                                        0,
+                                                    ),
+                                                    OP_I32_CONST(
+                                                        -1,
+                                                    ),
+                                                    OP_I32_ADD,
+                                                    OP_LOCAL_TEE(
+                                                        0,
+                                                    ),
+                                                    OP_BR_IF(
+                                                        0,
+                                                    ),
+                                                ],
+                                            },
+                                        ),
+                                    ],
+                                },
                             ),
                         ],
                     },
