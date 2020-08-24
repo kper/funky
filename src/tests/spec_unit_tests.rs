@@ -224,7 +224,11 @@ fn test_local_set_write() {
 #[test]
 fn test_f32_copy_sign() {
     let mut engine = construct_engine!(
-        vec![Var(OP_LOCAL_GET(0)), Var(OP_LOCAL_GET(1)), Num(OP_F32_COPYSIGN)],
+        vec![
+            Var(OP_LOCAL_GET(0)),
+            Var(OP_LOCAL_GET(1)),
+            Num(OP_F32_COPYSIGN)
+        ],
         vec![ValueType::F32, ValueType::F32],
         vec![ValueType::F32]
     );
@@ -235,6 +239,32 @@ fn test_f32_copy_sign() {
 
     assert_eq!(
         Some(StackContent::Value(Value::F32(-0.0))),
+        engine.store.stack.pop()
+    );
+}
+
+#[test]
+fn test_memory_grow() {
+    //env_logger::init();
+    let mut engine = construct_engine!(
+        vec![
+            Num(OP_I32_CONST(3)),
+            Mem(OP_MEMORY_GROW),
+            Num(OP_I32_CONST(2048)),
+            Mem(OP_MEMORY_GROW),
+            Num(OP_I32_CONST(65536)),
+            Mem(OP_MEMORY_GROW),
+        ],
+        vec![],
+        vec![ValueType::I32]
+    );
+
+    engine.init_memory(0).expect("init memory failed");
+
+    engine.invoke_exported_function(0, vec![]).unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::I32(-1))),
         engine.store.stack.pop()
     );
 }

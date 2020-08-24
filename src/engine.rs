@@ -14,6 +14,39 @@ use wasm_parser::Module;
 
 pub(crate) const PAGE_SIZE: usize = 65536;
 
+#[derive(Debug, Clone, Copy)]
+struct Page(usize);
+
+impl Page {
+    pub fn new(n : usize) -> Self {
+        Self(n)
+    }
+
+    pub fn from_count(c: usize) -> Self {
+        Self(c / PAGE_SIZE)
+    }
+
+    pub fn pages(&self) -> usize {
+        self.0
+    }
+
+    pub fn elements(&self) -> usize {
+        self.pages() * PAGE_SIZE
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
+}
+
+impl Add for Page {
+    type Output = Page;
+
+    fn add(self, other: Page) -> Page {
+        Page(self.0 + other.0)
+    }
+}
+
 #[derive(Debug)]
 pub struct Engine {
     pub module: ModuleInstance, //TODO rename to `module_instance`
@@ -443,51 +476,44 @@ fn reinterpret(v: Value) -> Value {
 /// Returns Err when paging failed
 /// Returns new length in pages
 /// https://webassembly.github.io/spec/core/exec/modules.html#growing-memories
-fn grow_memory(instance: &mut MemoryInstance, n: usize) -> Result<usize, ()> {
-    if n == 0 {
-        return Ok(instance.data.len() / PAGE_SIZE);
+fn grow_memory(instance: &mut MemoryInstance, n: Page) -> Result<Page, ()> {
+    if n.is_zero() {
+        return Ok(Page::from_count(instance.data.len()));
     }
 
-    let len = n + instance.data.len();
+    let len = n + Page::from_count(instance.data.len());
 
-    match instance.max {
-        None => {
-            if len / PAGE_SIZE > PAGE_SIZE * PAGE_SIZE as usize {
-                error!("Length exceeded. Too many memory pages");
-                return Err(());
-            }
-        }
-        Some(max) => {
-            debug!("Checking limit len {} < max {}", len / PAGE_SIZE, max);
-            if len / PAGE_SIZE > max as usize {
-                error!("Memory growing failed. Limit exceded");
-                return Err(());
-            }
-
-            debug!(
-                "Checking limit len {} + n {} < max {}",
-                len / PAGE_SIZE,
-                n,
-                max
-            );
-            if len / PAGE_SIZE + n > max as usize {
-                error!("Memory growing failed. Limit exceded");
-                return Err(());
-            }
-        }
+    //debug!("{} > {}", len / PAGE_SIZE, PAGE_SIZE);
+    if len.pages() > usize::pow(2, 16) {
+        error!("Length exceeded. Too many memory pages");
+        return Err(());
     }
 
-    let new_length = instance.data.len() + (n as usize) * PAGE_SIZE;
-    debug!("Resize by {} bytes", new_length);
+    if let Some(max) = instance.max {
+        debug!("Checking limit len {:?} < max {}", len.pages(), max);
+        if len.pages() > max as usize {
+            error!("Memory growing failed. Limit exceded");
+            return Err(());
+        }
 
-    let extension = vec![0u8; (n as usize) * PAGE_SIZE];
+               /*
+        if len / PAGE_SIZE + n > max as usize {
+            error!("Memory growing failed. Limit exceded");
+            return Err(());
+        }*/
+    }
 
+    let new_length = Page::from_count(instance.data.len()) + n;
+    debug!("Resize by {} bytes", new_length.elements());
+
+    // Create new vec and fill it with 0u8
+    let extension = vec![0u8; n.elements()];
+
+    // Append the new vec to the instance
     instance.data.extend_from_slice(&extension);
 
-    //instance.data.resize(new_length, 0u8);
-    //.resize(instance.data.len() + (n as usize) * PAGE_SIZE, 0u8);
-
-    Ok(new_length / PAGE_SIZE)
+    // Return pages
+    Ok(new_length)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -840,6 +866,20 @@ impl Engine {
         debug!("after allocate {:#?}", e);
 
         e
+    }
+
+    /// Initializes `n` pages in memory
+    pub(crate) fn init_memory(&mut self, n: usize) -> Result<()> {
+        let res = self
+            .store
+            .init_memory(n)
+            .context("Trying to initializean empty memory instance");
+
+        // only one memory module is allowed
+        assert!(self.module.memaddrs.len() == 0);
+        self.module.memaddrs.push(self.module.memaddrs.len() as u32);
+
+        res
     }
 
     fn allocate(&mut self, m: &Module) {
@@ -1647,7 +1687,6 @@ impl Engine {
                         }
 
                         /*
-
                         if let Some(max) = instance.max {
                             if err > max {
                                 error!("Memory growing failed. Limit exceded");
@@ -1657,12 +1696,10 @@ impl Engine {
                         }
                         */
 
-                        match grow_memory(instance, n as usize) {
+                        match grow_memory(instance, Page(n as usize)) {
                             Err(()) => {
                                 error!("Memory growing failed because paging failed.");
-                                let err = u32::MAX;
-                                debug!("New memory size {}", err);
-                                self.store.stack.push(Value(I32(err as i32)));
+                                self.store.stack.push(Value(I32(-1)));
                             }
                             Ok(_new_sz) => {
                                 //debug!("Old memory size {} pages", _new_sz);
@@ -2003,6 +2040,23 @@ impl Engine {
         match x {
             Value(v) => Ok(v),
             other => Err(anyhow!("Expected value but found {:?}", other)),
+        }
+    }
+}
+
+impl Store {
+    /// Initializes `n` pages in memory with 0
+    pub(crate) fn init_memory(&mut self, n: usize) -> Result<()> {
+        if self.memory.last().is_none() {
+            let instance = MemoryInstance {
+                max: None,
+                data: vec![0u8; n * PAGE_SIZE],
+            };
+
+            self.memory.push(instance);
+            Ok(())
+        } else {
+            Err(anyhow!("A memory instance is already defined"))
         }
     }
 }

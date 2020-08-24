@@ -802,7 +802,7 @@ fn test_run_memory_size() {
     );
 }
 
-#[test]
+/*#[test]
 fn test_run_memory_grow() {
     //env_logger::init();
     let engine = test_run_engine!("memory.wasm", 4, vec![I32(1)]);
@@ -810,7 +810,7 @@ fn test_run_memory_grow() {
         Some(&StackContent::Value(I32(1))),
         engine.store.stack.last()
     );
-}
+}*/
 
 /*
 #[test]
