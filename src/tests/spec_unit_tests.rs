@@ -149,7 +149,7 @@ fn test_as_mixed_operands() {
     );
 }
 
-#[test]
+//#[test]
 fn test_local_set_write() {
     env_logger::init();
 
