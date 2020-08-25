@@ -2,9 +2,8 @@
 /// failed in the `test_runner`.
 use crate::construct_engine;
 use crate::engine::*;
-use wasm_parser::core::ValueType;
 use crate::value::Value;
-
+use wasm_parser::core::ValueType;
 
 #[test]
 fn test_f32_add_minus_0_and_nan() {
@@ -222,11 +221,7 @@ fn test_local_set_write() {
 #[test]
 fn test_f32_copy_sign() {
     let mut engine = construct_engine!(
-        vec![
-            OP_LOCAL_GET(0),
-            OP_LOCAL_GET(1),
-            OP_F32_COPYSIGN
-        ],
+        vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_F32_COPYSIGN],
         vec![ValueType::F32, ValueType::F32],
         vec![ValueType::F32]
     );
@@ -269,7 +264,7 @@ fn test_memory_grow() {
 
 #[test]
 fn test_br_return() {
-    env_logger::init();
+    //env_logger::init();
     let mut engine = construct_engine!(
         vec![OP_BLOCK(
             BlockType::ValueTypeTy(0),
@@ -301,11 +296,96 @@ fn test_br_return() {
     engine.invoke_exported_function(0, vec![]).unwrap();
 
     assert_eq!(
-        Some(StackContent::Value(Value::F64(4.0))),
-        engine.store.stack.pop()
-    );
-    assert_eq!(
         Some(StackContent::Value(Value::F64(5.0))),
         engine.store.stack.pop()
     );
+    assert_eq!(
+        Some(StackContent::Value(Value::F64(4.0))),
+        engine.store.stack.pop()
+    );
 }
+
+#[test]
+fn test_i64_br_value() {
+    let mut engine = construct_engine!(
+        vec![OP_BLOCK(
+            BlockType::ValueType(ValueType::I64),
+            CodeBlock::with(0, vec![
+                OP_I64_CONST(2),
+                OP_BR(0),
+                OP_I64_CTZ
+            ])
+        )],
+        vec![],
+        vec![ValueType::I64]
+    );
+
+    engine.invoke_exported_function(0, vec![]).unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::I64(2))),
+        engine.store.stack.pop()
+    );
+}
+
+#[test]
+fn test_as_br_if_value_cond() {
+    //env_logger::init();
+    let mut engine = construct_engine!(
+        vec![OP_BLOCK(
+            BlockType::ValueType(ValueType::I32),
+            CodeBlock::with(0, vec![
+                OP_I32_CONST(6),
+                OP_I32_CONST(9),
+                OP_BR(0),
+                OP_BR_IF(0),
+                OP_DROP,
+                OP_I32_CONST(7),
+            ])
+        )],
+        vec![],
+        vec![ValueType::I32]
+    );
+
+    engine.invoke_exported_function(0, vec![]).unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::I32(9))),
+        engine.store.stack.pop()
+    );
+}
+
+#[test]
+fn test_as_return_values() {
+    env_logger::init();
+    let mut engine = construct_engine!(
+        vec![
+            OP_I32_CONST(2),
+            OP_BLOCK(
+            BlockType::ValueType(ValueType::I64),
+            CodeBlock::with(
+                0,
+                vec![
+                    OP_I32_CONST(1),
+                    OP_I64_CONST(7),
+                    OP_BR(0),
+                    OP_RETURN,
+                ],
+            ),
+        ),],
+        vec![],
+        vec![ValueType::I32, ValueType::I64]
+    );
+
+    engine.invoke_exported_function(0, vec![]).unwrap();
+
+    assert_eq!(
+        Some(StackContent::Value(Value::I64(7))),
+        engine.store.stack.pop()
+    );
+    assert_eq!(
+        Some(StackContent::Value(Value::I32(2))),
+        engine.store.stack.pop()
+    );
+}
+
