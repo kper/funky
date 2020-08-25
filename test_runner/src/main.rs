@@ -307,7 +307,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                     .iter()
                     .rev()
                     .take(expected.len())
-                    .rev()
+                    //.rev()
                     .collect();
 
                 if !actuals.iter().all(|x| x.is_value()) {
