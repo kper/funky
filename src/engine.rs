@@ -493,7 +493,7 @@ impl Engine {
         // We didn't get enough arguments for the locals,
         // therefore, we have to initialize
         // It is very important to use the correct type
-        for i in locals.len()..=typed_locals.len() {
+        for i in locals.len()..typed_locals.len() {
             let entry = typed_locals.get(i).unwrap();
 
             match entry.ty {
