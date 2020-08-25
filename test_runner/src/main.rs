@@ -247,8 +247,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
             // Replace `current_engine` with next WASM module
             Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             Command::AssertReturn(case) => {
-                if cmd_arguments.len() > 2 {
-                    if cmd_arguments
+                if cmd_arguments.len() > 2 && cmd_arguments
                         .iter()
                         .filter(|x| x.contains(&case.action.field))
                         .count()
@@ -257,7 +256,6 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
                         log::info!("Skipping {} because not matched", case.action.field);
                         continue;
                     }
-                }
 
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
                 case_stats.total_count.fetch_add(1, Ordering::Relaxed);
@@ -268,10 +266,11 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
 
                 let args = case.get_args();
 
+                /*
                 println!(
                     "Running function {} with {:?}",
                     case.action.field, case.action.args
-                );
+                );*/
 
                 if let Err(err) =
                     engine.invoke_exported_function_by_name(&case.action.field, args.clone())
