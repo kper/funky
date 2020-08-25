@@ -407,7 +407,7 @@ impl Engine {
             .context("Trying to initializean empty memory instance");
 
         // only one memory module is allowed
-        assert!(self.module.memaddrs.len() == 0);
+        assert!(self.module.memaddrs.is_empty());
         self.module.memaddrs.push(self.module.memaddrs.len() as u32);
 
         res
@@ -618,7 +618,7 @@ impl Engine {
             match &instruction {
                 OP_LOCAL_GET(idx) => {
                     if let Some(val) = fr.locals.get(*idx as usize) {
-                        self.store.stack.push(Value(val.clone()));
+                        self.store.stack.push(Value(*val));
                         debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
                         debug!("locals {:#?}", fr.locals);
                     } else {
