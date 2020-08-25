@@ -1280,6 +1280,8 @@ impl Engine {
 
                     let arity = self.get_block_ty_arity(&ty)?;
 
+                    debug!("Arity for loop ({:?}) is {}", ty, arity);
+
                     let label = Label {
                         arity: arity as u32,
                     };
@@ -1316,6 +1318,8 @@ impl Engine {
 
                     if let Some(StackContent::Value(Value::I32(v))) = element {
                         let arity = self.get_block_ty_arity(&ty)?;
+
+                        debug!("Arity for if ({:?}) is {}", ty, arity);
 
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
@@ -1542,12 +1546,18 @@ impl Engine {
         debug!("values before applying block's arity {:?}", val_m);
 
         if let Some(Label(lb)) = self.store.stack.pop() {
-            val_m = val_m
-                .into_iter()
-                .rev()
-                .take(lb.arity as usize)
-                .rev()
-                .collect();
+            debug!("Label on the top of the stack {:?}", lb);
+
+            // If and If-Else labels have arity 0
+            // therefore, we keep all results
+            if lb.arity != 0 {
+                val_m = val_m
+                    .into_iter()
+                    .rev()
+                    .take(lb.arity as usize)
+                    .rev()
+                    .collect();
+            }
         } else {
             return Err(anyhow!("Expected label, but it's not a label"));
         }
@@ -1558,8 +1568,8 @@ impl Engine {
         Ok(())
     }
 
-    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<usize> {
-        Ok(match block_ty {
+    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<Arity> {
+        let arity = match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,
             BlockType::ValueTypeTy(ty) => self
@@ -1569,7 +1579,11 @@ impl Engine {
                 .ok_or_else(|| anyhow!("Trap"))?
                 .return_types
                 .len(),
-        })
+        };
+
+        debug!("Arity is {}", arity);
+
+        Ok(arity as u32)
     }
 
     /// Maps `StackContent` to `Value`
