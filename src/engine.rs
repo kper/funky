@@ -1521,6 +1521,8 @@ impl Engine {
             val_m.push(self.store.stack.pop().unwrap());
         }
 
+        val_m.reverse();
+
         debug!("values {:?}", val_m);
 
         if !self
