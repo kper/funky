@@ -608,7 +608,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
@@ -636,7 +636,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
@@ -669,7 +669,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
@@ -704,7 +704,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
@@ -742,7 +742,7 @@ mod test {
         payload.push(0x0B); //end
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
@@ -779,7 +779,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_conditional(&payload, &mut counter).unwrap();
 
@@ -813,7 +813,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_conditional(&payload, &mut counter).unwrap();
 
@@ -839,7 +839,7 @@ mod test {
         payload.push(0x01); //nop
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_loop(&payload, &mut counter).unwrap();
 
@@ -874,7 +874,7 @@ mod test {
         payload.push(0x0B); //end
         payload.push(0x0B); //end
 
-        let mut counter = Counter::new();
+        let mut counter = Counter::default();
 
         let instructions = take_loop(&payload, &mut counter).unwrap();
 
