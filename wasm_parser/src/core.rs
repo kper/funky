@@ -208,6 +208,11 @@ pub struct FunctionBody {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// All parameters are locals. However, we
+/// can define more of them with `LocalEntry`
+/// A `LocalEntry` does **not** correspond to one local.
+/// We have a `count` property here, therefore we need
+/// to add as many as `count`.
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,

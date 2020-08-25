@@ -490,17 +490,21 @@ impl Engine {
 
         let mut locals = args;
 
-        // We didn't get enough arguments for the locals,
-        // therefore, we have to initialize
+        // All parameters are `locals`, but
+        // we can additionaly define more of them.
+        // This is done in the function definition of locals
         // It is very important to use the correct type
-        for i in locals.len()..typed_locals.len() {
+        for i in 0..typed_locals.len() {
             let entry = typed_locals.get(i).unwrap();
 
-            match entry.ty {
-                ValueType::I32 => locals.push(I32(0)),
-                ValueType::I64 => locals.push(I64(0)),
-                ValueType::F32 => locals.push(F32(0.0)),
-                ValueType::F64 => locals.push(F64(0.0)),
+            // There is a count property to define multiple at once
+            for _ in 0..entry.count {
+                match entry.ty {
+                    ValueType::I32 => locals.push(I32(0)),
+                    ValueType::I64 => locals.push(I64(0)),
+                    ValueType::F32 => locals.push(F32(0.0)),
+                    ValueType::F64 => locals.push(F64(0.0)),
+                }
             }
         }
 
