@@ -1236,6 +1236,8 @@ impl Engine {
 
                     let arity = self.get_block_ty_arity(&ty)?;
 
+                    debug!("Arity for block ({:?}) is {}", ty, arity);
+
                     let label = Label {
                         arity: arity as u32,
                     };
@@ -1523,18 +1525,20 @@ impl Engine {
 
         val_m.reverse();
 
-        debug!("values {:?}", val_m);
+        debug!("values before applying block's arity {:?}", val_m);
 
-        if !self
-            .store
-            .stack
-            .pop()
-            .ok_or_else(|| anyhow!("Expected Label, but found nothing"))?
-            .is_label()
-        {
+        if let Some(Label(lb)) = self.store.stack.pop() {
+            val_m = val_m
+                .into_iter()
+                .rev()
+                .take(lb.arity as usize)
+                .rev()
+                .collect();
+        } else {
             return Err(anyhow!("Expected label, but it's not a label"));
         }
 
+        debug!("values after applying block's arity {:?}", val_m);
         self.store.stack.append(&mut val_m);
 
         Ok(())
