@@ -183,7 +183,7 @@ fn main() {
 }
 
 /// `cmd_arguments` are function name which we filter (just for `assert_return`)
-fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<String>) -> String {
+fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[String]) -> String {
     let case_stats = Stats::default();
 
     let h = path.path();
@@ -247,15 +247,16 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &Vec<S
             // Replace `current_engine` with next WASM module
             Command::Module(m) => current_engine = fs_handler.get(&m.filename),
             Command::AssertReturn(case) => {
-                if cmd_arguments.len() > 2 && cmd_arguments
+                if cmd_arguments.len() > 2
+                    && cmd_arguments
                         .iter()
                         .filter(|x| x.contains(&case.action.field))
                         .count()
                         == 0
-                    {
-                        log::info!("Skipping {} because not matched", case.action.field);
-                        continue;
-                    }
+                {
+                    log::info!("Skipping {} because not matched", case.action.field);
+                    continue;
+                }
 
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
                 case_stats.total_count.fetch_add(1, Ordering::Relaxed);
