@@ -483,15 +483,25 @@ impl Engine {
         self.check_parameters_of_function(idx, &args);
 
         let t = &self.store.funcs[idx as usize].ty;
-        let lc = match self.store.funcs[idx as usize].code.locals.get(0) {
-            Some(fb) => fb.count as usize,
-            None => 0,
-        };
+
+        let typed_locals = &self.store.funcs[idx as usize].code.locals;
+
+        debug!("defined locals are {:#?}", typed_locals);
 
         let mut locals = args;
 
-        if locals.len() < lc {
-            locals.resize(lc, I32(0));
+        // We didn't get enough arguments for the locals,
+        // therefore, we have to initialize
+        // It is very important to use the correct type
+        for i in locals.len()..=typed_locals.len() {
+            let entry = typed_locals.get(i).unwrap();
+
+            match entry.ty {
+                ValueType::I32 => locals.push(I32(0)),
+                ValueType::I64 => locals.push(I64(0)),
+                ValueType::F32 => locals.push(F32(0.0)),
+                ValueType::F64 => locals.push(F64(0.0)),
+            }
         }
 
         self.store.stack.push(Frame(Frame {
