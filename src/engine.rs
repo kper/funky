@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::config::Configuration;
 use crate::convert;
 use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::StackContent::*;
@@ -412,7 +411,7 @@ impl ModuleInstance {
 }
 
 impl Engine {
-    pub fn new(mi: ModuleInstance, module: &Module, config: Configuration) -> Engine {
+    pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>) -> Engine {
         let mut e = Engine {
             module: mi,
             started: false,
@@ -423,9 +422,7 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
-            debugger: config
-                .get_program_counter()
-                .expect("Cannot create program counter"),
+            debugger,
         };
 
         debug!("before allocate {:#?}", e);

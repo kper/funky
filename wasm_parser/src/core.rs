@@ -280,7 +280,24 @@ impl CodeBlock {
         }
     }
 
-    
+    /// Checks whether the given `cmp` instruction
+    /// is in this CodeBlock
+    pub fn has_instruction(&self, cmp: usize) -> bool {
+        let min = self
+            .instructions
+            .iter()
+            .min_by_key(|x| x.instruction_id)
+            .unwrap()
+            .instruction_id;
+        let max = self
+            .instructions
+            .iter()
+            .max_by_key(|x| x.instruction_id)
+            .unwrap()
+            .instruction_id;
+
+        min <= cmp && cmp <= max
+    }
 
     pub fn iter(&self) -> std::slice::Iter<'_, InstructionWrapper> {
         self.instructions.iter()

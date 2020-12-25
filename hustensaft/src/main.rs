@@ -1,6 +1,6 @@
 use docopt::Docopt;
 use funky::cli::parse_args;
-use funky::config::Configuration;
+use funky::debugger::DebuggerProgramCounter;
 use funky::engine::{Engine, ModuleInstance};
 use log::{debug, info};
 use serde::Deserialize;
@@ -19,8 +19,10 @@ use tui::{
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
+use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::mpsc::channel;
 
 use crate::util::{Event, Events};
 
@@ -45,15 +47,20 @@ struct Args {
     arg_args: Vec<String>,
 }
 
+/*
+use std::fmt;
+impl fmt::Debug for wasm_parser::core::InstructionWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Hi: {}", self.get_pc())
+    }
+}*/
+
 fn main() -> Result<(), std::io::Error> {
     env_logger::init();
 
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
-
-    let mut config = Configuration::new();
-    config.enable_debugger();
 
     let reader = read_wasm!(args.arg_input);
 
@@ -64,7 +71,13 @@ fn main() -> Result<(), std::io::Error> {
 
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
-    let e = Arc::new(Mutex::new(Engine::new(mi, &module, config)));
+
+    let (instruction_watcher_tx, instruction_watcher_rx) = channel();
+    let (instruction_advancer_tx, instruction_advancer_rx) = channel();
+    let debugger =
+        DebuggerProgramCounter::new(instruction_watcher_tx, instruction_advancer_rx).unwrap();
+
+    let e = Arc::new(Mutex::new(Engine::new(mi, &module, Box::new(debugger))));
     debug!("engine {:#?}", e);
 
     debug!("Instantiation engine");
@@ -78,8 +91,11 @@ fn main() -> Result<(), std::io::Error> {
 
     let args_function_cpy = args.arg_function.clone();
 
+    let copy = e.lock().unwrap().module.code.clone();
+
+    let engine = e.clone();
     std::thread::spawn(move || {
-        if let Err(err) = e
+        if let Err(err) = engine
             .clone()
             .lock()
             .unwrap()
@@ -88,7 +104,8 @@ fn main() -> Result<(), std::io::Error> {
             panic!("{}", err);
         }
 
-        let result = e.lock().unwrap().store.stack.last();
+        let result = engine.lock().unwrap().store.stack.last();
+        std::process::exit(0);
     });
 
     let stdin = stdin();
@@ -100,6 +117,9 @@ fn main() -> Result<(), std::io::Error> {
 
     let events = Events::new();
     let mut scroll = (0, 0);
+
+    let mut current_pc = 0;
+
     loop {
         if let Event::Input(key) = events.next().unwrap() {
             if key == Key::Char('q') {
@@ -124,6 +144,9 @@ fn main() -> Result<(), std::io::Error> {
                     y -= 1;
                     scroll.0 = y;
                 }
+            } else if key == Key::Backspace {
+                instruction_advancer_tx.send(()).unwrap();
+                current_pc = instruction_watcher_rx.recv().unwrap(); // Blocking
             }
         }
 
@@ -133,24 +156,26 @@ fn main() -> Result<(), std::io::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints(
-                    [
-                        Constraint::Percentage(10),
-                        Constraint::Percentage(20),
-                    ]
-                    .as_ref(),
-                )
+                .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
                 .split(f.size());
             let block = Block::default().title("Hustensaft").borders(Borders::ALL);
             f.render_widget(block, size);
 
-            let paragraph = Paragraph::new("Das ist ein TestThere are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.")
+            let paragraph = Paragraph::new(format!("{:#?}", copy))
                 .style(Style::default())
                 .alignment(Alignment::Left)
                 .scroll(scroll)
-                .wrap(Wrap { trim: true });
+                .wrap(Wrap { trim: false });
 
             f.render_widget(paragraph, chunks[0]);
+
+            let pc = Paragraph::new(format!("Current instruction {:#?}", current_pc))
+                .style(Style::default())
+                .alignment(Alignment::Left)
+                .wrap(Wrap { trim: false });
+
+            f.render_widget(pc, chunks[1]);
+
         })?;
     }
 

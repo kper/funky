@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use log::debug;
-use std::net::UdpSocket;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::{Receiver, Sender};
 
 /// The `ProgramCounter` trait defines how a program
 /// can advance.
@@ -36,15 +37,22 @@ impl ProgramCounter for RelativeProgramCounter {
 #[derive(Debug)]
 pub struct DebuggerProgramCounter {
     pc: usize,
-    socket: UdpSocket,
+    /// Informs the receiver what is the next `instruction_id` program counter
+    /// `hustensaft` will own the receiver
+    instruction_watcher: Sender<usize>,
+    /// Informs the receiver if it can proceed one step
+    /// The runtime will own the receiver
+    instruction_advancer: Receiver<()>,
 }
 
 impl DebuggerProgramCounter {
-    pub fn new(port: usize) -> Result<Self> {
+    pub fn new(watcher: Sender<usize>, advancer: Receiver<()>) -> Result<Self> {
         Ok(Self {
             pc: 0,
-            socket: UdpSocket::bind(format!("127.0.0.1:{}", port))
-                .context("Binding udp socket in DebuggerProgramCounter")?,
+            instruction_watcher: watcher,
+            instruction_advancer: advancer,
+            //socket: UdpSocket::bind(format!("127.0.0.1:{}", port))
+            //.context("Binding udp socket in DebuggerProgramCounter")?,
         })
     }
 }
@@ -53,12 +61,17 @@ impl ProgramCounter for DebuggerProgramCounter {
     fn set_pc(&mut self, n: usize) -> Result<()> {
         debug!("Waiting for progress signal");
         // Wait for the incoming signal to proceed.
-        let mut buf = [0; 1];
-        let (_, _) = self.socket.recv_from(&mut buf)?; // blocking
+        //let mut buf = [0; 1];
+        //let (_, _) = self.socket.recv_from(&mut buf)?; // blocking
+
+        self.instruction_advancer.recv().unwrap();
+
         debug!("Progress signal received");
 
         debug!("Setting pc to {}", n);
         self.pc = n;
+
+        self.instruction_watcher.send(n).unwrap();
 
         Ok(())
     }

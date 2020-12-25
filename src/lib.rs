@@ -3,7 +3,6 @@ extern crate log;
 extern crate wasm_parser;
 pub mod allocation;
 pub mod cli;
-pub mod config;
 pub mod debugger;
 pub mod engine;
 pub mod instantiation;
