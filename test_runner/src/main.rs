@@ -16,6 +16,7 @@ use std::sync::{Arc, Mutex};
 use funky::engine::{Engine, ModuleInstance, StackContent};
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
+use funky::debugger::RelativeProgramCounter;
 
 use std::collections::HashMap;
 
@@ -227,6 +228,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
             )
         });
 
+
     // Saves the handler of the engine TODO better explaination
     for fs_name in fs_names {
         let reader = read_wasm!(&format!("testsuite/{}", fs_name));
@@ -234,8 +236,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
         let validation = validate(&module);
         let mi = ModuleInstance::new(&module);
 
-        let mut e = Engine::new(mi, &module);
-
+        let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::new()));
         if let Err(err) = e.instantiation(&module) {}
 
         fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));

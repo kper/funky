@@ -9,23 +9,35 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_BLOCK(
-                        ValueType(
-                            I32,
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 1,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 2,
+                                        instruction: OP_LOCAL_GET(
+                                            1,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 3,
+                                        instruction: OP_I32_ADD,
+                                    },
+                                ],
+                            },
                         ),
-                        CodeBlock {
-                            id: 1,
-                            instructions: [
-                                OP_LOCAL_GET(
-                                    0,
-                                ),
-                                OP_LOCAL_GET(
-                                    1,
-                                ),
-                                OP_I32_ADD,
-                            ],
-                        },
-                    ),
+                    },
                 ],
             },
         ],
@@ -64,23 +76,35 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_BLOCK(
-                            ValueType(
-                                I32,
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_BLOCK(
+                                ValueType(
+                                    I32,
+                                ),
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 1,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 2,
+                                            instruction: OP_LOCAL_GET(
+                                                1,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 3,
+                                            instruction: OP_I32_ADD,
+                                        },
+                                    ],
+                                },
                             ),
-                            CodeBlock {
-                                id: 1,
-                                instructions: [
-                                    OP_LOCAL_GET(
-                                        0,
-                                    ),
-                                    OP_LOCAL_GET(
-                                        1,
-                                    ),
-                                    OP_I32_ADD,
-                                ],
-                            },
-                        ),
+                        },
                     ],
                 },
             },
@@ -90,4 +114,7 @@ Engine {
         stack: [],
         globals: [],
     },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
 }

@@ -187,7 +187,7 @@ fn allocate_globals(
                 Mu::Var => true,
                 _ => false,
             },
-            val: get_expr_const_ty_global(&gl.init)?, //TODO this might be a problem, because we only accept CONST and no other globals
+            val: get_expr_const_ty_global(&gl.init)?,
         };
 
         mod_instance.globaladdrs.push(store.globals.len() as u32);
@@ -221,7 +221,7 @@ fn allocate_exports(
     Ok(())
 }
 
-pub(crate) fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()> {
+pub(crate) fn get_expr_const_ty_global(init: &Expr) -> Result<Value, ()> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
@@ -229,7 +229,7 @@ pub(crate) fn get_expr_const_ty_global(init: &[Instruction]) -> Result<Value, ()
         return Err(());
     }
 
-    match init.get(0).unwrap() {
+    match init.get(0).unwrap().get_instruction() {
         OP_I32_CONST(v) => Ok(Value::I32(*v)),
         OP_I64_CONST(v) => Ok(Value::I64(*v)),
         OP_F32_CONST(v) => Ok(Value::F32(*v)),

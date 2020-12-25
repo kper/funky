@@ -14,52 +14,94 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_I32_MUL,
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_SELECT,
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_IF(
-                        Empty,
-                        CodeBlock {
-                            id: 2,
-                            instructions: [
-                                OP_LOOP(
-                                    Empty,
-                                    CodeBlock {
-                                        id: 1,
-                                        instructions: [
-                                            OP_LOCAL_GET(
-                                                0,
-                                            ),
-                                            OP_I32_CONST(
-                                                -1,
-                                            ),
-                                            OP_I32_ADD,
-                                            OP_LOCAL_TEE(
-                                                0,
-                                            ),
-                                            OP_BR_IF(
-                                                0,
-                                            ),
-                                        ],
+                    InstructionWrapper {
+                        instruction_id: 7,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 8,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 9,
+                        instruction: OP_I32_MUL,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 10,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 11,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 12,
+                        instruction: OP_SELECT,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 13,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 14,
+                        instruction: OP_IF(
+                            Empty,
+                            CodeBlock {
+                                id: 2,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 6,
+                                        instruction: OP_LOOP(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 1,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 2,
+                                                        instruction: OP_I32_CONST(
+                                                            -1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 3,
+                                                        instruction: OP_I32_ADD,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 4,
+                                                        instruction: OP_LOCAL_TEE(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 5,
+                                                        instruction: OP_BR_IF(
+                                                            0,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
                                     },
-                                ),
-                            ],
-                        },
-                    ),
+                                ],
+                            },
+                        ),
+                    },
                 ],
             },
         ],
@@ -116,52 +158,94 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_I32_MUL,
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_SELECT,
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_IF(
-                            Empty,
-                            CodeBlock {
-                                id: 2,
-                                instructions: [
-                                    OP_LOOP(
-                                        Empty,
-                                        CodeBlock {
-                                            id: 1,
-                                            instructions: [
-                                                OP_LOCAL_GET(
-                                                    0,
-                                                ),
-                                                OP_I32_CONST(
-                                                    -1,
-                                                ),
-                                                OP_I32_ADD,
-                                                OP_LOCAL_TEE(
-                                                    0,
-                                                ),
-                                                OP_BR_IF(
-                                                    0,
-                                                ),
-                                            ],
+                        InstructionWrapper {
+                            instruction_id: 7,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 8,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 9,
+                            instruction: OP_I32_MUL,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 10,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 11,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 12,
+                            instruction: OP_SELECT,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 13,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 14,
+                            instruction: OP_IF(
+                                Empty,
+                                CodeBlock {
+                                    id: 2,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 6,
+                                            instruction: OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 1,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 2,
+                                                            instruction: OP_I32_CONST(
+                                                                -1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 3,
+                                                            instruction: OP_I32_ADD,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 4,
+                                                            instruction: OP_LOCAL_TEE(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 5,
+                                                            instruction: OP_BR_IF(
+                                                                0,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                            ),
                                         },
-                                    ),
-                                ],
-                            },
-                        ),
+                                    ],
+                                },
+                            ),
+                        },
                     ],
                 },
             },
@@ -176,4 +260,7 @@ Engine {
         stack: [],
         globals: [],
     },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
 }

@@ -272,7 +272,13 @@ fn take_func<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8],
 
     let (i, code) = take_expr(i, counter)?;
 
-    Ok((i, FunctionBody { locals, code }))
+    Ok((
+        i,
+        FunctionBody {
+            locals,
+            code: InstructionWrapper::wrap_instructions(counter, code),
+        },
+    ))
 }
 
 fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
@@ -299,7 +305,7 @@ fn take_data<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8],
         i,
         DataSegment {
             data: mem_idx,
-            offset: e,
+            offset: InstructionWrapper::wrap_instructions(counter, e),
             init: b.into_iter().map(|w| w[0]).collect(),
         },
     ))
@@ -317,7 +323,7 @@ fn take_elem<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8],
         i,
         ElementSegment {
             table: table_idx,
-            offset: e,
+            offset: InstructionWrapper::wrap_instructions(counter, e),
             init: y_vec,
         },
     ))
@@ -336,7 +342,13 @@ fn take_global<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8
     let (i, ty) = take_globaltype(i)?;
     let (i, e) = take_expr(i, counter)?;
 
-    Ok((i, GlobalVariable { ty, init: e }))
+    Ok((
+        i,
+        GlobalVariable {
+            ty,
+            init: InstructionWrapper::wrap_instructions(counter, e),
+        },
+    ))
 }
 
 pub(crate) fn take_expr<'a, 'b>(

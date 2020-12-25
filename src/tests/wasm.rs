@@ -1,10 +1,12 @@
+use crate::debugger::RelativeProgramCounter;
+use crate::engine::*;
 use crate::value::Value::*;
 use crate::value::*;
-use crate::engine::*;
+use crate::wrap_instructions;
 use insta::assert_snapshot;
 use validation::validate;
-use wasm_parser::core::*;
 use wasm_parser::core::Instruction::*;
+use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
 
 macro_rules! test_file_engine {
@@ -14,7 +16,7 @@ macro_rules! test_file_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module);
+        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::new()));
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -27,11 +29,17 @@ macro_rules! test_run_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let mut engine = Engine::new(instance, &module);
+        let mut engine = Engine::new(
+            instance,
+            &module,
+            Box::new(crate::debugger::RelativeProgramCounter::new()),
+        );
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
-        engine.invoke_exported_function($num_f, $init).expect("Invoke exported function failed");
+        engine
+            .invoke_exported_function($num_f, $init)
+            .expect("Invoke exported function failed");
         engine
     }};
 }
@@ -43,7 +51,7 @@ macro_rules! allocation {
         };
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module);
+        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::new()));
 
         engine
     }};
@@ -63,7 +71,7 @@ fn test_allocation_funcs() {
 
     let body = FunctionBody {
         locals: vec![],
-        code: vec![OP_NOP],
+        code: wrap_instructions!(vec![OP_NOP]),
     };
 
     let engine = allocation!(vec![
@@ -185,7 +193,7 @@ fn test_allocation_globals() {
                 value_type: ValueType::I32,
                 mu: Mu::Const
             },
-            init: vec![OP_I32_CONST(10)]
+            init: wrap_instructions!(vec![OP_I32_CONST(10)])
         }]
     })]);
 

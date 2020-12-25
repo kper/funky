@@ -9,27 +9,45 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_LOCAL_GET(
-                        1,
-                    ),
-                    OP_I32_ADD,
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 2,
+                        instruction: OP_LOCAL_GET(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 3,
+                        instruction: OP_I32_ADD,
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_CALL(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 5,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 6,
+                        instruction: OP_CALL(
+                            0,
+                        ),
+                    },
                 ],
             },
         ],
@@ -84,13 +102,22 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_LOCAL_GET(
-                            1,
-                        ),
-                        OP_I32_ADD,
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 2,
+                            instruction: OP_LOCAL_GET(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 3,
+                            instruction: OP_I32_ADD,
+                        },
                     ],
                 },
             },
@@ -106,15 +133,24 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_CALL(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 5,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 6,
+                            instruction: OP_CALL(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -124,4 +160,7 @@ Engine {
         stack: [],
         globals: [],
     },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
 }

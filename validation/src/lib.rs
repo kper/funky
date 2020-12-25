@@ -3,8 +3,6 @@ use wasm_parser::Module;
 
 type IResult<T> = Result<T, &'static str>;
 
-type Expr = [Instruction];
-
 pub mod extract;
 //pub mod instructions;
 
@@ -237,7 +235,7 @@ fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<
         return Err("No expr to evaluate");
     }
 
-    match init.get(0).unwrap() {
+    match init.get(0).unwrap().get_instruction() {
         OP_I32_CONST(_) => Ok(ValueType::I32),
         OP_I64_CONST(_) => Ok(ValueType::I64),
         OP_F32_CONST(_) => Ok(ValueType::F32),
@@ -298,7 +296,7 @@ fn get_expr_const_i32_ty(init: &Expr) -> IResult<ValueType> {
         return Err("No expr to evaluate");
     }
 
-    match init.get(0).unwrap() {
+    match init.get(0).unwrap().get_instruction() {
         Instruction::OP_I32_CONST(_) => Ok(ValueType::I32),
         _ => Err("Expression is not a I32 const"),
     }

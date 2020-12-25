@@ -14,12 +14,18 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 2,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
@@ -30,12 +36,18 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_I64_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 3,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
@@ -46,12 +58,18 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_F32_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 5,
+                        instruction: OP_F32_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 6,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
@@ -62,56 +80,86 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_F64_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 7,
+                        instruction: OP_F64_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 8,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        10,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 9,
+                        instruction: OP_I32_CONST(
+                            10,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 10,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I64_CONST(
-                        11,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 11,
+                        instruction: OP_I64_CONST(
+                            11,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 12,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_F32_CONST(
-                        11.1,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 13,
+                        instruction: OP_F32_CONST(
+                            11.1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 14,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_F64_CONST(
-                        12.2,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 15,
+                        instruction: OP_F64_CONST(
+                            12.2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 16,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
@@ -130,78 +178,186 @@ Engine {
                     },
                 ],
                 code: [
-                    OP_I64_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        0,
-                    ),
-                    OP_I64_EQZ,
-                    OP_DROP,
-                    OP_F32_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        1,
-                    ),
-                    OP_F32_NEG,
-                    OP_DROP,
-                    OP_F64_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        2,
-                    ),
-                    OP_F64_NEG,
-                    OP_DROP,
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        3,
-                    ),
-                    OP_I32_EQZ,
-                    OP_DROP,
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        4,
-                    ),
-                    OP_I32_EQZ,
-                    OP_DROP,
-                    OP_F32_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        5,
-                    ),
-                    OP_F32_NEG,
-                    OP_DROP,
-                    OP_I64_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        6,
-                    ),
-                    OP_I64_EQZ,
-                    OP_DROP,
-                    OP_I64_CONST(
-                        0,
-                    ),
-                    OP_LOCAL_TEE(
-                        7,
-                    ),
-                    OP_I64_EQZ,
-                    OP_DROP,
-                    OP_F64_CONST(
-                        0.0,
-                    ),
-                    OP_LOCAL_TEE(
-                        8,
-                    ),
-                    OP_F64_NEG,
-                    OP_DROP,
+                    InstructionWrapper {
+                        instruction_id: 17,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 18,
+                        instruction: OP_LOCAL_TEE(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 19,
+                        instruction: OP_I64_EQZ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 20,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 21,
+                        instruction: OP_F32_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 22,
+                        instruction: OP_LOCAL_TEE(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 23,
+                        instruction: OP_F32_NEG,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 24,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 25,
+                        instruction: OP_F64_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 26,
+                        instruction: OP_LOCAL_TEE(
+                            2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 27,
+                        instruction: OP_F64_NEG,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 28,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 29,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 30,
+                        instruction: OP_LOCAL_TEE(
+                            3,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 31,
+                        instruction: OP_I32_EQZ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 32,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 33,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 34,
+                        instruction: OP_LOCAL_TEE(
+                            4,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 35,
+                        instruction: OP_I32_EQZ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 36,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 37,
+                        instruction: OP_F32_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 38,
+                        instruction: OP_LOCAL_TEE(
+                            5,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 39,
+                        instruction: OP_F32_NEG,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 40,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 41,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 42,
+                        instruction: OP_LOCAL_TEE(
+                            6,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 43,
+                        instruction: OP_I64_EQZ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 44,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 45,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 46,
+                        instruction: OP_LOCAL_TEE(
+                            7,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 47,
+                        instruction: OP_I64_EQZ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 48,
+                        instruction: OP_DROP,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 49,
+                        instruction: OP_F64_CONST(
+                            0.0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 50,
+                        instruction: OP_LOCAL_TEE(
+                            8,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 51,
+                        instruction: OP_F64_NEG,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 52,
+                        instruction: OP_DROP,
+                    },
                 ],
             },
         ],
@@ -362,12 +518,18 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 2,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -386,12 +548,18 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_I64_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 3,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -410,12 +578,18 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_F32_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 5,
+                            instruction: OP_F32_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 6,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -434,12 +608,18 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_F64_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 7,
+                            instruction: OP_F64_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 8,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -455,12 +635,18 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            10,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 9,
+                            instruction: OP_I32_CONST(
+                                10,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 10,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -476,12 +662,18 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I64_CONST(
-                            11,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 11,
+                            instruction: OP_I64_CONST(
+                                11,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 12,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -497,12 +689,18 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_F32_CONST(
-                            11.1,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 13,
+                            instruction: OP_F32_CONST(
+                                11.1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 14,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -518,12 +716,18 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_F64_CONST(
-                            12.2,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 15,
+                            instruction: OP_F64_CONST(
+                                12.2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 16,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
                     ],
                 },
             },
@@ -554,78 +758,186 @@ Engine {
                         },
                     ],
                     code: [
-                        OP_I64_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            0,
-                        ),
-                        OP_I64_EQZ,
-                        OP_DROP,
-                        OP_F32_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            1,
-                        ),
-                        OP_F32_NEG,
-                        OP_DROP,
-                        OP_F64_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            2,
-                        ),
-                        OP_F64_NEG,
-                        OP_DROP,
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            3,
-                        ),
-                        OP_I32_EQZ,
-                        OP_DROP,
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            4,
-                        ),
-                        OP_I32_EQZ,
-                        OP_DROP,
-                        OP_F32_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            5,
-                        ),
-                        OP_F32_NEG,
-                        OP_DROP,
-                        OP_I64_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            6,
-                        ),
-                        OP_I64_EQZ,
-                        OP_DROP,
-                        OP_I64_CONST(
-                            0,
-                        ),
-                        OP_LOCAL_TEE(
-                            7,
-                        ),
-                        OP_I64_EQZ,
-                        OP_DROP,
-                        OP_F64_CONST(
-                            0.0,
-                        ),
-                        OP_LOCAL_TEE(
-                            8,
-                        ),
-                        OP_F64_NEG,
-                        OP_DROP,
+                        InstructionWrapper {
+                            instruction_id: 17,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 18,
+                            instruction: OP_LOCAL_TEE(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 19,
+                            instruction: OP_I64_EQZ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 20,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 21,
+                            instruction: OP_F32_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 22,
+                            instruction: OP_LOCAL_TEE(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 23,
+                            instruction: OP_F32_NEG,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 24,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 25,
+                            instruction: OP_F64_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 26,
+                            instruction: OP_LOCAL_TEE(
+                                2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 27,
+                            instruction: OP_F64_NEG,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 28,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 29,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 30,
+                            instruction: OP_LOCAL_TEE(
+                                3,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 31,
+                            instruction: OP_I32_EQZ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 32,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 33,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 34,
+                            instruction: OP_LOCAL_TEE(
+                                4,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 35,
+                            instruction: OP_I32_EQZ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 36,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 37,
+                            instruction: OP_F32_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 38,
+                            instruction: OP_LOCAL_TEE(
+                                5,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 39,
+                            instruction: OP_F32_NEG,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 40,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 41,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 42,
+                            instruction: OP_LOCAL_TEE(
+                                6,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 43,
+                            instruction: OP_I64_EQZ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 44,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 45,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 46,
+                            instruction: OP_LOCAL_TEE(
+                                7,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 47,
+                            instruction: OP_I64_EQZ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 48,
+                            instruction: OP_DROP,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 49,
+                            instruction: OP_F64_CONST(
+                                0.0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 50,
+                            instruction: OP_LOCAL_TEE(
+                                8,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 51,
+                            instruction: OP_F64_NEG,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 52,
+                            instruction: OP_DROP,
+                        },
                     ],
                 },
             },
@@ -635,4 +947,7 @@ Engine {
         stack: [],
         globals: [],
     },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
 }

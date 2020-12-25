@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
 use crate::convert;
+use crate::debugger::ProgramState;
+use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::StackContent::*;
 use crate::operations::*;
 use crate::page::Page;
@@ -17,6 +19,7 @@ pub struct Engine {
     pub module: ModuleInstance, //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
+    debugger: Box<dyn ProgramCounter>,
 }
 
 #[derive(Debug)]
@@ -24,6 +27,36 @@ pub enum InstructionOutcome {
     EXIT,
     BRANCH(u32),
     RETURN,
+}
+
+#[allow(dead_code)]
+pub(crate) fn empty_engine() -> Engine {
+    let mi = ModuleInstance {
+        start: 0,
+        code: Vec::new(),
+        fn_types: Vec::new(),
+        funcaddrs: Vec::new(),
+        tableaddrs: Vec::new(),
+        memaddrs: Vec::new(),
+        globaladdrs: Vec::new(),
+        exports: Vec::new(),
+    };
+
+    Engine {
+        started: true,
+        store: Store {
+            funcs: Vec::new(),
+            tables: Vec::new(),
+            globals: Vec::new(),
+            memory: Vec::new(),
+            stack: vec![StackContent::Frame(Frame {
+                arity: 0,
+                locals: Vec::new(),
+            })],
+        },
+        module: mi,
+        debugger: Box::new(RelativeProgramCounter::new()),
+    }
 }
 
 /// Returns Err when paging failed
@@ -68,7 +101,7 @@ pub struct Variable {
     pub val: Value,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
@@ -80,7 +113,7 @@ pub struct Label {
     arity: Arity,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
@@ -379,7 +412,7 @@ impl ModuleInstance {
 }
 
 impl Engine {
-    pub fn new(mi: ModuleInstance, module: &Module) -> Self {
+    pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>) -> Engine {
         let mut e = Engine {
             module: mi,
             started: false,
@@ -390,6 +423,7 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
+            debugger,
         };
 
         debug!("before allocate {:#?}", e);
@@ -624,11 +658,18 @@ impl Engine {
     fn run_instructions<'a>(
         &mut self,
         fr: &mut Frame,
-        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
+        instruction_wrapper: &'a mut impl std::iter::Iterator<Item = &'a InstructionWrapper>,
     ) -> Result<InstructionOutcome> {
-        let mut ip = 0;
-        for instruction in instructions {
+        //let mut ip = 0;
+        for wrapped_instruction in instruction_wrapper {
+            self.debugger.set_pc(ProgramState::new(
+                wrapped_instruction.get_pc(),
+                self.store.stack.clone(),
+            ));
+
+            let instruction = wrapped_instruction.get_instruction();
             debug!("Evaluating instruction {:?}", instruction);
+
             match &instruction {
                 OP_LOCAL_GET(idx) => {
                     if let Some(val) = fr.locals.get(*idx as usize) {
@@ -1258,8 +1299,7 @@ impl Engine {
 
                     self.store.stack.push(StackContent::Label(label));
 
-                    let outcome =
-                        self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
+                    let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1289,8 +1329,7 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome =
-                            self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
+                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1330,10 +1369,8 @@ impl Engine {
 
                             self.store.stack.push(StackContent::Label(label));
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch.instructions.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1370,10 +1407,8 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch_1.instructions.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1389,10 +1424,8 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch_2.instructions.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1455,7 +1488,7 @@ impl Engine {
                         .stack
                         .split_off(self.store.stack.len() - t.param_types.len())
                         .into_iter()
-                        .map(Engine::map_stackcontent_to_value)
+                        .map(map_stackcontent_to_value)
                         .collect::<Result<_>>()?;
 
                     self.invoke_function(*idx, args)?;
@@ -1496,7 +1529,7 @@ impl Engine {
                                 .stack
                                 .split_off(self.store.stack.len() - f.ty.param_types.len())
                                 .into_iter()
-                                .map(Engine::map_stackcontent_to_value)
+                                .map(map_stackcontent_to_value)
                                 .collect::<Result<_>>()?;
 
                             self.invoke_function(a as u32, args)?;
@@ -1512,9 +1545,6 @@ impl Engine {
                 OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
                 //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
-            ip += 1;
-
-            debug!("ip is now {}", ip);
 
             trace!("stack {:#?}", self.store.stack);
         }
@@ -1585,14 +1615,6 @@ impl Engine {
 
         Ok(arity as u32)
     }
-
-    /// Maps `StackContent` to `Value`
-    fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
-        match x {
-            Value(v) => Ok(v),
-            other => Err(anyhow!("Expected value but found {:?}", other)),
-        }
-    }
 }
 
 impl Store {
@@ -1609,5 +1631,13 @@ impl Store {
         } else {
             Err(anyhow!("A memory instance is already defined"))
         }
+    }
+}
+
+/// Maps `StackContent` to `Value`
+fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
+    match x {
+        Value(v) => Ok(v),
+        other => Err(anyhow!("Expected value but found {:?}", other)),
     }
 }
