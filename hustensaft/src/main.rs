@@ -7,9 +7,9 @@ use serde::Deserialize;
 use std::io::{stdin, stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
+use termion::{input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::backend::TermionBackend;
 use tui::Terminal;
-use termion::{input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -77,7 +77,7 @@ fn main() -> Result<(), std::io::Error> {
     let inv_args = parse_args(args.arg_args);
 
     let args_function_cpy = args.arg_function.clone();
-    
+
     std::thread::spawn(move || {
         if let Err(err) = e
             .clone()
@@ -99,10 +99,31 @@ fn main() -> Result<(), std::io::Error> {
     let mut terminal = Terminal::new(backend)?;
 
     let events = Events::new();
+    let mut scroll = (0, 0);
     loop {
         if let Event::Input(key) = events.next().unwrap() {
             if key == Key::Char('q') {
                 break;
+            } else if key == Key::Char('l') {
+                let (y, mut x) = scroll;
+                x += 1;
+                scroll.1 = x;
+            } else if key == Key::Char('h') {
+                let (y, mut x) = scroll;
+                if x > 0 {
+                    x -= 1;
+                    scroll.1 = x;
+                }
+            } else if key == Key::Char('j') {
+                let (mut y, x) = scroll;
+                y += 1;
+                scroll.0 = y;
+            } else if key == Key::Char('k') {
+                let (mut y, x) = scroll;
+                if y > 0 {
+                    y -= 1;
+                    scroll.0 = y;
+                }
             }
         }
 
@@ -114,7 +135,7 @@ fn main() -> Result<(), std::io::Error> {
                 .margin(1)
                 .constraints(
                     [
-                        Constraint::Percentage(80),
+                        Constraint::Percentage(10),
                         Constraint::Percentage(20),
                     ]
                     .as_ref(),
@@ -123,9 +144,10 @@ fn main() -> Result<(), std::io::Error> {
             let block = Block::default().title("Hustensaft").borders(Borders::ALL);
             f.render_widget(block, size);
 
-            let paragraph = Paragraph::new("Das ist ein Test")
+            let paragraph = Paragraph::new("Das ist ein TestThere are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.")
                 .style(Style::default())
                 .alignment(Alignment::Left)
+                .scroll(scroll)
                 .wrap(Wrap { trim: true });
 
             f.render_widget(paragraph, chunks[0]);
