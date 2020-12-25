@@ -1,6 +1,7 @@
 use crate::value::Value::*;
 use crate::value::*;
 use crate::engine::*;
+use crate::wrap_instructions;
 use crate::config::Configuration;
 use insta::assert_snapshot;
 use validation::validate;
@@ -64,7 +65,7 @@ fn test_allocation_funcs() {
 
     let body = FunctionBody {
         locals: vec![],
-        code: vec![OP_NOP],
+        code: wrap_instructions!(vec![OP_NOP]),
     };
 
     let engine = allocation!(vec![
@@ -186,7 +187,7 @@ fn test_allocation_globals() {
                 value_type: ValueType::I32,
                 mu: Mu::Const
             },
-            init: vec![OP_I32_CONST(10)]
+            init: wrap_instructions!(vec![OP_I32_CONST(10)])
         }]
     })]);
 

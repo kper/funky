@@ -660,11 +660,13 @@ impl Engine {
     fn run_instructions<'a>(
         &mut self,
         fr: &mut Frame,
-        instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
+        instruction_wrapper: &'a mut impl std::iter::Iterator<Item = &'a InstructionWrapper>,
     ) -> Result<InstructionOutcome> {
         //let mut ip = 0;
-        for instruction in instructions {
+        for wrapped_instruction in instruction_wrapper {
+            let instruction = wrapped_instruction.get_instruction();
             debug!("Evaluating instruction {:?}", instruction);
+
             match &instruction {
                 OP_LOCAL_GET(idx) => {
                     if let Some(val) = fr.locals.get(*idx as usize) {
@@ -1295,7 +1297,7 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     let outcome =
-                        self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
+                        self.run_instructions(fr, &mut block_instructions.iter())?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1326,7 +1328,7 @@ impl Engine {
 
                     loop {
                         let outcome =
-                            self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
+                            self.run_instructions(fr, &mut block_instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1368,7 +1370,7 @@ impl Engine {
 
                             let outcome = self.run_instructions(
                                 fr,
-                                &mut block_instructions_branch.instructions.iter(),
+                                &mut block_instructions_branch.iter(),
                             )?;
 
                             match outcome {
@@ -1408,7 +1410,7 @@ impl Engine {
 
                             let outcome = self.run_instructions(
                                 fr,
-                                &mut block_instructions_branch_1.instructions.iter(),
+                                &mut block_instructions_branch_1.iter(),
                             )?;
 
                             match outcome {
@@ -1427,7 +1429,7 @@ impl Engine {
 
                             let outcome = self.run_instructions(
                                 fr,
-                                &mut block_instructions_branch_2.instructions.iter(),
+                                &mut block_instructions_branch_2.iter(),
                             )?;
 
                             match outcome {

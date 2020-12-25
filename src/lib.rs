@@ -2,6 +2,7 @@
 extern crate log;
 extern crate wasm_parser;
 pub mod allocation;
+pub mod cli;
 pub mod config;
 pub mod debugger;
 pub mod engine;
@@ -9,7 +10,6 @@ pub mod instantiation;
 mod operations;
 mod page;
 pub mod value;
-pub mod cli;
 
 pub use validation::validate;
 pub use wasm_parser::parse;
@@ -31,6 +31,7 @@ macro_rules! construct_engine {
         #[allow(unused_imports)]
         use wasm_parser::core::Instruction::*;
         use wasm_parser::core::*;
+        use wasm_parser::tests::UnannotatedCodeBlock;
 
         let mut e = crate::empty_engine();
 
@@ -39,6 +40,9 @@ macro_rules! construct_engine {
             code: $body,
         };
 
+        let mut counter = Counter::default();
+
+        let body = body.annotate(&mut counter)
         e.store.funcs = vec![FuncInstance {
             ty: FunctionSignature {
                 param_types: $params,
@@ -58,5 +62,15 @@ macro_rules! construct_engine {
         }];
 
         e
+    }};
+}
+
+#[macro_export]
+macro_rules! wrap_instructions {
+    ($instructions:expr) => {{
+        use wasm_parser::core::Counter;
+        use wasm_parser::core::Instruction::*;
+
+        InstructionWrapper::wrap_instructions(&mut Counter::default(), $instructions)
     }};
 }

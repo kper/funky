@@ -6,6 +6,11 @@ use std::net::UdpSocket;
 /// can advance.
 pub trait ProgramCounter: std::fmt::Debug + Send {
     fn next_instruction(&mut self) -> Result<()>;
+
+    /// Because a jump occured,
+    /// we set the instruction pointer to
+    /// a new value.
+    fn jmp_to(&mut self, n: usize) -> Result<()>;
 }
 
 /// The default program counter because it doesn't hold.
@@ -28,6 +33,13 @@ impl ProgramCounter for RelativeProgramCounter {
             .ok_or(anyhow!("Program counter overflowed"))?;
 
         debug!("ip is now {:?}", r);
+
+        Ok(())
+    }
+
+    fn jmp_to(&mut self, n: usize) -> Result<()> {
+        debug!("Jumping to instruction {}", n);
+        self.0 = n;
 
         Ok(())
     }
@@ -65,6 +77,13 @@ impl ProgramCounter for DebuggerProgramCounter {
             .ok_or(anyhow!("Program counter overflowed"))?;
 
         debug!("ip is now {:?}", r);
+
+        Ok(())
+    }
+
+    fn jmp_to(&mut self, n: usize) -> Result<()> {
+        debug!("Jumping to instruction {}", n);
+        self.pc = n;
 
         Ok(())
     }

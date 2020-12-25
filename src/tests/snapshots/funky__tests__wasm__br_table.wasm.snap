@@ -9,81 +9,135 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_BLOCK(
-                        Empty,
-                        CodeBlock {
-                            id: 5,
-                            instructions: [
-                                OP_BLOCK(
-                                    Empty,
-                                    CodeBlock {
-                                        id: 4,
-                                        instructions: [
-                                            OP_BLOCK(
-                                                Empty,
-                                                CodeBlock {
-                                                    id: 3,
-                                                    instructions: [
-                                                        OP_BLOCK(
+                    InstructionWrapper {
+                        instruction_id: 17,
+                        instruction: OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 5,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 14,
+                                        instruction: OP_BLOCK(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 4,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 11,
+                                                        instruction: OP_BLOCK(
                                                             Empty,
                                                             CodeBlock {
-                                                                id: 2,
+                                                                id: 3,
                                                                 instructions: [
-                                                                    OP_BLOCK(
-                                                                        Empty,
-                                                                        CodeBlock {
-                                                                            id: 1,
-                                                                            instructions: [
-                                                                                OP_LOCAL_GET(
-                                                                                    0,
-                                                                                ),
-                                                                                OP_BR_TABLE(
-                                                                                    [
-                                                                                        3,
-                                                                                        2,
-                                                                                        1,
-                                                                                        0,
-                                                                                    ],
-                                                                                    4,
-                                                                                ),
-                                                                                OP_I32_CONST(
-                                                                                    99,
-                                                                                ),
-                                                                                OP_RETURN,
-                                                                            ],
-                                                                        },
-                                                                    ),
-                                                                    OP_I32_CONST(
-                                                                        100,
-                                                                    ),
-                                                                    OP_RETURN,
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 8,
+                                                                        instruction: OP_BLOCK(
+                                                                            Empty,
+                                                                            CodeBlock {
+                                                                                id: 2,
+                                                                                instructions: [
+                                                                                    InstructionWrapper {
+                                                                                        instruction_id: 5,
+                                                                                        instruction: OP_BLOCK(
+                                                                                            Empty,
+                                                                                            CodeBlock {
+                                                                                                id: 1,
+                                                                                                instructions: [
+                                                                                                    InstructionWrapper {
+                                                                                                        instruction_id: 1,
+                                                                                                        instruction: OP_LOCAL_GET(
+                                                                                                            0,
+                                                                                                        ),
+                                                                                                    },
+                                                                                                    InstructionWrapper {
+                                                                                                        instruction_id: 2,
+                                                                                                        instruction: OP_BR_TABLE(
+                                                                                                            [
+                                                                                                                3,
+                                                                                                                2,
+                                                                                                                1,
+                                                                                                                0,
+                                                                                                            ],
+                                                                                                            4,
+                                                                                                        ),
+                                                                                                    },
+                                                                                                    InstructionWrapper {
+                                                                                                        instruction_id: 3,
+                                                                                                        instruction: OP_I32_CONST(
+                                                                                                            99,
+                                                                                                        ),
+                                                                                                    },
+                                                                                                    InstructionWrapper {
+                                                                                                        instruction_id: 4,
+                                                                                                        instruction: OP_RETURN,
+                                                                                                    },
+                                                                                                ],
+                                                                                            },
+                                                                                        ),
+                                                                                    },
+                                                                                    InstructionWrapper {
+                                                                                        instruction_id: 6,
+                                                                                        instruction: OP_I32_CONST(
+                                                                                            100,
+                                                                                        ),
+                                                                                    },
+                                                                                    InstructionWrapper {
+                                                                                        instruction_id: 7,
+                                                                                        instruction: OP_RETURN,
+                                                                                    },
+                                                                                ],
+                                                                            },
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 9,
+                                                                        instruction: OP_I32_CONST(
+                                                                            101,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 10,
+                                                                        instruction: OP_RETURN,
+                                                                    },
                                                                 ],
                                                             },
                                                         ),
-                                                        OP_I32_CONST(
-                                                            101,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 12,
+                                                        instruction: OP_I32_CONST(
+                                                            102,
                                                         ),
-                                                        OP_RETURN,
-                                                    ],
-                                                },
-                                            ),
-                                            OP_I32_CONST(
-                                                102,
-                                            ),
-                                            OP_RETURN,
-                                        ],
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 13,
+                                                        instruction: OP_RETURN,
+                                                    },
+                                                ],
+                                            },
+                                        ),
                                     },
-                                ),
-                                OP_I32_CONST(
-                                    103,
-                                ),
-                                OP_RETURN,
-                            ],
-                        },
-                    ),
-                    OP_I32_CONST(
-                        104,
-                    ),
+                                    InstructionWrapper {
+                                        instruction_id: 15,
+                                        instruction: OP_I32_CONST(
+                                            103,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 16,
+                                        instruction: OP_RETURN,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 18,
+                        instruction: OP_I32_CONST(
+                            104,
+                        ),
+                    },
                 ],
             },
         ],
@@ -133,81 +187,135 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_BLOCK(
-                            Empty,
-                            CodeBlock {
-                                id: 5,
-                                instructions: [
-                                    OP_BLOCK(
-                                        Empty,
-                                        CodeBlock {
-                                            id: 4,
-                                            instructions: [
-                                                OP_BLOCK(
-                                                    Empty,
-                                                    CodeBlock {
-                                                        id: 3,
-                                                        instructions: [
-                                                            OP_BLOCK(
+                        InstructionWrapper {
+                            instruction_id: 17,
+                            instruction: OP_BLOCK(
+                                Empty,
+                                CodeBlock {
+                                    id: 5,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 14,
+                                            instruction: OP_BLOCK(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 4,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 11,
+                                                            instruction: OP_BLOCK(
                                                                 Empty,
                                                                 CodeBlock {
-                                                                    id: 2,
+                                                                    id: 3,
                                                                     instructions: [
-                                                                        OP_BLOCK(
-                                                                            Empty,
-                                                                            CodeBlock {
-                                                                                id: 1,
-                                                                                instructions: [
-                                                                                    OP_LOCAL_GET(
-                                                                                        0,
-                                                                                    ),
-                                                                                    OP_BR_TABLE(
-                                                                                        [
-                                                                                            3,
-                                                                                            2,
-                                                                                            1,
-                                                                                            0,
-                                                                                        ],
-                                                                                        4,
-                                                                                    ),
-                                                                                    OP_I32_CONST(
-                                                                                        99,
-                                                                                    ),
-                                                                                    OP_RETURN,
-                                                                                ],
-                                                                            },
-                                                                        ),
-                                                                        OP_I32_CONST(
-                                                                            100,
-                                                                        ),
-                                                                        OP_RETURN,
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 8,
+                                                                            instruction: OP_BLOCK(
+                                                                                Empty,
+                                                                                CodeBlock {
+                                                                                    id: 2,
+                                                                                    instructions: [
+                                                                                        InstructionWrapper {
+                                                                                            instruction_id: 5,
+                                                                                            instruction: OP_BLOCK(
+                                                                                                Empty,
+                                                                                                CodeBlock {
+                                                                                                    id: 1,
+                                                                                                    instructions: [
+                                                                                                        InstructionWrapper {
+                                                                                                            instruction_id: 1,
+                                                                                                            instruction: OP_LOCAL_GET(
+                                                                                                                0,
+                                                                                                            ),
+                                                                                                        },
+                                                                                                        InstructionWrapper {
+                                                                                                            instruction_id: 2,
+                                                                                                            instruction: OP_BR_TABLE(
+                                                                                                                [
+                                                                                                                    3,
+                                                                                                                    2,
+                                                                                                                    1,
+                                                                                                                    0,
+                                                                                                                ],
+                                                                                                                4,
+                                                                                                            ),
+                                                                                                        },
+                                                                                                        InstructionWrapper {
+                                                                                                            instruction_id: 3,
+                                                                                                            instruction: OP_I32_CONST(
+                                                                                                                99,
+                                                                                                            ),
+                                                                                                        },
+                                                                                                        InstructionWrapper {
+                                                                                                            instruction_id: 4,
+                                                                                                            instruction: OP_RETURN,
+                                                                                                        },
+                                                                                                    ],
+                                                                                                },
+                                                                                            ),
+                                                                                        },
+                                                                                        InstructionWrapper {
+                                                                                            instruction_id: 6,
+                                                                                            instruction: OP_I32_CONST(
+                                                                                                100,
+                                                                                            ),
+                                                                                        },
+                                                                                        InstructionWrapper {
+                                                                                            instruction_id: 7,
+                                                                                            instruction: OP_RETURN,
+                                                                                        },
+                                                                                    ],
+                                                                                },
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 9,
+                                                                            instruction: OP_I32_CONST(
+                                                                                101,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 10,
+                                                                            instruction: OP_RETURN,
+                                                                        },
                                                                     ],
                                                                 },
                                                             ),
-                                                            OP_I32_CONST(
-                                                                101,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 12,
+                                                            instruction: OP_I32_CONST(
+                                                                102,
                                                             ),
-                                                            OP_RETURN,
-                                                        ],
-                                                    },
-                                                ),
-                                                OP_I32_CONST(
-                                                    102,
-                                                ),
-                                                OP_RETURN,
-                                            ],
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 13,
+                                                            instruction: OP_RETURN,
+                                                        },
+                                                    ],
+                                                },
+                                            ),
                                         },
-                                    ),
-                                    OP_I32_CONST(
-                                        103,
-                                    ),
-                                    OP_RETURN,
-                                ],
-                            },
-                        ),
-                        OP_I32_CONST(
-                            104,
-                        ),
+                                        InstructionWrapper {
+                                            instruction_id: 15,
+                                            instruction: OP_I32_CONST(
+                                                103,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 16,
+                                            instruction: OP_RETURN,
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 18,
+                            instruction: OP_I32_CONST(
+                                104,
+                            ),
+                        },
                     ],
                 },
             },

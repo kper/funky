@@ -9,9 +9,12 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        -1000,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_I32_CONST(
+                            -1000,
+                        ),
+                    },
                 ],
             },
         ],
@@ -59,9 +62,12 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            -1000,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_I32_CONST(
+                                -1000,
+                            ),
+                        },
                     ],
                 },
             },

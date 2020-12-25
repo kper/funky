@@ -9,78 +9,117 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_I32_LOAD(
-                        MemArg {
-                            align: 2,
-                            offset: 0,
-                        },
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 2,
+                        instruction: OP_I32_LOAD(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        0,
-                    ),
-                    OP_I32_CONST(
-                        2,
-                    ),
-                    OP_I32_STORE(
-                        MemArg {
-                            align: 2,
-                            offset: 0,
-                        },
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 3,
+                        instruction: OP_I32_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_I32_CONST(
+                            2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 5,
+                        instruction: OP_I32_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        65536,
-                    ),
-                    OP_I32_LOAD(
-                        MemArg {
-                            align: 2,
-                            offset: 0,
-                        },
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 6,
+                        instruction: OP_I32_CONST(
+                            65536,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 7,
+                        instruction: OP_I32_LOAD(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        65536,
-                    ),
-                    OP_I32_CONST(
-                        3,
-                    ),
-                    OP_I32_STORE(
-                        MemArg {
-                            align: 2,
-                            offset: 0,
-                        },
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 8,
+                        instruction: OP_I32_CONST(
+                            65536,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 9,
+                        instruction: OP_I32_CONST(
+                            3,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 10,
+                        instruction: OP_I32_STORE(
+                            MemArg {
+                                align: 2,
+                                offset: 0,
+                            },
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_LOCAL_GET(
-                        0,
-                    ),
-                    OP_MEMORY_GROW,
+                    InstructionWrapper {
+                        instruction_id: 11,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 12,
+                        instruction: OP_MEMORY_GROW,
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_MEMORY_SIZE,
+                    InstructionWrapper {
+                        instruction_id: 13,
+                        instruction: OP_MEMORY_SIZE,
+                    },
                 ],
             },
         ],
@@ -169,15 +208,21 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_I32_LOAD(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 2,
+                            instruction: OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        },
                     ],
                 },
             },
@@ -189,18 +234,27 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            0,
-                        ),
-                        OP_I32_CONST(
-                            2,
-                        ),
-                        OP_I32_STORE(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 3,
+                            instruction: OP_I32_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_I32_CONST(
+                                2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 5,
+                            instruction: OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        },
                     ],
                 },
             },
@@ -214,15 +268,21 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            65536,
-                        ),
-                        OP_I32_LOAD(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 6,
+                            instruction: OP_I32_CONST(
+                                65536,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 7,
+                            instruction: OP_I32_LOAD(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        },
                     ],
                 },
             },
@@ -234,18 +294,27 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            65536,
-                        ),
-                        OP_I32_CONST(
-                            3,
-                        ),
-                        OP_I32_STORE(
-                            MemArg {
-                                align: 2,
-                                offset: 0,
-                            },
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 8,
+                            instruction: OP_I32_CONST(
+                                65536,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 9,
+                            instruction: OP_I32_CONST(
+                                3,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 10,
+                            instruction: OP_I32_STORE(
+                                MemArg {
+                                    align: 2,
+                                    offset: 0,
+                                },
+                            ),
+                        },
                     ],
                 },
             },
@@ -261,10 +330,16 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_LOCAL_GET(
-                            0,
-                        ),
-                        OP_MEMORY_GROW,
+                        InstructionWrapper {
+                            instruction_id: 11,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 12,
+                            instruction: OP_MEMORY_GROW,
+                        },
                     ],
                 },
             },
@@ -278,7 +353,10 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_MEMORY_SIZE,
+                        InstructionWrapper {
+                            instruction_id: 13,
+                            instruction: OP_MEMORY_SIZE,
+                        },
                     ],
                 },
             },

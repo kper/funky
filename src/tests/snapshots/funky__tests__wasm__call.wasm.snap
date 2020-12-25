@@ -9,21 +9,33 @@ Engine {
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_I32_CONST(
-                        42,
-                    ),
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_I32_CONST(
+                            42,
+                        ),
+                    },
                 ],
             },
             FunctionBody {
                 locals: [],
                 code: [
-                    OP_CALL(
-                        0,
-                    ),
-                    OP_I32_CONST(
-                        1,
-                    ),
-                    OP_I32_ADD,
+                    InstructionWrapper {
+                        instruction_id: 2,
+                        instruction: OP_CALL(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 3,
+                        instruction: OP_I32_CONST(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_I32_ADD,
+                    },
                 ],
             },
         ],
@@ -64,9 +76,12 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_I32_CONST(
-                            42,
-                        ),
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_I32_CONST(
+                                42,
+                            ),
+                        },
                     ],
                 },
             },
@@ -80,13 +95,22 @@ Engine {
                 code: FunctionBody {
                     locals: [],
                     code: [
-                        OP_CALL(
-                            0,
-                        ),
-                        OP_I32_CONST(
-                            1,
-                        ),
-                        OP_I32_ADD,
+                        InstructionWrapper {
+                            instruction_id: 2,
+                            instruction: OP_CALL(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 3,
+                            instruction: OP_I32_CONST(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_I32_ADD,
+                        },
                     ],
                 },
             },
