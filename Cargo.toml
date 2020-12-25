@@ -9,6 +9,7 @@ members = [
 	"wasm_parser",
 	"validation",
 	"test_runner",
+	"hustensaft"
 ]
 
 [lib]

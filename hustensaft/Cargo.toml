@@ -1,0 +1,12 @@
+[package]
+name = "hustensaft"
+version = "0.1.0"
+authors = ["kper <kevin.per@protonmail.com>"]
+edition = "2018"
+decription = "This is a debugger for the funky wasm engine"
+
+[dependencies]
+wasm-parser = { path = "../wasm_parser" }
+funky = { path = "../" }
+tui = "0.13"
+termion = "1.5"
