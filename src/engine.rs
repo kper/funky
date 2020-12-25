@@ -423,7 +423,9 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
-            debugger: Box::new(config.get_program_counter()),
+            debugger: config
+                .get_program_counter()
+                .expect("Cannot create program counter"),
         };
 
         debug!("before allocate {:#?}", e);
@@ -466,11 +468,7 @@ impl Engine {
     }
 
     /// Take only exported functions into consideration
-    pub fn invoke_exported_function(
-        &mut self,
-        idx: u32,
-        args: Vec<Value>,
-    ) -> Result<()> {
+    pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
         debug!("invoke_exported_function {:?}", idx);
         let k = {
             let x = &self.module;
@@ -505,11 +503,7 @@ impl Engine {
         Ok(())
     }
 
-    pub fn invoke_exported_function_by_name(
-        &mut self,
-        name: &str,
-        args: Vec<Value>,
-    ) -> Result<()> {
+    pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
         let idx = self
             .module
             .exports
@@ -521,11 +515,7 @@ impl Engine {
         Ok(())
     }
 
-    pub(crate) fn invoke_function(
-        &mut self,
-        idx: u32,
-        args: Vec<Value>,
-    ) -> Result<()> {
+    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
         self.check_parameters_of_function(idx, &args);
 
         let t = &self.store.funcs[idx as usize].ty;
@@ -1335,10 +1325,8 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome = self.run_instructions(
-                            fr,
-                            &mut block_instructions.instructions.iter(),
-                        )?;
+                        let outcome =
+                            self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1632,8 +1620,6 @@ impl Engine {
 
         Ok(arity as u32)
     }
-
-    
 }
 
 impl Store {

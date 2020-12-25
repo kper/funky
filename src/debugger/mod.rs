@@ -1,9 +1,10 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use log::debug;
+use std::net::UdpSocket;
 
 /// The `ProgramCounter` trait defines how a program
 /// can advance.
-pub trait ProgramCounter : std::fmt::Debug {
+pub trait ProgramCounter: std::fmt::Debug {
     fn next_instruction(&mut self) -> Result<()>;
 }
 
@@ -23,6 +24,41 @@ impl ProgramCounter for RelativeProgramCounter {
     fn next_instruction(&mut self) -> Result<()> {
         let r = self
             .0
+            .checked_add(1)
+            .ok_or(anyhow!("Program counter overflowed"))?;
+
+        debug!("ip is now {:?}", r);
+
+        Ok(())
+    }
+}
+
+/// This program counter does wait for an incoming udp signal before
+/// it advances the program.
+#[derive(Debug)]
+pub struct DebuggerProgramCounter {
+    pc: usize,
+    socket: UdpSocket,
+}
+
+impl DebuggerProgramCounter {
+    pub fn new(port: usize) -> Result<Self> {
+        Ok(Self {
+            pc: 0,
+            socket: UdpSocket::bind(format!("127.0.0.1:{}", port))
+                .context("Binding udp socket in DebuggerProgramCounter")?,
+        })
+    }
+}
+
+impl ProgramCounter for DebuggerProgramCounter {
+    fn next_instruction(&mut self) -> Result<()> {
+        // Wait for the incoming signal to proceed.
+        let mut buf = [0; 1];
+        let (_, _) = self.socket.recv_from(&mut buf)?; // blocking
+
+        let r = self
+            .pc
             .checked_add(1)
             .ok_or(anyhow!("Program counter overflowed"))?;
 
