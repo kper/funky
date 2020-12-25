@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use log::debug;
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Receiver, Sender};
-use crate::engine::StackContent;
+use crate::engine::stack::StackContent;
 
 #[derive(Debug)]
 pub struct ProgramState {

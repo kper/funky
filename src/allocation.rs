@@ -1,7 +1,14 @@
+use crate::engine::memory::MemoryInstance;
+use crate::engine::store::Store;
 use crate::engine::*;
+use crate::value::Value;
 use wasm_parser::core::*;
 use wasm_parser::Module;
-use crate::value::Value;
+
+use crate::engine::export::ExportInstance;
+use crate::engine::func::FuncInstance;
+use crate::engine::module::ModuleInstance;
+use crate::engine::table::TableInstance;
 
 pub fn allocate(
     m: &Module,

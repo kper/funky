@@ -1,0 +1,12 @@
+mod local_get;
+mod local_set;
+mod local_tee;
+mod global_get;
+mod global_set;
+mod select;
+mod memory_size;
+mod memory_grow;
+mod block;
+mod br;
+mod call;
+mod call_indirect;

@@ -1,7 +1,8 @@
 use docopt::Docopt;
 use funky::cli::parse_args;
 use funky::debugger::DebuggerProgramCounter;
-use funky::engine::{Engine, ModuleInstance};
+use funky::engine::{Engine};
+use funky::engine::module::ModuleInstance;
 use log::{debug, info};
 use serde::Deserialize;
 use std::io::{stdin, stdout, Write};

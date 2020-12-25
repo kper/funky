@@ -1,18 +1,36 @@
 #![allow(dead_code)]
 
+pub(crate) mod export;
+pub(crate) mod func;
+pub(crate) mod memory;
+pub mod module;
+mod op;
+pub(crate) mod prelude;
+pub mod stack;
+pub(crate) mod store;
+pub(crate) mod table;
+
+use self::memory::{grow_memory, MemoryInstance};
+use self::stack::StackContent;
+use self::stack::StackContent::*;
+use self::stack::{Frame, Label};
+use self::store::Store;
 use crate::convert;
-use crate::debugger::ProgramState;
-use crate::debugger::{ProgramCounter, RelativeProgramCounter};
-use crate::engine::StackContent::*;
+pub use crate::debugger::ProgramState;
+pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
+use crate::engine::export::ExportInstance;
+use crate::engine::func::FuncInstance;
+use crate::engine::module::ModuleInstance;
+use crate::engine::table::TableInstance;
 use crate::operations::*;
-use crate::page::Page;
+pub use crate::page::Page;
 use crate::value::{Arity, Value, Value::*};
-use crate::PAGE_SIZE;
-use anyhow::{anyhow, Context, Result};
+pub use crate::PAGE_SIZE;
+pub use anyhow::{anyhow, Context, Result};
 use std::fmt;
-use wasm_parser::core::Instruction::*;
-use wasm_parser::core::*;
-use wasm_parser::Module;
+pub use wasm_parser::core::Instruction::*;
+pub use wasm_parser::core::*;
+pub use wasm_parser::Module;
 
 #[derive(Debug)]
 pub struct Engine {
@@ -59,157 +77,13 @@ pub(crate) fn empty_engine() -> Engine {
     }
 }
 
-/// Returns Err when paging failed
-/// Returns new length in pages
-/// https://webassembly.github.io/spec/core/exec/modules.html#growing-memories
-fn grow_memory(instance: &mut MemoryInstance, n: Page) -> Result<Page, ()> {
-    if n.is_zero() {
-        return Ok(Page::from_count(instance.data.len()));
-    }
-
-    let len = n + Page::from_count(instance.data.len());
-
-    if len.pages() > usize::pow(2, 16) {
-        error!("Length exceeded. Too many memory pages");
-        return Err(());
-    }
-
-    if let Some(max) = instance.max {
-        debug!("Checking limit len {:?} < max {}", len.pages(), max);
-        if len.pages() > max as usize {
-            error!("Memory growing failed. Limit exceded");
-            return Err(());
-        }
-    }
-
-    let new_length = Page::from_count(instance.data.len()) + n;
-    debug!("Resize by {} bytes", new_length.elements());
-
-    // Create new vec and fill it with 0u8
-    let extension = vec![0u8; n.elements()];
-
-    // Append the new vec to the instance
-    instance.data.extend_from_slice(&extension);
-
-    // Return pages
-    Ok(new_length)
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
     pub val: Value,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum StackContent {
-    Value(Value),
-    Frame(Frame),
-    Label(Label),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Label {
-    arity: Arity,
-}
-
-#[derive(Debug, Clone)]
-pub struct Frame {
-    pub arity: u32,
-    pub locals: Vec<Value>,
-    //pub module_instance: Weak<RefCell<ModuleInstance>>,
-}
-
-impl PartialEq for Frame {
-    fn eq(&self, other: &Self) -> bool {
-        self.arity == other.arity && self.locals == other.locals
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ModuleInstance {
-    pub start: u32,
-    pub code: Vec<FunctionBody>,
-    pub fn_types: Vec<FunctionSignature>,
-    pub funcaddrs: Vec<FuncIdx>,
-    pub tableaddrs: Vec<TableIdx>,
-    pub memaddrs: Vec<MemoryIdx>,
-    pub globaladdrs: Vec<GlobalIdx>,
-    pub exports: Vec<ExportInstance>,
-}
-
-#[derive(Debug)]
-pub struct Store {
-    pub funcs: Vec<FuncInstance>,
-    pub tables: Vec<TableInstance>,
-    pub memory: Vec<MemoryInstance>,
-    pub stack: Vec<StackContent>,
-    pub globals: Vec<Variable>, //=GlobalInstance
-}
-
-#[derive(Debug, Clone)]
-pub struct FuncInstance {
-    //FIXME Add HostFunc
-    pub ty: FunctionSignature,
-    //pub module: Weak<RefCell<ModuleInstance>>,
-    pub code: FunctionBody,
-}
-
-#[derive(Debug, Clone)]
-pub struct TableInstance {
-    pub elem: Vec<Option<FuncIdx>>,
-    pub max: Option<u32>,
-}
-
-#[derive(Clone)]
-pub struct MemoryInstance {
-    pub data: Vec<u8>,
-    pub max: Option<u32>,
-}
-
-impl StackContent {
-    pub fn is_value(&self) -> bool {
-        match self {
-            StackContent::Value(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_label(&self) -> bool {
-        match self {
-            StackContent::Label(_) => true,
-            _ => false,
-        }
-    }
-}
-
-/// Overwritten debug implementation
-/// Because `data` can have a lot of entries, which
-/// can be a problem when printing
-impl fmt::Debug for MemoryInstance {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("MemoryInstance")
-            .field("data (only length)", &self.data.len())
-            .field("max", &self.max)
-            .finish()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct ExportInstance {
-    pub name: String,
-    pub value: ExternalKindType, //TODO maybe drop the Type in name?
-}
-
-impl Into<ExportInstance> for &ExportEntry {
-    fn into(self) -> ExportInstance {
-        ExportInstance {
-            name: self.name.clone(),
-            value: self.kind,
-        }
-    }
-}
-
+#[macro_export]
 macro_rules! fetch_unop {
     ($stack: expr) => {{
         debug!("Popping {:?}", $stack.last());
@@ -221,8 +95,11 @@ macro_rules! fetch_unop {
     }};
 }
 
+#[macro_export]
 macro_rules! fetch_binop {
     ($stack: expr) => {{
+        use crate::fetch_unop;
+
         let v1 = fetch_unop!($stack);
         let v2 = fetch_unop!($stack);
 
@@ -367,48 +244,6 @@ macro_rules! store_memoryN {
             panic!("Expected a different value on the stack");
         }
     };
-}
-
-impl ModuleInstance {
-    pub fn new(m: &Module) -> Self {
-        let mut mi = ModuleInstance {
-            start: 0,
-            code: Vec::new(),
-            fn_types: Vec::new(),
-            funcaddrs: Vec::new(),
-            tableaddrs: Vec::new(),
-            memaddrs: Vec::new(),
-            globaladdrs: Vec::new(),
-            exports: Vec::new(),
-        };
-        for section in m.sections.iter() {
-            match section {
-                Section::Code(CodeSection { entries: x }) => {
-                    mi.code = x.clone();
-                }
-                Section::Type(TypeSection { entries: x }) => {
-                    mi.fn_types = x.clone();
-                }
-                _ => {}
-            }
-        }
-
-        mi
-    }
-
-    /// Adding a new function type.
-    /// We need this function to test blocks, with multiple
-    /// return values.
-    pub(crate) fn add_func_type(&mut self, r: Vec<ValueType>) -> Result<usize> {
-        let instance = FunctionSignature {
-            param_types: vec![],
-            return_types: r,
-        };
-
-        self.fn_types.push(instance);
-
-        Ok(self.fn_types.len() - 1)
-    }
 }
 
 impl Engine {
@@ -557,27 +392,6 @@ impl Engine {
         Ok(())
     }
 
-    fn local_set(&mut self, idx: &u32, fr: &mut Frame) -> Result<()> {
-        debug!("OP_LOCAL_SET {:?}", idx);
-        debug!("locals {:#?}", fr.locals);
-
-        match self.store.stack.pop() {
-            Some(Value(v)) => {
-                match fr.locals.get_mut(*idx as usize) {
-                    Some(k) => *k = v, //Exists replace
-                    None => {
-                        //Does not exists; push
-                        fr.locals.push(v)
-                    }
-                }
-            }
-            Some(x) => panic!("Expected value but found {:?}", x),
-            None => panic!("Empty stack during local.set"),
-        }
-
-        Ok(())
-    }
-
     fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
         let fn_types = self
             .store
@@ -672,65 +486,20 @@ impl Engine {
 
             match &instruction {
                 OP_LOCAL_GET(idx) => {
-                    if let Some(val) = fr.locals.get(*idx as usize) {
-                        self.store.stack.push(Value(*val));
-                        debug!("LOCAL_GET at {} is {:?}", idx, fr.locals[*idx as usize]);
-                        debug!("locals {:#?}", fr.locals);
-                    } else {
-                        return Err(anyhow!(
-                            "Trying to access locals ({}), but out of bounds (length {})",
-                            idx,
-                            fr.locals.len()
-                        ));
-                    }
+                    self.local_get(idx, fr)?;
                 }
                 OP_LOCAL_SET(idx) => {
                     self.local_set(idx, fr)?;
-                    debug!("locals {:#?}", fr.locals);
                 }
                 OP_LOCAL_TEE(idx) => {
-                    debug!("OP_LOCAL_TEE {:?}", idx);
-
-                    let value = match self.store.stack.pop() {
-                        Some(StackContent::Value(v)) => v,
-                        Some(x) => {
-                            return Err(anyhow!("Expected value but found {:?}", x));
-                        }
-                        None => {
-                            return Err(anyhow!("Empty stack during local.tee"));
-                        }
-                    };
-
-                    self.store.stack.push(StackContent::Value(value));
-                    self.store.stack.push(StackContent::Value(value));
-
-                    self.local_set(idx, fr)?;
-
-                    debug!("stack {:?}", self.store.stack);
-                    debug!("locals {:#?}", fr.locals);
+                    self.local_tee(idx, fr)?;
                 }
                 OP_GLOBAL_GET(idx) => {
-                    self.store
-                        .stack
-                        .push(Value(self.store.globals[*idx as usize].val));
-
-                    debug!("globals {:#?}", self.store.globals);
+                    self.global_get(idx, fr)?;
                 }
-                OP_GLOBAL_SET(idx) => match self.store.stack.pop() {
-                    Some(Value(v)) => {
-                        if !self.store.globals[*idx as usize].mutable {
-                            return Err(anyhow!("Attempting to modify a immutable global"));
-                        }
-                        self.store.globals[*idx as usize].val = v;
-                        debug!("globals {:#?}", self.store.globals);
-                    }
-                    Some(x) => {
-                        return Err(anyhow!("Expected value but found {:?}", x));
-                    }
-                    None => {
-                        return Err(anyhow!("Empty stack during local.tee"));
-                    }
-                },
+                OP_GLOBAL_SET(idx) => {
+                    self.global_set(idx, fr)?;
+                }
                 OP_I32_CONST(v) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
                     self.store.stack.push(Value(I32(*v)));
@@ -1162,20 +931,7 @@ impl Engine {
                     debug!("Dropping {:?}", k);
                 }
                 OP_SELECT => {
-                    debug!("OP_SELECT");
-                    debug!("Popping {:?}", self.store.stack.last());
-                    let c = match self.store.stack.pop() {
-                        Some(Value(I32(x))) => x,
-                        _ => return Err(anyhow!("Expected I32 on top of stack")),
-                    };
-                    let (v1, v2) = fetch_binop!(self.store.stack);
-                    if c != 0 {
-                        debug!("C is not 0 therefore, pushing {:?}", v2);
-                        self.store.stack.push(Value(v2))
-                    } else {
-                        debug!("C is not 0 therefore, pushing {:?}", v1);
-                        self.store.stack.push(Value(v1))
-                    }
+                    self.select()?;
                 }
                 OP_I32_LOAD_8_u(arg) => {
                     load_memorySX!(self, arg, 4, i32, I32, u8);
@@ -1247,59 +1003,13 @@ impl Engine {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 OP_MEMORY_SIZE => {
-                    let module = &self.module;
-                    let addr = module
-                        .memaddrs
-                        .get(0)
-                        .ok_or_else(|| anyhow!("No memory address found"))?;
-                    let instance = &self.store.memory[*addr as usize];
-
-                    let sz = instance.data.len() / PAGE_SIZE;
-
-                    self.store.stack.push(Value(I32(sz as i32)));
+                    self.memory_size()?;
                 }
                 OP_MEMORY_GROW => {
-                    let module = &self.module;
-                    let addr = module
-                        .memaddrs
-                        .get(0)
-                        .ok_or_else(|| anyhow!("No memory address found"))?;
-                    let instance = &mut self.store.memory[*addr as usize];
-                    let _sz = instance.data.len() / PAGE_SIZE;
-
-                    if let Some(Value(I32(n))) = self.store.stack.pop() {
-                        if n < 0 {
-                            return Err(anyhow!("Memory grow expected n > 0, got {}", n));
-                        }
-
-                        match grow_memory(instance, Page::new(n as usize)) {
-                            Err(()) => {
-                                error!("Memory growing failed because paging failed.");
-                                self.store.stack.push(Value(I32(-1)));
-                            }
-                            Ok(_new_sz) => {
-                                //debug!("Old memory size {} pages", _new_sz);
-                                self.store.stack.push(Value(I32(_sz as i32)));
-                            }
-                        }
-                    } else {
-                        return Err(anyhow!("Unexpected stack element. Expected I32"));
-                    }
+                    self.memory_grow()?;
                 }
                 OP_BLOCK(ty, block_instructions) => {
-                    debug!("OP_BLOCK {:?}", ty);
-
-                    let arity = self.get_block_ty_arity(&ty)?;
-
-                    debug!("Arity for block ({:?}) is {}", ty, arity);
-
-                    let label = Label {
-                        arity: arity as u32,
-                    };
-
-                    self.store.stack.push(StackContent::Label(label));
-
-                    let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
+                    let outcome = self.block(fr, ty, block_instructions)?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1322,9 +1032,7 @@ impl Engine {
 
                     debug!("Arity for loop ({:?}) is {}", ty, arity);
 
-                    let label = Label {
-                        arity: arity as u32,
-                    };
+                    let label = Label::new(arity);
 
                     self.store.stack.push(StackContent::Label(label));
 
@@ -1363,9 +1071,7 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
 
-                            let label = Label {
-                                arity: arity as u32,
-                            };
+                            let label = Label::new(arity);
 
                             self.store.stack.push(StackContent::Label(label));
 
@@ -1395,13 +1101,9 @@ impl Engine {
                 OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2) => {
                     debug!("OP_IF_AND_ELSE {:?}", ty);
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        //let label_idx = self.get_label_count()?;
-                        //let (arity, args) = self.get_block_params(&ty)?;
                         let arity = self.get_block_ty_arity(&ty)?;
 
-                        let label = Label {
-                            arity: arity as u32,
-                        };
+                        let label = Label::new(arity);
 
                         self.store.stack.push(StackContent::Label(label));
                         if v != 0 {
@@ -1446,9 +1148,7 @@ impl Engine {
                     }
                 }
                 OP_BR(label_idx) => {
-                    debug!("OP_BR {}", label_idx);
-
-                    return Ok(InstructionOutcome::BRANCH(*label_idx));
+                    self.br(label_idx)?;
                 }
                 OP_BR_IF(label_idx) => {
                     debug!("OP_BR_IF {}", label_idx);
@@ -1478,64 +1178,10 @@ impl Engine {
                     }
                 }
                 OP_CALL(idx) => {
-                    debug!("OP_CALL {:?}", idx);
-
-                    trace!("fn_types: {:#?}", self.module.fn_types);
-                    let t = self.store.funcs[*idx as usize].ty.clone();
-
-                    let args = self
-                        .store
-                        .stack
-                        .split_off(self.store.stack.len() - t.param_types.len())
-                        .into_iter()
-                        .map(map_stackcontent_to_value)
-                        .collect::<Result<_>>()?;
-
-                    self.invoke_function(*idx, args)?;
+                    self.call_function(idx)?;
                 }
                 OP_CALL_INDIRECT(idx) => {
-                    debug!("OP_CALL_INDIRECT {:?}", idx);
-                    let ta = self.module.tableaddrs[0];
-                    let tab = &self.store.tables[ta as usize];
-
-                    let i = match fetch_unop!(self.store.stack) {
-                        I32(x) => x,
-                        x => return Err(anyhow!("invalid index type: {:?}", x)),
-                    };
-                    if (i as usize) >= tab.elem.len() {
-                        return Err(anyhow!(
-                            "Attempt to perform indirect call to index larger than the table"
-                        ));
-                    }
-                    trace!("Table: {:?}", tab.elem);
-
-                    match tab.elem[i as usize] {
-                        Some(a) => {
-                            let f = self
-                                .store
-                                .funcs
-                                .get(a as usize)
-                                .expect("No function in store");
-
-                            {
-                                // Compare types
-                                let m = &self.module;
-                                let ty = m.fn_types.get(*idx as usize);
-                                assert!(&f.ty == ty.expect("No type found"));
-                            }
-
-                            let args = self
-                                .store
-                                .stack
-                                .split_off(self.store.stack.len() - f.ty.param_types.len())
-                                .into_iter()
-                                .map(map_stackcontent_to_value)
-                                .collect::<Result<_>>()?;
-
-                            self.invoke_function(a as u32, args)?;
-                        }
-                        None => panic!("Table not initilized at index {}", i),
-                    }
+                    self.call_indirect_function(idx)?; 
                 }
                 OP_RETURN => {
                     debug!("Return");
@@ -1580,11 +1226,11 @@ impl Engine {
 
             // If and If-Else labels have arity 0
             // therefore, we keep all results
-            if lb.arity != 0 {
+            if lb.get_arity() != 0 {
                 val_m = val_m
                     .into_iter()
                     .rev()
-                    .take(lb.arity as usize)
+                    .take(lb.get_arity() as usize)
                     .rev()
                     .collect();
             }
@@ -1617,24 +1263,7 @@ impl Engine {
     }
 }
 
-impl Store {
-    /// Initializes `n` pages in memory with 0
-    pub(crate) fn init_memory(&mut self, n: usize) -> Result<()> {
-        if self.memory.last().is_none() {
-            let instance = MemoryInstance {
-                max: None,
-                data: vec![0u8; n * PAGE_SIZE],
-            };
-
-            self.memory.push(instance);
-            Ok(())
-        } else {
-            Err(anyhow!("A memory instance is already defined"))
-        }
-    }
-}
-
-/// Maps `StackContent` to `Value`
+/// Maps `StackContent` to `Value`, if not then throw error
 fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
     match x {
         Value(v) => Ok(v),

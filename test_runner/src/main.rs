@@ -13,10 +13,12 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use funky::engine::{Engine, ModuleInstance, StackContent};
+use funky::debugger::RelativeProgramCounter;
+use funky::engine::stack::StackContent;
+use funky::engine::{Engine};
+use funky::engine::module::ModuleInstance;
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
-use funky::debugger::RelativeProgramCounter;
 
 use std::collections::HashMap;
 
@@ -227,7 +229,6 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                 h.file_name().unwrap().to_str().unwrap()
             )
         });
-
 
     // Saves the handler of the engine TODO better explaination
     for fs_name in fs_names {

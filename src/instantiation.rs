@@ -1,8 +1,11 @@
-use crate::engine::*;
-use wasm_parser::Module;
+use crate::engine::module::ModuleInstance;
+use crate::engine::stack::StackContent;
+use crate::engine::stack::{Frame, Label};
+use crate::engine::store::Store;
+use crate::engine::Engine;
 use crate::value::Value;
-
 use anyhow::{anyhow, Result};
+use wasm_parser::Module;
 
 type StartFunctionAddr = u32;
 
@@ -117,11 +120,7 @@ fn instantiate_elements(
     Ok(())
 }
 
-fn instantiate_data(
-    m: &Module,
-    mod_instance: &ModuleInstance,
-    store: &mut Store,
-) -> Result<()> {
+fn instantiate_data(m: &Module, mod_instance: &ModuleInstance, store: &mut Store) -> Result<()> {
     debug!("instantiate elements");
 
     let ty = validation::extract::get_data(&m);

@@ -6,9 +6,10 @@ extern crate regex;
 
 use docopt::Docopt;
 use funky::cli::parse_args;
-use funky::engine::{Engine, ModuleInstance};
-use funky::value::Value;
 use funky::debugger::RelativeProgramCounter;
+use funky::engine::module::ModuleInstance;
+use funky::engine::Engine;
+use funky::value::Value;
 use funky::value::Value::*;
 use regex::Regex;
 use regex::RegexSet;
@@ -83,10 +84,7 @@ fn main() {
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
-    if let Err(err) = e.invoke_exported_function_by_name(
-        &args.arg_function,
-        inv_args
-    ) {
+    if let Err(err) = e.invoke_exported_function_by_name(&args.arg_function, inv_args) {
         panic!("{}", err);
     }
 
