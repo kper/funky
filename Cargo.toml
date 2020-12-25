@@ -23,6 +23,10 @@ name = "funky"
 path = "test_runner/src/main.rs"
 name = "test_runner"
 
+[[bin]]
+path = "hustensaft/src/main.rs"
+name = "hustensaft"
+
 [dependencies]
 validation = { path = "./validation" }
 wasm-parser = { path = "./wasm_parser" }
@@ -33,6 +37,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.56" 
 regex = "1"
 anyhow = "1.0.32"
+tui = "0.13"
+termion = "1.5"
+
 
 [dev-dependencies]
 insta = "*"

@@ -9,6 +9,7 @@ pub mod instantiation;
 mod operations;
 mod page;
 pub mod value;
+pub mod cli;
 
 pub use validation::validate;
 pub use wasm_parser::parse;

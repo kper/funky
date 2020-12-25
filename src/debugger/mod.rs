@@ -53,9 +53,11 @@ impl DebuggerProgramCounter {
 
 impl ProgramCounter for DebuggerProgramCounter {
     fn next_instruction(&mut self) -> Result<()> {
+        debug!("Waiting for progress signal");
         // Wait for the incoming signal to proceed.
         let mut buf = [0; 1];
         let (_, _) = self.socket.recv_from(&mut buf)?; // blocking
+        debug!("Progress signal received");
 
         let r = self
             .pc
