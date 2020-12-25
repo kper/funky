@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::convert;
+use crate::debugger::ProgramState;
 use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::StackContent::*;
 use crate::operations::*;
@@ -100,7 +101,7 @@ pub struct Variable {
     pub val: Value,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum StackContent {
     Value(Value),
     Frame(Frame),
@@ -112,7 +113,7 @@ pub struct Label {
     arity: Arity,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
@@ -661,7 +662,10 @@ impl Engine {
     ) -> Result<InstructionOutcome> {
         //let mut ip = 0;
         for wrapped_instruction in instruction_wrapper {
-            self.debugger.set_pc(wrapped_instruction.get_pc());
+            self.debugger.set_pc(ProgramState::new(
+                wrapped_instruction.get_pc(),
+                self.store.stack.clone(),
+            ));
 
             let instruction = wrapped_instruction.get_instruction();
             debug!("Evaluating instruction {:?}", instruction);

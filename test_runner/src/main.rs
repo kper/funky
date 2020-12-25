@@ -17,7 +17,6 @@ use funky::engine::{Engine, ModuleInstance, StackContent};
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
 use funky::debugger::RelativeProgramCounter;
-use funky::config::Configuration;
 
 use std::collections::HashMap;
 
@@ -237,9 +236,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
         let validation = validate(&module);
         let mi = ModuleInstance::new(&module);
 
-        let mut config = Configuration::new();
-
-        let mut e = Engine::new(mi, &module, config);
+        let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::new()));
         if let Err(err) = e.instantiation(&module) {}
 
         fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));

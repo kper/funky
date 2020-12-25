@@ -8,13 +8,13 @@ use docopt::Docopt;
 use funky::cli::parse_args;
 use funky::engine::{Engine, ModuleInstance};
 use funky::value::Value;
+use funky::debugger::RelativeProgramCounter;
 use funky::value::Value::*;
 use regex::Regex;
 use regex::RegexSet;
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
-use funky::config::Configuration;
 
 const USAGE: &str = "
 Funky - a WebAssembly Interpreter
@@ -29,8 +29,7 @@ Options:
   --version     Show version.
   --stage0      Stop at Parser.
   --stage1      Stop at Validation.
-  --spec        Format output to be compliant for spec tests
-  --debugger    Debugger runs the program.";
+  --spec        Format output to be compliant for spec tests";
 
 #[derive(Debug, Deserialize)]
 struct Args {
@@ -40,7 +39,6 @@ struct Args {
     arg_input: String,
     arg_function: String,
     arg_args: Vec<String>,
-    flag_debugger: bool,
 }
 
 fn main() {
@@ -70,15 +68,10 @@ fn main() {
         return;
     }
 
-    let mut config = Configuration::new();
-
-    if args.flag_debugger {
-        config.enable_debugger();
-    }
-
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
-    let mut e = Engine::new(mi, &module, config);
+
+    let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::new()));
     debug!("engine {:#?}", e);
 
     debug!("Instantiation engine");

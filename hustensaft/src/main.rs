@@ -20,9 +20,9 @@ use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
 use std::sync::atomic::AtomicUsize;
+use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::mpsc::channel;
 
 use crate::util::{Event, Events};
 
@@ -117,8 +117,9 @@ fn main() -> Result<(), std::io::Error> {
 
     let events = Events::new();
     let mut scroll = (0, 0);
+    let mut scroll2 = (0, 0);
 
-    let mut current_pc = 0;
+    let mut state = None;
 
     loop {
         if let Event::Input(key) = events.next().unwrap() {
@@ -144,9 +145,19 @@ fn main() -> Result<(), std::io::Error> {
                     y -= 1;
                     scroll.0 = y;
                 }
+            } else if key == Key::Down {
+                let (mut y, x) = scroll2;
+                y += 1;
+                scroll2.0 = y;
+            } else if key == Key::Up {
+                let (mut y, x) = scroll2;
+                if y > 0 {
+                    y -= 1;
+                    scroll2.0 = y;
+                }
             } else if key == Key::Backspace {
                 instruction_advancer_tx.send(()).unwrap();
-                current_pc = instruction_watcher_rx.recv().unwrap(); // Blocking
+                state = Some(instruction_watcher_rx.recv().unwrap()); // Blocking
             }
         }
 
@@ -156,7 +167,7 @@ fn main() -> Result<(), std::io::Error> {
             let chunks = Layout::default()
                 .direction(Direction::Horizontal)
                 .margin(1)
-                .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+                .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
             let block = Block::default().title("Hustensaft").borders(Borders::ALL);
             f.render_widget(block, size);
@@ -169,13 +180,13 @@ fn main() -> Result<(), std::io::Error> {
 
             f.render_widget(paragraph, chunks[0]);
 
-            let pc = Paragraph::new(format!("Current instruction {:#?}", current_pc))
+            let pc = Paragraph::new(format!("State {:#?}", state))
                 .style(Style::default())
                 .alignment(Alignment::Left)
+                .scroll(scroll2)
                 .wrap(Wrap { trim: false });
 
             f.render_widget(pc, chunks[1]);
-
         })?;
     }
 
