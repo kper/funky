@@ -664,6 +664,8 @@ impl Engine {
     ) -> Result<InstructionOutcome> {
         //let mut ip = 0;
         for wrapped_instruction in instruction_wrapper {
+            self.debugger.set_pc(wrapped_instruction.get_pc());
+
             let instruction = wrapped_instruction.get_instruction();
             debug!("Evaluating instruction {:?}", instruction);
 
@@ -1296,8 +1298,7 @@ impl Engine {
 
                     self.store.stack.push(StackContent::Label(label));
 
-                    let outcome =
-                        self.run_instructions(fr, &mut block_instructions.iter())?;
+                    let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1327,8 +1328,7 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome =
-                            self.run_instructions(fr, &mut block_instructions.iter())?;
+                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1368,10 +1368,8 @@ impl Engine {
 
                             self.store.stack.push(StackContent::Label(label));
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1408,10 +1406,8 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch_1.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1427,10 +1423,8 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let outcome = self.run_instructions(
-                                fr,
-                                &mut block_instructions_branch_2.iter(),
-                            )?;
+                            let outcome =
+                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1550,8 +1544,6 @@ impl Engine {
                 OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
                 //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
-
-            self.debugger.next_instruction()?;
 
             trace!("stack {:#?}", self.store.stack);
         }

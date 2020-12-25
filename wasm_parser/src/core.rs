@@ -7,7 +7,7 @@ pub type GlobalIdx = u32;
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
 
-pub type Expr = Vec<Instruction>;
+pub type Expr = Vec<InstructionWrapper>;
 
 /// This struct is basically the same as FuncType.
 /// But `FuncType` defines a concrete type of a function.
@@ -224,47 +224,105 @@ pub enum Limits {
     One(u32, u32),
 }
 
+/// A helper struct to count codeblocks (`OP_CODE`)
+/// and instruction ids.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Counter {
     value: usize,
+    instruction_id: usize,
 }
 
 impl Counter {
+    /// Increases the `value` for codeblocks.
     fn inc(&mut self) {
         self.value += 1;
     }
 
+    /// Increases the last value and get's the current `value` for codeblocks.
     pub fn get_value(&mut self) -> usize {
         self.inc();
         self.value
+    }
+
+    /// Increases the `instruction_id` for instructions.
+    fn inc_next_instruction(&mut self) {
+        self.instruction_id += 1;
+    }
+
+    /// Increases the last `instruction_id` and get's the value for instructions.
+    pub fn get_next_instruction(&mut self) -> usize {
+        self.inc_next_instruction();
+        self.instruction_id
     }
 }
 
 impl Default for Counter {
     fn default() -> Self {
-        Counter { value: 0 }
+        Counter {
+            value: 0,
+            instruction_id: 0,
+        }
     }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CodeBlock {
     pub id: usize,
-    pub instructions: Vec<Instruction>,
+    instructions: Vec<InstructionWrapper>,
 }
 
 impl CodeBlock {
+    /// Creates a new `CodeBlock`.
     pub fn new(counter: &mut Counter, instructions: Vec<Instruction>) -> Self {
         Self {
             id: counter.get_value(),
-            instructions,
+            instructions: InstructionWrapper::wrap_instructions(counter, instructions),
         }
     }
 
-    pub fn with(id: usize, instructions: Vec<Instruction>) -> Self {
-        Self { id, instructions }
+    
+
+    pub fn iter(&self) -> std::slice::Iter<'_, InstructionWrapper> {
+        self.instructions.iter()
     }
 }
 
+/// Wrapper for the opcodes
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub struct InstructionWrapper {
+    /// Identifies the instruction
+    instruction_id: usize,
+    /// Instruction code
+    instruction: Instruction,
+}
+
+impl InstructionWrapper {
+    /// Wraps an instruction with `instruction_id` and returns an `InstructionWrapper`.
+    pub fn wrap(counter: &mut Counter, instruction: Instruction) -> Self {
+        Self {
+            instruction_id: counter.get_next_instruction(),
+            instruction: instruction,
+        }
+    }
+
+    /// Wrap multiple instructions with `instruction_id` and returns a `Vev<InstructionWrapper>`.
+    pub fn wrap_instructions(counter: &mut Counter, instructions: Vec<Instruction>) -> Vec<Self> {
+        instructions
+            .into_iter()
+            .map(|i| InstructionWrapper::wrap(counter, i))
+            .collect()
+    }
+
+    pub fn get_instruction(&self) -> &Instruction {
+        &self.instruction
+    }
+
+    pub fn get_pc(&self) -> usize {
+        self.instruction_id
+    }
+}
+
+/// Internal representation of web assembly's opcodes
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 pub enum Instruction {

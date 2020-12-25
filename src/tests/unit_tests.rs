@@ -237,7 +237,10 @@ fn test_function_if_else_2() {
         locals: vec![],
         code: wrap_instructions!(vec![OP_IF_AND_ELSE(
             BlockType::ValueType(ValueType::I32),
-            CodeBlock::new(&mut counter, vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],),
+            CodeBlock::new(
+                &mut counter,
+                vec![OP_LOCAL_GET(0), OP_LOCAL_GET(1), OP_I32_ADD],
+            ),
             CodeBlock::new(&mut counter, vec![OP_I32_CONST(-1000)]),
         )]),
     }];
