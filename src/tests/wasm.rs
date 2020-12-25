@@ -1,6 +1,7 @@
 use crate::value::Value::*;
 use crate::value::*;
 use crate::engine::*;
+use crate::config::Configuration;
 use insta::assert_snapshot;
 use validation::validate;
 use wasm_parser::core::*;
@@ -14,7 +15,7 @@ macro_rules! test_file_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module);
+        let engine = Engine::new(instance, &module, Configuration::new());
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -27,7 +28,7 @@ macro_rules! test_run_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let mut engine = Engine::new(instance, &module);
+        let mut engine = Engine::new(instance, &module, Configuration::new());
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
@@ -43,7 +44,7 @@ macro_rules! allocation {
         };
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module);
+        let engine = Engine::new(instance, &module, Configuration::new());
 
         engine
     }};

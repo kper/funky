@@ -289,4 +289,7 @@ Engine {
         stack: [],
         globals: [],
     },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
 }

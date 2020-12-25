@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
+use crate::config::Configuration;
 use crate::convert;
+use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::StackContent::*;
 use crate::operations::*;
 use crate::page::Page;
@@ -17,6 +19,7 @@ pub struct Engine {
     pub module: ModuleInstance, //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
+    debugger: Box<dyn ProgramCounter>,
 }
 
 #[derive(Debug)]
@@ -24,6 +27,36 @@ pub enum InstructionOutcome {
     EXIT,
     BRANCH(u32),
     RETURN,
+}
+
+#[allow(dead_code)]
+pub(crate) fn empty_engine() -> Engine {
+    let mi = ModuleInstance {
+        start: 0,
+        code: Vec::new(),
+        fn_types: Vec::new(),
+        funcaddrs: Vec::new(),
+        tableaddrs: Vec::new(),
+        memaddrs: Vec::new(),
+        globaladdrs: Vec::new(),
+        exports: Vec::new(),
+    };
+
+    Engine {
+        started: true,
+        store: Store {
+            funcs: Vec::new(),
+            tables: Vec::new(),
+            globals: Vec::new(),
+            memory: Vec::new(),
+            stack: vec![StackContent::Frame(Frame {
+                arity: 0,
+                locals: Vec::new(),
+            })],
+        },
+        module: mi,
+        debugger: Box::new(RelativeProgramCounter::new()),
+    }
 }
 
 /// Returns Err when paging failed
@@ -379,7 +412,7 @@ impl ModuleInstance {
 }
 
 impl Engine {
-    pub fn new(mi: ModuleInstance, module: &Module) -> Self {
+    pub fn new(mi: ModuleInstance, module: &Module, config: Configuration) -> Engine {
         let mut e = Engine {
             module: mi,
             started: false,
@@ -390,6 +423,7 @@ impl Engine {
                 globals: Vec::new(),
                 memory: Vec::new(),
             },
+            debugger: Box::new(config.get_program_counter()),
         };
 
         debug!("before allocate {:#?}", e);
@@ -432,7 +466,11 @@ impl Engine {
     }
 
     /// Take only exported functions into consideration
-    pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
+    pub fn invoke_exported_function(
+        &mut self,
+        idx: u32,
+        args: Vec<Value>,
+    ) -> Result<()> {
         debug!("invoke_exported_function {:?}", idx);
         let k = {
             let x = &self.module;
@@ -467,7 +505,11 @@ impl Engine {
         Ok(())
     }
 
-    pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
+    pub fn invoke_exported_function_by_name(
+        &mut self,
+        name: &str,
+        args: Vec<Value>,
+    ) -> Result<()> {
         let idx = self
             .module
             .exports
@@ -479,7 +521,11 @@ impl Engine {
         Ok(())
     }
 
-    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
+    pub(crate) fn invoke_function(
+        &mut self,
+        idx: u32,
+        args: Vec<Value>,
+    ) -> Result<()> {
         self.check_parameters_of_function(idx, &args);
 
         let t = &self.store.funcs[idx as usize].ty;
@@ -626,7 +672,7 @@ impl Engine {
         fr: &mut Frame,
         instructions: &'a mut impl std::iter::Iterator<Item = &'a Instruction>,
     ) -> Result<InstructionOutcome> {
-        let mut ip = 0;
+        //let mut ip = 0;
         for instruction in instructions {
             debug!("Evaluating instruction {:?}", instruction);
             match &instruction {
@@ -1289,8 +1335,10 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome =
-                            self.run_instructions(fr, &mut block_instructions.instructions.iter())?;
+                        let outcome = self.run_instructions(
+                            fr,
+                            &mut block_instructions.instructions.iter(),
+                        )?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1455,7 +1503,7 @@ impl Engine {
                         .stack
                         .split_off(self.store.stack.len() - t.param_types.len())
                         .into_iter()
-                        .map(Engine::map_stackcontent_to_value)
+                        .map(map_stackcontent_to_value)
                         .collect::<Result<_>>()?;
 
                     self.invoke_function(*idx, args)?;
@@ -1496,7 +1544,7 @@ impl Engine {
                                 .stack
                                 .split_off(self.store.stack.len() - f.ty.param_types.len())
                                 .into_iter()
-                                .map(Engine::map_stackcontent_to_value)
+                                .map(map_stackcontent_to_value)
                                 .collect::<Result<_>>()?;
 
                             self.invoke_function(a as u32, args)?;
@@ -1512,9 +1560,8 @@ impl Engine {
                 OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
                 //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
-            ip += 1;
 
-            debug!("ip is now {}", ip);
+            self.debugger.next_instruction()?;
 
             trace!("stack {:#?}", self.store.stack);
         }
@@ -1586,13 +1633,7 @@ impl Engine {
         Ok(arity as u32)
     }
 
-    /// Maps `StackContent` to `Value`
-    fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
-        match x {
-            Value(v) => Ok(v),
-            other => Err(anyhow!("Expected value but found {:?}", other)),
-        }
-    }
+    
 }
 
 impl Store {
@@ -1609,5 +1650,13 @@ impl Store {
         } else {
             Err(anyhow!("A memory instance is already defined"))
         }
+    }
+}
+
+/// Maps `StackContent` to `Value`
+fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
+    match x {
+        Value(v) => Ok(v),
+        other => Err(anyhow!("Expected value but found {:?}", other)),
     }
 }
