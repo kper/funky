@@ -1,17 +1,30 @@
-use std::io;
-use tui::Terminal;
-use tui::backend::TermionBackend;
-use termion::raw::IntoRawMode;
-use tui::widgets::{Widget, Block, Borders};
-use tui::layout::{Layout, Constraint, Direction};
-use funky::cli::parse_args;
-use funky::engine::{Engine, ModuleInstance};
-use validation::validate;
-use wasm_parser::{parse, read_wasm};
-use funky::config::Configuration;
 use docopt::Docopt;
+use funky::cli::parse_args;
+use funky::config::Configuration;
+use funky::engine::{Engine, ModuleInstance};
 use log::{debug, info};
 use serde::Deserialize;
+use std::io::{stdin, stdout, Write};
+use termion::event::Key;
+use termion::input::TermRead;
+use tui::backend::TermionBackend;
+use tui::Terminal;
+use termion::{input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
+use tui::{
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Paragraph, Wrap},
+};
+use validation::validate;
+use wasm_parser::{parse, read_wasm};
+
+use std::sync::Arc;
+use std::sync::Mutex;
+
+use crate::util::{Event, Events};
+
+mod util;
 
 const USAGE: &str = "
 Hustensaft - a debugger for the  WebAssembly Interpreter funky
@@ -32,7 +45,7 @@ struct Args {
     arg_args: Vec<String>,
 }
 
-fn main() -> Result<(), io::Error> {
+fn main() -> Result<(), std::io::Error> {
     env_logger::init();
 
     let args: Args = Docopt::new(USAGE)
@@ -51,43 +64,73 @@ fn main() -> Result<(), io::Error> {
 
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
-    let mut e = Engine::new(mi, &module, config);
+    let e = Arc::new(Mutex::new(Engine::new(mi, &module, config)));
     debug!("engine {:#?}", e);
 
     debug!("Instantiation engine");
 
-    if let Err(err) = e.instantiation(&module) {
+    if let Err(err) = e.lock().unwrap().instantiation(&module) {
         panic!("{}", err);
     }
 
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
-    if let Err(err) = e.invoke_exported_function_by_name(
-        &args.arg_function,
-        inv_args
-    ) {
-        panic!("{}", err);
+    let args_function_cpy = args.arg_function.clone();
+    
+    std::thread::spawn(move || {
+        if let Err(err) = e
+            .clone()
+            .lock()
+            .unwrap()
+            .invoke_exported_function_by_name(&args_function_cpy, inv_args)
+        {
+            panic!("{}", err);
+        }
+
+        let result = e.lock().unwrap().store.stack.last();
+    });
+
+    let stdin = stdin();
+    let stdout = stdout().into_raw_mode()?;
+    let stdout = MouseTerminal::from(stdout);
+    let stdout = AlternateScreen::from(stdout);
+    let backend = TermionBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let events = Events::new();
+    loop {
+        if let Event::Input(key) = events.next().unwrap() {
+            if key == Key::Char('q') {
+                break;
+            }
+        }
+
+        terminal.draw(|f| {
+            let size = f.size();
+
+            let chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .margin(1)
+                .constraints(
+                    [
+                        Constraint::Percentage(80),
+                        Constraint::Percentage(20),
+                    ]
+                    .as_ref(),
+                )
+                .split(f.size());
+            let block = Block::default().title("Hustensaft").borders(Borders::ALL);
+            f.render_widget(block, size);
+
+            let paragraph = Paragraph::new("Das ist ein Test")
+                .style(Style::default())
+                .alignment(Alignment::Left)
+                .wrap(Wrap { trim: true });
+
+            f.render_widget(paragraph, chunks[0]);
+        })?;
     }
 
-    //let stdout = io::stdout().into_raw_mode()?;
-    //let backend = TermionBackend::new(stdout);
-    //let mut terminal = Terminal::new(backend)?;
-
-    
-
-    let result = e.store.stack.last();
-
     Ok(())
-
-
-
-    /*
-   terminal.draw(|f| {
-        let size = f.size();
-        let block = Block::default()
-            .title("Block")
-            .borders(Borders::ALL);
-        f.render_widget(block, size);
-    })*/
 }

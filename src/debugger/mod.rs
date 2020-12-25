@@ -4,7 +4,7 @@ use std::net::UdpSocket;
 
 /// The `ProgramCounter` trait defines how a program
 /// can advance.
-pub trait ProgramCounter: std::fmt::Debug {
+pub trait ProgramCounter: std::fmt::Debug + Send {
     fn next_instruction(&mut self) -> Result<()>;
 }
 
