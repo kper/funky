@@ -15,7 +15,7 @@ use self::stack::StackContent::*;
 use self::stack::{Frame, Label};
 use self::store::Store;
 use crate::convert;
-pub use crate::debugger::ProgramState;
+pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
@@ -474,10 +474,10 @@ impl Engine {
         //let mut ip = 0;
         for wrapped_instruction in instruction_wrapper {
             self.debugger
-                .set_pc(ProgramState::new(
+                .set_pc(BorrowedProgramState::new(
                     wrapped_instruction.get_pc(),
-                    self.store.stack.clone(),
-                    fr.locals.clone(),
+                    &self.store.stack,
+                    &fr.locals,
                 ))
                 .context("Setting program state failed")?;
 

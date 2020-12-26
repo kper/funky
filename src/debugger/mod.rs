@@ -5,6 +5,37 @@ use log::debug;
 use std::fmt;
 use std::sync::mpsc::{Receiver, Sender};
 
+/// It has the same function as `ProgramState`,
+/// however it has borrowed members.
+/// The reason for this is performance. The `set_pc` function
+/// for the `DebuggerProgramCounter` needs the state, but the
+/// `RelativeProgramCounter` does not. Therefore, we should avoid allocations.
+pub struct BorrowedProgramState<'a> {
+    current_pc: usize,
+    stack: &'a [StackContent],
+    locals: &'a [Value]
+}
+
+impl<'a> BorrowedProgramState<'a> {
+    pub fn new(current_pc: usize, stack: &'a [StackContent], locals: &'a [Value]) -> Self {
+        Self {
+            current_pc,
+            stack,
+            locals,
+        }
+    }
+}
+
+impl<'a> Into<ProgramState> for BorrowedProgramState<'a> {
+    fn into(self) -> ProgramState {
+        ProgramState {
+            current_pc: self.current_pc,
+            stack: self.stack.to_vec(),
+            locals: self.locals.to_vec()
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ProgramState {
     current_pc: usize,
@@ -39,7 +70,7 @@ impl fmt::Display for ProgramState {
 pub trait ProgramCounter: std::fmt::Debug + Send {
     /// we set the program pointer to
     /// a new value.
-    fn set_pc(&mut self, n: ProgramState) -> Result<()>;
+    fn set_pc<'a>(&mut self, n: BorrowedProgramState<'a>) -> Result<()>;
 }
 
 /// The default program counter because it doesn't hold.
@@ -55,7 +86,7 @@ impl RelativeProgramCounter {
 }
 
 impl ProgramCounter for RelativeProgramCounter {
-    fn set_pc(&mut self, n: ProgramState) -> Result<()> {
+    fn set_pc<'a>(&mut self, n: BorrowedProgramState<'a>) -> Result<()> {
         debug!("Setting pc to {}", n.current_pc);
         self.0 = n.current_pc;
 
@@ -87,7 +118,7 @@ impl DebuggerProgramCounter {
 }
 
 impl ProgramCounter for DebuggerProgramCounter {
-    fn set_pc(&mut self, state: ProgramState) -> Result<()> {
+    fn set_pc<'a>(&mut self, state: BorrowedProgramState<'a>) -> Result<()> {
         debug!("Waiting for progress signal");
 
         self.instruction_advancer.recv().unwrap();
@@ -97,7 +128,8 @@ impl ProgramCounter for DebuggerProgramCounter {
         debug!("Setting pc to {}", state.current_pc);
         self.pc = state.current_pc;
 
-        self.instruction_watcher.send(state).unwrap();
+        // we defered the `clone` until here
+        self.instruction_watcher.send(state.into()).unwrap();
 
         Ok(())
     }
