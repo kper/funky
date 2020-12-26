@@ -477,6 +477,7 @@ impl Engine {
                 .set_pc(ProgramState::new(
                     wrapped_instruction.get_pc(),
                     self.store.stack.clone(),
+                    fr.locals.clone(),
                 ))
                 .context("Setting program state failed")?;
 

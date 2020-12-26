@@ -1,27 +1,36 @@
 use crate::engine::stack::StackContent;
+use crate::value::Value;
 use anyhow::Result;
 use log::debug;
-use std::sync::mpsc::{Receiver, Sender};
 use std::fmt;
+use std::sync::mpsc::{Receiver, Sender};
 
 #[derive(Debug, Clone)]
 pub struct ProgramState {
     current_pc: usize,
     stack: Vec<StackContent>,
+    locals: Vec<Value>,
 }
 
 impl ProgramState {
-    pub fn new(current_pc: usize, stack: Vec<StackContent>) -> Self {
-        Self { current_pc, stack }
+    pub fn new(current_pc: usize, stack: Vec<StackContent>, locals: Vec<Value>) -> Self {
+        Self {
+            current_pc,
+            stack,
+            locals,
+        }
     }
 }
 
 impl fmt::Display for ProgramState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let elements : Vec<_> = self.stack.iter().map(|w| format!("{}", w)).collect();
+        let elements: Vec<_> = self.stack.iter().map(|w| format!("{}", w)).collect();
 
-
-        write!(f, "Current pc {}\n Stack: \n{:#?}", self.current_pc, elements)
+        write!(
+            f,
+            "Current pc {}\n Stack: \n{:#?}\n Locals: \n {:#?}",
+            self.current_pc, elements, self.locals
+        )
     }
 }
 
