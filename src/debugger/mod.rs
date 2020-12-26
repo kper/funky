@@ -51,6 +51,10 @@ impl ProgramState {
             locals,
         }
     }
+
+    pub fn get_pc(&self) -> usize {
+        self.current_pc
+    }
 }
 
 impl fmt::Display for ProgramState {

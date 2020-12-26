@@ -302,6 +302,11 @@ impl CodeBlock {
     pub fn iter(&self) -> std::slice::Iter<'_, InstructionWrapper> {
         self.instructions.iter()
     }
+
+    /// Get the code block's instructions.
+    pub fn get_instructions(&self) -> &[InstructionWrapper] {
+        &self.instructions
+    }
 }
 
 /// Wrapper for the opcodes
@@ -318,7 +323,7 @@ impl InstructionWrapper {
     pub fn wrap(counter: &mut Counter, instruction: Instruction) -> Self {
         Self {
             instruction_id: counter.get_next_instruction(),
-            instruction: instruction,
+            instruction,
         }
     }
 
@@ -334,7 +339,7 @@ impl InstructionWrapper {
         &self.instruction
     }
 
-    pub fn get_pc(&self) -> usize {
+    pub fn get_id(&self) -> usize {
         self.instruction_id
     }
 }

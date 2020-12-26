@@ -475,7 +475,7 @@ impl Engine {
         for wrapped_instruction in instruction_wrapper {
             self.debugger
                 .set_pc(BorrowedProgramState::new(
-                    wrapped_instruction.get_pc(),
+                    wrapped_instruction.get_id(),
                     &self.store.stack,
                     &fr.locals,
                 ))

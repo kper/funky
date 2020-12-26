@@ -12,17 +12,17 @@ use tui::backend::TermionBackend;
 use tui::Terminal;
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
-    style::Style,
-    //style::{Color, Modifier, Style},
-    //text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    style::{Color, Modifier, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 use validation::validate;
+use wasm_parser::core::{Instruction, InstructionWrapper};
 use wasm_parser::{parse, read_wasm};
 
 use std::sync::mpsc::channel;
 
-use crate::util::Events;
+use crate::util::{Events, StatefulList};
 use anyhow::{Context, Result};
 use std::sync::{Arc, Mutex};
 
@@ -114,6 +114,23 @@ fn main() -> Result<()> {
 
     let mut state = None;
 
+    let functions: Vec<_> = copy.into_iter().map(|w| w.code.clone()).flatten().collect();
+    let instructions = get_instructions(&functions); //expands the blocks
+
+    /*
+    let items: Vec<_> = instructions
+        .iter()
+        .map(|w| {
+            ListItem::new(Spans::from(Span::styled(
+                format!("{:?}", w.get_instruction()),
+                Style::default().add_modifier(Modifier::ITALIC),
+            )))
+            .style(Style::default())
+        })
+        .collect();*/
+
+    let mut stateful = StatefulList::with_items(instructions);
+
     loop {
         let key = events.next().unwrap();
 
@@ -152,6 +169,9 @@ fn main() -> Result<()> {
         } else if key == Key::Backspace {
             instruction_advancer_tx.send(()).unwrap();
             state = Some(instruction_watcher_rx.recv().unwrap()); // Blocking
+            if let Some(ref state) = state {
+                stateful.find_by_id(state.get_pc());
+            }
         }
 
         terminal.draw(|f| {
@@ -165,13 +185,35 @@ fn main() -> Result<()> {
             let block = Block::default().title("Hustensaft").borders(Borders::ALL);
             f.render_widget(block, size);
 
-            let paragraph = Paragraph::new(format!("{:#?}", copy))
+            let items: Vec<ListItem> = stateful
+                .items
+                .iter()
+                .map(|w| {
+                    ListItem::new(Spans::from(Span::styled(
+                        format!("{:?}", w.get_instruction()),
+                        Style::default().add_modifier(Modifier::ITALIC),
+                    )))
+                    .style(Style::default())
+                })
+                .collect();
+
+            let list = List::new(items)
+                .highlight_style(
+                    Style::default()
+                        .bg(Color::LightGreen)
+                        .add_modifier(Modifier::BOLD),
+                )
+                .highlight_symbol(">> ");
+
+            /*
+            let paragraph = Paragraph::new(format!("{:#?}", instructions))
                 .style(Style::default())
                 .alignment(Alignment::Left)
                 .scroll(scroll)
                 .wrap(Wrap { trim: false });
+            */
 
-            f.render_widget(paragraph, chunks[0]);
+            f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
             if let Some(state) = state.clone() {
                 let pc = Paragraph::new(format!("State {}", state))
@@ -193,4 +235,35 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn get_instructions(instructions: &[InstructionWrapper]) -> Vec<&InstructionWrapper> {
+    let mut result = Vec::new();
+
+    for i in instructions {
+        match i.get_instruction() {
+            Instruction::OP_BLOCK(_, block) => {
+                result.push(i);
+                result.extend(&get_instructions(block.get_instructions()));
+            }
+            Instruction::OP_LOOP(_, block) => {
+                result.push(i);
+                result.extend(&get_instructions(block.get_instructions()));
+            }
+            Instruction::OP_IF(_, block) => {
+                result.push(i);
+                result.extend(&get_instructions(block.get_instructions()));
+            }
+            Instruction::OP_IF_AND_ELSE(_, block1, block2) => {
+                result.push(i);
+                result.extend(&get_instructions(block1.get_instructions()));
+                result.extend(&get_instructions(block2.get_instructions()));
+            }
+            _ => {
+                result.push(i);
+            }
+        }
+    }
+
+    result
 }
