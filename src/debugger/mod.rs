@@ -2,8 +2,9 @@ use crate::engine::stack::StackContent;
 use anyhow::Result;
 use log::debug;
 use std::sync::mpsc::{Receiver, Sender};
+use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ProgramState {
     current_pc: usize,
     stack: Vec<StackContent>,
@@ -12,6 +13,15 @@ pub struct ProgramState {
 impl ProgramState {
     pub fn new(current_pc: usize, stack: Vec<StackContent>) -> Self {
         Self { current_pc, stack }
+    }
+}
+
+impl fmt::Display for ProgramState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let elements : Vec<_> = self.stack.iter().map(|w| format!("{}", w)).collect();
+
+
+        write!(f, "Current pc {}\n Stack: \n{:#?}", self.current_pc, elements)
     }
 }
 

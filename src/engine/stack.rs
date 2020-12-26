@@ -1,4 +1,5 @@
 use crate::engine::prelude::*;
+use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StackContent {
@@ -19,6 +20,19 @@ impl StackContent {
         match self {
             StackContent::Label(_) => true,
             _ => false,
+        }
+    }
+}
+
+impl fmt::Display for StackContent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &*self {
+            StackContent::Label(label) => 
+                write!(f, "{:?}", label),
+            StackContent::Frame(frame) => 
+                write!(f, "{:?}", frame),
+            StackContent::Value(value) => 
+                write!(f, "{:?}", value),
         }
     }
 }

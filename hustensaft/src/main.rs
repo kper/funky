@@ -173,13 +173,22 @@ fn main() -> Result<()> {
 
             f.render_widget(paragraph, chunks[0]);
 
-            let pc = Paragraph::new(format!("State {:#?}", state))
-                .style(Style::default())
-                .alignment(Alignment::Left)
-                .scroll(scroll2)
-                .wrap(Wrap { trim: false });
+            if let Some(state) = state.clone() {
+                let pc = Paragraph::new(format!("State {}", state))
+                    .style(Style::default())
+                    .alignment(Alignment::Left)
+                    .scroll(scroll2)
+                    .wrap(Wrap { trim: false });
 
-            f.render_widget(pc, chunks[1]);
+                f.render_widget(pc, chunks[1]);
+            } else {
+                let no_state = Paragraph::new("No state")
+                    .style(Style::default())
+                    .alignment(Alignment::Left)
+                    .wrap(Wrap { trim: false });
+
+                f.render_widget(no_state, chunks[1]);
+            }
         })?;
     }
 
