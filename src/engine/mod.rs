@@ -10,7 +10,6 @@ pub mod stack;
 pub(crate) mod store;
 pub(crate) mod table;
 
-use self::memory::{grow_memory, MemoryInstance};
 use self::stack::StackContent;
 use self::stack::StackContent::*;
 use self::stack::{Frame, Label};
@@ -18,7 +17,6 @@ use self::store::Store;
 use crate::convert;
 pub use crate::debugger::ProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
-use crate::engine::export::ExportInstance;
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
@@ -27,7 +25,6 @@ pub use crate::page::Page;
 use crate::value::{Arity, Value, Value::*};
 pub use crate::PAGE_SIZE;
 pub use anyhow::{anyhow, Context, Result};
-use std::fmt;
 pub use wasm_parser::core::Instruction::*;
 pub use wasm_parser::core::*;
 pub use wasm_parser::Module;
@@ -476,10 +473,12 @@ impl Engine {
     ) -> Result<InstructionOutcome> {
         //let mut ip = 0;
         for wrapped_instruction in instruction_wrapper {
-            self.debugger.set_pc(ProgramState::new(
-                wrapped_instruction.get_pc(),
-                self.store.stack.clone(),
-            ));
+            self.debugger
+                .set_pc(ProgramState::new(
+                    wrapped_instruction.get_pc(),
+                    self.store.stack.clone(),
+                ))
+                .context("Setting program state failed")?;
 
             let instruction = wrapped_instruction.get_instruction();
             debug!("Evaluating instruction {:?}", instruction);
@@ -1181,7 +1180,7 @@ impl Engine {
                     self.call_function(idx)?;
                 }
                 OP_CALL_INDIRECT(idx) => {
-                    self.call_indirect_function(idx)?; 
+                    self.call_indirect_function(idx)?;
                 }
                 OP_RETURN => {
                     debug!("Return");

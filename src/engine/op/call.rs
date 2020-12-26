@@ -1,5 +1,4 @@
 use wasm_parser::core::FuncIdx;
-use crate::engine::InstructionOutcome;
 use anyhow::Result;
 use crate::engine::Engine;
 use crate::engine::map_stackcontent_to_value;

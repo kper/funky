@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use wasm_parser::core::GlobalIdx;
 
 impl Engine {
-    pub(crate) fn global_set(&mut self, idx: &GlobalIdx, fr: &mut Frame) -> Result<()> {
+    pub(crate) fn global_set(&mut self, idx: &GlobalIdx, _fr: &mut Frame) -> Result<()> {
         match self.store.stack.pop() {
             Some(Value(v)) => {
                 if !self.store.globals[*idx as usize].mutable {

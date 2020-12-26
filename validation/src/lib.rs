@@ -1,7 +1,7 @@
 use wasm_parser::core::*;
 use wasm_parser::Module;
+use anyhow::{anyhow, Result};
 
-type IResult<T> = Result<T, &'static str>;
 
 pub mod extract;
 //pub mod instructions;
@@ -29,9 +29,9 @@ struct Context<'a> {
     _return: Vec<()>, //TODO
 }
 
-pub fn validate(module: &Module) -> IResult<()> {
+pub fn validate(module: &Module) -> Result<()> {
     let types = get_types(&module);
-    let functions: Vec<IResult<_>> = get_funcs(&module)
+    let functions: Vec<Result<_>> = get_funcs(&module)
         .iter()
         .map(|w| get_ty_of_function(&types, **w as usize))
         .collect();
@@ -39,7 +39,7 @@ pub fn validate(module: &Module) -> IResult<()> {
     for f in functions.iter() {
         if f.is_err() {
             error!("Function {:?}", f);
-            return Err("Function is not defined");
+            return Err(anyhow!("Function is not defined"));
         }
     }
 
@@ -82,7 +82,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn validate(&self, module: &Module) -> IResult<()> {
+    pub fn validate(&self, module: &Module) -> Result<()> {
         let c_prime = self.get_c_prime().clone(); //TODO this might not be necessary
 
         // Check functype
@@ -123,7 +123,7 @@ impl<'a> Context<'a> {
 
             if entry.ty.value_type != init_expr_ty {
                 //Expr has not the same type as the global
-                return Err("Expr has not the same type as the global");
+                return Err(anyhow!("Expr has not the same type as the global"));
             }
         }
 
@@ -192,11 +192,11 @@ impl<'a> Context<'a> {
     }
 }
 
-fn check_lengths(c: &Context) -> IResult<()> {
+fn check_lengths(c: &Context) -> Result<()> {
     // tables must not be larger than 1
 
     if c.tables.len() > 1 {
-        return Err("More than one table");
+        return Err(anyhow!("More than one table"));
     }
 
     debug!("Table size is ok");
@@ -204,21 +204,21 @@ fn check_lengths(c: &Context) -> IResult<()> {
     // Memory must not be larger than 1
 
     if c.mems.len() > 1 {
-        return Err("More than one memory");
+        return Err(anyhow!("More than one memory"));
     }
 
     Ok(())
 }
 
 /// All export names must be different
-fn check_export_names(exports: &[&ExportEntry]) -> IResult<()> {
+fn check_export_names(exports: &[&ExportEntry]) -> Result<()> {
     let mut set = std::collections::HashSet::new();
 
     for e in exports.iter() {
         if !set.contains(&e.name) {
             set.insert(e.name.clone());
         } else {
-            return Err("Export function names are not unique");
+            return Err(anyhow!("Export function names are not unique"));
         }
     }
 
@@ -228,11 +228,11 @@ fn check_export_names(exports: &[&ExportEntry]) -> IResult<()> {
 }
 
 /// Evalutes the expr `init` and checks if it returns const
-fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<ValueType> {
+fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> Result<ValueType> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
-        return Err("No expr to evaluate");
+        return Err(anyhow!("No expr to evaluate"));
     }
 
     match init.get(0).unwrap().get_instruction() {
@@ -243,14 +243,14 @@ fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> IResult<
         OP_GLOBAL_GET(lidx) => match globals_ty.get(*lidx as usize).as_ref() {
             Some(global) => {
                 if global.mu == Mu::Var {
-                    return Err("Global var is mutable");
+                    return Err(anyhow!("Global var is mutable"));
                 }
 
                 Ok(global.value_type)
             }
-            None => Err("Global does not exist"),
+            None => Err(anyhow!("Global does not exist")),
         },
-        _ => Err("Wrong expression"),
+        _ => Err(anyhow!("Wrong expression")),
     }
 }
 
@@ -258,7 +258,7 @@ fn check_elem_ty(
     elem_ty: &ElementSegment,
     tables: &[&TableType],
     func_ty: &[FuncType],
-) -> IResult<bool> {
+) -> Result<bool> {
     debug!("check_elem_ty");
     //https://webassembly.github.io/spec/core/valid/modules.html#element-segments
 
@@ -267,7 +267,7 @@ fn check_elem_ty(
     let funcs_idx = &elem_ty.init;
 
     if tables.get(*table_idx as usize).is_none() {
-        return Err("No table defined for element's index");
+        return Err(anyhow!("No table defined for element's index"));
     }
 
     get_expr_const_i32_ty(offset)?;
@@ -284,25 +284,25 @@ fn check_elem_ty(
     }
 
     if !not_def_funcs.is_empty() {
-        return Err("Element section is not correct");
+        return Err(anyhow!("Element section is not correct"));
     }
 
     Ok(true)
 }
 
 /// Evalutes the expr `init` and checks if it returns const and I32
-fn get_expr_const_i32_ty(init: &Expr) -> IResult<ValueType> {
+fn get_expr_const_i32_ty(init: &Expr) -> Result<ValueType> {
     if init.is_empty() {
-        return Err("No expr to evaluate");
+        return Err(anyhow!("No expr to evaluate"));
     }
 
     match init.get(0).unwrap().get_instruction() {
         Instruction::OP_I32_CONST(_) => Ok(ValueType::I32),
-        _ => Err("Expression is not a I32 const"),
+        _ => Err(anyhow!("Expression is not a I32 const")),
     }
 }
 
-fn check_data_ty(data_ty: &DataSegment, memtypes: &[&MemoryType]) -> IResult<bool> {
+fn check_data_ty(data_ty: &DataSegment, memtypes: &[&MemoryType]) -> Result<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#data-segments
 
     let mem_idx = data_ty.data;
@@ -317,7 +317,7 @@ fn check_data_ty(data_ty: &DataSegment, memtypes: &[&MemoryType]) -> IResult<boo
     Ok(true)
 }
 
-fn check_start(start: &StartSection, functypes: &[FuncType]) -> IResult<bool> {
+fn check_start(start: &StartSection, functypes: &[FuncType]) -> Result<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#valid-start
 
     let fidx = start.index;
@@ -325,14 +325,14 @@ fn check_start(start: &StartSection, functypes: &[FuncType]) -> IResult<bool> {
     if let Some(f) = functypes.get(fidx as usize).as_ref() {
         if !f.param_types.is_empty() && !f.return_types.is_empty() {
             error!("Function {:?}", f);
-            return Err("Function is not a valid start function");
+            return Err(anyhow!("Function is not a valid start function"));
         }
     }
 
     Ok(true)
 }
 
-fn check_import_ty(import_ty: &ImportEntry, types: &[&FunctionSignature]) -> IResult<bool> {
+fn check_import_ty(import_ty: &ImportEntry, types: &[&FunctionSignature]) -> Result<bool> {
     check_import_desc(&import_ty.desc, types)
 }
 
@@ -342,14 +342,14 @@ fn check_export_ty(
     tabletypes: &[&TableType],
     memtypes: &[&MemoryType],
     globaltypes: &[&GlobalType],
-) -> IResult<bool> {
+) -> Result<bool> {
     //https://webassembly.github.io/spec/core/valid/modules.html#exports
 
     macro_rules! exists(
         ($e:ident, $w:ident, $k:expr) => (
             match $e.get($w as usize).as_ref() {
                 Some(_) => {Ok(true)}, //exists
-                _ => Err($k)
+                _ => Err(anyhow!($k))
             }
         )
     );
@@ -363,7 +363,7 @@ fn check_export_ty(
 }
 
 // If there exists a `typeidx` in `types`, then `typeidx` has its type.
-fn get_ty_of_function(types: &[&FunctionSignature], typeidx: usize) -> IResult<FuncType> {
+fn get_ty_of_function(types: &[&FunctionSignature], typeidx: usize) -> Result<FuncType> {
     if let Some(t) = types.get(typeidx) {
         return Ok(FuncType {
             param_types: t.param_types.clone(),
@@ -371,10 +371,10 @@ fn get_ty_of_function(types: &[&FunctionSignature], typeidx: usize) -> IResult<F
         });
     }
 
-    Err("No function with this index")
+    Err(anyhow!("No function with this index"))
 }
 
-fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> IResult<bool> {
+fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> Result<bool> {
     let b = match e {
         ImportDesc::Function { ty } => get_ty_of_function(types, *ty as usize).is_ok(),
         ImportDesc::Table { .. } => true, //Limits are u32 that's why they are valid
@@ -385,7 +385,7 @@ fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> IResult<bo
     Ok(b)
 }
 
-fn check_memory_ty(memory: &MemoryType) -> IResult<()> {
+fn check_memory_ty(memory: &MemoryType) -> Result<()> {
     let b = match memory.limits {
         Limits::Zero(n) => n < 2u32.checked_pow(16).unwrap(), //cannot overflow
         Limits::One(n, m) => n < 2u32.checked_pow(16).unwrap() && m < 2u32.checked_pow(16).unwrap(), //cannot overflow
@@ -394,7 +394,7 @@ fn check_memory_ty(memory: &MemoryType) -> IResult<()> {
     if b {
         Ok(())
     } else {
-        Err("Memory exhausted")
+        Err(anyhow!("Memory exhausted"))
     }
 }
 
@@ -423,7 +423,7 @@ mod tests {
             sections: vec![Section::Type(t), Section::Function(w)],
         };
 
-        assert_eq!(Err("Function is not defined"), validate(&module));
+        assert_eq!(Err(anyhow!("Function is not defined")), validate(&module));
     }
 
     #[test]
@@ -467,7 +467,7 @@ mod tests {
         };
 
         assert_eq!(
-            Err("Export function names are not unique"),
+            Err(anyhow!("Export function names are not unique")),
             validate(&module)
         );
     }
@@ -510,7 +510,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Table(w)],
         };
 
-        assert_eq!(Err("Table does not exist"), validate(&module));
+        assert_eq!(Err(anyhow!("Table does not exist")), validate(&module));
     }
 
     #[test]
@@ -550,7 +550,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Memory(w)],
         };
 
-        assert_eq!(Err("Memory does not exist"), validate(&module));
+        assert_eq!(Err(anyhow!("Memory does not exist")), validate(&module));
     }
 
     #[test]
@@ -594,7 +594,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Global(w)],
         };
 
-        assert_eq!(Err("Global does not exist"), validate(&module));
+        assert_eq!(Err(anyhow!("Global does not exist")), validate(&module));
     }
 
     #[test]
@@ -641,7 +641,7 @@ mod tests {
             sections: vec![Section::Import(k), Section::Type(x), Section::Function(w)],
         };
 
-        assert_eq!(Err("Function is not defined"), validate(&module));
+        assert_eq!(Err(anyhow!("Function is not defined")), validate(&module));
     }
 
     #[test]
@@ -705,7 +705,7 @@ mod tests {
             sections: vec![Section::Import(k)],
         };
 
-        assert_eq!(Err("Memory exhausted"), validate(&module));
+        assert_eq!(Err(anyhow!("Memory exhausted")), validate(&module));
     }
 
     #[test]
@@ -750,7 +750,7 @@ mod tests {
             sections: vec![Section::Table(k), Section::Table(w)],
         };
 
-        assert_eq!(Err("More than one table"), validate(&module));
+        assert_eq!(Err(anyhow!("More than one table")), validate(&module));
     }
 
     #[test]
@@ -771,7 +771,7 @@ mod tests {
             sections: vec![Section::Memory(k), Section::Memory(w)],
         };
 
-        assert_eq!(Err("More than one memory"), validate(&module));
+        assert_eq!(Err(anyhow!("More than one memory")), validate(&module));
     }
 
     #[test]
@@ -786,7 +786,7 @@ mod tests {
             sections: vec![Section::Memory(k)],
         };
 
-        assert_eq!(Err("Memory exhausted"), validate(&module));
+        assert_eq!(Err(anyhow!("Memory exhausted")), validate(&module));
     }
 
     #[test]
@@ -795,7 +795,7 @@ mod tests {
             limits: Limits::Zero(u32::max_value()),
         };
 
-        assert_eq!(Err("Memory exhausted"), check_memory_ty(&ty));
+        assert_eq!(Err(anyhow!("Memory exhausted")), check_memory_ty(&ty));
     }
 
     macro_rules! test_file {

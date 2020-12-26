@@ -1,6 +1,5 @@
 use crate::engine::stack::Frame;
 use crate::engine::stack::StackContent;
-use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use anyhow::{anyhow, Result};
 use wasm_parser::core::LocalIdx;

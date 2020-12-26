@@ -1,8 +1,6 @@
 use crate::engine::export::ExportInstance;
-use crate::engine::func::FuncInstance;
-use crate::engine::table::TableInstance;
+use anyhow::Result;
 use wasm_parser::core::*;
-use anyhow::{anyhow, Context, Result};
 use wasm_parser::Module;
 
 #[derive(Debug, Clone)]

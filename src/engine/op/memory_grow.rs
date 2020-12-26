@@ -1,11 +1,9 @@
-use crate::engine::stack::Frame;
 use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use crate::engine::memory::grow_memory;
 use crate::value::Value::I32;
 use crate::PAGE_SIZE;
 use anyhow::{anyhow, Result};
-use wasm_parser::core::GlobalIdx;
 use crate::engine::Page;
 
 impl Engine {

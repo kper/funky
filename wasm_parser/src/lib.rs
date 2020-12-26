@@ -9,6 +9,7 @@ mod leb128;
 use self::core::*;
 use self::leb128::*;
 
+use anyhow::Result;
 use byteorder::{ByteOrder, LittleEndian};
 use nom::bytes::complete::take;
 use nom::combinator::complete;
@@ -39,14 +40,13 @@ macro_rules! read_wasm {
     }};
 }
 
-pub fn parse(content: Vec<u8>) -> Result<Module, ()> {
+pub fn parse(content: Vec<u8>) -> Result<Module> {
     let slice = content.as_slice();
 
-    debug!("{:#?}", parse_module(slice).unwrap());
-    let sections = match parse_module(slice) {
-        Ok((_, s)) => s,
-        Err(_) => return Err(()), // TODO: improve this error handling
-    };
+    let parsed = parse_module(slice).expect("Parsing failed");
+
+    debug!("{:#?}", parsed);
+    let (_, sections) = parsed;
     Ok(Module { sections })
 }
 

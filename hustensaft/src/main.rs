@@ -1,31 +1,30 @@
 use docopt::Docopt;
 use funky::cli::parse_args;
 use funky::debugger::DebuggerProgramCounter;
-use funky::engine::{Engine};
 use funky::engine::module::ModuleInstance;
+use funky::engine::Engine;
 use log::{debug, info};
 use serde::Deserialize;
-use std::io::{stdin, stdout, Write};
+use std::io::{stdin, stdout};
 use termion::event::Key;
-use termion::input::TermRead;
 use termion::{input::MouseTerminal, raw::IntoRawMode, screen::AlternateScreen};
 use tui::backend::TermionBackend;
 use tui::Terminal;
 use tui::{
     layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    style::Style,
+    //style::{Color, Modifier, Style},
+    //text::{Span, Spans},
     widgets::{Block, Borders, Paragraph, Wrap},
 };
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use std::sync::atomic::AtomicUsize;
 use std::sync::mpsc::channel;
-use std::sync::Arc;
-use std::sync::Mutex;
 
-use crate::util::{Event, Events};
+use crate::util::Events;
+use anyhow::{Context, Result};
+use std::sync::{Arc, Mutex};
 
 mod util;
 
@@ -48,15 +47,7 @@ struct Args {
     arg_args: Vec<String>,
 }
 
-/*
-use std::fmt;
-impl fmt::Debug for wasm_parser::core::InstructionWrapper {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Hi: {}", self.get_pc())
-    }
-}*/
-
-fn main() -> Result<(), std::io::Error> {
+fn main() -> Result<()> {
     env_logger::init();
 
     let args: Args = Docopt::new(USAGE)
@@ -67,8 +58,8 @@ fn main() -> Result<(), std::io::Error> {
 
     info!("Parsing wasm file");
 
-    let module = parse(reader).unwrap();
-    let validation = validate(&module);
+    let module = parse(reader)?;
+    let _validation = validate(&module).context("Validation failed")?;
 
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
@@ -105,11 +96,12 @@ fn main() -> Result<(), std::io::Error> {
             panic!("{}", err);
         }
 
-        let result = engine.lock().unwrap().store.stack.last();
+        println!("{:?}", engine.lock().unwrap().store.stack.last());
+
         std::process::exit(0);
     });
 
-    let stdin = stdin();
+    let _stdin = stdin();
     let stdout = stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
     let stdout = AlternateScreen::from(stdout);
@@ -123,43 +115,43 @@ fn main() -> Result<(), std::io::Error> {
     let mut state = None;
 
     loop {
-        if let Event::Input(key) = events.next().unwrap() {
-            if key == Key::Char('q') {
-                break;
-            } else if key == Key::Char('l') {
-                let (y, mut x) = scroll;
-                x += 1;
+        let key = events.next().unwrap();
+
+        if key == Key::Char('q') {
+            break;
+        } else if key == Key::Char('l') {
+            let (_y, mut x) = scroll;
+            x += 1;
+            scroll.1 = x;
+        } else if key == Key::Char('h') {
+            let (_y, mut x) = scroll;
+            if x > 0 {
+                x -= 1;
                 scroll.1 = x;
-            } else if key == Key::Char('h') {
-                let (y, mut x) = scroll;
-                if x > 0 {
-                    x -= 1;
-                    scroll.1 = x;
-                }
-            } else if key == Key::Char('j') {
-                let (mut y, x) = scroll;
-                y += 1;
-                scroll.0 = y;
-            } else if key == Key::Char('k') {
-                let (mut y, x) = scroll;
-                if y > 0 {
-                    y -= 1;
-                    scroll.0 = y;
-                }
-            } else if key == Key::Down {
-                let (mut y, x) = scroll2;
-                y += 1;
-                scroll2.0 = y;
-            } else if key == Key::Up {
-                let (mut y, x) = scroll2;
-                if y > 0 {
-                    y -= 1;
-                    scroll2.0 = y;
-                }
-            } else if key == Key::Backspace {
-                instruction_advancer_tx.send(()).unwrap();
-                state = Some(instruction_watcher_rx.recv().unwrap()); // Blocking
             }
+        } else if key == Key::Char('j') {
+            let (mut y, _x) = scroll;
+            y += 1;
+            scroll.0 = y;
+        } else if key == Key::Char('k') {
+            let (mut y, _x) = scroll;
+            if y > 0 {
+                y -= 1;
+                scroll.0 = y;
+            }
+        } else if key == Key::Down {
+            let (mut y, _x) = scroll2;
+            y += 1;
+            scroll2.0 = y;
+        } else if key == Key::Up {
+            let (mut y, _x) = scroll2;
+            if y > 0 {
+                y -= 1;
+                scroll2.0 = y;
+            }
+        } else if key == Key::Backspace {
+            instruction_advancer_tx.send(()).unwrap();
+            state = Some(instruction_watcher_rx.recv().unwrap()); // Blocking
         }
 
         terminal.draw(|f| {

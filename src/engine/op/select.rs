@@ -1,10 +1,8 @@
-use crate::engine::stack::Frame;
 use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
-use anyhow::{anyhow, Result};
-use wasm_parser::core::GlobalIdx;
-use crate::value::Value::I32;
 use crate::fetch_binop;
+use crate::value::Value::I32;
+use anyhow::{anyhow, Result};
 
 impl Engine {
     pub(crate) fn select(&mut self) -> Result<()> {

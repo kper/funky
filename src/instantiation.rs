@@ -1,8 +1,7 @@
 use crate::engine::module::ModuleInstance;
 use crate::engine::stack::StackContent;
-use crate::engine::stack::{Frame, Label};
+use crate::engine::stack::{Frame};
 use crate::engine::store::Store;
-use crate::engine::Engine;
 use crate::value::Value;
 use anyhow::{anyhow, Result};
 use wasm_parser::Module;

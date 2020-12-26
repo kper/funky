@@ -20,8 +20,6 @@ pub const PAGE_SIZE: usize = 65536;
 #[cfg(test)]
 mod tests;
 
-use debugger::ProgramCounter;
-use debugger::RelativeProgramCounter;
 use engine::*;
 
 #[allow(unused_macros)]

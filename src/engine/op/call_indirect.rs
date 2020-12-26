@@ -1,6 +1,5 @@
 use crate::engine::map_stackcontent_to_value;
 use crate::engine::Engine;
-use crate::engine::InstructionOutcome;
 use anyhow::{anyhow, Result};
 use crate::value::Value::I32;
 use wasm_parser::core::FuncIdx;
