@@ -9,7 +9,8 @@ members = [
 	"wasm_parser",
 	"validation",
 	"test_runner",
-	"hustensaft"
+	"hustensaft",
+	"custom_debug"
 ]
 
 [lib]
@@ -39,7 +40,6 @@ regex = "1"
 anyhow = "1.0.32"
 tui = "0.13"
 termion = "1.5"
-
 
 [dev-dependencies]
 insta = "*"

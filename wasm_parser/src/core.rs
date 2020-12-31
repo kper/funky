@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use custom_debug::CustomDisplay;
 
 pub type FuncIdx = u32;
 pub type TableIdx = u32;
@@ -345,8 +346,10 @@ impl InstructionWrapper {
 }
 
 /// Internal representation of web assembly's opcodes
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, CustomDisplay, PartialEq, Clone, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 #[allow(non_camel_case_types)]
+#[allow(unused_variables)]
 pub enum Instruction {
     // CTRL
     OP_UNREACHABLE,
