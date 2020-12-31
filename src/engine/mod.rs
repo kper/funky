@@ -308,7 +308,7 @@ impl Engine {
             let w = x
                 .exports
                 .get(idx as usize)
-                .expect("Exported function not found or found something else");
+                .context("Exported function not found or found something else")?;
 
             w.value
         };
@@ -323,7 +323,8 @@ impl Engine {
                     .get(ty as usize)
                     .ok_or_else(|| anyhow!("Function not found"))?;
 
-                self.invoke_function(func_addr, args)?;
+                self.invoke_function(func_addr, args)
+                    .context("Invoking the function failed")?;
             }
             _ => {
                 return Err(anyhow!("Exported function not found"));
@@ -339,8 +340,10 @@ impl Engine {
             .exports
             .iter()
             .position(|e| e.name == name)
-            .expect("Function not found");
-        self.invoke_exported_function(idx as u32, args)?;
+            .context("Cannot find function in exports")?;
+
+        self.invoke_exported_function(idx as u32, args)
+            .context("Invoking the exported function failed")?;
 
         Ok(())
     }
