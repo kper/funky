@@ -8,6 +8,9 @@ use validation::validate;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
+use crate::engine::module::ModuleInstance;
+use crate::engine::stack::StackContent;
+use crate::engine::export::ExportInstance;
 
 macro_rules! test_file_engine {
     ($fs_name:expr) => {

@@ -7,6 +7,11 @@ use crate::PAGE_SIZE;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
 
+use crate::engine::memory::MemoryInstance;
+use crate::engine::stack::Frame;
+use crate::engine::stack::StackContent;
+use crate::engine::func::FuncInstance;
+
 #[test]
 #[should_panic(expected = "Function expected different parameters!")]
 fn test_invoke_wrong_length_parameters() {
