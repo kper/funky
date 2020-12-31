@@ -20,7 +20,7 @@ docopt = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0.32"
-custom_debug = { path = "../custom_debug" }
+custom_display = { path = "../custom_display" }
 
 [dev-dependencies]
 insta = "*"

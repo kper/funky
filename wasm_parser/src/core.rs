@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use custom_debug::CustomDisplay;
+use custom_display::CustomDisplay;
 
 pub type FuncIdx = u32;
 pub type TableIdx = u32;

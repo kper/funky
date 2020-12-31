@@ -10,7 +10,7 @@ members = [
 	"validation",
 	"test_runner",
 	"hustensaft",
-	"custom_debug"
+	"custom_display"
 ]
 
 [lib]

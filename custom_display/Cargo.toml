@@ -1,5 +1,5 @@
 [package]
-name = "custom_debug"
+name = "custom_display"
 version = "0.1.0"
 authors = ["kper <kevin.per@protonmail.com>"]
 edition = "2018"

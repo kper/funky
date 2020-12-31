@@ -1,7 +1,5 @@
 extern crate log;
 
-extern crate custom_debug;
-
 use log::debug;
 
 pub mod core;
