@@ -44,13 +44,6 @@ pub struct StatefulList<'a> {
 }
 
 impl<'a> StatefulList<'a> {
-    pub fn new() -> StatefulList<'a> {
-        StatefulList {
-            state: ListState::default(),
-            items: Vec::new(),
-        }
-    }
-
     pub fn with_items(items: Vec<&InstructionWrapper>) -> StatefulList {
         StatefulList {
             state: ListState::default(),
@@ -60,7 +53,7 @@ impl<'a> StatefulList<'a> {
 
     pub fn find_by_id(&mut self, index: usize) {
         let i = match self.state.selected() {
-            Some(i) => self
+            Some(_i) => self
                 .items
                 .iter()
                 .position(|w| w.get_id() == index)
@@ -69,37 +62,5 @@ impl<'a> StatefulList<'a> {
         };
 
         self.state.select(Some(i));
-    }
-
-    pub fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn unselect(&mut self) {
-        self.state.select(None);
     }
 }
