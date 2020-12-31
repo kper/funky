@@ -190,7 +190,7 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|w| {
                     ListItem::new(Spans::from(Span::styled(
-                        format!("{:?}", w.get_instruction()),
+                        format!("{}", w.get_instruction()),
                         Style::default().add_modifier(Modifier::ITALIC),
                     )))
                     .style(Style::default())
