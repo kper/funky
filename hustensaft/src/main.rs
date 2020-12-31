@@ -88,7 +88,6 @@ fn main() -> Result<()> {
     let engine = e.clone();
     std::thread::spawn(move || {
         if let Err(err) = engine
-            .clone()
             .lock()
             .unwrap()
             .invoke_exported_function_by_name(&args_function_cpy, inv_args)
@@ -114,7 +113,7 @@ fn main() -> Result<()> {
 
     let mut state = None;
 
-    let functions: Vec<_> = copy.into_iter().map(|w| w.code.clone()).flatten().collect();
+    let functions: Vec<_> = copy.into_iter().map(|w| w.code).flatten().collect();
     let instructions = get_instructions(&functions); //expands the blocks
 
     /*
