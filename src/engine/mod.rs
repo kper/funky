@@ -1151,7 +1151,9 @@ impl Engine {
                     }
                 }
                 OP_BR(label_idx) => {
-                    self.br(label_idx)?;
+                    debug!("OP_BR {}", label_idx);
+
+                    return Ok(InstructionOutcome::BRANCH(*label_idx));
                 }
                 OP_BR_IF(label_idx) => {
                     debug!("OP_BR_IF {}", label_idx);

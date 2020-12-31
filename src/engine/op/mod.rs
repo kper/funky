@@ -7,6 +7,5 @@ mod select;
 mod memory_size;
 mod memory_grow;
 mod block;
-mod br;
 mod call;
 mod call_indirect;
