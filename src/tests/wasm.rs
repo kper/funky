@@ -1,4 +1,7 @@
 use crate::debugger::RelativeProgramCounter;
+use crate::engine::export::ExportInstance;
+use crate::engine::module::ModuleInstance;
+use crate::engine::stack::StackContent;
 use crate::engine::*;
 use crate::value::Value::*;
 use crate::value::*;
@@ -8,9 +11,6 @@ use validation::validate;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
-use crate::engine::module::ModuleInstance;
-use crate::engine::stack::StackContent;
-use crate::engine::export::ExportInstance;
 
 macro_rules! test_file_engine {
     ($fs_name:expr) => {
@@ -614,7 +614,7 @@ fn test_run_as_loop_first_br_if_2() {
       )
       (i32.const 1)
     )
-  ))*/
+))*/
 
 #[test]
 fn test_run_br_if0() {
@@ -820,38 +820,21 @@ fn test_run_memory_size() {
     );
 }
 
-/*#[test]
-fn test_run_memory_grow() {
-    //env_logger::init();
-    let engine = test_run_engine!("memory.wasm", 4, vec![I32(1)]);
+#[test]
+fn test_memory_redundancy() {
+    env_logger::init();
+    let mut engine = test_run_engine!("memory_redundancy.wasm", 1, vec![]);
     assert_eq!(
-        Some(&StackContent::Value(I32(1))),
+        Some(&StackContent::Value(I32(128))),
         engine.store.stack.last()
     );
-}*/
 
-/*
-#[test]
-fn test_run_call_indirect() {
-    /*
-     (module
-      (table 2 anyfunc)
-      (func $f1 (result i32)
-        i32.const 42)
-      (func $f2 (result i32)
-        i32.const 13)
-      (elem (i32.const 0) $f1 $f2)
-      (type $return_i32 (func (result i32)))
-      (func (export "callByIndex") (param $i i32) (result i32)
-        local.get $i
-        call_indirect (type $return_i32))
-    )*/
+    engine
+        .invoke_exported_function(2, vec![])
+        .expect("Invoke exported function failed");
 
-    env_logger::init();
-    let engine = test_run_engine!("wasm-table.wasm", 0, vec![I32(1)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(43))),
+        Some(&StackContent::Value(I32(128))),
         engine.store.stack.last()
-    )
+    );
 }
-*/
