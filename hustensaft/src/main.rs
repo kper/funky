@@ -21,6 +21,7 @@ use wasm_parser::core::{Instruction, InstructionWrapper};
 use wasm_parser::{parse, read_wasm};
 
 use std::sync::mpsc::channel;
+use std::sync::atomic::AtomicBool;
 
 use crate::util::{Events, StatefulList};
 use anyhow::{Context, Result};
@@ -86,6 +87,10 @@ fn main() -> Result<()> {
     let copy = e.lock().unwrap().module.code.clone();
 
     let engine = e.clone();
+
+    let terminated = Arc::new(AtomicBool::new(false));
+    let cpy = terminated.clone();
+
     std::thread::spawn(move || {
         if let Err(err) = engine
             .lock()
@@ -97,7 +102,9 @@ fn main() -> Result<()> {
 
         println!("{:?}", engine.lock().unwrap().store.stack.last());
 
-        std::process::exit(0);
+        cpy.store(true, std::sync::atomic::Ordering::Relaxed);
+
+        //std::process::exit(0);
     });
 
     let _stdin = stdin();
@@ -116,21 +123,13 @@ fn main() -> Result<()> {
     let functions: Vec<_> = copy.into_iter().map(|w| w.code).flatten().collect();
     let instructions = get_instructions(&functions); //expands the blocks
 
-    /*
-    let items: Vec<_> = instructions
-        .iter()
-        .map(|w| {
-            ListItem::new(Spans::from(Span::styled(
-                format!("{:?}", w.get_instruction()),
-                Style::default().add_modifier(Modifier::ITALIC),
-            )))
-            .style(Style::default())
-        })
-        .collect();*/
-
     let mut stateful = StatefulList::with_items(instructions);
 
     loop {
+        if terminated.load(std::sync::atomic::Ordering::Relaxed) {
+            break;
+        }
+
         let key = events.next().unwrap();
 
         if key == Key::Char('q') {
@@ -199,18 +198,10 @@ fn main() -> Result<()> {
             let list = List::new(items)
                 .highlight_style(
                     Style::default()
-                        .bg(Color::LightGreen)
+                        .bg(Color::LightYellow)
                         .add_modifier(Modifier::BOLD),
                 )
                 .highlight_symbol(">> ");
-
-            /*
-            let paragraph = Paragraph::new(format!("{:#?}", instructions))
-                .style(Style::default())
-                .alignment(Alignment::Left)
-                .scroll(scroll)
-                .wrap(Wrap { trim: false });
-            */
 
             f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
@@ -236,6 +227,8 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Block structures save instructions in enum variants.
+/// This function expands it and flattens to linearize a list.
 fn get_instructions(instructions: &[InstructionWrapper]) -> Vec<&InstructionWrapper> {
     let mut result = Vec::new();
 
