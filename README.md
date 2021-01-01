@@ -95,3 +95,15 @@ utf8-import-field.json.csv	00	00	0.0%
 utf8-import-module.json.csv	00	00	0.0%
 utf8-invalid-encoding.json.csv	00	00	0.0%
 ~~~
+
+## Run it
+
+```
+cargo run --bin funky -- ./testsuite/block.0.wasm "break-bare"
+```
+
+## Run the debugger
+
+```
+cargo run --bin hustensaft -- ./testsuite/block.0.wasm "break-bare"
+```
