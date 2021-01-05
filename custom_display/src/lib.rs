@@ -6,7 +6,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
-/// This crate is a custom implementation for Debug
+/// This crate is a custom implementation for Display 
 /// In fact, the problem which tries to solve is that
 /// we aren't interested in full recursive println of
 /// instructions.
