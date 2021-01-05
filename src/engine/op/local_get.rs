@@ -13,11 +13,11 @@ impl Engine {
 
             Ok(())
         } else {
-            return Err(anyhow!(
+            Err(anyhow!(
                 "Trying to access locals ({}), but out of bounds (length {})",
                 idx,
                 fr.locals.len()
-            ));
+            ))
         }
     }
 }

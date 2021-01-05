@@ -17,10 +17,10 @@ impl Engine {
                 Ok(())
             }
             Some(x) => {
-                return Err(anyhow!("Expected value but found {:?}", x));
+                Err(anyhow!("Expected value but found {:?}", x))
             }
             None => {
-                return Err(anyhow!("Empty stack during local.tee"));
+                Err(anyhow!("Empty stack during local.tee"))
             }
         }
     }

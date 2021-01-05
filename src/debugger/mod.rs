@@ -80,14 +80,8 @@ pub trait ProgramCounter: std::fmt::Debug + Send {
 /// The default program counter because it doesn't hold.
 /// It is relative because it doesn't keep up with
 /// function calls or nested blocks.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RelativeProgramCounter(usize);
-
-impl RelativeProgramCounter {
-    pub fn new() -> Self {
-        RelativeProgramCounter(0)
-    }
-}
 
 impl ProgramCounter for RelativeProgramCounter {
     fn set_pc<'a>(&mut self, n: BorrowedProgramState<'a>) -> Result<()> {

@@ -237,7 +237,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
         let validation = validate(&module);
         let mi = ModuleInstance::new(&module);
 
-        let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::new()));
+        let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::default()));
         if let Err(err) = e.instantiation(&module) {}
 
         fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));

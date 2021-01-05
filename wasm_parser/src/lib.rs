@@ -1,3 +1,5 @@
+#![allow(clippy::same_item_push)]
+
 extern crate log;
 
 use log::debug;

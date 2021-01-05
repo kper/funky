@@ -189,10 +189,7 @@ fn allocate_globals(
     for gl in ty.0.iter() {
         debug!("global {:#?}", gl);
         let instance = Variable {
-            mutable: match gl.ty.mu {
-                Mu::Var => true,
-                _ => false,
-            },
+            mutable: matches!(gl.ty.mu, Mu::Var),
             val: get_expr_const_ty_global(&gl.init)?,
         };
 
@@ -227,7 +224,7 @@ fn allocate_exports(
     Ok(())
 }
 
-pub(crate) fn get_expr_const_ty_global(init: &Expr) -> Result<Value, ()> {
+pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Value, ()> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {

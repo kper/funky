@@ -1,7 +1,6 @@
+use anyhow::{anyhow, Result};
 use wasm_parser::core::*;
 use wasm_parser::Module;
-use anyhow::{anyhow, Result};
-
 
 pub mod extract;
 //pub mod instructions;
@@ -228,7 +227,10 @@ fn check_export_names(exports: &[&ExportEntry]) -> Result<()> {
 }
 
 /// Evalutes the expr `init` and checks if it returns const
-fn get_expr_const_ty_global(init: &Expr, globals_ty: &[&GlobalType]) -> Result<ValueType> {
+fn get_expr_const_ty_global(
+    init: &[InstructionWrapper],
+    globals_ty: &[&GlobalType],
+) -> Result<ValueType> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
@@ -291,7 +293,7 @@ fn check_elem_ty(
 }
 
 /// Evalutes the expr `init` and checks if it returns const and I32
-fn get_expr_const_i32_ty(init: &Expr) -> Result<ValueType> {
+fn get_expr_const_i32_ty(init: &[InstructionWrapper]) -> Result<ValueType> {
     if init.is_empty() {
         return Err(anyhow!("No expr to evaluate"));
     }

@@ -73,8 +73,8 @@ pub fn custom_display(input: TokenStream) -> TokenStream {
                 }
             };
 
-            return TokenStream::from(result);
+            TokenStream::from(result)
         }
         _ => panic!("Macro only for enums"),
-    };
+    }
 }

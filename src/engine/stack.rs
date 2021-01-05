@@ -10,29 +10,20 @@ pub enum StackContent {
 
 impl StackContent {
     pub fn is_value(&self) -> bool {
-        match self {
-            StackContent::Value(_) => true,
-            _ => false,
-        }
+        matches!(self, StackContent::Value(_))
     }
 
     pub fn is_label(&self) -> bool {
-        match self {
-            StackContent::Label(_) => true,
-            _ => false,
-        }
+        matches!(self, StackContent::Label(_))
     }
 }
 
 impl fmt::Display for StackContent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self {
-            StackContent::Label(label) => 
-                write!(f, "{:?}", label),
-            StackContent::Frame(frame) => 
-                write!(f, "{:?}", frame),
-            StackContent::Value(value) => 
-                write!(f, "{:?}", value),
+            StackContent::Label(label) => write!(f, "{:?}", label),
+            StackContent::Frame(frame) => write!(f, "{:?}", frame),
+            StackContent::Value(value) => write!(f, "{:?}", value),
         }
     }
 }
@@ -47,14 +38,12 @@ pub struct Label {
 impl Label {
     /// Create new label
     pub fn new(arity: Arity) -> Self {
-        Label {
-            arity
-        }
+        Label { arity }
     }
 
     /// Get the arity of the label
     pub fn get_arity(&self) -> Arity {
-        self.arity 
+        self.arity
     }
 }
 

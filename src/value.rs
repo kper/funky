@@ -54,17 +54,11 @@ impl Value {
     }
 
     pub fn is_f32(&self) -> bool {
-        match self {
-            Value::F32(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::F32(_))
     }
 
     pub fn is_f64(&self) -> bool {
-        match self {
-            Value::F64(_) => true,
-            _ => false,
-        }
+        matches!(self, Value::F64(_))
     }
 }
 

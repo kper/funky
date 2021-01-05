@@ -68,7 +68,7 @@ fn main() {
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
 
-    let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::new()));
+    let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::default()));
     debug!("engine {:#?}", e);
 
     debug!("Instantiation engine");

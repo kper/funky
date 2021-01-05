@@ -70,7 +70,7 @@ pub(crate) fn empty_engine() -> Engine {
             })],
         },
         module: mi,
-        debugger: Box::new(RelativeProgramCounter::new()),
+        debugger: Box::new(RelativeProgramCounter::default()),
     }
 }
 
