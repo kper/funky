@@ -820,6 +820,7 @@ fn test_run_memory_size() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_memory_redundancy() {
     env_logger::init();
