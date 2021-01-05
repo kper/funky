@@ -19,16 +19,13 @@ impl TestFile {
     }
 
     pub fn get_cases(&self) -> impl Iterator<Item = &Command> {
-        self.commands.iter().filter(|x| match x {
-            Command::Module(m) => true,
-            Command::AssertReturn(w) => true,
-            _ => false,
-        })
+        self.commands
+            .iter()
+            .filter(|x| matches!(x, Command::Module(_) | Command::AssertReturn(_)))
     }
 
     pub fn get_fs_names(&self) -> Vec<&String> {
-        self
-            .commands
+        self.commands
             .iter()
             .filter_map(|x| match x {
                 Command::Module(w) => Some(&w.filename),
@@ -175,57 +172,57 @@ mod test {
     use super::*;
 
     /*
-    #[test]
-    fn parse_file() {
-        let data = r#"
-        {
- "source_filename": "f64.wast",
- "commands": [
-  {"type": "module", "line": 5, "filename": "f64.0.wasm"}, 
-  {"type": "assert_return", "line": 19, "action": {"type": "invoke", "field": "add", "args": [{"type": "f64", "value": "9223372036854775808"}, {"type": "f64", "value": "9223372036854775808"}]}, "expected": [{"type": "f64", "value": "9223372036854775808"}]}, 
-  
-        }"#;
+       #[test]
+       fn parse_file() {
+           let data = r#"
+           {
+    "source_filename": "f64.wast",
+    "commands": [
+     {"type": "module", "line": 5, "filename": "f64.0.wasm"},
+     {"type": "assert_return", "line": 19, "action": {"type": "invoke", "field": "add", "args": [{"type": "f64", "value": "9223372036854775808"}, {"type": "f64", "value": "9223372036854775808"}]}, "expected": [{"type": "f64", "value": "9223372036854775808"}]},
 
-        let v: TestFile = ::serde_json::from_str(data).unwrap();
+           }"#;
 
-        /*
-        let acc = Action {
-            field: "add".to_string(),
-            args: vec![
-                Argument {
-                    ty: "f64".to_string(),
-                    value: "9223372036854775808".to_string(),
-                },
-                Argument {
-                    ty: "f64".to_string(),
-                    value: "9223372036854775808".to_string(),
-                },
-            ],
+           let v: TestFile = ::serde_json::from_str(data).unwrap();
 
-        };
+           /*
+           let acc = Action {
+               field: "add".to_string(),
+               args: vec![
+                   Argument {
+                       ty: "f64".to_string(),
+                       value: "9223372036854775808".to_string(),
+                   },
+                   Argument {
+                       ty: "f64".to_string(),
+                       value: "9223372036854775808".to_string(),
+                   },
+               ],
 
-        let compare = TestFile {
-            source_filename: "f64.wast".to_string(),
-            commands: vec![
-                Command::Module(Module {
-                    line: 5,
-                    filename: "f64.0.wasm".to_string(),
-                }),
-                Command::AssertReturn(AssertReturn {
-                    line: 20,
-                    action: acc,
-            expected: vec![Argument {
-                ty: "f64".to_string(),
-                value: "9223372036854775808".to_string(),
-            }],
-                }),
-            ],
-        };
+           };
 
-        assert_eq!(v, compare);
-        */
-    }
-    */
+           let compare = TestFile {
+               source_filename: "f64.wast".to_string(),
+               commands: vec![
+                   Command::Module(Module {
+                       line: 5,
+                       filename: "f64.0.wasm".to_string(),
+                   }),
+                   Command::AssertReturn(AssertReturn {
+                       line: 20,
+                       action: acc,
+               expected: vec![Argument {
+                   ty: "f64".to_string(),
+                   value: "9223372036854775808".to_string(),
+               }],
+                   }),
+               ],
+           };
+
+           assert_eq!(v, compare);
+           */
+       }
+       */
 
     #[test]
     fn parse_action() {

@@ -82,11 +82,11 @@ fn main() -> Result<()> {
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
-    let args_function_cpy = args.arg_function.clone();
+    let args_function_cpy = args.arg_function;
 
     let copy = e.lock().unwrap().module.code.clone();
 
-    let engine = e.clone();
+    let engine = e;
 
     let terminated = Arc::new(AtomicBool::new(false));
     let cpy = terminated.clone();
