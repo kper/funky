@@ -425,7 +425,7 @@ mod tests {
             sections: vec![Section::Type(t), Section::Function(w)],
         };
 
-        assert_eq!(Err(anyhow!("Function is not defined")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -469,8 +469,8 @@ mod tests {
         };
 
         assert_eq!(
-            Err(anyhow!("Export function names are not unique")),
-            validate(&module)
+            anyhow!("Export function names are not unique"),
+            validate(&module).err().unwrap()
         );
     }
 
@@ -512,7 +512,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Table(w)],
         };
 
-        assert_eq!(Err(anyhow!("Table does not exist")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -552,7 +552,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Memory(w)],
         };
 
-        assert_eq!(Err(anyhow!("Memory does not exist")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -564,13 +564,18 @@ mod tests {
             }],
         };
 
+        let mut counter = Counter::default();
+
         let w = GlobalSection {
             globals: vec![GlobalVariable {
                 ty: GlobalType {
                     value_type: ValueType::I32,
                     mu: Mu::Const,
                 },
-                init: vec![Instruction::OP_I32_CONST(1)],
+                init: vec![
+                    InstructionWrapper::new(&mut counter),
+                    Instruction::OP_I32_CONST(1),
+                ],
             }],
         };
 
@@ -643,7 +648,7 @@ mod tests {
             sections: vec![Section::Import(k), Section::Type(x), Section::Function(w)],
         };
 
-        assert_eq!(Err(anyhow!("Function is not defined")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -707,7 +712,7 @@ mod tests {
             sections: vec![Section::Import(k)],
         };
 
-        assert_eq!(Err(anyhow!("Memory exhausted")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -752,7 +757,7 @@ mod tests {
             sections: vec![Section::Table(k), Section::Table(w)],
         };
 
-        assert_eq!(Err(anyhow!("More than one table")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -773,7 +778,7 @@ mod tests {
             sections: vec![Section::Memory(k), Section::Memory(w)],
         };
 
-        assert_eq!(Err(anyhow!("More than one memory")), validate(&module));
+        assert_eq!(validate(&module).is_err());
     }
 
     #[test]
@@ -788,7 +793,7 @@ mod tests {
             sections: vec![Section::Memory(k)],
         };
 
-        assert_eq!(Err(anyhow!("Memory exhausted")), validate(&module));
+        assert_eq!(validate(&module).is_err());
     }
 
     #[test]
@@ -797,7 +802,7 @@ mod tests {
             limits: Limits::Zero(u32::max_value()),
         };
 
-        assert_eq!(Err(anyhow!("Memory exhausted")), check_memory_ty(&ty));
+        assert_eq!(check_memory_ty(&ty).is_err());
     }
 
     macro_rules! test_file {
