@@ -25,8 +25,9 @@ class perf_run(db.Model):
     branch_instructions = db.Column('branch-instructions', db.BigInteger)
     on_create = db.Column('on-create', db.DateTime)
     path = db.Column('path', db.String(255))
+    duration_time = db.Column('duration_time', db.BigInteger)
 
-    def __init__(self, commit, cache_misses, branch_misses, cpu_cycles, instructions, branch_instructions, on_create, path):
+    def __init__(self, commit, cache_misses, branch_misses, cpu_cycles, instructions, branch_instructions, on_create, path, duration_time):
         self.commit = commit
         self.cache_misses = cache_misses
         self.branch_misses = branch_misses
@@ -35,6 +36,7 @@ class perf_run(db.Model):
         self.branch_instructions = branch_instructions
         self.on_create = on_create 
         self.path = path
+        self.duration_time = duration_time
 
 @app.route('/')
 def index():
@@ -44,7 +46,7 @@ def index():
 def test_run():
     if request.method == 'POST':
         data = request.get_json()
-        db.session.add(perf_run(commit=data['commit'], cache_misses = data['cache-misses'], branch_misses = data['branch-misses'], cpu_cycles = data['cpu-cycles'], instructions = data['instructions'], branch_instructions = data['branch-instructions'], on_create=datetime.now(), path = data['path']))
+        db.session.add(perf_run(commit=data['commit'], cache_misses = data['cache-misses'], branch_misses = data['branch-misses'], cpu_cycles = data['cpu-cycles'], instructions = data['instructions'], branch_instructions = data['branch-instructions'], on_create=datetime.now(), path = data['path'], duration_time=data['duration_time']))
         db.session.commit()
         return 'Ok'
     elif request.method == 'GET':
@@ -135,6 +137,22 @@ def branch_instructions():
 
         result = [
                 {'path': k, 'branch_instructions': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
+
+@app.route('/duration_time')
+def duration_time():
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.duration_time), perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
+
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'duration_time': [x[1] for x in g]}
             for k, g in itertools.groupby(data, extract_key)
         ]
 

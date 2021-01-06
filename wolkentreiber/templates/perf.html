@@ -49,7 +49,7 @@
 
 	$(document).ready(function() {
 		$.getJSON('http://localhost:5000/commits', function(commits) {
-				var perfs = ['cache_misses', 'branch_misses', 'cpu_cycles', 'instructions', 'branch_instructions'];
+				var perfs = ['cache_misses', 'branch_misses', 'cpu_cycles', 'instructions', 'branch_instructions', 'duration_time'];
 				//var perfs = ['cache_misses'];
 
 				perfs.forEach(perf => {
@@ -87,6 +87,11 @@
 
 <body>
    	<div class="container">
+		<div class="graph">
+			<h4>Duration time in ns</h4>
+			<canvas id="duration_time"></canvas>
+		</div>
+
 		<div class="graph">
 			<h4># Cache Misses</h4>
 			<canvas id="cache_misses"></canvas>
