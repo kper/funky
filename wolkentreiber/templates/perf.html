@@ -33,7 +33,7 @@
 			return data.map(x => {
 					return {
 						label: x.path,
-						data: [x[field]],
+						data: x[field],
 						fillColor: "rgba(14,72,100,1)"
 					}; 
 				});
@@ -42,6 +42,7 @@
 	$(document).ready(function() {
 		$.getJSON('http://localhost:5000/commits', function(commits) {
 				var perfs = ['cache_misses', 'branch_misses', 'cpu_cycles', 'instructions', 'branch_instructions'];
+				//var perfs = ['cache_misses'];
 
 				perfs.forEach(perf => {
 					$.getJSON('http://localhost:5000/' + perf, function(data) {

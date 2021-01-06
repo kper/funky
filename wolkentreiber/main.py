@@ -4,6 +4,7 @@ from flask import Flask, request, render_template, redirect, jsonify
 import sqlite3 as sql
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import itertools
 
 app = Flask(__name__)
 app.config ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.sqlite3'
@@ -52,36 +53,86 @@ def test_run():
 
 @app.route('/commits')
 def labels():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit).group_by(perf_run.commit).order_by(perf_run.on_create.asc()).all()
 
         return jsonify(rows)
 
 @app.route('/cache_misses')
 def cache_misses():
-        rows = perf_run.query.with_entities(perf_run.cache_misses, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.cache_misses, perf_run.path).group_by(perf_run.path, perf_run.commit).order_by(perf_run.on_create.asc()).all()
 
-        return jsonify(rows)
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'cache_misses': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
 
 @app.route('/branch_misses')
 def branch_misses():
-        rows = perf_run.query.with_entities(perf_run.branch_misses, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.branch_misses, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        return jsonify(rows)
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'branch_misses': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
 
 @app.route('/cpu_cycles')
 def cpu_cycles():
-        rows = perf_run.query.with_entities(perf_run.cpu_cycles, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.cpu_cycles, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        return jsonify(rows)
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'cpu_cycles': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
 
 @app.route('/instructions')
 def instructions():
-        rows = perf_run.query.with_entities(perf_run.instructions, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.instructions, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        return jsonify(rows)
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'instructions': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
 
 @app.route('/branch_instructions')
 def branch_instructions():
-        rows = perf_run.query.with_entities(perf_run.branch_instructions, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.branch_instructions, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        return jsonify(rows)
+        def extract_key(v):
+            return v[2]
+
+        data = sorted(rows, key=extract_key)
+
+        result = [
+                {'path': k, 'branch_instructions': [x[1] for x in g]}
+            for k, g in itertools.groupby(data, extract_key)
+        ]
+
+        return jsonify(result)
