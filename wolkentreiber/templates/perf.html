@@ -25,7 +25,14 @@
 
 	.graph {
 		width: 400px;
+		text-align: center;
 	}
+
+	.graph h4 {
+		margin-bottom: 10px;
+	}
+
+
 </style>
 
 <script>
@@ -81,22 +88,27 @@
 <body>
    	<div class="container">
 		<div class="graph">
+			<h4># Cache Misses</h4>
 			<canvas id="cache_misses"></canvas>
 		</div>
 
 		<div class="graph">
+			<h4># Branch Misses</h4>
 			<canvas id="branch_misses"></canvas>
 		</div>
 
 		<div class="graph">
+			<h4># CPU cycles</h4>
 			<canvas id="cpu_cycles"></canvas>
 		</div>
 
 		<div class="graph">
+			<h4># Instructions</h4>
 			<canvas id="instructions"></canvas>
 		</div>
 
 		<div class="graph">
+			<h4># Branch Instructions</h4>
 			<canvas id="branch_instructions"></canvas>
 		</div>
 	</div>
