@@ -1,0 +1,18 @@
+<html lang="en">
+<head>
+<title>Wolkentreiber</title>
+</head>
+
+<h1>Wolkentreiber</h1>
+
+<body>
+    <div> 
+		<ul>
+			{% for item in rows %}
+			<li>Commit {{item.commit}} on {{item.on_create}} </li>
+    {% endfor %}
+		</ul>
+    </div>
+</body>
+
+</html>
