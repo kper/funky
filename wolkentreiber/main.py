@@ -22,8 +22,9 @@ class perf_run(db.Model):
     instructions = db.Column('instructions', db.BigInteger)
     branch_instructions = db.Column('branch-instructions', db.BigInteger)
     on_create = db.Column('on-create', db.DateTime)
+    path = db.Column('path', db.String(255))
 
-    def __init__(self, commit, cache_misses, branch_misses, cpu_cycles, instructions, branch_instructions, on_create):
+    def __init__(self, commit, cache_misses, branch_misses, cpu_cycles, instructions, branch_instructions, on_create, path):
         self.commit = commit
         self.cache_misses = cache_misses
         self.branch_misses = branch_misses
@@ -31,6 +32,7 @@ class perf_run(db.Model):
         self.instructions = instructions
         self.branch_instructions = branch_instructions
         self.on_create = on_create 
+        self.path = path
 
 @app.route('/')
 def index():
@@ -40,8 +42,7 @@ def index():
 def test_run():
     if request.method == 'POST':
         data = request.get_json()
-        print(data['cache-misses'])
-        db.session.add(perf_run(commit=data['commit'], cache_misses = data['cache-misses'], branch_misses = data['branch-misses'], cpu_cycles = data['cpu-cycles'], instructions = data['instructions'], branch_instructions = data['branch-instructions'], on_create=datetime.now()))
+        db.session.add(perf_run(commit=data['commit'], cache_misses = data['cache-misses'], branch_misses = data['branch-misses'], cpu_cycles = data['cpu-cycles'], instructions = data['instructions'], branch_instructions = data['branch-instructions'], on_create=datetime.now(), path = data['path']))
         db.session.commit()
         return 'Ok'
     elif request.method == 'GET':
@@ -51,48 +52,36 @@ def test_run():
 
 @app.route('/commits')
 def labels():
-        rows = perf_run.query.with_entities(perf_run.commit).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)
 
 @app.route('/cache_misses')
 def cache_misses():
-        rows = perf_run.query.with_entities(perf_run.cache_misses).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.cache_misses, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)
 
 @app.route('/branch_misses')
 def branch_misses():
-        rows = perf_run.query.with_entities(perf_run.branch_misses).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.branch_misses, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)
 
 @app.route('/cpu_cycles')
 def cpu_cycles():
-        rows = perf_run.query.with_entities(perf_run.cpu_cycles).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.cpu_cycles, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)
 
 @app.route('/instructions')
 def instructions():
-        rows = perf_run.query.with_entities(perf_run.instructions).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.instructions, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)
 
 @app.route('/branch_instructions')
 def branch_instructions():
-        rows = perf_run.query.with_entities(perf_run.branch_instructions).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.branch_instructions, perf_run.path).group_by(perf_run.path).order_by(perf_run.on_create.asc()).all()
 
-        flatten = [item for sublist in rows for item in sublist]
-
-        return jsonify(flatten)
+        return jsonify(rows)

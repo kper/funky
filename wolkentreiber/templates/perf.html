@@ -29,123 +29,41 @@
 
 <script>
 
+	var parse_to_data = function(data, field) {
+			return data.map(x => {
+					return {
+						label: x.path,
+						data: [x[field]],
+						fillColor: "rgba(14,72,100,1)"
+					}; 
+				});
+	};
+
 	$(document).ready(function() {
 		$.getJSON('http://localhost:5000/commits', function(commits) {
-				$.getJSON('http://localhost:5000/cache_misses', function(data) {
-					var myChart = new Chart(document.getElementById('cache_misses').getContext('2d'), {
-						type: 'line',
-						data: {
-							labels: commits,
-							datasets: [{
-								label: '# Cache misses',
-								data: data,
-								borderWidth: 1
-							}]
-						},
-						options: {
-							scales: {
-								yAxes: [{
-									ticks: {
-										beginAtZero: true
-									}
-								}]
-							}
-						}
-					});
-				});
+				var perfs = ['cache_misses', 'branch_misses', 'cpu_cycles', 'instructions', 'branch_instructions'];
 
-				$.getJSON('http://localhost:5000/branch_misses', function(data) {
-					var myChart = new Chart(document.getElementById('branch_misses').getContext('2d'), {
-						type: 'line',
-						data: {
-							labels: commits,
-							datasets: [{
-								label: '# Branch misses',
-								data: data,
-								borderWidth: 1
-							}]
-						},
-						options: {
-							scales: {
-								yAxes: [{
-									ticks: {
-										beginAtZero: true
-									}
-								}]
+				perfs.forEach(perf => {
+					$.getJSON('http://localhost:5000/' + perf, function(data) {
+						var myChart = new Chart(document.getElementById(perf).getContext('2d'), {
+							type: 'line',
+							data: {
+								labels: commits.map(x => x.commit),
+								datasets: parse_to_data(data, perf)
+							},
+							options: {
+								scales: {
+									yAxes: [{
+										ticks: {
+											beginAtZero: true
+										}
+									}]
+								}
 							}
-						}
+						});
 					});
-				});
-
-				$.getJSON('http://localhost:5000/cpu_cycles', function(data) {
-					var myChart = new Chart(document.getElementById('cpu_cycles'), {
-						type: 'line',
-						data: {
-							labels: commits,
-							datasets: [{
-								label: '# CPU Cycles',
-								data: data,
-								borderWidth: 1
-							}]
-						},
-						options: {
-							scales: {
-								yAxes: [{
-									ticks: {
-										beginAtZero: true
-									}
-								}]
-							}
-						}
-					});
-				});
-
-				$.getJSON('http://localhost:5000/instructions', function(data) {
-					var myChart = new Chart(document.getElementById('instructions'), {
-						type: 'line',
-						data: {
-							labels: commits,
-							datasets: [{
-								label: '# instructions',
-								data: data,
-								borderWidth: 1
-							}]
-						},
-						options: {
-							scales: {
-								yAxes: [{
-									ticks: {
-										beginAtZero: true
-									}
-								}]
-							}
-						}
-					});
-				});
-
-				$.getJSON('http://localhost:5000/branch_instructions', function(data) {
-					var myChart = new Chart(document.getElementById('branch_instructions'), {
-						type: 'line',
-						data: {
-							labels: commits,
-							datasets: [{
-								label: '# branch_instructions',
-								data: data,
-								borderWidth: 1
-							}]
-						},
-						options: {
-							scales: {
-								yAxes: [{
-									ticks: {
-										beginAtZero: true
-									}
-								}]
-							}
-						}
-					});
-				});
 			});
+		});
 	});
 </script>
 	</head>
