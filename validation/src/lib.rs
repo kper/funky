@@ -468,9 +468,8 @@ mod tests {
             sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)],
         };
 
-        assert_eq!(
-            anyhow!("Export function names are not unique"),
-            validate(&module).err().unwrap()
+        assert!(
+            validate(&module).is_err()
         );
     }
 
@@ -573,7 +572,7 @@ mod tests {
                     mu: Mu::Const,
                 },
                 init: vec![
-                    InstructionWrapper::new(&mut counter),
+                    InstructionWrapper::default(&mut counter),
                     Instruction::OP_I32_CONST(1),
                 ],
             }],
@@ -601,7 +600,7 @@ mod tests {
             sections: vec![Section::Export(k), Section::Global(w)],
         };
 
-        assert_eq!(Err(anyhow!("Global does not exist")), validate(&module));
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -778,7 +777,7 @@ mod tests {
             sections: vec![Section::Memory(k), Section::Memory(w)],
         };
 
-        assert_eq!(validate(&module).is_err());
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -793,7 +792,7 @@ mod tests {
             sections: vec![Section::Memory(k)],
         };
 
-        assert_eq!(validate(&module).is_err());
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -802,7 +801,7 @@ mod tests {
             limits: Limits::Zero(u32::max_value()),
         };
 
-        assert_eq!(check_memory_ty(&ty).is_err());
+        assert!(check_memory_ty(&ty).is_err());
     }
 
     macro_rules! test_file {

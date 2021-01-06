@@ -6,7 +6,7 @@ use wasm_parser::Module;
 
 use validation::validate;
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 WebAssembly validator for an AST.
 
 Usage:
