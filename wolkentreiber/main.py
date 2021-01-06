@@ -2,7 +2,8 @@
 
 from flask import Flask, request, render_template, redirect, jsonify
 import sqlite3 as sql
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy 
+from sqlalchemy import func
 from datetime import datetime
 import itertools
 
@@ -59,10 +60,12 @@ def labels():
 
 @app.route('/cache_misses')
 def cache_misses():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.cache_misses, perf_run.path).group_by(perf_run.path, perf_run.commit).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.cache_misses), perf_run.path).group_by(perf_run.path, perf_run.commit).order_by(perf_run.on_create.asc()).all()
 
         def extract_key(v):
             return v[2]
+
+        print(rows)
 
         data = sorted(rows, key=extract_key)
 
@@ -75,7 +78,7 @@ def cache_misses():
 
 @app.route('/branch_misses')
 def branch_misses():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.branch_misses, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.branch_misses), perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
         def extract_key(v):
             return v[2]
@@ -91,7 +94,7 @@ def branch_misses():
 
 @app.route('/cpu_cycles')
 def cpu_cycles():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.cpu_cycles, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.cpu_cycles), perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
         def extract_key(v):
             return v[2]
@@ -107,7 +110,7 @@ def cpu_cycles():
 
 @app.route('/instructions')
 def instructions():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.instructions, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.instructions), perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
         def extract_key(v):
             return v[2]
@@ -123,7 +126,7 @@ def instructions():
 
 @app.route('/branch_instructions')
 def branch_instructions():
-        rows = perf_run.query.with_entities(perf_run.commit, perf_run.branch_instructions, perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
+        rows = perf_run.query.with_entities(perf_run.commit, func.avg(perf_run.branch_instructions), perf_run.path).group_by(perf_run.commit, perf_run.path).order_by(perf_run.on_create.asc()).all()
 
         def extract_key(v):
             return v[2]
