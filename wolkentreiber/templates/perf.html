@@ -58,6 +58,7 @@
 					var myChart = new Chart(document.getElementById('branch_misses').getContext('2d'), {
 						type: 'line',
 						data: {
+							labels: commits,
 							datasets: [{
 								label: '# Branch misses',
 								data: data,
@@ -80,6 +81,7 @@
 					var myChart = new Chart(document.getElementById('cpu_cycles'), {
 						type: 'line',
 						data: {
+							labels: commits,
 							datasets: [{
 								label: '# CPU Cycles',
 								data: data,
@@ -102,6 +104,7 @@
 					var myChart = new Chart(document.getElementById('instructions'), {
 						type: 'line',
 						data: {
+							labels: commits,
 							datasets: [{
 								label: '# instructions',
 								data: data,
@@ -124,6 +127,7 @@
 					var myChart = new Chart(document.getElementById('branch_instructions'), {
 						type: 'line',
 						data: {
+							labels: commits,
 							datasets: [{
 								label: '# branch_instructions',
 								data: data,
