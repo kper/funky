@@ -19,7 +19,7 @@ macro_rules! test_file_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::new()));
+        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -35,7 +35,7 @@ macro_rules! test_run_engine {
         let mut engine = Engine::new(
             instance,
             &module,
-            Box::new(crate::debugger::RelativeProgramCounter::new()),
+            Box::new(crate::debugger::RelativeProgramCounter::default()),
         );
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
@@ -54,7 +54,7 @@ macro_rules! allocation {
         };
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::new()));
+        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
 
         engine
     }};
