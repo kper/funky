@@ -44,7 +44,7 @@ pub fn allocate(
     Ok(())
 }
 
-fn get_extern_values_in_imports<'a>(m: &'a Module) -> Result<Vec<&'a ImportDesc>> {
+fn get_extern_values_in_imports(m: &Module) -> Result<Vec<&ImportDesc>> {
     let ty: Vec<_> = m
         .sections
         .iter()
