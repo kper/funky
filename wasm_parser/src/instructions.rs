@@ -9,7 +9,10 @@ use crate::{take_blocktype, take_f32, take_f64, take_leb_i32, take_leb_i64};
 const END_INSTR: &[u8] = &[0x0B];
 const END_IF_BLOCK: &[u8] = &[0x05];
 
-pub(crate) fn parse_instr<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8], Instruction> {
+pub(crate) fn parse_instr<'a, 'b>(
+    i: &'a [u8],
+    counter: &'b mut Counter,
+) -> IResult<&'a [u8], Instruction> {
     debug!("parse_instr");
     debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
@@ -316,68 +319,26 @@ pub(crate) fn parse_instr<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IRes
         0xa9 => (i, Instruction::OP_I32_TRUNC_F32_U),
         0xaa => (i, Instruction::OP_I32_TRUNC_F64_S),
         0xab => (i, Instruction::OP_I32_TRUNC_F64_U),
-        0xac => (
-            i,
-            Instruction::OP_I64_EXTEND_I32_S,
-        ),
-        0xad => (
-            i,
-            Instruction::OP_I64_EXTEND_I32_U,
-        ),
+        0xac => (i, Instruction::OP_I64_EXTEND_I32_S),
+        0xad => (i, Instruction::OP_I64_EXTEND_I32_U),
         0xae => (i, Instruction::OP_I64_TRUNC_F32_S),
         0xaf => (i, Instruction::OP_I64_TRUNC_F32_U),
         0xb0 => (i, Instruction::OP_I64_TRUNC_F64_S),
         0xb1 => (i, Instruction::OP_I64_TRUNC_F64_U),
-        0xb2 => (
-            i,
-            Instruction::OP_F32_CONVERT_I32_S,
-        ),
-        0xb3 => (
-            i,
-            Instruction::OP_F32_CONVERT_I32_U,
-        ),
-        0xb4 => (
-            i,
-            Instruction::OP_F32_CONVERT_I64_S,
-        ),
-        0xb5 => (
-            i,
-            Instruction::OP_F32_CONVERT_I64_U,
-        ),
+        0xb2 => (i, Instruction::OP_F32_CONVERT_I32_S),
+        0xb3 => (i, Instruction::OP_F32_CONVERT_I32_U),
+        0xb4 => (i, Instruction::OP_F32_CONVERT_I64_S),
+        0xb5 => (i, Instruction::OP_F32_CONVERT_I64_U),
         0xb6 => (i, Instruction::OP_F32_DEMOTE_F64),
-        0xb7 => (
-            i,
-            Instruction::OP_F64_CONVERT_I32_S,
-        ),
-        0xb8 => (
-            i,
-            Instruction::OP_F64_CONVERT_I32_U,
-        ),
-        0xb9 => (
-            i,
-            Instruction::OP_F64_CONVERT_I64_S,
-        ),
-        0xba => (
-            i,
-            Instruction::OP_F64_CONVERT_I64_U,
-        ),
+        0xb7 => (i, Instruction::OP_F64_CONVERT_I32_S),
+        0xb8 => (i, Instruction::OP_F64_CONVERT_I32_U),
+        0xb9 => (i, Instruction::OP_F64_CONVERT_I64_S),
+        0xba => (i, Instruction::OP_F64_CONVERT_I64_U),
         0xbb => (i, Instruction::OP_F64_PROMOTE_F32),
-        0xbc => (
-            i,
-            Instruction::OP_I32_REINTERPRET_F32,
-        ),
-        0xbd => (
-            i,
-            Instruction::OP_I64_REINTERPRET_F64,
-        ),
-        0xbe => (
-            i,
-            Instruction::OP_F32_REINTERPRET_I32,
-        ),
-        0xbf => (
-            i,
-            Instruction::OP_F64_REINTERPRET_I64,
-        ),
+        0xbc => (i, Instruction::OP_I32_REINTERPRET_F32),
+        0xbd => (i, Instruction::OP_I64_REINTERPRET_F64),
+        0xbe => (i, Instruction::OP_F32_REINTERPRET_I32),
+        0xbf => (i, Instruction::OP_F64_REINTERPRET_I64),
         0xc0 => (i, Instruction::OP_I32_EXTEND8_S),
         0xc1 => (i, Instruction::OP_I32_EXTEND16_S),
         0xc2 => (i, Instruction::OP_I64_EXTEND8_S),
@@ -433,10 +394,7 @@ fn take_block<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8]
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::OP_BLOCK(
-        block_ty,
-        CodeBlock::new(counter, instructions),
-    );
+    let block = Instruction::OP_BLOCK(block_ty, CodeBlock::new(counter, instructions));
 
     Ok((i, block))
 }
@@ -463,10 +421,7 @@ fn take_loop<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8],
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
 
-    let block = Instruction::OP_LOOP(
-        block_ty,
-        CodeBlock::new(counter, instructions),
-    );
+    let block = Instruction::OP_LOOP(block_ty, CodeBlock::new(counter, instructions));
 
     Ok((i, block))
 }
@@ -527,10 +482,7 @@ fn take_conditional<'a, 'b>(
 
     Ok((
         i,
-        Instruction::OP_IF(
-            blockty,
-            CodeBlock::new(counter, instructions),
-        ),
+        Instruction::OP_IF(blockty, CodeBlock::new(counter, instructions)),
     ))
 }
 
@@ -613,14 +565,13 @@ mod test {
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
                 BlockType::Empty,
-                CodeBlock::with(1, vec![
-                    Instruction::OP_NOP,
-                    Instruction::OP_NOP
-                ])
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );
     }
@@ -642,17 +593,13 @@ mod test {
         assert!(instructions.0 != [11]);
         assert_eq!(0, instructions.0.len());
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
                 BlockType::ValueType(ValueType::F64),
-                CodeBlock::with(
-                    1,
-                    vec![
-                        Instruction::OP_NOP,
-                        Instruction::OP_NOP
-                    ]
-                )
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );
     }
@@ -675,17 +622,13 @@ mod test {
         assert!(instructions.0 != [11]);
         assert_eq!(0, instructions.0.len());
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
                 BlockType::ValueTypeTy(-128),
-                CodeBlock::with(
-                    1,
-                    vec![
-                        Instruction::OP_NOP,
-                        Instruction::OP_NOP
-                    ]
-                )
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );
     }
@@ -709,19 +652,20 @@ mod test {
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
+        let innerblock = CodeBlock::new(&mut counter, vec![Instruction::OP_NOP]);
+
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
                 BlockType::Empty,
-                CodeBlock::with(
-                    2,
+                CodeBlock::new(
+                    &mut counter,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP,
-                        Instruction::OP_BLOCK(
-                            BlockType::Empty,
-                            CodeBlock::with(1, vec![Instruction::OP_NOP])
-                        ),
+                        Instruction::OP_BLOCK(BlockType::Empty, innerblock),
                         Instruction::OP_NOP,
                     ]
                 )
@@ -747,24 +691,23 @@ mod test {
         let instructions = take_block(&payload, &mut counter).unwrap();
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
+        let block1 = CodeBlock::new(&mut counter, vec![]);
+
+        let block3 = CodeBlock::new(
+            &mut counter,
+            vec![Instruction::OP_BLOCK(BlockType::Empty, block1)],
+        );
+
+        let block2 = CodeBlock::new(
+            &mut counter,
+            vec![Instruction::OP_BLOCK(BlockType::Empty, block3)],
+        );
+
         assert_eq!(
             instructions.1,
-            Instruction::OP_BLOCK(
-                BlockType::Empty,
-                CodeBlock::with(
-                    3,
-                    vec![Instruction::OP_BLOCK(
-                        BlockType::Empty,
-                        CodeBlock::with(
-                            2,
-                            vec![Instruction::OP_BLOCK(
-                                BlockType::Empty,
-                                CodeBlock::with(1, vec![])
-                            )]
-                        )
-                    )]
-                )
-            )
+            Instruction::OP_BLOCK(BlockType::Empty, block2)
         );
     }
 
@@ -786,17 +729,13 @@ mod test {
         //debug!("{:?}", instructions);
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_IF(
                 BlockType::Empty,
-                CodeBlock::with(
-                    1,
-                    vec![
-                        Instruction::OP_NOP,
-                        Instruction::OP_NOP
-                    ]
-                )
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );
     }
@@ -820,12 +759,14 @@ mod test {
         //debug!("{:?}", instructions);
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_IF_AND_ELSE(
                 BlockType::Empty,
-                CodeBlock::with(1, vec![Instruction::OP_NOP]),
-                CodeBlock::with(2, vec![Instruction::OP_NOP])
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP]),
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP])
             )
         );
     }
@@ -845,17 +786,13 @@ mod test {
 
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
         assert_eq!(
             instructions.1,
             Instruction::OP_LOOP(
                 BlockType::Empty,
-                CodeBlock::with(
-                    1,
-                    vec![
-                        Instruction::OP_NOP,
-                        Instruction::OP_NOP
-                    ]
-                ),
+                CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP]),
             )
         );
     }
@@ -880,25 +817,21 @@ mod test {
 
         assert!(instructions.0 != [11]);
 
+        let mut counter = Counter::default();
+
+        let innerblock =
+            CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP]);
+
         assert_eq!(
             instructions.1,
             Instruction::OP_LOOP(
                 BlockType::Empty,
-                CodeBlock::with(
-                    2,
+                CodeBlock::new(
+                    &mut counter,
                     vec![
                         Instruction::OP_NOP,
                         Instruction::OP_NOP,
-                        Instruction::OP_LOOP(
-                            BlockType::Empty,
-                            CodeBlock::with(
-                                1,
-                                vec![
-                                    Instruction::OP_NOP,
-                                    Instruction::OP_NOP
-                                ]
-                            ),
-                        )
+                        Instruction::OP_LOOP(BlockType::Empty, innerblock)
                     ]
                 ),
             )

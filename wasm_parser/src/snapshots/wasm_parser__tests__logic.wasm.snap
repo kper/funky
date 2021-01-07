@@ -124,149 +124,281 @@ Module {
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_I32_CONST(
-                                0,
-                            ),
-                            OP_I32_NE,
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_CONST(
-                                0,
-                            ),
-                            OP_I32_NE,
-                            OP_I32_AND,
+                            InstructionWrapper {
+                                instruction_id: 1,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 2,
+                                instruction: OP_I32_CONST(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 3,
+                                instruction: OP_I32_NE,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 4,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 5,
+                                instruction: OP_I32_CONST(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 6,
+                                instruction: OP_I32_NE,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 7,
+                                instruction: OP_I32_AND,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_I32_CONST(
-                                0,
-                            ),
-                            OP_I32_NE,
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_CONST(
-                                0,
-                            ),
-                            OP_I32_NE,
-                            OP_I32_XOR,
+                            InstructionWrapper {
+                                instruction_id: 8,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 9,
+                                instruction: OP_I32_CONST(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 10,
+                                instruction: OP_I32_NE,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 11,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 12,
+                                instruction: OP_I32_CONST(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 13,
+                                instruction: OP_I32_NE,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 14,
+                                instruction: OP_I32_XOR,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_OR,
-                            OP_I32_CONST(
-                                0,
-                            ),
-                            OP_I32_NE,
+                            InstructionWrapper {
+                                instruction_id: 15,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 16,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 17,
+                                instruction: OP_I32_OR,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 18,
+                                instruction: OP_I32_CONST(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 19,
+                                instruction: OP_I32_NE,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_CONST(
-                                31,
-                            ),
-                            OP_I32_AND,
-                            OP_I32_SHL,
+                            InstructionWrapper {
+                                instruction_id: 20,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 21,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 22,
+                                instruction: OP_I32_CONST(
+                                    31,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 23,
+                                instruction: OP_I32_AND,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 24,
+                                instruction: OP_I32_SHL,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_CONST(
-                                31,
-                            ),
-                            OP_I32_AND,
-                            OP_I32_SHR_U,
+                            InstructionWrapper {
+                                instruction_id: 25,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 26,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 27,
+                                instruction: OP_I32_CONST(
+                                    31,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 28,
+                                instruction: OP_I32_AND,
+                            },
+                            InstructionWrapper {
+                                instruction_id: 29,
+                                instruction: OP_I32_SHR_U,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_LT_U,
+                            InstructionWrapper {
+                                instruction_id: 30,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 31,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 32,
+                                instruction: OP_I32_LT_U,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_LE_U,
+                            InstructionWrapper {
+                                instruction_id: 33,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 34,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 35,
+                                instruction: OP_I32_LE_U,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_GE_U,
+                            InstructionWrapper {
+                                instruction_id: 36,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 37,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 38,
+                                instruction: OP_I32_GE_U,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_GT_U,
+                            InstructionWrapper {
+                                instruction_id: 39,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 40,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 41,
+                                instruction: OP_I32_GT_U,
+                            },
                         ],
                     },
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_LOCAL_GET(
-                                1,
-                            ),
-                            OP_I32_EQ,
+                            InstructionWrapper {
+                                instruction_id: 42,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 43,
+                                instruction: OP_LOCAL_GET(
+                                    1,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 44,
+                                instruction: OP_I32_EQ,
+                            },
                         ],
                     },
                 ],

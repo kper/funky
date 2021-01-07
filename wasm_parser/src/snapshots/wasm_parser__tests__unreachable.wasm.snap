@@ -60,7 +60,10 @@ Module {
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_UNREACHABLE,
+                            InstructionWrapper {
+                                instruction_id: 1,
+                                instruction: OP_UNREACHABLE,
+                            },
                         ],
                     },
                 ],

@@ -58,18 +58,27 @@ Module {
                     FunctionBody {
                         locals: [],
                         code: [
-                            OP_LOCAL_GET(
-                                0,
-                            ),
-                            OP_I64_CONST(
-                                -1000,
-                            ),
-                            OP_I64_STORE(
-                                MemArg {
-                                    align: 2,
-                                    offset: 0,
-                                },
-                            ),
+                            InstructionWrapper {
+                                instruction_id: 1,
+                                instruction: OP_LOCAL_GET(
+                                    0,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 2,
+                                instruction: OP_I64_CONST(
+                                    -1000,
+                                ),
+                            },
+                            InstructionWrapper {
+                                instruction_id: 3,
+                                instruction: OP_I64_STORE(
+                                    MemArg {
+                                        align: 2,
+                                        offset: 0,
+                                    },
+                                ),
+                            },
                         ],
                     },
                 ],
