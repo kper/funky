@@ -468,9 +468,7 @@ mod tests {
             sections: vec![Section::Type(t), Section::Function(w), Section::Export(k)],
         };
 
-        assert!(
-            validate(&module).is_err()
-        );
+        assert!(validate(&module).is_err());
     }
 
     #[test]
@@ -571,10 +569,10 @@ mod tests {
                     value_type: ValueType::I32,
                     mu: Mu::Const,
                 },
-                init: vec![
-                    InstructionWrapper::default(&mut counter),
+                init: vec![InstructionWrapper::wrap(
+                    &mut counter,
                     Instruction::OP_I32_CONST(1),
-                ],
+                )],
             }],
         };
 

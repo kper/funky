@@ -74,7 +74,7 @@ impl fmt::Display for ProgramState {
 pub trait ProgramCounter: std::fmt::Debug + Send {
     /// we set the program pointer to
     /// a new value.
-    fn set_pc<'a>(&mut self, n: BorrowedProgramState<'a>) -> Result<()>;
+    fn set_pc(&mut self, n: BorrowedProgramState<'_>) -> Result<()>;
 }
 
 /// The default program counter because it doesn't hold.
@@ -84,7 +84,7 @@ pub trait ProgramCounter: std::fmt::Debug + Send {
 pub struct RelativeProgramCounter(usize);
 
 impl ProgramCounter for RelativeProgramCounter {
-    fn set_pc<'a>(&mut self, n: BorrowedProgramState<'a>) -> Result<()> {
+    fn set_pc(&mut self, n: BorrowedProgramState<'_>) -> Result<()> {
         debug!("Setting pc to {}", n.current_pc);
         self.0 = n.current_pc;
 
@@ -116,7 +116,7 @@ impl DebuggerProgramCounter {
 }
 
 impl ProgramCounter for DebuggerProgramCounter {
-    fn set_pc<'a>(&mut self, state: BorrowedProgramState<'a>) -> Result<()> {
+    fn set_pc(&mut self, state: BorrowedProgramState<'_>) -> Result<()> {
         debug!("Waiting for progress signal");
 
         self.instruction_advancer.recv().unwrap();

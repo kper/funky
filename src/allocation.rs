@@ -8,12 +8,13 @@ use wasm_parser::Module;
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
+use anyhow::{Result, anyhow};
 
 pub fn allocate(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate");
 
     // Step 1
@@ -43,7 +44,7 @@ pub fn allocate(
     Ok(())
 }
 
-fn get_extern_values_in_imports<'a>(m: &'a Module) -> Result<Vec<&'a ImportDesc>, ()> {
+fn get_extern_values_in_imports<'a>(m: &'a Module) -> Result<Vec<&'a ImportDesc>> {
     let ty: Vec<_> = m
         .sections
         .iter()
@@ -62,7 +63,7 @@ fn allocate_functions(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate function");
 
     debug!("module {:#?}", m);
@@ -116,7 +117,7 @@ fn allocate_tables(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate tables");
 
     // Gets all tables and imports
@@ -149,7 +150,7 @@ fn allocate_memories(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate memories");
     // Gets all memories and imports
     let ty = validation::extract::get_mems(&m);
@@ -181,7 +182,7 @@ fn allocate_globals(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate globals");
     // Gets all globals and imports
     let ty = validation::extract::get_globals(&m);
@@ -207,7 +208,7 @@ fn allocate_exports(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     _store: &mut Store,
-) -> Result<(), ()> {
+) -> Result<()> {
     debug!("allocate exports");
 
     // Gets all exports
@@ -224,12 +225,12 @@ fn allocate_exports(
     Ok(())
 }
 
-pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Value, ()> {
+pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Value> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
         error!("No expr to evaluate");
-        return Err(());
+        return Err(anyhow!("No expr to evaluate"));
     }
 
     match init.get(0).unwrap().get_instruction() {
@@ -239,7 +240,7 @@ pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Va
         OP_F64_CONST(v) => Ok(Value::F64(*v)),
         _ => {
             error!("Wrong expression");
-            Err(())
+            Err(anyhow!("Wrong expression"))
         }
     }
 }
