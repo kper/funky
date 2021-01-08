@@ -1,7 +1,5 @@
 use custom_display::CustomDisplay;
 use serde::{Deserialize, Serialize};
-use std::cell::{RefCell, RefMut};
-use std::rc::Rc;
 
 pub type FuncIdx = u32;
 pub type TableIdx = u32;
@@ -280,14 +278,6 @@ impl CodeBlock {
         Self {
             id: counter.get_value(),
             instructions: InstructionWrapper::wrap_instructions(counter, instructions),
-        }
-    }
-   
-    /// Creates a new `CodeBlock` with given counter value.
-    pub fn with(counter: &Rc<RefCell<Counter>>, instructions: Vec<Instruction>) -> Self {
-        Self {
-            id: counter.borrow_mut().get_value(),
-            instructions: InstructionWrapper::wrap_instructions(RefMut::leak(counter.borrow_mut()), instructions),
         }
     }
 

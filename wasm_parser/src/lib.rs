@@ -1,5 +1,4 @@
 #![allow(clippy::same_item_push)]
-#![feature(cell_leak)]
 
 extern crate log;
 
