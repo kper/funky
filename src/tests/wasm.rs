@@ -19,7 +19,11 @@ macro_rules! test_file_engine {
         assert!(validate(&module).is_ok());
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
+        let engine = Engine::new(
+            instance,
+            &module,
+            Box::new(RelativeProgramCounter::default()),
+        );
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -54,7 +58,11 @@ macro_rules! allocation {
         };
 
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
+        let engine = Engine::new(
+            instance,
+            &module,
+            Box::new(RelativeProgramCounter::default()),
+        );
 
         engine
     }};
@@ -820,15 +828,18 @@ fn test_run_memory_size() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_memory_redundancy() {
-    env_logger::init();
+    //env_logger::init();
     let mut engine = test_run_engine!("memory_redundancy.wasm", 1, vec![]);
     assert_eq!(
         Some(&StackContent::Value(I32(128))),
         engine.store.stack.last()
     );
+
+    engine
+        .invoke_exported_function(0, vec![])
+        .expect("Invoke exported function failed");
 
     engine
         .invoke_exported_function(2, vec![])

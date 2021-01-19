@@ -1,7 +1,5 @@
 #![allow(unused)]
 
-//extern crate serde_json;
-
 #[macro_use]
 extern crate funky;
 
@@ -14,9 +12,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use funky::debugger::RelativeProgramCounter;
-use funky::engine::stack::StackContent;
-use funky::engine::{Engine};
 use funky::engine::module::ModuleInstance;
+use funky::engine::stack::StackContent;
+use funky::engine::Engine;
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
 
@@ -83,7 +81,7 @@ fn main() {
 
     let args = ::std::env::args().collect::<Vec<_>>();
 
-    //assert!(args.len() <= 2); //only two arguments allowed
+    debug!("args {:?}", args);
 
     let paths = match args.get(1) {
         // Get all files with .json
@@ -119,6 +117,8 @@ fn main() {
             .map(|w| w.unwrap())
             .collect::<Vec<_>>(),
     };
+
+    debug!("paths {:?}", paths);
 
     let mut handlers = Vec::new();
     let stdouts = Arc::new(Mutex::new(Vec::new()));
@@ -248,18 +248,63 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
         match case {
             // Replace `current_engine` with next WASM module
             Command::Module(m) => current_engine = fs_handler.get(&m.filename),
-            Command::AssertReturn(case) => {
-                if cmd_arguments.len() > 2
-                    && cmd_arguments
-                        .iter()
-                        .filter(|x| x.contains(&case.action.field))
-                        .count()
-                        == 0
+            Command::Action(case) => {
+                let mut engine = current_engine
+                    .expect("No WASM module was initialized")
+                    .borrow_mut();
+
+                let args = case.get_args();
+
+                if let Err(err) =
+                    engine.invoke_exported_function_by_name(&case.action.field, args.clone())
                 {
-                    log::info!("Skipping {} because not matched", case.action.field);
+                    report_fail(
+                        &mut report_file,
+                        &mut case_file,
+                        &case,
+                        p,
+                        vec![],
+                        ExecutionResult::NotComparable,
+                    );
+                }
+
+                let expected = case.get_expected();
+
+                debug!("expected {:?}", expected);
+                debug!("arg into the engine {:?}", args);
+                debug!("store {:?}", engine.store.stack);
+
+                if expected.is_empty() {
+                    // Do not report ok, because this
+                    // is an action, not a test
                     continue;
                 }
 
+                // Get the actual results based on the count how many results we expect
+                let actuals: Vec<_> = engine
+                    .store
+                    .stack
+                    .iter()
+                    .rev()
+                    .take(expected.len())
+                    .collect();
+
+                if !actuals.iter().all(|x| x.is_value()) {
+                    report_fail(
+                        &mut report_file,
+                        &mut case_file,
+                        &case,
+                        p,
+                        expected,
+                        ExecutionResult::NotComparable,
+                    );
+
+                    error!("Executed function did not return a value");
+
+                    continue;
+                }
+            }
+            Command::AssertReturn(case) => {
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
                 case_stats.total_count.fetch_add(1, Ordering::Relaxed);
 

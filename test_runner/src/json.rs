@@ -21,7 +21,7 @@ impl TestFile {
     pub fn get_cases(&self) -> impl Iterator<Item = &Command> {
         self.commands
             .iter()
-            .filter(|x| matches!(x, Command::Module(_) | Command::AssertReturn(_)))
+            .filter(|x| matches!(x, Command::Module(_) | Command::AssertReturn(_) | Command::Action(_)))
     }
 
     pub fn get_fs_names(&self) -> Vec<&String> {
@@ -55,7 +55,7 @@ pub(crate) enum Command {
     #[serde(rename = "assert_exhaustion")]
     AssertExhaustion, //TODO
     #[serde(rename = "action")]
-    Action, //TODO
+    Action(AssertReturn),
     #[serde(rename = "assert_uninstantiable")]
     AssertUninstantiable, //TODO
 }

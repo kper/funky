@@ -84,9 +84,8 @@ fn main() {
         panic!("{}", err);
     }
 
-    if args.flag_spec {
-        println!("{:?}", e.store.stack.last())
-    } else {
-        println!("Last value on stack was: {:?}", e.store.stack.last())
+    if e.store.stack.last().is_some() {
+        let value = e.store.stack.pop();
+        println!("{:?}", value);
     }
 }

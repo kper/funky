@@ -119,13 +119,13 @@ macro_rules! load_memory {
 
             debug!("instance {:?}", instance);
             debug!("Range {:?}", ea..ea + $size);
-            debug!("part {:?}", &instance.data[ea..ea + $size]);
-
+            //debug!("part {:?}", &instance.data[ea..ea + $size]);
             let mut b = vec![0; $size];
             b.copy_from_slice(&instance.data[ea..ea + $size]);
-            assert!(b.len() == $size);
-
-            debug!("b {:?}", b);
+            assert!(
+                b.len() == $size,
+                "Size of bytes sequence is expected to match size"
+            );
 
             unsafe {
                 //Convert [u8] to [number]
