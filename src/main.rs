@@ -74,14 +74,22 @@ fn main() {
     debug!("Instantiation engine");
 
     if let Err(err) = e.instantiation(&module) {
-        panic!("{}", err);
+        eprintln!("ERROR: {}", err);
+        err.chain()
+            .skip(1)
+            .for_each(|cause| eprintln!("because: {}", cause));
+        std::process::exit(1);
     }
 
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
     if let Err(err) = e.invoke_exported_function_by_name(&args.arg_function, inv_args) {
-        panic!("{}", err);
+        eprintln!("ERROR: {}", err);
+        err.chain()
+            .skip(1)
+            .for_each(|cause| eprintln!("because: {}", cause));
+        std::process::exit(1);
     }
 
     if e.store.stack.last().is_some() {

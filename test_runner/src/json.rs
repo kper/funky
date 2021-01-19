@@ -72,6 +72,7 @@ pub(crate) struct AssertInvalid {
 pub(crate) struct Module {
     line: usize,
     pub filename: String,
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -100,9 +101,22 @@ impl AssertReturn {
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub(crate) struct Action {
+    pub module: Option<String>,
     pub field: String,
     #[serde(default = "Vec::new")]
     pub args: Vec<Argument>,
+    #[serde(rename = "type")]
+    pub ty: ActionType, 
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+pub(crate) enum ActionType {
+    /// Invoke a function
+    #[serde(rename = "invoke")]
+    Invoke,
+    /// Get a global
+    #[serde(rename = "get")]
+    Get,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -234,6 +248,8 @@ mod test {
         let v: Action = serde_json::from_str(data).unwrap();
 
         let compare = Action {
+            module: None,
+            ty: ActionType::Invoke,
             field: "add".to_string(),
             args: vec![
                 Argument {

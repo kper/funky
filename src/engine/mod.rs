@@ -297,6 +297,41 @@ impl Engine {
         Ok(())
     }
 
+    /// Get a global value
+    pub fn get(&mut self, name: &str) -> Result<Value> {
+        debug!("get global for {:?}", name);
+
+        let module = &self.module.exports;
+
+        let filtered: Vec<_> = module.iter().filter(|x| x.name == name).take(1).collect();
+
+        let export_instance = filtered
+            .get(0)
+            .context("Exported function not found or found something else")?;
+
+        debug!("Exports {:#?}", export_instance);
+
+        match export_instance.value {
+            ExternalKindType::Global { ty } => {
+                let global_addr = *self
+                    .module
+                    .globaladdrs
+                    .get(ty as usize)
+                    .ok_or_else(|| anyhow!("Global not found"))?;
+
+                return Ok(self
+                    .store
+                    .globals
+                    .get(global_addr as usize)
+                    .ok_or_else(|| anyhow!("Global not found in the store"))?
+                    .val);
+            }
+            _ => {
+                return Err(anyhow!("Exported global not found"));
+            }
+        }
+    }
+
     /// Take only exported functions into consideration
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
         debug!("invoke_exported_function {:?}", idx);

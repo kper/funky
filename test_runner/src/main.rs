@@ -4,6 +4,7 @@
 extern crate funky;
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fs::{create_dir, read_dir, read_to_string, remove_file, DirEntry, File, OpenOptions};
 use std::io::Write;
 use std::path::Path;
@@ -17,8 +18,6 @@ use funky::engine::stack::StackContent;
 use funky::engine::Engine;
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
-
-use std::collections::HashMap;
 
 use log::{debug, error};
 
@@ -244,10 +243,21 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
     }
 
     let mut current_engine = None;
+    let mut named_modules = HashMap::new();
+
     for case in fs.get_cases() {
         match case {
             // Replace `current_engine` with next WASM module
-            Command::Module(m) => current_engine = fs_handler.get(&m.filename),
+            Command::Module(m) => {
+                // If the module is named,
+                // then save it
+                if let Some(ref name) = m.name {
+                    named_modules.insert(name, fs_handler.get(&m.filename));
+                    current_engine = fs_handler.get(&m.filename);
+                } else {
+                    current_engine = fs_handler.get(&m.filename);
+                }
+            }
             Command::Action(case) => {
                 let mut engine = current_engine
                     .expect("No WASM module was initialized")
@@ -308,36 +318,73 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
                 case_stats.total_count.fetch_add(1, Ordering::Relaxed);
 
-                let mut engine = current_engine
-                    .expect("No WASM module was initialized")
-                    .borrow_mut();
+                let mut engine = match &case.action.module {
+                    None => {
+                        debug!("Using current engine");
+                        current_engine
+                            .expect("No WASM module was initialized")
+                            .borrow_mut()
+                    }
+                    Some(name) => {
+                        // do not load current_engine, but defined module
+                        debug!("Using named module {}", name);
+                        named_modules.get(&name).unwrap().unwrap().borrow_mut()
+                    }
+                };
 
                 let args = case.get_args();
 
-                /*
-                println!(
-                    "Running function {} with {:?}",
-                    case.action.field, case.action.args
-                );*/
+                let expected: Vec<_> = case.get_expected().iter().map(|x| x.clone()).collect();
+                let actuals = match case.action.ty {
+                    ActionType::Invoke => {
+                        if let Err(err) = engine
+                            .invoke_exported_function_by_name(&case.action.field, args.clone())
+                        {
+                            debug!("failed for lineno {}", case.line);
+                            report_fail(
+                                &mut report_file,
+                                &mut case_file,
+                                &case,
+                                p,
+                                vec![],
+                                ExecutionResult::NotComparable,
+                            );
+                        }
 
-                if let Err(err) =
-                    engine.invoke_exported_function_by_name(&case.action.field, args.clone())
-                {
-                    report_fail(
-                        &mut report_file,
-                        &mut case_file,
-                        &case,
-                        p,
-                        vec![],
-                        ExecutionResult::NotComparable,
-                    );
-                }
+                        let actuals: Vec<_> = engine
+                            .store
+                            .stack
+                            .iter()
+                            .rev()
+                            .take(expected.len())
+                            //.rev()
+                            .collect();
 
-                let expected = case.get_expected();
+                        actuals.into_iter().map(|w| w.clone()).collect()
+                    }
+                    ActionType::Get => {
+                        let res = engine.get(&case.action.field);
+                        if let Err(ref err) = res {
+                            debug!("failed for lineno {}", case.line);
+                            report_fail(
+                                &mut report_file,
+                                &mut case_file,
+                                &case,
+                                p,
+                                vec![],
+                                ExecutionResult::NotComparable,
+                            );
+
+                            vec![]
+                        } else {
+                            vec![StackContent::Value(res.unwrap())]
+                        }
+                    }
+                };
 
                 debug!("expected {:?}", expected);
                 debug!("arg into the engine {:?}", args);
-                debug!("store {:?}", engine.store.stack);
+                debug!("store {:?}", actuals);
 
                 // If nothing is expected and no error occurred then ok
                 if expected.is_empty() {
@@ -348,14 +395,6 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                 }
 
                 // Get the actual results based on the count how many results we expect
-                let actuals: Vec<_> = engine
-                    .store
-                    .stack
-                    .iter()
-                    .rev()
-                    .take(expected.len())
-                    //.rev()
-                    .collect();
 
                 if !actuals.iter().all(|x| x.is_value()) {
                     report_fail(
@@ -383,7 +422,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
 
                 debug!("Actual {:?}", actuals);
 
-                assert!(actuals.len() == expected.len());
+                assert_eq!(expected, actuals);
 
                 let mut total_do_match = true;
                 for i in 0..actuals.len() {
@@ -398,7 +437,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                         {
                             true
                         }
-                        (Some(f1), Some(f2)) => *f1 == f2,
+                        (Some(f1), Some(f2)) => f1 == f2,
                         (None, None) => true,
                         _ => false,
                     };
@@ -465,8 +504,8 @@ fn draw_args(v: Vec<Value>) -> String {
     buffer
 }
 
-enum ExecutionResult<'a> {
-    Values(Vec<&'a Value>),
+enum ExecutionResult {
+    Values(Vec<Value>),
     NotComparable,
 }
 

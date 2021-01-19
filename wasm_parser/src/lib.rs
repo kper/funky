@@ -842,7 +842,12 @@ mod tests {
 
     #[test]
     fn test_as_loop_mid_br_if() {
-        env_logger::init();
+        //env_logger::init();
         test_file!("as_loop_mid_br_if.wasm");
+    }
+
+    #[test]
+    fn test_global() {
+        test_file!("global.wasm");
     }
 }

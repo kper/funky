@@ -1,0 +1,43 @@
+---
+source: src/tests/wasm.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: ModuleInstance {
+        start: 0,
+        code: [],
+        fn_types: [],
+        funcaddrs: [],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [
+            0,
+        ],
+        exports: [
+            ExportInstance {
+                name: "e",
+                value: Global {
+                    ty: 0,
+                },
+            },
+        ],
+    },
+    started: false,
+    store: Store {
+        funcs: [],
+        tables: [],
+        memory: [],
+        stack: [],
+        globals: [
+            Variable {
+                mutable: false,
+                val: I32(
+                    42,
+                ),
+            },
+        ],
+    },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
+}

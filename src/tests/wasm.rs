@@ -51,6 +51,25 @@ macro_rules! test_run_engine {
     }};
 }
 
+macro_rules! test_get_exported_global {
+    ($fs_name:expr, $num_f:expr) => {{
+        let file = read_wasm!(&format!("tests/{}", $fs_name));
+        let module = parse(file).expect("Parsing failed");
+        assert!(validate(&module).is_ok());
+
+        let instance = ModuleInstance::new(&module);
+        let mut engine = Engine::new(
+            instance,
+            &module,
+            Box::new(crate::debugger::RelativeProgramCounter::default()),
+        );
+
+        assert_snapshot!($fs_name, format!("{:#?}", engine));
+
+        engine.get($num_f)
+    }};
+}
+
 macro_rules! allocation {
     ($sections:expr) => {{
         let module = Module {
@@ -849,4 +868,13 @@ fn test_memory_redundancy() {
         Some(&StackContent::Value(I32(128))),
         engine.store.stack.last()
     );
+}
+
+#[test]
+fn test_get_exported_global() {
+    //env_logger::init();
+    let value = test_get_exported_global!("global.wasm", "e");
+
+    assert!(value.is_ok(), "Global should exists");
+    assert_eq!(I32(42), value.unwrap());
 }
