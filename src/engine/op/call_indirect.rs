@@ -1,11 +1,10 @@
 use crate::engine::map_stackcontent_to_value;
-use crate::engine::Engine;
-use anyhow::{anyhow, Result};
-use crate::value::Value::I32;
-use wasm_parser::core::FuncIdx;
-use crate::fetch_unop;
 use crate::engine::stack::StackContent::Value;
-
+use crate::engine::Engine;
+use crate::fetch_unop;
+use crate::value::Value::I32;
+use anyhow::{anyhow, Context, Result};
+use wasm_parser::core::FuncIdx;
 
 impl Engine {
     pub(crate) fn call_indirect_function(&mut self, idx: &FuncIdx) -> Result<()> {
@@ -26,30 +25,31 @@ impl Engine {
 
         match tab.elem[i as usize] {
             Some(a) => {
-                let f = self
+                let func_instance = &self
                     .store
                     .funcs
-                    .get(a as usize)
-                    .expect("No function in store");
+                    .get(*idx as usize)
+                    .ok_or_else(|| anyhow!("Cannot access function with addr {}", idx))?
+                    .ty;
+
+                let param_count = func_instance.param_types.len();
 
                 {
                     // Compare types
                     let m = &self.module;
                     let ty = m.fn_types.get(*idx as usize);
-                    assert!(&f.ty == ty.expect("No type found"));
+                    assert!(func_instance == ty.expect("No type found"));
                 }
 
                 let args = self
-                    .store
-                    .stack
-                    .split_off(self.store.stack.len() - f.ty.param_types.len())
-                    .into_iter()
-                    .map(map_stackcontent_to_value)
-                    .collect::<Result<_>>()?;
+                    .extract_args_of_stack(param_count)
+                    .with_context(|| {
+                        format!("Cannot extract args out of stack for function addr {}", idx)
+                    })?;
 
                 self.invoke_function(a as u32, args)?;
             }
-            None => panic!("Table not initilized at index {}", i),
+            None => panic!("Table not initialized at index {}", i),
         }
 
         Ok(())

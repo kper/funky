@@ -1,33 +1,82 @@
 use crate::engine::map_stackcontent_to_value;
-use crate::engine::Engine;
+use crate::engine::{Engine, StackContent};
+use crate::value::Value;
 use anyhow::{anyhow, Context, Result};
 use wasm_parser::core::FuncIdx;
 
 impl Engine {
+    /// Drops the `param_count` off the stack and returns it
+    /// so it can be used as arguments for a web assembly function.
+    /// However, we are ignoring labels and frames.
+    pub(crate) fn extract_args_of_stack(&mut self, param_count: usize) -> Result<Vec<Value>> {
+        let mut count = 0;
+        let mut value_count = 0;
+
+        // Count until we counted at least `function_ty.param_types.len()` values of the stack
+        for element in self.store.stack.iter().rev() {
+            debug!("Element is {:?}", element);
+            count += 1;
+
+            if !matches!(element, StackContent::Value(_)) {
+                // If not value, then go to next
+                continue;
+            } else {
+                value_count += 1;
+            }
+
+            debug!(
+                "value_count {} >= params {} then break",
+                value_count, param_count
+            );
+            if value_count >= param_count {
+                break;
+            }
+        }
+
+        debug!("=> count is {}", count);
+
+        let new_args = self
+            .store
+            .stack
+            .split_off(self.store.stack.len() - count)
+            .into_iter();
+
+        let mut non_values = new_args
+            .clone()
+            .filter(|w| !matches!(w, StackContent::Value(_)))
+            .collect();
+        // Append labels and frames back
+        self.store.stack.append(&mut non_values);
+
+        let args: Vec<_> = new_args
+            .filter(|w| matches!(w, StackContent::Value(_)))
+            .map(map_stackcontent_to_value)
+            .collect::<Result<_>>()
+            .context("Cannot map StackContent to Value")?;
+
+        debug!("=> Stack is {:#?}", self.store.stack);
+        debug!("=> args {:#?}", args);
+
+        Ok(args)
+    }
+
     pub(crate) fn call_function(&mut self, idx: &FuncIdx) -> Result<()> {
         debug!("OP_CALL {:?}", idx);
 
-        //let function_ty = self.store.funcs[*idx as usize].ty.clone();
-        let function_ty = &self
+        let param_count = &self
             .store
             .funcs
             .get(*idx as usize)
             .ok_or_else(|| anyhow!("Cannot access function with addr {}", idx))?
-            .ty;
+            .ty.param_types.len();
 
         debug!("=> Function with addr {} found", idx);
         debug!("=> Stack is {:#?}", self.store.stack);
-        debug!("=> Function ty is {:#?}", function_ty);
 
         let args = self
-            .store
-            .stack
-            .split_off(self.store.stack.len() - function_ty.param_types.len())
-            .into_iter()
-            .map(map_stackcontent_to_value)
-            .collect::<Result<_>>()
+            .extract_args_of_stack(*param_count)
             .with_context(|| {
-                format!("Cannot map StackContent to Value for function addr {}", idx)
+                format!("Cannot extract args out of stack for function addr {}", idx)
             })?;
 
         self.invoke_function(*idx, args)
