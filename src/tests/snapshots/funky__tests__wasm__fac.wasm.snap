@@ -1,0 +1,1645 @@
+---
+source: src/tests/wasm.rs
+expression: "format!(\"{:#?}\", engine)"
+---
+Engine {
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 8,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 9,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 10,
+                        instruction: OP_I64_EQ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 11,
+                        instruction: OP_IF_AND_ELSE(
+                            ValueType(
+                                I64,
+                            ),
+                            CodeBlock {
+                                id: 1,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 1,
+                                        instruction: OP_I64_CONST(
+                                            1,
+                                        ),
+                                    },
+                                ],
+                            },
+                            CodeBlock {
+                                id: 2,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 2,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 3,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 4,
+                                        instruction: OP_I64_CONST(
+                                            1,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 5,
+                                        instruction: OP_I64_SUB,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 6,
+                                        instruction: OP_CALL(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 7,
+                                        instruction: OP_I64_MUL,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 19,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 20,
+                        instruction: OP_I64_CONST(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 21,
+                        instruction: OP_I64_EQ,
+                    },
+                    InstructionWrapper {
+                        instruction_id: 22,
+                        instruction: OP_IF_AND_ELSE(
+                            ValueType(
+                                I64,
+                            ),
+                            CodeBlock {
+                                id: 3,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 12,
+                                        instruction: OP_I64_CONST(
+                                            1,
+                                        ),
+                                    },
+                                ],
+                            },
+                            CodeBlock {
+                                id: 4,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 13,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 14,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 15,
+                                        instruction: OP_I64_CONST(
+                                            1,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 16,
+                                        instruction: OP_I64_SUB,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 17,
+                                        instruction: OP_CALL(
+                                            1,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 18,
+                                        instruction: OP_I64_MUL,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 2,
+                        ty: I64,
+                    },
+                ],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 38,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 39,
+                        instruction: OP_LOCAL_SET(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 40,
+                        instruction: OP_I64_CONST(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 41,
+                        instruction: OP_LOCAL_SET(
+                            2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 42,
+                        instruction: OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 8,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 37,
+                                        instruction: OP_LOOP(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 7,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 32,
+                                                        instruction: OP_LOCAL_GET(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 33,
+                                                        instruction: OP_I64_CONST(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 34,
+                                                        instruction: OP_I64_EQ,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 35,
+                                                        instruction: OP_IF_AND_ELSE(
+                                                            Empty,
+                                                            CodeBlock {
+                                                                id: 5,
+                                                                instructions: [
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 23,
+                                                                        instruction: OP_BR(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                ],
+                                                            },
+                                                            CodeBlock {
+                                                                id: 6,
+                                                                instructions: [
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 24,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 25,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 26,
+                                                                        instruction: OP_I64_MUL,
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 27,
+                                                                        instruction: OP_LOCAL_SET(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 28,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 29,
+                                                                        instruction: OP_I64_CONST(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 30,
+                                                                        instruction: OP_I64_SUB,
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 31,
+                                                                        instruction: OP_LOCAL_SET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 36,
+                                                        instruction: OP_BR(
+                                                            0,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 43,
+                        instruction: OP_LOCAL_GET(
+                            2,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 2,
+                        ty: I64,
+                    },
+                ],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 59,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 60,
+                        instruction: OP_LOCAL_SET(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 61,
+                        instruction: OP_I64_CONST(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 62,
+                        instruction: OP_LOCAL_SET(
+                            2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 63,
+                        instruction: OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 12,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 58,
+                                        instruction: OP_LOOP(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 11,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 53,
+                                                        instruction: OP_LOCAL_GET(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 54,
+                                                        instruction: OP_I64_CONST(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 55,
+                                                        instruction: OP_I64_EQ,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 56,
+                                                        instruction: OP_IF_AND_ELSE(
+                                                            Empty,
+                                                            CodeBlock {
+                                                                id: 9,
+                                                                instructions: [
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 44,
+                                                                        instruction: OP_BR(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                ],
+                                                            },
+                                                            CodeBlock {
+                                                                id: 10,
+                                                                instructions: [
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 45,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 46,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 47,
+                                                                        instruction: OP_I64_MUL,
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 48,
+                                                                        instruction: OP_LOCAL_SET(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 49,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 50,
+                                                                        instruction: OP_I64_CONST(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 51,
+                                                                        instruction: OP_I64_SUB,
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 52,
+                                                                        instruction: OP_LOCAL_SET(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 57,
+                                                        instruction: OP_BR(
+                                                            0,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 64,
+                        instruction: OP_LOCAL_GET(
+                            2,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [
+                    LocalEntry {
+                        count: 1,
+                        ty: I64,
+                    },
+                ],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 82,
+                        instruction: OP_I64_CONST(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 83,
+                        instruction: OP_LOCAL_SET(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 84,
+                        instruction: OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 14,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 77,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 78,
+                                        instruction: OP_I64_CONST(
+                                            2,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 79,
+                                        instruction: OP_I64_LT_S,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 80,
+                                        instruction: OP_BR_IF(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 81,
+                                        instruction: OP_LOOP(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 13,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 65,
+                                                        instruction: OP_LOCAL_GET(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 66,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 67,
+                                                        instruction: OP_I64_MUL,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 68,
+                                                        instruction: OP_LOCAL_SET(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 69,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 70,
+                                                        instruction: OP_I64_CONST(
+                                                            -1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 71,
+                                                        instruction: OP_I64_ADD,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 72,
+                                                        instruction: OP_LOCAL_SET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 73,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 74,
+                                                        instruction: OP_I64_CONST(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 75,
+                                                        instruction: OP_I64_GT_S,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 76,
+                                                        instruction: OP_BR_IF(
+                                                            0,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 85,
+                        instruction: OP_LOCAL_GET(
+                            1,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 86,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 87,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 88,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 89,
+                        instruction: OP_LOCAL_GET(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 90,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 103,
+                        instruction: OP_I64_CONST(
+                            1,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 104,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 105,
+                        instruction: OP_LOOP(
+                            ValueTypeTy(
+                                3,
+                            ),
+                            CodeBlock {
+                                id: 15,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 91,
+                                        instruction: OP_CALL(
+                                            6,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 92,
+                                        instruction: OP_CALL(
+                                            6,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 93,
+                                        instruction: OP_I64_MUL,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 94,
+                                        instruction: OP_CALL(
+                                            6,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 95,
+                                        instruction: OP_I64_CONST(
+                                            1,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 96,
+                                        instruction: OP_I64_SUB,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 97,
+                                        instruction: OP_CALL(
+                                            5,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 98,
+                                        instruction: OP_I64_CONST(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 99,
+                                        instruction: OP_I64_GT_U,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 100,
+                                        instruction: OP_BR_IF(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 101,
+                                        instruction: OP_DROP,
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 102,
+                                        instruction: OP_RETURN,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I64,
+                ],
+                return_types: [
+                    I64,
+                ],
+            },
+            FunctionSignature {
+                param_types: [
+                    I64,
+                ],
+                return_types: [
+                    I64,
+                    I64,
+                ],
+            },
+            FunctionSignature {
+                param_types: [
+                    I64,
+                    I64,
+                ],
+                return_types: [
+                    I64,
+                    I64,
+                    I64,
+                ],
+            },
+            FunctionSignature {
+                param_types: [
+                    I64,
+                    I64,
+                ],
+                return_types: [
+                    I64,
+                ],
+            },
+        ],
+        funcaddrs: [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "fac-rec",
+                value: Function {
+                    ty: 0,
+                },
+            },
+            ExportInstance {
+                name: "fac-rec-named",
+                value: Function {
+                    ty: 1,
+                },
+            },
+            ExportInstance {
+                name: "fac-iter",
+                value: Function {
+                    ty: 2,
+                },
+            },
+            ExportInstance {
+                name: "fac-iter-named",
+                value: Function {
+                    ty: 3,
+                },
+            },
+            ExportInstance {
+                name: "fac-opt",
+                value: Function {
+                    ty: 4,
+                },
+            },
+            ExportInstance {
+                name: "fac-ssa",
+                value: Function {
+                    ty: 7,
+                },
+            },
+        ],
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 8,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 9,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 10,
+                            instruction: OP_I64_EQ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 11,
+                            instruction: OP_IF_AND_ELSE(
+                                ValueType(
+                                    I64,
+                                ),
+                                CodeBlock {
+                                    id: 1,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 1,
+                                            instruction: OP_I64_CONST(
+                                                1,
+                                            ),
+                                        },
+                                    ],
+                                },
+                                CodeBlock {
+                                    id: 2,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 2,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 3,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 4,
+                                            instruction: OP_I64_CONST(
+                                                1,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 5,
+                                            instruction: OP_I64_SUB,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 6,
+                                            instruction: OP_CALL(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 7,
+                                            instruction: OP_I64_MUL,
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 19,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 20,
+                            instruction: OP_I64_CONST(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 21,
+                            instruction: OP_I64_EQ,
+                        },
+                        InstructionWrapper {
+                            instruction_id: 22,
+                            instruction: OP_IF_AND_ELSE(
+                                ValueType(
+                                    I64,
+                                ),
+                                CodeBlock {
+                                    id: 3,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 12,
+                                            instruction: OP_I64_CONST(
+                                                1,
+                                            ),
+                                        },
+                                    ],
+                                },
+                                CodeBlock {
+                                    id: 4,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 13,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 14,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 15,
+                                            instruction: OP_I64_CONST(
+                                                1,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 16,
+                                            instruction: OP_I64_SUB,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 17,
+                                            instruction: OP_CALL(
+                                                1,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 18,
+                                            instruction: OP_I64_MUL,
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 2,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 38,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 39,
+                            instruction: OP_LOCAL_SET(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 40,
+                            instruction: OP_I64_CONST(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 41,
+                            instruction: OP_LOCAL_SET(
+                                2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 42,
+                            instruction: OP_BLOCK(
+                                Empty,
+                                CodeBlock {
+                                    id: 8,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 37,
+                                            instruction: OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 7,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 32,
+                                                            instruction: OP_LOCAL_GET(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 33,
+                                                            instruction: OP_I64_CONST(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 34,
+                                                            instruction: OP_I64_EQ,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 35,
+                                                            instruction: OP_IF_AND_ELSE(
+                                                                Empty,
+                                                                CodeBlock {
+                                                                    id: 5,
+                                                                    instructions: [
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 23,
+                                                                            instruction: OP_BR(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                    ],
+                                                                },
+                                                                CodeBlock {
+                                                                    id: 6,
+                                                                    instructions: [
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 24,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 25,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 26,
+                                                                            instruction: OP_I64_MUL,
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 27,
+                                                                            instruction: OP_LOCAL_SET(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 28,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 29,
+                                                                            instruction: OP_I64_CONST(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 30,
+                                                                            instruction: OP_I64_SUB,
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 31,
+                                                                            instruction: OP_LOCAL_SET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 36,
+                                                            instruction: OP_BR(
+                                                                0,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 43,
+                            instruction: OP_LOCAL_GET(
+                                2,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 2,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 59,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 60,
+                            instruction: OP_LOCAL_SET(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 61,
+                            instruction: OP_I64_CONST(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 62,
+                            instruction: OP_LOCAL_SET(
+                                2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 63,
+                            instruction: OP_BLOCK(
+                                Empty,
+                                CodeBlock {
+                                    id: 12,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 58,
+                                            instruction: OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 11,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 53,
+                                                            instruction: OP_LOCAL_GET(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 54,
+                                                            instruction: OP_I64_CONST(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 55,
+                                                            instruction: OP_I64_EQ,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 56,
+                                                            instruction: OP_IF_AND_ELSE(
+                                                                Empty,
+                                                                CodeBlock {
+                                                                    id: 9,
+                                                                    instructions: [
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 44,
+                                                                            instruction: OP_BR(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                    ],
+                                                                },
+                                                                CodeBlock {
+                                                                    id: 10,
+                                                                    instructions: [
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 45,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 46,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 47,
+                                                                            instruction: OP_I64_MUL,
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 48,
+                                                                            instruction: OP_LOCAL_SET(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 49,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 50,
+                                                                            instruction: OP_I64_CONST(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 51,
+                                                                            instruction: OP_I64_SUB,
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 52,
+                                                                            instruction: OP_LOCAL_SET(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 57,
+                                                            instruction: OP_BR(
+                                                                0,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 64,
+                            instruction: OP_LOCAL_GET(
+                                2,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [
+                        LocalEntry {
+                            count: 1,
+                            ty: I64,
+                        },
+                    ],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 82,
+                            instruction: OP_I64_CONST(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 83,
+                            instruction: OP_LOCAL_SET(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 84,
+                            instruction: OP_BLOCK(
+                                Empty,
+                                CodeBlock {
+                                    id: 14,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 77,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 78,
+                                            instruction: OP_I64_CONST(
+                                                2,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 79,
+                                            instruction: OP_I64_LT_S,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 80,
+                                            instruction: OP_BR_IF(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 81,
+                                            instruction: OP_LOOP(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 13,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 65,
+                                                            instruction: OP_LOCAL_GET(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 66,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 67,
+                                                            instruction: OP_I64_MUL,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 68,
+                                                            instruction: OP_LOCAL_SET(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 69,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 70,
+                                                            instruction: OP_I64_CONST(
+                                                                -1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 71,
+                                                            instruction: OP_I64_ADD,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 72,
+                                                            instruction: OP_LOCAL_SET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 73,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 74,
+                                                            instruction: OP_I64_CONST(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 75,
+                                                            instruction: OP_I64_GT_S,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 76,
+                                                            instruction: OP_BR_IF(
+                                                                0,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 85,
+                            instruction: OP_LOCAL_GET(
+                                1,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 86,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 87,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                        I64,
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 88,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 89,
+                            instruction: OP_LOCAL_GET(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 90,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I64,
+                    ],
+                    return_types: [
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 103,
+                            instruction: OP_I64_CONST(
+                                1,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 104,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 105,
+                            instruction: OP_LOOP(
+                                ValueTypeTy(
+                                    3,
+                                ),
+                                CodeBlock {
+                                    id: 15,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 91,
+                                            instruction: OP_CALL(
+                                                6,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 92,
+                                            instruction: OP_CALL(
+                                                6,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 93,
+                                            instruction: OP_I64_MUL,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 94,
+                                            instruction: OP_CALL(
+                                                6,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 95,
+                                            instruction: OP_I64_CONST(
+                                                1,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 96,
+                                            instruction: OP_I64_SUB,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 97,
+                                            instruction: OP_CALL(
+                                                5,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 98,
+                                            instruction: OP_I64_CONST(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 99,
+                                            instruction: OP_I64_GT_U,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 100,
+                                            instruction: OP_BR_IF(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 101,
+                                            instruction: OP_DROP,
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 102,
+                                            instruction: OP_RETURN,
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [],
+        stack: [],
+        globals: [],
+    },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
+}

@@ -1,11 +1,9 @@
 <html>
 	<head>
 		<script>
-			WebAssembly.instantiateStreaming(fetch('http://localhost:8000/tests/memory_redundancy.wasm'), {})
+			WebAssembly.instantiateStreaming(fetch('http://localhost:8000/tests/fac.wasm'), {})
 				.then(obj => {
-					console.log(obj.instance.exports.test_store_to_load());
-					console.log(obj.instance.exports.zero_everything());
-					console.log(obj.instance.exports.test_redundant_load());
+					console.log(obj.instance.exports["fac-ssa"](BigInt(25)));
 				});
 		</script>
 	</head>

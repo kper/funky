@@ -326,19 +326,18 @@ impl Engine {
                     .ok_or_else(|| anyhow!("Global not found in the store"))?
                     .val);
             }
-            _ => {
-                Err(anyhow!("Exported global not found"))
-            }
+            _ => Err(anyhow!("Exported global not found")),
         }
     }
 
     /// Take only exported functions into consideration
+    /// `idx` is the id of the export instance, not the function
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
-        debug!("invoke_exported_function {:?}", idx);
+        debug!("invoke_exported_function {} with args {:?}", idx, args);
         let k = {
             let x = &self.module;
 
-            debug!("x's element {:?}", x.exports.get(idx as usize));
+            debug!("the export instance is {:?}", x.exports.get(idx as usize));
 
             let w = x
                 .exports
@@ -370,12 +369,19 @@ impl Engine {
     }
 
     pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
+        debug!(
+            "Invoking exporting function by name {} with args {:?}",
+            name, args
+        );
         let idx = self
             .module
             .exports
             .iter()
             .position(|e| e.name == name)
             .context("Cannot find function in exports")?;
+
+        debug!("=> Export instance found");
+        debug!("The function addr is {}", idx);
 
         self.invoke_exported_function(idx as u32, args)
             .context("Invoking the exported function failed")?;
@@ -469,7 +475,8 @@ impl Engine {
 
         debug!("frame {:#?}", fr);
 
-        self.run_instructions(&mut fr, &mut f.code.iter())?;
+        self.run_instructions(&mut fr, &mut f.code.iter())
+            .with_context(|| format!("Running instructions for function {}", idx))?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -524,19 +531,24 @@ impl Engine {
 
             match &instruction {
                 OP_LOCAL_GET(idx) => {
-                    self.local_get(idx, fr)?;
+                    self.local_get(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_GET({})", idx))?;
                 }
                 OP_LOCAL_SET(idx) => {
-                    self.local_set(idx, fr)?;
+                    self.local_set(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_SET({})", idx))?;
                 }
                 OP_LOCAL_TEE(idx) => {
-                    self.local_tee(idx, fr)?;
+                    self.local_tee(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_TEE({})", idx))?;
                 }
                 OP_GLOBAL_GET(idx) => {
-                    self.global_get(idx, fr)?;
+                    self.global_get(idx, fr)
+                        .with_context(|| format!("OP_GLOBAL_GET({})", idx))?;
                 }
                 OP_GLOBAL_SET(idx) => {
-                    self.global_set(idx, fr)?;
+                    self.global_set(idx, fr)
+                        .with_context(|| format!("OP_GLOBAL_SET({})", idx))?;
                 }
                 OP_I32_CONST(v) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
@@ -1041,13 +1053,15 @@ impl Engine {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 OP_MEMORY_SIZE => {
-                    self.memory_size()?;
+                    self.memory_size().context("Memory size failed")?;
                 }
                 OP_MEMORY_GROW => {
-                    self.memory_grow()?;
+                    self.memory_grow().context("Memory grow failed")?;
                 }
                 OP_BLOCK(ty, block_instructions) => {
-                    let outcome = self.block(fr, ty, block_instructions)?;
+                    let outcome = self
+                        .block(fr, ty, block_instructions)
+                        .with_context(|| format!("OP_BLOCK with ty {:?} failed", ty))?;
 
                     match outcome {
                         InstructionOutcome::BRANCH(0) => {}
@@ -1075,7 +1089,11 @@ impl Engine {
                     self.store.stack.push(StackContent::Label(label));
 
                     loop {
-                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
+                        let outcome = self
+                            .run_instructions(fr, &mut block_instructions.iter())
+                            .with_context(|| {
+                                format!("OP_LOOP({:?}) `run_instructions` failed", ty)
+                            })?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
@@ -1113,8 +1131,11 @@ impl Engine {
 
                             self.store.stack.push(StackContent::Label(label));
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch.iter())
+                                .with_context(|| {
+                                    format!("OP_IF({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1147,8 +1168,11 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch_1.iter())
+                                .with_context(|| {
+                                    format!("OP_IF_AND_ELSE({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1164,8 +1188,11 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch_2.iter())
+                                .with_context(|| {
+                                    format!("OP_IF_AND_ELSE({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
@@ -1218,10 +1245,12 @@ impl Engine {
                     }
                 }
                 OP_CALL(idx) => {
-                    self.call_function(idx)?;
+                    self.call_function(idx)
+                        .with_context(|| format!("OP_CALL for function addr {} failed", idx))?;
                 }
                 OP_CALL_INDIRECT(idx) => {
-                    self.call_indirect_function(idx)?;
+                    self.call_indirect_function(idx)
+                        .with_context(|| format!("OP_CALL_INDIRECT for function addr {} failed", idx))?;
                 }
                 OP_RETURN => {
                     debug!("Return");
@@ -1229,7 +1258,6 @@ impl Engine {
                 }
                 OP_NOP => {}
                 OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
-                //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
 
             trace!("stack {:#?}", self.store.stack);
@@ -1305,6 +1333,8 @@ impl Engine {
 
 /// Maps `StackContent` to `Value`, if not then throw error
 fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
+    debug!("=> Mapping StackContent to Value {:?}", x);
+
     match x {
         Value(v) => Ok(v),
         other => Err(anyhow!("Expected value but found {:?}", other)),

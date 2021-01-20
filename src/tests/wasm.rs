@@ -44,9 +44,15 @@ macro_rules! test_run_engine {
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
-        engine
-            .invoke_exported_function($num_f, $init)
-            .expect("Invoke exported function failed");
+        if let Err(err) = engine.invoke_exported_function($num_f, $init) {
+            error!("ERROR: {}", err);
+            err.chain()
+                .skip(1)
+                .for_each(|cause| error!("because: {}", cause));
+
+            panic!("Test failed");
+        }
+
         engine
     }};
 }
@@ -877,4 +883,15 @@ fn test_get_exported_global() {
 
     assert!(value.is_ok(), "Global should exists");
     assert_eq!(I32(42), value.unwrap());
+}
+
+#[test]
+fn test_fac_ssa() {
+    env_logger::init();
+
+    let engine = test_run_engine!("fac.wasm", 5, vec![I64(25)]); // the function id is 7, but the export id is 5
+    assert_eq!(
+        Some(&StackContent::Value(I64(7034535277573963776))),
+        engine.store.stack.last()
+    );
 }
