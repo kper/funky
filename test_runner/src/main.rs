@@ -334,7 +334,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
 
                 let args = case.get_args();
 
-                let expected: Vec<_> = case.get_expected().iter().map(|x| x.clone()).collect();
+                let expected: Vec<_> = case.get_expected().iter().copied().collect();
                 let actuals = match case.action.ty {
                     ActionType::Invoke => {
                         if let Err(err) = engine
@@ -360,7 +360,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                             //.rev()
                             .collect();
 
-                        actuals.into_iter().map(|w| w.clone()).collect()
+                        actuals.into_iter().cloned().collect()
                     }
                     ActionType::Get => {
                         let res = engine.get(&case.action.field);

@@ -327,7 +327,7 @@ impl Engine {
                     .val);
             }
             _ => {
-                return Err(anyhow!("Exported global not found"));
+                Err(anyhow!("Exported global not found"))
             }
         }
     }
