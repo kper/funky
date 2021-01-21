@@ -1,9 +1,9 @@
 <html>
 	<head>
 		<script>
-			WebAssembly.instantiateStreaming(fetch('http://localhost:8000/tests/fac.wasm'), {})
+			WebAssembly.instantiateStreaming(fetch('http://localhost:8000/tests/fib.wasm'), {})
 				.then(obj => {
-					console.log(obj.instance.exports["fac-ssa"](BigInt(25)));
+					console.log(obj.instance.exports["fib"](4));
 				});
 		</script>
 	</head>

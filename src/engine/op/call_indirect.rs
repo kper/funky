@@ -1,4 +1,3 @@
-use crate::engine::map_stackcontent_to_value;
 use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use crate::fetch_unop;

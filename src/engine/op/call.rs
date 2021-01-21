@@ -5,6 +5,41 @@ use anyhow::{anyhow, Context, Result};
 use wasm_parser::core::FuncIdx;
 
 impl Engine {
+    pub(crate) fn call_function(&mut self, idx: &FuncIdx) -> Result<()> {
+        debug!("OP_CALL {:?}", idx);
+
+        let param_count = &self
+            .store
+            .funcs
+            .get(*idx as usize)
+            .ok_or_else(|| anyhow!("Cannot access function with addr {}", idx))?
+            .ty
+            .param_types
+            .len();
+
+        debug!("=> Function with addr {} found", idx);
+        debug!("=> Stack is {:#?}", self.store.stack);
+
+        let args = self.extract_args_of_stack(*param_count).with_context(|| {
+            format!("Cannot extract args out of stack for function addr {}", idx)
+        })?;
+
+        //debug!("=> Resetting stack");
+        //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
+
+        self.invoke_function(*idx, args)
+            .with_context(|| format!("Invoking function addr {} failed", idx))?;
+
+        /*
+        debug!("=> Restoring stack");
+        // Insert `stack` before the values of `self.store.stack`
+        let mut new_stack: Vec<_> = self.store.stack.drain(0..).collect();
+        self.store.stack = stack.drain(0..).collect();
+        self.store.stack.append(&mut new_stack);*/
+
+        Ok(())
+    }
+
     /// Drops the `param_count` off the stack and returns it
     /// so it can be used as arguments for a web assembly function.
     /// However, we are ignoring labels and frames.
@@ -58,30 +93,5 @@ impl Engine {
         debug!("=> args {:#?}", args);
 
         Ok(args)
-    }
-
-    pub(crate) fn call_function(&mut self, idx: &FuncIdx) -> Result<()> {
-        debug!("OP_CALL {:?}", idx);
-
-        let param_count = &self
-            .store
-            .funcs
-            .get(*idx as usize)
-            .ok_or_else(|| anyhow!("Cannot access function with addr {}", idx))?
-            .ty.param_types.len();
-
-        debug!("=> Function with addr {} found", idx);
-        debug!("=> Stack is {:#?}", self.store.stack);
-
-        let args = self
-            .extract_args_of_stack(*param_count)
-            .with_context(|| {
-                format!("Cannot extract args out of stack for function addr {}", idx)
-            })?;
-
-        self.invoke_function(*idx, args)
-            .with_context(|| format!("Invoking function addr {} failed", idx))?;
-
-        Ok(())
     }
 }
