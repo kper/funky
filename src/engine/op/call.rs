@@ -2,33 +2,31 @@ use crate::engine::map_stackcontent_to_value;
 use crate::engine::{Engine, StackContent};
 use crate::value::Value;
 use anyhow::{anyhow, Context, Result};
-use wasm_parser::core::FuncIdx;
+use wasm_parser::core::FuncAddr;
 
 impl Engine {
-    pub(crate) fn call_function(&mut self, idx: &FuncIdx) -> Result<()> {
-        debug!("OP_CALL {:?}", idx);
+    pub(crate) fn call_function(&mut self, func_addr: &FuncAddr) -> Result<()> {
+        debug!("OP_CALL {:?}", func_addr);
 
         let param_count = &self
             .store
-            .funcs
-            .get(*idx as usize)
-            .ok_or_else(|| anyhow!("Cannot access function with addr {}", idx))?
+            .get_func_instance(func_addr)?
             .ty
             .param_types
             .len();
 
-        debug!("=> Function with addr {} found", idx);
+        debug!("=> Function with {:?} found", func_addr);
         debug!("=> Stack is {:#?}", self.store.stack);
 
         let args = self.extract_args_of_stack(*param_count).with_context(|| {
-            format!("Cannot extract args out of stack for function addr {}", idx)
+            format!("Cannot extract args out of stack for function {:?}", func_addr)
         })?;
 
         //debug!("=> Resetting stack");
         //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
 
-        self.invoke_function(*idx, args)
-            .with_context(|| format!("Invoking function addr {} failed", idx))?;
+        self.invoke_function(func_addr, args)
+            .with_context(|| format!("Invoking function {:?} failed", func_addr))?;
 
         /*
         debug!("=> Restoring stack");

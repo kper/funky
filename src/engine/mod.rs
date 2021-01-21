@@ -59,16 +59,7 @@ pub(crate) fn empty_engine() -> Engine {
 
     Engine {
         started: true,
-        store: Store {
-            funcs: Vec::new(),
-            tables: Vec::new(),
-            globals: Vec::new(),
-            memory: Vec::new(),
-            stack: vec![StackContent::Frame(Frame {
-                arity: 0,
-                locals: Vec::new(),
-            })],
-        },
+        store: Store::default_with_frame(),
         module: mi,
         debugger: Box::new(RelativeProgramCounter::default()),
     }
@@ -86,7 +77,7 @@ macro_rules! fetch_unop {
         debug!("Popping {:?}", $stack.last());
         let v1 = match $stack.pop().unwrap() {
             Value(v) => v,
-            x => panic!("Top of stack was not a value, but instead {:?}", x),
+            x => return Err(anyhow!("Top of stack was not a value, but instead {:?}", x)),
         };
         (v1)
     }};
@@ -244,22 +235,17 @@ macro_rules! store_memoryN {
 }
 
 impl Engine {
+    //TODO make Result
     pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>) -> Engine {
         let mut e = Engine {
             module: mi,
             started: false,
-            store: Store {
-                funcs: Vec::new(),
-                tables: Vec::new(),
-                stack: Vec::new(),
-                globals: Vec::new(),
-                memory: Vec::new(),
-            },
+            store: Store::default(),
             debugger,
         };
 
         debug!("before allocate {:#?}", e);
-        e.allocate(module);
+        e.allocate(module).context("Allocation instance failed");
         debug!("after allocate {:#?}", e);
 
         e
@@ -279,19 +265,23 @@ impl Engine {
         res
     }
 
-    fn allocate(&mut self, m: &Module) {
+    fn allocate(&mut self, m: &Module) -> Result<()> {
         info!("Allocation");
         crate::allocation::allocate(m, &mut self.module, &mut self.store)
-            .expect("Allocation failed");
+            .context("Allocation failed")?;
+
+        Ok(())
     }
 
     pub fn instantiation(&mut self, m: &Module) -> Result<()> {
         info!("Instantiation");
-        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)?;
+        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)
+            .context("Instantiation failed")?;
 
         if let Some(func_addr) = start_function {
             debug!("Invoking start function with {:?}", func_addr);
-            self.invoke_function(func_addr, vec![])?;
+            self.invoke_function(&func_addr, vec![])
+                .context("Invoking function failed")?;
         }
 
         Ok(())
@@ -330,6 +320,20 @@ impl Engine {
         }
     }
 
+    /// Adding new function to the engine
+    pub(crate) fn add_function(
+        &mut self,
+        signature: FunctionSignature,
+        body: FunctionBody,
+    ) -> Result<()> {
+        self.module.code.push(body.clone());
+        self.store
+            .allocate_func_instance(signature, body)
+            .context("Adding function failed")?;
+
+        Ok(())
+    }
+
     /// Take only exported functions into consideration
     /// `idx` is the id of the export instance, not the function
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
@@ -357,7 +361,7 @@ impl Engine {
                     .get(ty as usize)
                     .ok_or_else(|| anyhow!("Function not found"))?;
 
-                self.invoke_function(func_addr, args)
+                self.invoke_function(&FuncAddr::new(func_addr), args)
                     .context("Invoking the function failed")?;
             }
             _ => {
@@ -389,12 +393,18 @@ impl Engine {
         Ok(())
     }
 
-    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
-        self.check_parameters_of_function(idx, &args);
+    pub(crate) fn invoke_function(&mut self, func_addr: &FuncAddr, args: Vec<Value>) -> Result<()> {
+        self.check_parameters_of_function(func_addr, &args)
+            .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
-        let t = &self.store.funcs[idx as usize].ty;
+        let count_return_types = self
+            .store
+            .get_func_instance(func_addr)?
+            .ty
+            .return_types
+            .len() as u32;
 
-        let typed_locals = &self.store.funcs[idx as usize].code.locals;
+        let typed_locals = &self.store.get_func_instance(func_addr)?.code.locals;
 
         debug!("defined locals are {:#?}", typed_locals);
 
@@ -419,7 +429,7 @@ impl Engine {
         }
 
         self.store.stack.push(Frame(Frame {
-            arity: t.return_types.len() as u32,
+            arity: count_return_types,
             locals,
             //module_instance: Rc::downgrade(&self.module),
         }));
@@ -427,22 +437,21 @@ impl Engine {
         trace!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
-        self.run_function(idx)
-            .with_context(|| format!("Function with id {} failed", idx))?;
+        self.run_function(&func_addr)
+            .with_context(|| format!("Function with addr {:?} failed", func_addr))?;
 
         Ok(())
     }
 
-    fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
+    fn check_parameters_of_function(&self, func_addr: &FuncAddr, args: &[Value]) -> Result<()> {
         let fn_types = self
             .store
-            .funcs
-            .get(idx as usize)
-            .expect("Function not found")
+            .get_func_instance(func_addr)?
             .ty
             .param_types
             .iter();
 
+        // Extract the ValueType
         let argtypes = args.iter().map(|w| match *w {
             Value::I32(_) => ValueType::I32,
             Value::I64(_) => ValueType::I64,
@@ -457,26 +466,33 @@ impl Engine {
         let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
 
         if !is_same || len_1 != len_2 {
-            panic!("Function expected different parameters!");
+            return Err(anyhow!("Function expected different parameters!"));
         }
+
+        Ok(())
     }
 
     #[allow(clippy::cognitive_complexity)]
-    pub(crate) fn run_function(&mut self, idx: u32) -> Result<()> {
-        debug!("Running function {:?}", idx);
+    pub(crate) fn run_function(&mut self, func_addr: &FuncAddr) -> Result<()> {
+        debug!("Running function with addr {:?}", func_addr);
 
         //FIXME this `.clone` is extremly expensive!!!
         // But there is a problem
         // Because, we iterate over the borrowed iterator,
         // we cannot easily run the block
-        let f = &self.module.code[idx as usize].clone();
+        //let f = &self.module.code[idx as usize].clone();
+        let f = &self.store.get_func_instance(func_addr)?.code.clone();
+
+        //let f = &self.module.code[func_addr.get() as usize].clone();
+        //debug!("mod {:#?}", f);
+        //debug!("instance {:#?}", self.store.get_func_instance(func_addr)?.code.clone());
 
         let mut fr = self.get_frame()?;
 
         debug!("frame {:#?}", fr);
 
         self.run_instructions(&mut fr, &mut f.code.iter())
-            .with_context(|| format!("Running instructions for function {}", idx))?;
+            .with_context(|| format!("Running instructions for function addr {:?}", func_addr))?;
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -620,7 +636,7 @@ impl Engine {
                             .store
                             .stack
                             .push(Value(I64(((x1 as u64) % (x2 as u64)) as i64))),
-                        _ => panic!("Invalid types for REM_U"),
+                        _ => return Err(anyhow!("Invalid types for REM_U")),
                     }
                 }
                 OP_I32_AND | OP_I64_AND => {
@@ -1154,7 +1170,7 @@ impl Engine {
                             debug!("C is zero, therefore not branching");
                         }
                     } else {
-                        panic!("Value must be i32.const. Instead {:#?}", element);
+                        return Err(anyhow!("Value must be i32.const. Instead {:#?}", element));
                     }
                 }
                 OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2) => {
@@ -1207,9 +1223,9 @@ impl Engine {
                             }
                         }
 
-                        self.exit_block()?;
+                        self.exit_block().context("exiting block failed")?;
                     } else {
-                        panic!("Value must be i32.const");
+                        return Err(anyhow!("Value must be i32.const"));
                     }
                 }
                 OP_BR(label_idx) => {
@@ -1241,16 +1257,18 @@ impl Engine {
                         };
                         return Ok(InstructionOutcome::BRANCH(label_idx));
                     } else {
-                        panic!("invalid index type: {:?}", ival);
+                        return Err(anyhow!("invalid index type: {:?}", ival));
                     }
                 }
-                OP_CALL(idx) => {
-                    self.call_function(idx)
-                        .with_context(|| format!("OP_CALL for function addr {} failed", idx))?;
+                OP_CALL(func_addr) => {
+                    self.call_function(&FuncAddr::new(*func_addr))
+                        .with_context(|| format!("OP_CALL for function {:?} failed", func_addr))?;
                 }
-                OP_CALL_INDIRECT(idx) => {
-                    self.call_indirect_function(idx)
-                        .with_context(|| format!("OP_CALL_INDIRECT for function addr {} failed", idx))?;
+                OP_CALL_INDIRECT(func_addr) => {
+                    self.call_indirect_function(&FuncAddr::new(*func_addr))
+                        .with_context(|| {
+                            format!("OP_CALL_INDIRECT for function {:?} failed", func_addr)
+                        })?;
                 }
                 OP_RETURN => {
                     debug!("Return");

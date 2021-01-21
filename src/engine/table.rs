@@ -1,7 +1,7 @@
-use wasm_parser::core::FuncIdx;
+use wasm_parser::core::FuncAddr;
 
 #[derive(Debug, Clone)]
 pub struct TableInstance {
-    pub elem: Vec<Option<FuncIdx>>,
+    pub elem: Vec<Option<FuncAddr>>,
     pub max: Option<u32>,
 }

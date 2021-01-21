@@ -8,8 +8,6 @@ use crate::value::*;
 use crate::wrap_instructions;
 use insta::assert_snapshot;
 use validation::validate;
-use wasm_parser::core::Instruction::*;
-use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
 
 macro_rules! test_file_engine {
@@ -134,9 +132,9 @@ fn test_allocation_funcs() {
 
     // Store has an entry for func instance
 
-    assert_eq!(1, engine.store.funcs.len());
-    assert_eq!(sig, engine.store.funcs[0].ty);
-    assert_eq!(body, engine.store.funcs[0].code);
+    assert_eq!(1, engine.store.count_functions());
+    assert_eq!(sig, engine.store.get_func_instance(&FuncAddr::new(0)).unwrap().ty);
+    assert_eq!(body, engine.store.get_func_instance(&FuncAddr::new(0)).unwrap().code);
 }
 
 #[test]

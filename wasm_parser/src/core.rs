@@ -2,11 +2,23 @@ use custom_display::CustomDisplay;
 use serde::{Deserialize, Serialize};
 
 pub type FuncIdx = u32;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FuncAddr(usize);
 pub type TableIdx = u32;
 pub type MemoryIdx = u32;
 pub type GlobalIdx = u32;
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
+
+impl FuncAddr {
+    pub fn new(value: u32) -> Self {
+        Self(value as usize)
+    }
+
+    pub fn get(&self) -> usize {
+        self.0
+    }
+}
 
 pub type Expr = Vec<InstructionWrapper>;
 

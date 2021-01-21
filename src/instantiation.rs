@@ -1,12 +1,13 @@
 use crate::engine::module::ModuleInstance;
+use crate::engine::stack::Frame;
 use crate::engine::stack::StackContent;
-use crate::engine::stack::{Frame};
 use crate::engine::store::Store;
 use crate::value::Value;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
+use wasm_parser::core::FuncAddr;
 use wasm_parser::Module;
 
-type StartFunctionAddr = u32;
+type StartFunctionAddr = FuncAddr;
 
 /// Returns the addr of the start function, which needs to be invoked
 pub fn instantiation(
@@ -108,7 +109,7 @@ fn instantiate_elements(
 
                 let _ = replace(
                     &mut table_inst.elem[table_index as usize + j],
-                    Some(*funcaddr),
+                    Some(FuncAddr::new(*funcaddr)),
                 );
             }
         } else {
@@ -169,7 +170,7 @@ fn instantiate_start(
     m: &Module,
     mod_instance: &ModuleInstance,
     store: &mut Store,
-) -> Result<Option<u32>> {
+) -> Result<Option<StartFunctionAddr>> {
     debug!("instantiate start");
 
     if let Some(start_section) = validation::extract::get_start(m).first() {
@@ -178,16 +179,17 @@ fn instantiate_start(
         let borrow = &mod_instance;
         let func_addr = borrow
             .funcaddrs
-            .get((start_section.index) as usize)
-            .ok_or_else(|| anyhow!("got no func_addr"))?;
+            .get(start_section.index as usize)
+            .ok_or_else(|| anyhow!("Start function addr was not found"))?;
+
+        let wrapped_func_addr = FuncAddr::new(*func_addr);
 
         // Check if the functions really exists
-        let _func_instance = store
-            .funcs
-            .get(*func_addr as usize)
-            .ok_or_else(|| anyhow!("Function does not exist"))?;
+        store
+            .get_func_instance(&wrapped_func_addr)
+            .context("Checking if start function exists failed")?;
 
-        return Ok(Some(*func_addr));
+        return Ok(Some(wrapped_func_addr));
     } else {
         debug!("No start section");
     }

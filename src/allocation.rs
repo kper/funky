@@ -8,36 +8,32 @@ use wasm_parser::Module;
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 
-pub fn allocate(
-    m: &Module,
-    mod_instance: &mut ModuleInstance,
-    store: &mut Store,
-) -> Result<()> {
+pub fn allocate(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<()> {
     debug!("allocate");
 
     // Step 1
     let _imports = get_extern_values_in_imports(m)?;
 
     // Step 2a and 6
-    allocate_functions(m, mod_instance, store)?;
+    allocate_functions(m, mod_instance, store).context("Allocating function instances failed")?;
     //TODO host functions
 
     // Step 3a and 7
-    allocate_tables(m, mod_instance, store)?;
+    allocate_tables(m, mod_instance, store).context("Allocation table instances failed")?;
 
     // Step 4a and 8
-    allocate_memories(m, mod_instance, store)?;
+    allocate_memories(m, mod_instance, store).context("Allocating memory instances failed")?;
 
     // Step 5a and 9
-    allocate_globals(m, mod_instance, store)?;
+    allocate_globals(m, mod_instance, store).context("Allocating global instances failed")?;
 
     // ... Step 13
 
     // Step 14.
 
-    allocate_exports(m, mod_instance, store)?;
+    allocate_exports(m, mod_instance, store).context("Allocating export instances failed")?;
 
     // Step 15.
 
@@ -73,9 +69,6 @@ fn allocate_functions(
 
     debug!("functions extracted {:#?}", ty);
 
-    //let rc = Rc::new(mod_instance);
-    //let _weak = Rc::downgrade(mod_instance);
-
     for (code_index, t) in ty.iter().enumerate() {
         debug!("Function {:#?}", t);
         // Allocate function
@@ -85,39 +78,29 @@ fn allocate_functions(
             let fbody = match borrow.fn_types.get(**t as usize) {
                 Some(fbody) => fbody,
                 None => {
-                    panic!("{} function type is not defined", t);
+                    return Err(anyhow!("{} function type is not defined", t));
                 }
             };
 
             let fcode = match borrow.code.get(code_index as usize) {
                 Some(fcode) => fcode,
                 None => {
-                    panic!("{} code is not defined", t);
+                    return Err(anyhow!("{} code is not defined", t));
                 }
             };
 
-            let instance = FuncInstance {
-                ty: fbody.clone(),
-                //module: weak.clone(),
-                code: fcode.clone(),
-            };
-
-            store.funcs.push(instance);
+            store.allocate_func_instance(fbody.clone(), fcode.clone())?;
         }
 
-        mod_instance.funcaddrs.push(store.funcs.len() as u32 - 1);
+        mod_instance
+            .funcaddrs
+            .push(store.count_functions() as u32 - 1);
     }
-
-    debug!("Functions in store {:#?}", store.funcs);
 
     Ok(())
 }
 
-fn allocate_tables(
-    m: &Module,
-    mod_instance: &mut ModuleInstance,
-    store: &mut Store,
-) -> Result<()> {
+fn allocate_tables(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<()> {
     debug!("allocate tables");
 
     // Gets all tables and imports
