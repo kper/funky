@@ -430,15 +430,33 @@ Engine {
             },
         ],
         funcaddrs: [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
+            FuncAddr(
+                0,
+            ),
+            FuncAddr(
+                1,
+            ),
+            FuncAddr(
+                2,
+            ),
+            FuncAddr(
+                3,
+            ),
+            FuncAddr(
+                4,
+            ),
+            FuncAddr(
+                5,
+            ),
+            FuncAddr(
+                6,
+            ),
+            FuncAddr(
+                7,
+            ),
+            FuncAddr(
+                8,
+            ),
         ],
         tableaddrs: [],
         memaddrs: [],

@@ -94,7 +94,7 @@ fn allocate_functions(
 
         mod_instance
             .funcaddrs
-            .push(store.count_functions() as u32 - 1);
+            .push(FuncAddr::new(store.count_functions() as u32 - 1));
     }
 
     Ok(())

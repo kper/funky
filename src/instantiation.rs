@@ -109,7 +109,7 @@ fn instantiate_elements(
 
                 let _ = replace(
                     &mut table_inst.elem[table_index as usize + j],
-                    Some(FuncAddr::new(*funcaddr)),
+                    Some(funcaddr.clone()),
                 );
             }
         } else {
@@ -182,14 +182,12 @@ fn instantiate_start(
             .get(start_section.index as usize)
             .ok_or_else(|| anyhow!("Start function addr was not found"))?;
 
-        let wrapped_func_addr = FuncAddr::new(*func_addr);
-
         // Check if the functions really exists
         store
-            .get_func_instance(&wrapped_func_addr)
+            .get_func_instance(&func_addr)
             .context("Checking if start function exists failed")?;
 
-        return Ok(Some(wrapped_func_addr));
+        return Ok(Some(func_addr.clone()));
     } else {
         debug!("No start section");
     }

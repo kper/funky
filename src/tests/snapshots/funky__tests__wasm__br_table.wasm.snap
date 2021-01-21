@@ -152,7 +152,9 @@ Engine {
             },
         ],
         funcaddrs: [
-            0,
+            FuncAddr(
+                0,
+            ),
         ],
         tableaddrs: [],
         memaddrs: [],

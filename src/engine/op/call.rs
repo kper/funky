@@ -22,6 +22,8 @@ impl Engine {
             format!("Cannot extract args out of stack for function {:?}", func_addr)
         })?;
 
+        debug!("=> Extracted arguments for the function are {:?}", args);
+
         //debug!("=> Resetting stack");
         //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
 

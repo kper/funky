@@ -1,5 +1,5 @@
 use crate::engine::export::ExportInstance;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
@@ -8,7 +8,7 @@ pub struct ModuleInstance {
     pub start: u32,
     pub code: Vec<FunctionBody>,
     pub fn_types: Vec<FunctionSignature>,
-    pub funcaddrs: Vec<FuncIdx>,
+    pub funcaddrs: Vec<FuncAddr>,
     pub tableaddrs: Vec<TableIdx>,
     pub memaddrs: Vec<MemoryIdx>,
     pub globaladdrs: Vec<GlobalIdx>,
@@ -54,5 +54,19 @@ impl ModuleInstance {
         self.fn_types.push(instance);
 
         Ok(self.fn_types.len() - 1)
+    }
+
+    /// Looking up the function's address in the store by given function's module address.
+    pub(crate) fn lookup_function_addr(&self, function_module_addr: FuncIdx) -> Result<FuncAddr> {
+        debug!(
+            "Looking up store's func addr for idx {}",
+            function_module_addr
+        );
+
+        Ok(self
+            .funcaddrs
+            .get(function_module_addr as usize)
+            .ok_or_else(|| anyhow!("Cannot lookup funcaddr for id {:?}", function_module_addr))?
+            .clone())
     }
 }

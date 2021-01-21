@@ -355,13 +355,14 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = *self
+                let func_addr = self
                     .module
                     .funcaddrs
                     .get(ty as usize)
-                    .ok_or_else(|| anyhow!("Function not found"))?;
+                    .ok_or_else(|| anyhow!("Function not found"))?
+                    .clone();
 
-                self.invoke_function(&FuncAddr::new(func_addr), args)
+                self.invoke_function(&func_addr, args)
                     .context("Invoking the function failed")?;
             }
             _ => {
@@ -444,6 +445,12 @@ impl Engine {
     }
 
     fn check_parameters_of_function(&self, func_addr: &FuncAddr, args: &[Value]) -> Result<()> {
+        debug!(
+            "Required type of function {:?} is {:?}",
+            func_addr,
+            self.store.get_func_instance(func_addr)?.ty
+        );
+
         let fn_types = self
             .store
             .get_func_instance(func_addr)?
@@ -468,6 +475,8 @@ impl Engine {
         if !is_same || len_1 != len_2 {
             return Err(anyhow!("Function expected different parameters!"));
         }
+
+        debug!("=> Parameters of functions and args are equal");
 
         Ok(())
     }
@@ -1260,15 +1269,16 @@ impl Engine {
                         return Err(anyhow!("invalid index type: {:?}", ival));
                     }
                 }
-                OP_CALL(func_addr) => {
-                    self.call_function(&FuncAddr::new(*func_addr))
+                OP_CALL(function_module_addr) => {
+                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
+                    self.call_function(&func_addr)
                         .with_context(|| format!("OP_CALL for function {:?} failed", func_addr))?;
                 }
-                OP_CALL_INDIRECT(func_addr) => {
-                    self.call_indirect_function(&FuncAddr::new(*func_addr))
-                        .with_context(|| {
-                            format!("OP_CALL_INDIRECT for function {:?} failed", func_addr)
-                        })?;
+                OP_CALL_INDIRECT(function_module_addr) => {
+                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
+                    self.call_indirect_function(&func_addr).with_context(|| {
+                        format!("OP_CALL_INDIRECT for function {:?} failed", func_addr)
+                    })?;
                 }
                 OP_RETURN => {
                     debug!("Return");

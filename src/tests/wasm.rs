@@ -128,7 +128,7 @@ fn test_allocation_funcs() {
     assert_eq!(1, mi.code.len());
     assert_eq!(body, mi.code[0]);
     assert_eq!(1, mi.funcaddrs.len());
-    assert_eq!(Some(&0), mi.funcaddrs.get(0));
+    assert_eq!(0, mi.funcaddrs.get(0).unwrap().get());
 
     // Store has an entry for func instance
 
