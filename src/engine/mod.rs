@@ -1305,7 +1305,7 @@ impl Engine {
                 OP_CALL_INDIRECT(function_module_addr) => {
                     let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
                     self.call_indirect_function(&func_addr).with_context(|| {
-                        format!("OP_CALL_INDIRECT for function {:?} failed", func_addr)
+                        format!("OP_CALL_INDIRECT for function {:?} failed and module addr ({}) failed", func_addr, function_module_addr)
                     })?;
                 }
                 OP_RETURN => {

@@ -22,9 +22,9 @@ impl Engine {
         }
         trace!("Table: {:?}", tab.elem);
 
-        let (a, param_count) = match &tab.elem[i as usize] {
-            Some(a) => {
-                let func_instance = &self.store.get_func_instance(function_addr)?.ty;
+        let (indirected_func_addr, param_count) = match &tab.elem[i as usize] {
+            Some(indirected_func_addr) => {
+                let func_instance = &self.store.get_func_instance(indirected_func_addr)?.ty;
 
                 let param_count = func_instance.param_types.len();
 
@@ -36,7 +36,7 @@ impl Engine {
                     assert!(func_instance == ty.expect("No type found"));
                 }*/
 
-                (a.clone(), param_count)
+                (indirected_func_addr.clone(), param_count)
             }
             None => return Err(anyhow!("Table not initialized at index {}", i)),
         };
@@ -44,11 +44,11 @@ impl Engine {
         let args = &self.extract_args_of_stack(param_count).with_context(|| {
             format!(
                 "Cannot extract args out of stack for function {:?}",
-                function_addr
+                indirected_func_addr
             )
         })?;
 
-        self.invoke_function(&a, args.to_vec())?;
+        self.invoke_function(&indirected_func_addr, args.to_vec())?;
 
         Ok(())
     }
