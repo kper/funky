@@ -473,7 +473,31 @@ impl Engine {
         let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
 
         if !is_same || len_1 != len_2 {
-            return Err(anyhow!("Function expected different parameters!"));
+            // Report error
+
+            let argtypes2 = args
+                .iter()
+                .map(|w| match *w {
+                    Value::I32(_) => ValueType::I32,
+                    Value::I64(_) => ValueType::I64,
+                    Value::F32(_) => ValueType::F32,
+                    Value::F64(_) => ValueType::F64,
+                })
+                .collect::<Vec<_>>();
+
+            let fn_types2 = self
+                .store
+                .get_func_instance(func_addr)?
+                .ty
+                .param_types
+                .iter()
+                .collect::<Vec<_>>();
+
+            return Err(anyhow!(
+                "Function expected different parameters! {:?} != {:?}",
+                argtypes2,
+                fn_types2
+            ));
         }
 
         debug!("=> Parameters of functions and args are equal");
@@ -1271,8 +1295,12 @@ impl Engine {
                 }
                 OP_CALL(function_module_addr) => {
                     let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
-                    self.call_function(&func_addr)
-                        .with_context(|| format!("OP_CALL for function {:?} failed", func_addr))?;
+                    self.call_function(&func_addr).with_context(|| {
+                        format!(
+                            "OP_CALL for function {:?} and module addr ({}) failed",
+                            func_addr, function_module_addr
+                        )
+                    })?;
                 }
                 OP_CALL_INDIRECT(function_module_addr) => {
                     let func_addr = self.module.lookup_function_addr(*function_module_addr)?;

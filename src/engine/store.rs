@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 
 #[derive(Debug, Default)]
 pub struct Store {
-    funcs: Vec<FuncInstance>,
+    pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
     pub stack: Vec<StackContent>,
@@ -53,6 +53,12 @@ impl Store {
         self.funcs
             .get(func_addr.get())
             .ok_or_else(|| anyhow!("Cannot find function by addr {:?}", func_addr))
+    }
+
+    pub(crate) fn get_func_instances(&self) -> &[FuncInstance] {
+        debug!("Getting func instances");
+
+        &self.funcs
     }
 
     pub(crate) fn allocate_func_instance(

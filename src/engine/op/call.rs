@@ -19,10 +19,11 @@ impl Engine {
         debug!("=> Stack is {:#?}", self.store.stack);
 
         let args = self.extract_args_of_stack(*param_count).with_context(|| {
-            format!("Cannot extract args out of stack for function {:?}", func_addr)
+            format!(
+                "Cannot extract args out of stack for function {:?}",
+                func_addr
+            )
         })?;
-
-        debug!("=> Extracted arguments for the function are {:?}", args);
 
         //debug!("=> Resetting stack");
         //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
@@ -46,6 +47,10 @@ impl Engine {
     pub(crate) fn extract_args_of_stack(&mut self, param_count: usize) -> Result<Vec<Value>> {
         let mut count = 0;
         let mut value_count = 0;
+
+        if param_count == 0 {
+            return Ok(vec![]);
+        }
 
         // Count until we counted at least `function_ty.param_types.len()` values of the stack
         for element in self.store.stack.iter().rev() {
