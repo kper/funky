@@ -627,7 +627,7 @@ mod test {
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
-                BlockType::ValueTypeTy(-128),
+                BlockType::FuncTy(-128),
                 CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );

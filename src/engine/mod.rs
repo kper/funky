@@ -74,8 +74,10 @@ pub struct Variable {
 #[macro_export]
 macro_rules! fetch_unop {
     ($stack: expr) => {{
+        use anyhow::Context;
+
         debug!("Popping {:?}", $stack.last());
-        let v1 = match $stack.pop().unwrap() {
+        let v1 = match $stack.pop().context("Popped element is None")? {
             Value(v) => v,
             x => return Err(anyhow!("Top of stack was not a value, but instead {:?}", x)),
         };
@@ -1129,13 +1131,7 @@ impl Engine {
                 OP_LOOP(ty, block_instructions) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    let arity = self.get_block_ty_arity(&ty)?;
-
-                    debug!("Arity for loop ({:?}) is {}", ty, arity);
-
-                    let label = Label::new(arity);
-
-                    self.store.stack.push(StackContent::Label(label));
+                    self.setup_stack_for_entering_block(ty)?;
 
                     loop {
                         let outcome = self
@@ -1169,16 +1165,10 @@ impl Engine {
                     debug!("Popping value {:?}", element);
 
                     if let Some(StackContent::Value(Value::I32(v))) = element {
-                        let arity = self.get_block_ty_arity(&ty)?;
-
-                        debug!("Arity for if ({:?}) is {}", ty, arity);
-
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
 
-                            let label = Label::new(arity);
-
-                            self.store.stack.push(StackContent::Label(label));
+                            self.setup_stack_for_entering_block(ty)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch.iter())
@@ -1209,13 +1199,10 @@ impl Engine {
                 OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2) => {
                     debug!("OP_IF_AND_ELSE {:?}", ty);
                     if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        let arity = self.get_block_ty_arity(&ty)?;
-
-                        let label = Label::new(arity);
-
-                        self.store.stack.push(StackContent::Label(label));
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
+
+                            self.setup_stack_for_entering_block(ty)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_1.iter())
@@ -1236,6 +1223,8 @@ impl Engine {
                             }
                         } else {
                             debug!("C is zero, therefore branching (2)");
+
+                            self.setup_stack_for_entering_block(ty)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_2.iter())
@@ -1305,7 +1294,10 @@ impl Engine {
                 OP_CALL_INDIRECT(function_module_addr) => {
                     let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
                     self.call_indirect_function(&func_addr).with_context(|| {
-                        format!("OP_CALL_INDIRECT for function {:?} failed and module addr ({}) failed", func_addr, function_module_addr)
+                        format!(
+                            "OP_CALL_INDIRECT for function {:?} failed and module addr ({}) failed",
+                            func_addr, function_module_addr
+                        )
                     })?;
                 }
                 OP_RETURN => {
@@ -1366,24 +1358,6 @@ impl Engine {
         self.store.stack.append(&mut val_m);
 
         Ok(())
-    }
-
-    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<Arity> {
-        let arity = match block_ty {
-            BlockType::Empty => 0,
-            BlockType::ValueType(_) => 1,
-            BlockType::ValueTypeTy(ty) => self
-                .module
-                .fn_types
-                .get(*ty as usize)
-                .ok_or_else(|| anyhow!("Trap"))?
-                .return_types
-                .len(),
-        };
-
-        debug!("Arity is {}", arity);
-
-        Ok(arity as u32)
     }
 }
 

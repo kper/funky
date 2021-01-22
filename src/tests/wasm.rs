@@ -722,7 +722,7 @@ fn test_run_loop2() {
 
 #[test]
 fn test_run_loop3() {
-    //env_logger::init();
+    env_logger::init();
     let engine = test_run_engine!("loop.wasm", 2, vec![]);
     assert_eq!(
         Some(&StackContent::Value(I32(1))),

@@ -70,9 +70,11 @@ fn instantiate_elements(
 ) -> Result<()> {
     debug!("instantiate elements");
 
-    let ty = validation::extract::get_elemens(&m);
+    let ty = validation::extract::get_elements(&m);
+
 
     for e in ty.iter() {
+        debug!("element's offset {:?}", e.offset);
         let eoval = crate::allocation::get_expr_const_ty_global(&e.offset)
             .map_err(|_| anyhow!("Fetching const expr failed"))?;
 

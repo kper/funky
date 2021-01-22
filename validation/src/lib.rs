@@ -130,7 +130,7 @@ impl<'a> Context<'a> {
 
         // Check elem
 
-        let elements = get_elemens(module);
+        let elements = get_elements(module);
         for elem in elements {
             check_elem_ty(elem, &self.tables, &self.functions)?;
         }

@@ -299,6 +299,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                     .take(expected.len())
                     .collect();
 
+                debug!("Returned actuals {:?}", actuals);
+
                 if !actuals.iter().all(|x| x.is_value()) {
                     report_fail(
                         &mut report_file,
@@ -337,6 +339,12 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                 let expected: Vec<_> = case.get_expected().iter().copied().collect();
                 let actuals = match case.action.ty {
                     ActionType::Invoke => {
+                        debug!(
+                            "Invoking with {} and {:?}",
+                            &case.action.field,
+                            args.clone()
+                        );
+
                         if let Err(err) = engine
                             .invoke_exported_function_by_name(&case.action.field, args.clone())
                         {
@@ -393,6 +401,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                     report_ok(&mut report_file, &mut case_file, &case, p, expected);
                     continue;
                 }
+
+                debug!("Returned actuals {:?}", actuals);
 
                 // Get the actual results based on the count how many results we expect
 

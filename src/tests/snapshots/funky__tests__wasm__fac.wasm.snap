@@ -656,7 +656,7 @@ Engine {
                     InstructionWrapper {
                         instruction_id: 105,
                         instruction: OP_LOOP(
-                            ValueTypeTy(
+                            FuncTy(
                                 3,
                             ),
                             CodeBlock {
@@ -1574,7 +1574,7 @@ Engine {
                         InstructionWrapper {
                             instruction_id: 105,
                             instruction: OP_LOOP(
-                                ValueTypeTy(
+                                FuncTy(
                                     3,
                                 ),
                                 CodeBlock {

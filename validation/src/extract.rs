@@ -56,7 +56,7 @@ pub fn get_start(module: &Module) -> Vec<&StartSection> {
     ty
 }
 
-pub fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
+pub fn get_elements(module: &Module) -> Vec<&ElementSegment> {
     let ty: Vec<_> = module
         .sections
         .iter()

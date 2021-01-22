@@ -556,9 +556,11 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
         0x40 => (u, BlockType::Empty),
         0x7F | 0x7E | 0x7D | 0x7C => (u, BlockType::ValueType(n[0].into())),
         _ => {
+            // This must be signed 33 bit
+            // Weird, Page 96 spec
             let (i, k) = take_leb_i33(i)?;
 
-            (i, BlockType::ValueTypeTy(k))
+            (i, BlockType::FuncTy(k))
         }
     };
 

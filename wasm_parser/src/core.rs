@@ -53,8 +53,9 @@ pub enum ValueType {
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
-    ValueTypeTy(i64),
-    //    S33(i64), //actually signed 33
+    /// The signature of the block
+    /// is defined as function definition
+    FuncTy(i64), // this is actually a FuncIdx, but it is required to have s33
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
