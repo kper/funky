@@ -274,8 +274,6 @@ fn check_elem_ty(
 
     get_expr_const_i32_ty(offset)?;
 
-    debug!("defined functions {:#?}", func_ty);
-
     let not_def_funcs: Vec<_> = funcs_idx
         .iter()
         .filter(|w| func_ty.get(**w as usize).is_none())

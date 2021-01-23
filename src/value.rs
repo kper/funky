@@ -1,7 +1,7 @@
-use wasm_parser::core::*;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
-use log::trace;
 use crate::value::Value::*;
+use log::trace;
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+use wasm_parser::core::*;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Value {

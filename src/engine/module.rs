@@ -11,7 +11,7 @@ pub struct ModuleInstance {
     pub funcaddrs: Vec<FuncAddr>,
     pub tableaddrs: Vec<TableIdx>,
     pub memaddrs: Vec<MemoryIdx>,
-    pub globaladdrs: Vec<GlobalIdx>,
+    pub globaladdrs: Vec<GlobalAddr>,
     pub exports: Vec<ExportInstance>,
 }
 

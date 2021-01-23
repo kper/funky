@@ -7,20 +7,23 @@ pub mod module;
 mod op;
 pub(crate) mod prelude;
 pub mod stack;
-pub(crate) mod store;
+pub mod store;
 pub(crate) mod table;
+pub mod import_resolver;
 
 use self::stack::StackContent;
 use self::stack::StackContent::*;
 use self::stack::{Frame, Label};
 use self::store::Store;
 use crate::convert;
+pub use crate::engine::store::GlobalInstance;
 pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
 use crate::operations::*;
+use crate::engine::import_resolver::{Import, Imports};
 pub use crate::page::Page;
 use crate::value::{Arity, Value, Value::*};
 pub use crate::PAGE_SIZE;
@@ -69,6 +72,15 @@ pub(crate) fn empty_engine() -> Engine {
 pub struct Variable {
     pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
     pub val: Value,
+}
+
+impl Variable {
+    pub fn immutable(val: Value) -> Self {
+        Self {
+            mutable: false,
+            val
+        }
+    }
 }
 
 #[macro_export]
@@ -237,8 +249,7 @@ macro_rules! store_memoryN {
 }
 
 impl Engine {
-    //TODO make Result
-    pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>) -> Engine {
+    pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>, imports: &Imports) -> Result<Engine> {
         let mut e = Engine {
             module: mi,
             started: false,
@@ -246,11 +257,10 @@ impl Engine {
             debugger,
         };
 
-        debug!("before allocate {:#?}", e);
-        e.allocate(module).context("Allocation instance failed");
-        debug!("after allocate {:#?}", e);
+        e.allocate(module, &imports).context("Allocation instance failed")?;
+        e.instantiation(module).context("Instantiation failed")?;
 
-        e
+        Ok(e)
     }
 
     /// Initializes `n` pages in memory
@@ -267,9 +277,9 @@ impl Engine {
         res
     }
 
-    fn allocate(&mut self, m: &Module) -> Result<()> {
+    fn allocate(&mut self, m: &Module, imports: &Imports) -> Result<()> {
         info!("Allocation");
-        crate::allocation::allocate(m, &mut self.module, &mut self.store)
+        crate::allocation::allocate(m, &mut self.module, &mut self.store, imports)
             .context("Allocation failed")?;
 
         Ok(())
@@ -305,7 +315,7 @@ impl Engine {
 
         match export_instance.value {
             ExternalKindType::Global { ty } => {
-                let global_addr = *self
+                let global_addr = self
                     .module
                     .globaladdrs
                     .get(ty as usize)
@@ -313,9 +323,8 @@ impl Engine {
 
                 return Ok(self
                     .store
-                    .globals
-                    .get(global_addr as usize)
-                    .ok_or_else(|| anyhow!("Global not found in the store"))?
+                    .get_global_instance(&global_addr)
+                    .context("Global not found in the store")?
                     .val);
             }
             _ => Err(anyhow!("Exported global not found")),

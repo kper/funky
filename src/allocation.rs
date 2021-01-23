@@ -1,3 +1,4 @@
+use crate::engine::import_resolver::{Import, ImportResolver, Imports};
 use crate::engine::memory::MemoryInstance;
 use crate::engine::store::Store;
 use crate::engine::*;
@@ -10,11 +11,18 @@ use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
 use anyhow::{anyhow, Context, Result};
 
-pub fn allocate(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<()> {
+pub fn allocate(
+    m: &Module,
+    mod_instance: &mut ModuleInstance,
+    store: &mut Store,
+    imports: &Imports,
+) -> Result<()> {
     debug!("allocate");
 
     // Step 1
-    let _imports = get_extern_values_in_imports(m)?;
+    let imports_entries = get_extern_values_in_imports(m)?;
+
+    let imports = create_import_resolver(&imports_entries, imports)?;
 
     // Step 2a and 6
     allocate_functions(m, mod_instance, store).context("Allocating function instances failed")?;
@@ -27,7 +35,8 @@ pub fn allocate(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store
     allocate_memories(m, mod_instance, store).context("Allocating memory instances failed")?;
 
     // Step 5a and 9
-    allocate_globals(m, mod_instance, store).context("Allocating global instances failed")?;
+    allocate_globals(m, mod_instance, store, &imports)
+        .context("Allocating global instances failed")?;
 
     // ... Step 13
 
@@ -40,7 +49,7 @@ pub fn allocate(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store
     Ok(())
 }
 
-fn get_extern_values_in_imports(m: &Module) -> Result<Vec<&ImportDesc>> {
+fn get_extern_values_in_imports(m: &Module) -> Result<Vec<&ImportEntry>> {
     let ty: Vec<_> = m
         .sections
         .iter()
@@ -49,10 +58,32 @@ fn get_extern_values_in_imports(m: &Module) -> Result<Vec<&ImportDesc>> {
             _ => None,
         })
         .flatten()
-        .map(|w| &w.desc)
         .collect();
 
     Ok(ty)
+}
+
+fn create_import_resolver(
+    _entries: &Vec<&ImportEntry>,
+    imports: &Imports,
+) -> Result<ImportResolver> {
+    debug!("match imports");
+    let mut resolver = ImportResolver::new();
+
+    for entry in imports.iter() {
+        //TODO add more types
+        match entry {
+            Import::Global(module, name, instance) => {
+                debug!("=> Injecting global import");
+
+                resolver
+                    .inject_global(module.clone(), name.clone(), instance)
+                    .with_context(|| format!("Injecting global failed {} {}", module, name))?;
+            }
+        }
+    }
+
+    Ok(resolver)
 }
 
 fn allocate_functions(
@@ -61,8 +92,6 @@ fn allocate_functions(
     store: &mut Store,
 ) -> Result<()> {
     debug!("allocate function");
-
-    debug!("module {:#?}", m);
 
     // Gets all functions and imports
     let ty = validation::extract::get_funcs(&m);
@@ -123,8 +152,8 @@ fn allocate_tables(m: &Module, mod_instance: &mut ModuleInstance, store: &mut St
         store.tables.push(instance);
     }
 
-    debug!("Tables in mod_i {:?}", mod_instance.tableaddrs);
-    debug!("Tables in store {:#?}", store.tables);
+    debug!("Tables in module instance {:?}", mod_instance.tableaddrs);
+    debug!("Allocated empty tables in store {:#?}", store.tables);
 
     Ok(())
 }
@@ -165,20 +194,39 @@ fn allocate_globals(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
+    imports: &ImportResolver,
 ) -> Result<()> {
     debug!("allocate globals");
     // Gets all globals and imports
-    let ty = validation::extract::get_globals(&m);
+    let defined_globals = validation::extract::get_defined_globals(&m);
+    let imported_globals = validation::extract::get_imported_globals(&m);
 
-    for gl in ty.0.iter() {
+    debug!("defined globals {:?}", defined_globals);
+    debug!("imported globals {:?}", imported_globals);
+    debug!("imports {:?}", imports);
+
+    for gl in defined_globals.iter() {
         debug!("global {:#?}", gl);
+
+        //TODO move to `allocate_global` in store
         let instance = Variable {
             mutable: matches!(gl.ty.mu, Mu::Var),
-            val: get_expr_const_ty_global(&gl.init)?,
+            val: get_expr_const_ty_global(&gl.init, &mod_instance, store)?,
         };
 
-        mod_instance.globaladdrs.push(store.globals.len() as u32);
+        mod_instance
+            .globaladdrs
+            .push(GlobalAddr::new(store.globals.len() as u32));
         store.globals.push(instance);
+    }
+
+    for gl in imported_globals.iter() {
+        debug!("global {:#?}", gl);
+
+        mod_instance
+            .globaladdrs
+            .push(GlobalAddr::new(store.globals.len() as u32));
+        store.globals.push(imports.resolve_global(&gl.module_name, &gl.name)?);
     }
 
     debug!("Globals in mod_i {:?}", mod_instance.globaladdrs);
@@ -208,7 +256,11 @@ fn allocate_exports(
     Ok(())
 }
 
-pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Value> {
+pub(crate) fn get_expr_const_ty_global(
+    init: &[InstructionWrapper],
+    mod_instance: &ModuleInstance,
+    store: &mut Store,
+) -> Result<Value> {
     use wasm_parser::core::Instruction::*;
 
     if init.is_empty() {
@@ -216,11 +268,24 @@ pub(crate) fn get_expr_const_ty_global(init: &[InstructionWrapper]) -> Result<Va
         return Err(anyhow!("No expr to evaluate"));
     }
 
-    match init.get(0).unwrap().get_instruction() {
+    match init
+        .get(0)
+        .context("Cannot access instruction")?
+        .get_instruction()
+    {
         OP_I32_CONST(v) => Ok(Value::I32(*v)),
         OP_I64_CONST(v) => Ok(Value::I64(*v)),
         OP_F32_CONST(v) => Ok(Value::F32(*v)),
         OP_F64_CONST(v) => Ok(Value::F64(*v)),
+        OP_GLOBAL_GET(idx) => {
+            let addr = mod_instance
+                .globaladdrs
+                .get(*idx as usize)
+                .ok_or_else(|| anyhow!("Cannot find global addr by index"))?;
+            let global_instance = store.get_global_instance(addr)?;
+
+            Ok(global_instance.val)
+        }
         _ => {
             error!("Wrong expression");
             Err(anyhow!("Wrong expression"))

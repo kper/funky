@@ -47,7 +47,6 @@ pub fn parse(content: Vec<u8>) -> Result<Module> {
 
     let parsed = parse_module(slice).expect("Parsing failed");
 
-    debug!("{:#?}", parsed);
     let (_, sections) = parsed;
     Ok(Module { sections })
 }

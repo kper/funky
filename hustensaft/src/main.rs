@@ -1,6 +1,7 @@
 use docopt::Docopt;
 use funky::cli::parse_args;
 use funky::debugger::DebuggerProgramCounter;
+use funky::engine::import_resolver::Imports;
 use funky::engine::module::ModuleInstance;
 use funky::engine::Engine;
 use log::{debug, info};
@@ -20,8 +21,8 @@ use validation::validate;
 use wasm_parser::core::{Instruction, InstructionWrapper};
 use wasm_parser::{parse, read_wasm};
 
-use std::sync::mpsc::channel;
 use std::sync::atomic::AtomicBool;
+use std::sync::mpsc::channel;
 
 use crate::util::{Events, StatefulList};
 use anyhow::{Context, Result};
@@ -70,14 +71,10 @@ fn main() -> Result<()> {
     let debugger =
         DebuggerProgramCounter::new(instruction_watcher_tx, instruction_advancer_rx).unwrap();
 
-    let e = Arc::new(Mutex::new(Engine::new(mi, &module, Box::new(debugger))));
+    let e = Arc::new(Mutex::new(
+        Engine::new(mi, &module, Box::new(debugger), &Imports::new()).expect("Cannot create engine"),
+    ));
     debug!("engine {:#?}", e);
-
-    debug!("Instantiation engine");
-
-    if let Err(err) = e.lock().unwrap().instantiation(&module) {
-        panic!("{}", err);
-    }
 
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);

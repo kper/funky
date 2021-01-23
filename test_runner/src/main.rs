@@ -13,8 +13,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use funky::debugger::RelativeProgramCounter;
+use funky::engine::import_resolver::{Import, Imports};
 use funky::engine::module::ModuleInstance;
 use funky::engine::stack::StackContent;
+use funky::engine::store::GlobalInstance;
 use funky::engine::Engine;
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
@@ -236,10 +238,23 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
         let validation = validate(&module);
         let mi = ModuleInstance::new(&module);
 
-        let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::default()));
-        if let Err(err) = e.instantiation(&module) {}
+        let spectest_import = get_spectest_import();
+        let mut e = Engine::new(
+            mi,
+            &module,
+            Box::new(RelativeProgramCounter::default()),
+            &spectest_import,
+        );
 
-        fs_handler.insert(fs_name, Rc::new(RefCell::new(e)));
+        if let Err(err) = e {
+            eprintln!("ERROR: {}", err);
+            err.chain()
+                .skip(1)
+                .for_each(|cause| eprintln!("because: {}", cause));
+            std::process::exit(1);
+        }
+
+        fs_handler.insert(fs_name, Rc::new(RefCell::new(e.unwrap())));
     }
 
     let mut current_engine = None;
@@ -543,6 +558,36 @@ fn report_fail(
             case_file.write_all(format!("[FAILED]: {}({}) @ {}\n[FAILED]: Assertion failed!\n[FAILED]: Expected: \t{}\n[FAILED]: Actual:\t{:?}\n", case.action.field, args, case.line, expected, "not comparable" ).as_bytes()).unwrap();
         }
     }
+}
+
+/// The default imports
+fn get_spectest_import() -> Imports {
+    let mut imports = Imports::new();
+
+    let module = "spectest".to_string();
+
+    imports.push(Import::Global(
+        module.clone(),
+        "global_i32".to_string(),
+        GlobalInstance::immutable(funky::value::Value::I32(666)),
+    ));
+    imports.push(Import::Global(
+        module.clone(),
+        "global_i64".to_string(),
+        GlobalInstance::immutable(funky::value::Value::I64(666)),
+    ));
+    imports.push(Import::Global(
+        module.clone(),
+        "global_f32".to_string(),
+        GlobalInstance::immutable(funky::value::Value::F32(666.6)),
+    ));
+    imports.push(Import::Global(
+        module.clone(),
+        "global_f64".to_string(),
+        GlobalInstance::immutable(funky::value::Value::F64(666.6)),
+    ));
+
+    imports
 }
 
 /*

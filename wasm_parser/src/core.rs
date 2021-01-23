@@ -7,18 +7,27 @@ pub struct FuncAddr(usize);
 pub type TableIdx = u32;
 pub type MemoryIdx = u32;
 pub type GlobalIdx = u32;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GlobalAddr(usize);
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
 
-impl FuncAddr {
-    pub fn new(value: u32) -> Self {
-        Self(value as usize)
-    }
+macro_rules! implAddr {
+    ($name:ident) => {
+        impl $name {
+            pub fn new(value: u32) -> Self {
+                Self(value as usize)
+            }
 
-    pub fn get(&self) -> usize {
-        self.0
-    }
+            pub fn get(&self) -> usize {
+                self.0
+            }
+        }
+    };
 }
+
+implAddr!(FuncAddr);
+implAddr!(GlobalAddr);
 
 pub type Expr = Vec<InstructionWrapper>;
 

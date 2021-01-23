@@ -4,10 +4,12 @@ use crate::engine::stack::StackContent;
 use crate::engine::stack::Frame;
 use crate::engine::Variable;
 use crate::engine::{FuncInstance, TableInstance};
-use wasm_parser::core::{FuncAddr, FunctionBody, FunctionSignature};
+use wasm_parser::core::{FuncAddr, GlobalAddr, FunctionBody, FunctionSignature};
 
 use crate::PAGE_SIZE;
 use anyhow::{anyhow, Result};
+
+pub type GlobalInstance = Variable;
 
 #[derive(Debug, Default)]
 pub struct Store {
@@ -15,7 +17,7 @@ pub struct Store {
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
     pub stack: Vec<StackContent>,
-    pub globals: Vec<Variable>, //=GlobalInstance
+    pub globals: Vec<GlobalInstance>,
 }
 
 impl Store {
@@ -53,6 +55,15 @@ impl Store {
         self.funcs
             .get(func_addr.get())
             .ok_or_else(|| anyhow!("Cannot find function by addr {:?}", func_addr))
+    }
+
+    /// Get the global instance by address
+    pub(crate) fn get_global_instance(&self, global_addr: &GlobalAddr) -> Result<&GlobalInstance> {
+        debug!("Get global's instance by addr {:?}", global_addr);
+
+        self.globals
+            .get(global_addr.get())
+            .ok_or_else(|| anyhow!("Cannot find global by addr {:?}", global_addr))
     }
 
     pub(crate) fn get_func_instances(&self) -> &[FuncInstance] {
