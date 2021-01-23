@@ -17,6 +17,7 @@ use funky::engine::import_resolver::{Import, Imports};
 use funky::engine::module::ModuleInstance;
 use funky::engine::stack::StackContent;
 use funky::engine::store::GlobalInstance;
+use funky::engine::TableInstance;
 use funky::engine::Engine;
 use funky::value::Value;
 use funky::{parse, read_wasm, validate};
@@ -586,16 +587,11 @@ fn get_spectest_import() -> Imports {
         "global_f64".to_string(),
         GlobalInstance::immutable(funky::value::Value::F64(666.6)),
     ));
+    imports.push(Import::Table(
+        module.clone(),
+        "table".to_string(),
+        TableInstance::new(10, Some(20))
+    ));
 
     imports
 }
-
-/*
-fn fold_start() {
-    println!("travis_fold:start:$1\033[33;1m$2\033[0m");
-}
-
-fn fold_end() {
-    println!("\ntravis_fold:end:$1\r");
-}
-*/

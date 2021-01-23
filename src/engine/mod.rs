@@ -21,7 +21,7 @@ pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
-use crate::engine::table::TableInstance;
+pub use crate::engine::table::TableInstance;
 use crate::operations::*;
 use crate::engine::import_resolver::{Import, Imports};
 pub use crate::page::Page;

@@ -1,4 +1,4 @@
-use crate::engine::GlobalInstance;
+use crate::engine::{GlobalInstance, TableInstance};
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 //use wasm_parser::core::ImportEntry;
@@ -12,6 +12,7 @@ type Name = String;
 #[derive(Debug)]
 pub enum Import {
     Global(Module, Name, GlobalInstance),
+    Table(Module, Name, TableInstance),
 }
 
 /// Private lookup table for
@@ -49,10 +50,22 @@ impl ImportResolver {
     pub fn resolve_global(&self, module: &String, name: &String) -> Result<GlobalInstance> {
         debug!("resolve global {} {}", module, name);
 
-        match self.imports.lookup(module, name) {
-            Some(Import::Global(_, _, instance)) => return Ok(instance.clone()),
-            None => return Err(anyhow!("Cannot find global for {} {}", module, name)),
+        if let Some(Import::Global(_, _, instance)) = self.imports.lookup(module, name) {
+            return Ok(instance.clone());
         }
+
+        Err(anyhow!("Cannot find global for {} {}", module, name))
+    }
+
+    /// Get the imported table by module and name
+    pub fn resolve_table(&self, module: &String, name: &String) -> Result<TableInstance> {
+        debug!("resolve table {} {}", module, name);
+
+        if let Some(Import::Table(_, _, instance)) = self.imports.lookup(module, name) {
+            return Ok(instance.clone());
+        }
+
+        Err(anyhow!("Cannot find table for {} {}", module, name))
     }
 
     pub fn inject_global(
@@ -64,6 +77,20 @@ impl ImportResolver {
         self.imports.modules.insert(
             (module.clone(), name.clone()),
             Import::Global(module, name, instance.clone()),
+        );
+
+        Ok(())
+    }
+
+    pub fn inject_table(
+        &mut self,
+        module: Module,
+        name: Name,
+        instance: &TableInstance,
+    ) -> Result<()> {
+        self.imports.modules.insert(
+            (module.clone(), name.clone()),
+            Import::Table(module, name, instance.clone()),
         );
 
         Ok(())

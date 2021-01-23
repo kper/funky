@@ -29,7 +29,8 @@ pub fn allocate(
     //TODO host functions
 
     // Step 3a and 7
-    allocate_tables(m, mod_instance, store).context("Allocation table instances failed")?;
+    allocate_tables(m, mod_instance, store, &imports_entries, &imports)
+        .context("Allocating table instances failed")?;
 
     // Step 4a and 8
     allocate_memories(m, mod_instance, store).context("Allocating memory instances failed")?;
@@ -80,6 +81,13 @@ fn create_import_resolver(
                     .inject_global(module.clone(), name.clone(), instance)
                     .with_context(|| format!("Injecting global failed {} {}", module, name))?;
             }
+            Import::Table(module, name, instance) => {
+                debug!("=> Injecting table import");
+
+                resolver
+                    .inject_table(module.clone(), name.clone(), instance)
+                    .with_context(|| format!("Injecting table failed {} {}", module, name))?;
+            }
         }
     }
 
@@ -129,31 +137,42 @@ fn allocate_functions(
     Ok(())
 }
 
-fn allocate_tables(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<()> {
+fn allocate_tables(
+    m: &Module,
+    mod_instance: &mut ModuleInstance,
+    store: &mut Store,
+    imports: &Vec<&ImportEntry>,
+    import_resolver: &ImportResolver,
+) -> Result<()> {
     debug!("allocate tables");
 
     // Gets all tables and imports
-    let ty = validation::extract::get_tables(&m);
+    //let ty = validation::extract::get_tables(&m);
+    let ty = validation::extract::get_defined_tables(&m);
 
     for t in ty.iter() {
         debug!("table {:#?}", t);
         let instance = match t.limits {
-            Limits::Zero(n) => TableInstance {
-                elem: vec![None; n as usize],
-                max: None,
-            },
-            Limits::One(n, m) => TableInstance {
-                elem: vec![None; n as usize],
-                max: Some(m),
-            },
+            Limits::Zero(n) => TableInstance::new(n, None),
+            Limits::One(n, m) => TableInstance::new(n, Some(m)),
         };
 
         mod_instance.tableaddrs.push(store.tables.len() as u32);
         store.tables.push(instance);
     }
 
-    debug!("Tables in module instance {:?}", mod_instance.tableaddrs);
-    debug!("Allocated empty tables in store {:#?}", store.tables);
+    for entry in imports {
+        if matches!(entry.desc, ImportDesc::Table { .. }) {
+            let instance = import_resolver.resolve_table(&entry.module_name, &entry.name)?;
+            debug!("table {:#?}", instance);
+
+            mod_instance.tableaddrs.push(store.tables.len() as u32);
+            store.tables.push(instance.clone());
+        }
+    }
+
+    debug!("Tables in mod_i {:?}", mod_instance.tableaddrs);
+    debug!("Tables in store {:#?}", store.tables);
 
     Ok(())
 }
@@ -226,7 +245,9 @@ fn allocate_globals(
         mod_instance
             .globaladdrs
             .push(GlobalAddr::new(store.globals.len() as u32));
-        store.globals.push(imports.resolve_global(&gl.module_name, &gl.name)?);
+        store
+            .globals
+            .push(imports.resolve_global(&gl.module_name, &gl.name)?);
     }
 
     debug!("Globals in mod_i {:?}", mod_instance.globaladdrs);

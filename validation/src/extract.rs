@@ -123,8 +123,8 @@ pub fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
     all
 }
 
-pub fn get_tables(module: &Module) -> Vec<&TableType> {
-    let ty: Vec<_> = module
+pub fn get_defined_tables(module: &Module) -> Vec<&TableType> {
+    module
         .sections
         .iter()
         .filter_map(|ref w| match w {
@@ -132,7 +132,11 @@ pub fn get_tables(module: &Module) -> Vec<&TableType> {
             _ => None,
         })
         .flatten()
-        .collect();
+        .collect()
+}
+
+pub fn get_tables(module: &Module) -> Vec<&TableType> {
+    let ty = get_defined_tables(module);
 
     let imported: Vec<_> = module
         .sections
