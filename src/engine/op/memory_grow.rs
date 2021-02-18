@@ -1,4 +1,3 @@
-use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use crate::engine::memory::grow_memory;
 use crate::value::Value::I32;
@@ -16,7 +15,7 @@ impl Engine {
         let instance = &mut self.store.memory[*addr as usize];
         let _sz = instance.data.len() / PAGE_SIZE;
 
-        if let Some(Value(I32(n))) = self.store.stack.pop() {
+        if let Some(I32(n)) = self.store.stack.pop() {
             if n < 0 {
                 return Err(anyhow!("Memory grow expected n > 0, got {}", n));
             }
@@ -24,11 +23,11 @@ impl Engine {
             match grow_memory(instance, Page::new(n as usize)) {
                 Err(()) => {
                     error!("Memory growing failed because paging failed.");
-                    self.store.stack.push(Value(I32(-1)));
+                    self.store.stack.push(I32(-1));
                 }
                 Ok(_new_sz) => {
                     //debug!("Old memory size {} pages", _new_sz);
-                    self.store.stack.push(Value(I32(_sz as i32)));
+                    self.store.stack.push(I32(_sz as i32));
                 }
             }
         } else {

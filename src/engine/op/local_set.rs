@@ -1,5 +1,4 @@
 use crate::engine::stack::Frame;
-use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use anyhow::Result;
 use wasm_parser::core::LocalIdx;
@@ -10,7 +9,7 @@ impl Engine {
         debug!("locals {:#?}", fr.locals);
 
         match self.store.stack.pop() {
-            Some(Value(v)) => {
+            Some(v) => {
                 match fr.locals.get_mut(*idx as usize) {
                     Some(k) => *k = v, //Exists replace
                     None => {

@@ -1,6 +1,6 @@
 use crate::engine::module::ModuleInstance;
 use crate::engine::stack::Frame;
-use crate::engine::stack::StackContent;
+use crate::engine::stack::CtrlStackContent;
 use crate::engine::store::Store;
 use crate::value::Value;
 use anyhow::{anyhow, Context, Result};
@@ -31,7 +31,7 @@ pub fn instantiation(
 
     // Step 8
 
-    store.stack.push(StackContent::Frame(frame));
+    store.ctrl_stack.push(CtrlStackContent::Frame(frame));
 
     // Step 9 and Step 13
     if let Err(err) = instantiate_elements(m, mod_instance, store) {
@@ -44,7 +44,7 @@ pub fn instantiation(
     }
 
     // Step 11 and 12
-    if let Some(StackContent::Frame(f)) = store.stack.pop() {
+    if let Some(CtrlStackContent::Frame(f)) = store.ctrl_stack.pop() {
         let frame = Frame {
             locals: Vec::new(),
             arity: 0,

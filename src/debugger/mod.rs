@@ -1,4 +1,4 @@
-use crate::engine::stack::StackContent;
+use crate::engine::stack::CtrlStackContent;
 use crate::value::Value;
 use anyhow::Result;
 use log::debug;
@@ -12,12 +12,12 @@ use std::sync::mpsc::{Receiver, Sender};
 /// `RelativeProgramCounter` does not. Therefore, we should avoid allocations.
 pub struct BorrowedProgramState<'a> {
     current_pc: usize,
-    stack: &'a [StackContent],
+    stack: &'a [Value],
     locals: &'a [Value]
 }
 
 impl<'a> BorrowedProgramState<'a> {
-    pub fn new(current_pc: usize, stack: &'a [StackContent], locals: &'a [Value]) -> Self {
+    pub fn new(current_pc: usize, stack: &'a [Value], locals: &'a [Value]) -> Self {
         Self {
             current_pc,
             stack,
@@ -39,12 +39,12 @@ impl<'a> Into<ProgramState> for BorrowedProgramState<'a> {
 #[derive(Debug, Clone)]
 pub struct ProgramState {
     current_pc: usize,
-    stack: Vec<StackContent>,
+    stack: Vec<Value>,
     locals: Vec<Value>,
 }
 
 impl ProgramState {
-    pub fn new(current_pc: usize, stack: Vec<StackContent>, locals: Vec<Value>) -> Self {
+    pub fn new(current_pc: usize, stack: Vec<Value>, locals: Vec<Value>) -> Self {
         Self {
             current_pc,
             stack,

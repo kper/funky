@@ -31,6 +31,7 @@ Engine {
         tables: [],
         memory: [],
         stack: [],
+        ctrl_stack: [],
         globals: [
             Variable {
                 mutable: false,

@@ -15,7 +15,6 @@ use std::sync::{Arc, Mutex};
 use funky::debugger::RelativeProgramCounter;
 use funky::engine::import_resolver::{Import, Imports};
 use funky::engine::module::ModuleInstance;
-use funky::engine::stack::StackContent;
 use funky::engine::store::GlobalInstance;
 use funky::engine::TableInstance;
 use funky::engine::Engine;
@@ -317,6 +316,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
 
                 debug!("Returned actuals {:?}", actuals);
 
+                /*
                 if !actuals.iter().all(|x| x.is_value()) {
                     report_fail(
                         &mut report_file,
@@ -330,7 +330,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                     error!("Executed function did not return a value");
 
                     continue;
-                }
+                }*/
             }
             Command::AssertReturn(case) => {
                 total_stats.total_count.fetch_add(1, Ordering::Relaxed);
@@ -401,7 +401,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
 
                             vec![]
                         } else {
-                            vec![StackContent::Value(res.unwrap())]
+                            vec![res.unwrap()]
                         }
                     }
                 };
@@ -422,27 +422,8 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
 
                 // Get the actual results based on the count how many results we expect
 
-                if !actuals.iter().all(|x| x.is_value()) {
-                    report_fail(
-                        &mut report_file,
-                        &mut case_file,
-                        &case,
-                        p,
-                        expected,
-                        ExecutionResult::NotComparable,
-                    );
-
-                    error!("Executed function did not return a value");
-
-                    continue;
-                }
-
                 let actuals: Vec<_> = actuals
                     .into_iter()
-                    .filter_map(|w| match w {
-                        StackContent::Value(v) => Some(v),
-                        _ => None,
-                    })
                     .rev()
                     .collect();
 

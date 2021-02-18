@@ -8,7 +8,7 @@ use crate::PAGE_SIZE;
 use crate::engine::func::FuncInstance;
 use crate::engine::memory::MemoryInstance;
 use crate::engine::stack::Frame;
-use crate::engine::stack::StackContent;
+use crate::stack::CtrlStackContent;
 
 #[test]
 #[should_panic(expected = "Function expected different parameters!")]
@@ -68,7 +68,7 @@ fn test_invoke_wrong_ty_parameters() {
 #[test]
 fn test_run_function() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.ctrl_stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: Vec::new(),
         //module_instance: e.downgrade_mod_instance(),
@@ -88,8 +88,8 @@ fn test_run_function() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(84)), e.store.stack.pop().unwrap());
-    e.store.stack = vec![StackContent::Frame(Frame {
+    assert_eq!(I32(84), e.store.stack.pop().unwrap());
+    e.store.ctrl_stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: Vec::new(),
         //module_instance: e.downgrade_mod_instance(),
@@ -112,14 +112,14 @@ fn test_run_function() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(1)).is_ok());
-    assert_eq!(StackContent::Value(I64(128)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I64(128)), e.store.stack.pop().unwrap());
 }
 
 #[test]
 fn test_function_with_params() {
     let mut e = empty_engine();
 
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.ctrl_stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![I32(1), I32(4)],
         //module_instance: e.downgrade_mod_instance(),
@@ -139,7 +139,7 @@ fn test_function_with_params() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(5)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I32(5)), e.store.stack.pop().unwrap());
 }
 
 #[test]
@@ -147,7 +147,7 @@ fn test_function_block() {
     let mut e = empty_engine();
     let mut counter = Counter::default();
 
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![I32(1), I32(1)],
         //module_instance: e.downgrade_mod_instance(),
@@ -173,7 +173,7 @@ fn test_function_block() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(2)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I32(2)), e.store.stack.pop().unwrap());
 }
 
 #[test]
@@ -182,8 +182,8 @@ fn test_function_if() {
     let mut counter = Counter::default();
 
     e.store.stack = vec![
-        StackContent::Value(Value::I32(1)),
-        StackContent::Frame(Frame {
+        CtrlStackContent::Value(Value::I32(1)),
+        CtrlStackContent::Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
                                           //module_instance: e.downgrade_mod_instance(),
@@ -210,7 +210,7 @@ fn test_function_if() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(2)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I32(2)), e.store.stack.pop().unwrap());
 }
 
 #[test]
@@ -219,8 +219,8 @@ fn test_function_if_false() {
     let mut counter = Counter::default();
 
     e.store.stack = vec![
-        StackContent::Value(Value::I32(0)), //THIS CHANGED
-        StackContent::Frame(Frame {
+        CtrlStackContent::Value(Value::I32(0)), //THIS CHANGED
+        CtrlStackContent::Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
                                           //module_instance: e.downgrade_mod_instance(),
@@ -256,8 +256,8 @@ fn test_function_if_else_1() {
     let mut counter = Counter::default();
 
     e.store.stack = vec![
-        StackContent::Value(Value::I32(1)),
-        StackContent::Frame(Frame {
+        CtrlStackContent::Value(Value::I32(1)),
+        CtrlStackContent::Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
                                           //module_instance: e.downgrade_mod_instance(),
@@ -286,7 +286,7 @@ fn test_function_if_else_1() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        Some(StackContent::Value(Value::I32(2))),
+        Some(CtrlStackContent::Value(Value::I32(2))),
         e.store.stack.pop()
     );
 }
@@ -297,8 +297,8 @@ fn test_function_if_else_2() {
     let mut counter = Counter::default();
 
     e.store.stack = vec![
-        StackContent::Value(Value::I32(0)), //changed
-        StackContent::Frame(Frame {
+        CtrlStackContent::Value(Value::I32(0)), //changed
+        CtrlStackContent::Frame(Frame {
             arity: 1,
             locals: vec![I32(1), I32(1)], //arguments for LOCAL_GET
                                           //module_instance: e.downgrade_mod_instance(),
@@ -327,7 +327,7 @@ fn test_function_if_else_2() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        Some(StackContent::Value(Value::I32(-1000))),
+        Some(CtrlStackContent::Value(Value::I32(-1000))),
         e.store.stack.pop()
     );
 }
@@ -335,7 +335,7 @@ fn test_function_if_else_2() {
 #[test]
 fn test_function_local_set() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![I32(1), I32(4)],
         //module_instance: e.downgrade_mod_instance(),
@@ -363,7 +363,7 @@ fn test_function_local_set() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(37)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I32(37)), e.store.stack.pop().unwrap());
 }
 
 #[test]
@@ -482,7 +482,7 @@ fn test_memory_load_i32() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(Some(&StackContent::Value(I32(0))), e.store.stack.last());
+    assert_eq!(Some(&CtrlStackContent::Value(I32(0))), e.store.stack.last());
 }
 
 #[test]
@@ -550,7 +550,7 @@ fn test_memory_load_i32_of_u8() {
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!((4 as i32).to_le_bytes(), e.store.memory[0].data.as_slice());
     assert_eq!(
-        Some(StackContent::Value(I32(4 as i32))),
+        Some(CtrlStackContent::Value(I32(4 as i32))),
         e.store.stack.pop()
     );
 }
@@ -780,7 +780,7 @@ fn test_num_store_f64() {
 #[test]
 fn test_num_wrap_i64_max() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -798,7 +798,7 @@ fn test_num_wrap_i64_max() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        StackContent::Value(I32(i32::MAX)),
+        CtrlStackContent::Value(I32(i32::MAX)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -806,7 +806,7 @@ fn test_num_wrap_i64_max() {
 #[test]
 fn test_num_wrap_i64_min() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -824,7 +824,7 @@ fn test_num_wrap_i64_min() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        StackContent::Value(I32(i32::MIN)),
+        CtrlStackContent::Value(I32(i32::MIN)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -832,7 +832,7 @@ fn test_num_wrap_i64_min() {
 #[test]
 fn test_num_wrap_i64_overflow() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -854,7 +854,7 @@ fn test_num_wrap_i64_overflow() {
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     // account for 0 value
     assert_eq!(
-        StackContent::Value(I32(i32::MIN + 49)),
+        CtrlStackContent::Value(I32(i32::MIN + 49)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -862,7 +862,7 @@ fn test_num_wrap_i64_overflow() {
 #[test]
 fn test_num_extend_s() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -879,12 +879,12 @@ fn test_num_extend_s() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I64(-1)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I64(-1)), e.store.stack.pop().unwrap());
 }
 #[test]
 fn test_num_extend_u() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -902,7 +902,7 @@ fn test_num_extend_u() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        StackContent::Value(I64(u32::MAX as i64)),
+        CtrlStackContent::Value(I64(u32::MAX as i64)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -910,7 +910,7 @@ fn test_num_extend_u() {
 #[test]
 fn test_num_trunc_s() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -927,13 +927,13 @@ fn test_num_trunc_s() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(I32(234)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(I32(234)), e.store.stack.pop().unwrap());
 }
 
 #[test]
 fn test_num_promote() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -954,7 +954,7 @@ fn test_num_promote() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        StackContent::Value(F64(1.1234568357467651)),
+        CtrlStackContent::Value(F64(1.1234568357467651)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -962,7 +962,7 @@ fn test_num_promote() {
 #[test]
 fn test_num_demote() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -984,7 +984,7 @@ fn test_num_demote() {
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     // float got demoted - we loose precision
     assert_eq!(
-        StackContent::Value(F32(1.1234568357467651)),
+        CtrlStackContent::Value(F32(1.1234568357467651)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -992,7 +992,7 @@ fn test_num_demote() {
 #[test]
 fn test_num_convert_s() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -1009,13 +1009,13 @@ fn test_num_convert_s() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(StackContent::Value(F32(-1.0)), e.store.stack.pop().unwrap());
+    assert_eq!(CtrlStackContent::Value(F32(-1.0)), e.store.stack.pop().unwrap());
 }
 
 #[test]
 fn test_num_convert_u() {
     let mut e = empty_engine();
-    e.store.stack = vec![StackContent::Frame(Frame {
+    e.store.stack = vec![CtrlStackContent::Frame(Frame {
         arity: 1,
         locals: vec![],
         //module_instance: e.downgrade_mod_instance(),
@@ -1033,7 +1033,7 @@ fn test_num_convert_u() {
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
     assert_eq!(
-        StackContent::Value(F32(u32::MAX as f32)),
+        CtrlStackContent::Value(F32(u32::MAX as f32)),
         e.store.stack.pop().unwrap()
     );
 }
@@ -1081,5 +1081,5 @@ fn test_memory_grow_with_max() {
         .is_ok());
 
     assert!(e.run_function(&FuncAddr::new(0)).is_ok());
-    assert_eq!(Some(&StackContent::Value(I32(-1))), e.store.stack.last());
+    assert_eq!(Some(&CtrlStackContent::Value(I32(-1))), e.store.stack.last());
 }

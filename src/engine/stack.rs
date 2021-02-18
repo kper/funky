@@ -2,28 +2,26 @@ use crate::engine::prelude::*;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum StackContent {
-    Value(Value),
+pub enum CtrlStackContent {
     Frame(Frame),
     Label(Label),
 }
 
-impl StackContent {
-    pub fn is_value(&self) -> bool {
-        matches!(self, StackContent::Value(_))
+impl CtrlStackContent {
+    pub fn is_label(&self) -> bool {
+        matches!(self, CtrlStackContent::Label(_))
     }
 
-    pub fn is_label(&self) -> bool {
-        matches!(self, StackContent::Label(_))
+    pub fn is_frame(&self) -> bool {
+        matches!(self, CtrlStackContent::Frame(_))
     }
 }
 
-impl fmt::Display for StackContent {
+impl fmt::Display for CtrlStackContent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self {
-            StackContent::Label(label) => write!(f, "{:?}", label),
-            StackContent::Frame(frame) => write!(f, "{:?}", frame),
-            StackContent::Value(value) => write!(f, "{:?}", value),
+            CtrlStackContent::Label(label) => write!(f, "{:?}", label),
+            CtrlStackContent::Frame(frame) => write!(f, "{:?}", frame),
         }
     }
 }
@@ -51,7 +49,6 @@ impl Label {
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
-    //pub module_instance: Weak<RefCell<ModuleInstance>>,
 }
 
 impl PartialEq for Frame {

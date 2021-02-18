@@ -1,9 +1,10 @@
 use crate::engine::memory::MemoryInstance;
-use crate::engine::stack::StackContent;
+use crate::engine::stack::CtrlStackContent;
 
 use crate::engine::stack::Frame;
 use crate::engine::Variable;
 use crate::engine::{FuncInstance, TableInstance};
+use crate::value::Value;
 use wasm_parser::core::{FuncAddr, GlobalAddr, FunctionBody, FunctionSignature};
 
 use crate::PAGE_SIZE;
@@ -16,7 +17,8 @@ pub struct Store {
     pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
-    pub stack: Vec<StackContent>,
+    pub stack: Vec<Value>,
+    pub ctrl_stack: Vec<CtrlStackContent>,
     pub globals: Vec<GlobalInstance>,
 }
 
@@ -25,7 +27,7 @@ impl Store {
     pub(crate) fn default_with_frame() -> Self {
         let mut store = Store::default();
 
-        store.stack.push(StackContent::Frame(Frame {
+        store.ctrl_stack.push(CtrlStackContent::Frame(Frame {
             arity: 0,
             locals: Vec::new(),
         }));

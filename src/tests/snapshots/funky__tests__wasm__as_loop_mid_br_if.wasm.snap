@@ -1,6 +1,7 @@
 ---
 source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
+
 ---
 Engine {
     module: ModuleInstance {
@@ -194,6 +195,7 @@ Engine {
         tables: [],
         memory: [],
         stack: [],
+        ctrl_stack: [],
         globals: [],
     },
     debugger: RelativeProgramCounter(

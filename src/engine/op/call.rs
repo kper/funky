@@ -1,7 +1,6 @@
-use crate::engine::map_stackcontent_to_value;
-use crate::engine::{Engine, StackContent};
+use crate::engine::{Engine};
 use crate::value::Value;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{bail, Context, Result};
 use wasm_parser::core::FuncAddr;
 
 impl Engine {
@@ -43,55 +42,24 @@ impl Engine {
     /// Drops the `param_count` off the stack and returns it
     /// so it can be used as arguments for a web assembly function.
     /// However, we are ignoring labels and frames.
-    pub(crate) fn extract_args_of_stack(&mut self, param_count: usize) -> Result<Vec<Value>> {
-        let mut count = 0;
-        let mut value_count = 0;
-
+    pub(crate) fn extract_args_of_stack(&mut self, mut param_count: usize) -> Result<Vec<Value>> {
         if param_count == 0 {
             return Ok(vec![]);
         }
 
-        // Count until we counted at least `function_ty.param_types.len()` values of the stack
-        for element in self.store.stack.iter().rev() {
-            debug!("Element is {:?}", element);
-            count += 1;
+        let mut args =  Vec::new();
 
-            if !matches!(element, StackContent::Value(_)) {
-                // If not value, then go to next
-                continue;
-            } else {
-                value_count += 1;
+        while param_count > 0 {
+            if let Some(val) = self.store.stack.pop() {
+                args.push(val);
+            } 
+            else {
+                bail!("No elements left at the stack.");
             }
 
-            debug!(
-                "value_count {} >= params {} then break",
-                value_count, param_count
-            );
-            if value_count >= param_count {
-                break;
-            }
+            param_count -= 1;
         }
 
-        debug!("=> count is {}", count);
-
-        let new_args = self
-            .store
-            .stack
-            .split_off(self.store.stack.len() - count)
-            .into_iter();
-
-        let mut non_values = new_args
-            .clone()
-            .filter(|w| !matches!(w, StackContent::Value(_)))
-            .collect();
-        // Append labels and frames back
-        self.store.stack.append(&mut non_values);
-
-        let args: Vec<_> = new_args
-            .filter(|w| matches!(w, StackContent::Value(_)))
-            .map(map_stackcontent_to_value)
-            .collect::<Result<_>>()
-            .context("Cannot map StackContent to Value")?;
 
         debug!("=> Stack is {:#?}", self.store.stack);
         debug!("=> args {:#?}", args);

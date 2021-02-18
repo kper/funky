@@ -1,4 +1,3 @@
-use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use crate::value::Value::I32;
 use anyhow::{anyhow, Result};
@@ -15,7 +14,7 @@ impl Engine {
 
         let sz = instance.data.len() / PAGE_SIZE;
 
-        self.store.stack.push(Value(I32(sz as i32)));
+        self.store.stack.push(I32(sz as i32));
 
         Ok(())
     }

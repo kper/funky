@@ -1,7 +1,7 @@
-use crate::engine::stack::{Frame, Label, StackContent};
+use crate::engine::stack::{Frame, Label, CtrlStackContent};
 use crate::engine::Engine;
 use crate::engine::InstructionOutcome;
-use crate::value::Arity;
+use crate::value::{Arity, Value};
 use anyhow::{Result, anyhow};
 use wasm_parser::core::{BlockType, CodeBlock};
 
@@ -35,7 +35,7 @@ impl Engine {
         let mut block_args = self.get_stack_elements_entering_block(param_count)?;
 
         // Pushing the label
-        self.store.stack.push(StackContent::Label(label));
+        self.store.ctrl_stack.push(CtrlStackContent::Label(label));
 
         // Pushing arguments back on the stack
         self.store.stack.append(&mut block_args);
@@ -48,7 +48,7 @@ impl Engine {
     fn get_stack_elements_entering_block(
         &mut self,
         param_count: u32,
-    ) -> Result<Vec<StackContent>> {
+    ) -> Result<Vec<Value>> {
         debug!(
             "For entering a block, popping off parameters {}",
             param_count
