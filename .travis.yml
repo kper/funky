@@ -4,6 +4,7 @@ rust:
 before_script:
   - rustup component add clippy 
   - cargo install cargo-audit
+  - apt-get install -y wabt
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
