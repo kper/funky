@@ -43,3 +43,4 @@ termion = "1.5"
 
 [dev-dependencies]
 insta = "*"
+tempdir = "*"
