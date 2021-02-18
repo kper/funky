@@ -14,20 +14,20 @@ impl Engine {
     ) -> Result<InstructionOutcome> {
         debug!("OP_BLOCK {:?}", ty);
 
-        self.setup_stack_for_entering_block(ty)?;
+        self.setup_stack_for_entering_block(ty, block_instructions)?;
 
         let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
         Ok(outcome)
     }
 
-    pub(crate) fn setup_stack_for_entering_block(&mut self, ty: &BlockType) -> Result<()> {
+    pub(crate) fn setup_stack_for_entering_block(&mut self, ty: &BlockType, block: &CodeBlock) -> Result<()> {
         let param_count = self.get_param_count_block(&ty)?;
         let return_count = self.get_return_count_block(&ty)?;
 
         debug!("Arity for block ({:?}) is {}", ty, return_count);
 
-        let label = Label::new(return_count);
+        let label = Label::new(return_count, block.id);
 
         debug!("=> stack {:#?}", self.store.stack);
 

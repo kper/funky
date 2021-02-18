@@ -31,17 +31,26 @@ impl fmt::Display for CtrlStackContent {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Label {
     arity: Arity,
+    /// the `id` of the block to which the
+    /// program counter has to jump for the
+    /// beginning.
+    start_block_id: usize,
 }
 
 impl Label {
     /// Create new label
-    pub fn new(arity: Arity) -> Self {
-        Label { arity }
+    pub fn new(arity: Arity, block_id: usize) -> Self {
+        Label { arity, start_block_id: block_id }
     }
 
     /// Get the arity of the label
     pub fn get_arity(&self) -> Arity {
         self.arity
+    }
+
+    /// Get the `id` of the start block
+    pub fn get_start_block(&self) -> usize {
+        self.start_block_id
     }
 }
 

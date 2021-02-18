@@ -895,22 +895,21 @@ fn test_get_exported_global() {
 }
 
 #[test]
-fn test_fac_ssa() {
+fn test_run_fib() {
     //env_logger::init();
-
-    let engine = test_run_engine!("fac.wasm", 5, vec![I64(25)]); // the function id is 7, but the export id is 5
+    let engine = test_run_engine!("fib.wasm", 1, vec![I32(10)]);
     assert_eq!(
-        Some(&(I64(7034535277573963776))),
+        Some(&(I32(55))),
         engine.store.stack.last()
     );
 }
 
 #[test]
-fn test_run_fib() {
-    env_logger::init();
-    let engine = test_run_engine!("fib.wasm", 1, vec![I32(10)]);
+fn test_run_fib_higher() {
+    //env_logger::init();
+    let engine = test_run_engine!("fib.wasm", 1, vec![I32(25)]);
     assert_eq!(
-        Some(&(I32(55))),
+        Some(&(I32(75025))),
         engine.store.stack.last()
     );
 }

@@ -1119,15 +1119,21 @@ impl Engine {
                         .with_context(|| format!("OP_BLOCK with ty {:?} failed", ty))?;
 
                     match outcome {
-                        InstructionOutcome::BRANCH(0) => {}
+                        InstructionOutcome::BRANCH(0) => {
+                            debug!("Instruction outcome was 0. Repeat.");
+                        }
                         InstructionOutcome::BRANCH(x) => {
+                            debug!("Instruction outcome was {}.", x - 1);
                             self.exit_block()?;
                             return Ok(InstructionOutcome::BRANCH(x - 1));
                         }
                         InstructionOutcome::RETURN => {
+                            debug!("Instruction outcome was return.");
                             return Ok(InstructionOutcome::RETURN);
                         }
-                        InstructionOutcome::EXIT => {}
+                        InstructionOutcome::EXIT => {
+                            debug!("Instruction outcome was exit.");
+                        }
                     }
 
                     self.exit_block()?;
@@ -1135,7 +1141,7 @@ impl Engine {
                 OP_LOOP(ty, block_instructions) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    self.setup_stack_for_entering_block(ty)?;
+                    self.setup_stack_for_entering_block(ty, block_instructions)?;
 
                     loop {
                         let outcome = self
@@ -1172,7 +1178,7 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
 
-                            self.setup_stack_for_entering_block(ty)?;
+                            self.setup_stack_for_entering_block(ty, block_instructions_branch)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch.iter())
@@ -1206,7 +1212,7 @@ impl Engine {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            self.setup_stack_for_entering_block(ty)?;
+                            self.setup_stack_for_entering_block(ty, block_instructions_branch_1)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_1.iter())
@@ -1228,7 +1234,7 @@ impl Engine {
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            self.setup_stack_for_entering_block(ty)?;
+                            self.setup_stack_for_entering_block(ty, block_instructions_branch_2)?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_2.iter())
@@ -1332,20 +1338,23 @@ impl Engine {
         debug!("exit_block");
 
         // Get all values from the stack
-        let mut val_m : Vec<_> = self.store.stack.drain(0..).collect();
+        //let mut val_m : Vec<_> = self.store.stack.drain(0..).collect();
+
+        //debug!("Popped m {} elements from the stack", val_m.len());
 
         /*
         while let Some(Value(_v)) = self.store.stack.last() {
             val_m.push(self.store.stack.pop().unwrap());
         }*/
 
-        val_m.reverse();
+        //val_m.reverse();
 
-        debug!("values before applying block's arity {:?}", val_m);
+        //debug!("values before applying block's arity {:?}", val_m);
 
         if let Some(Label(lb)) = self.store.ctrl_stack.pop() {
             debug!("Label on the top of the stack {:?}", lb);
 
+            /*
             // If and If-Else labels have arity 0
             // therefore, we keep all results
             if lb.get_arity() != 0 {
@@ -1356,12 +1365,13 @@ impl Engine {
                     .rev()
                     .collect();
             }
+            */
         } else {
             return Err(anyhow!("Expected label, but it's not a label"));
         }
 
-        debug!("values after applying block's arity {:?}", val_m);
-        self.store.stack.append(&mut val_m);
+        //debug!("values after applying block's arity {:?}", val_m);
+        //self.store.stack.append(&mut val_m);
 
         Ok(())
     }
