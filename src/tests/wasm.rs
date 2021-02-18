@@ -906,7 +906,6 @@ fn test_fac_ssa() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_run_fib() {
     env_logger::init();

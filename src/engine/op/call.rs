@@ -25,18 +25,17 @@ impl Engine {
             )
         })?;
 
-        //debug!("=> Resetting stack");
-        //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
+        debug!("=> Resetting stack");
+        let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
 
         self.invoke_function(func_addr, args)
             .with_context(|| format!("Invoking function {:?} failed", func_addr))?;
 
-        /*
         debug!("=> Restoring stack");
         // Insert `stack` before the values of `self.store.stack`
         let mut new_stack: Vec<_> = self.store.stack.drain(0..).collect();
         self.store.stack = stack.drain(0..).collect();
-        self.store.stack.append(&mut new_stack);*/
+        self.store.stack.append(&mut new_stack);
 
         Ok(())
     }

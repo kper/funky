@@ -3,7 +3,7 @@ use wasm_parser::core::{ExternalKindType, ExportEntry};
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExportInstance {
     pub name: String,
-    pub value: ExternalKindType, //TODO maybe drop the Type in name?
+    pub value: ExternalKindType,
 }
 
 impl Into<ExportInstance> for &ExportEntry {

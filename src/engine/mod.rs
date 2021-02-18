@@ -332,6 +332,7 @@ impl Engine {
     }
 
     /// Adding new function to the engine
+    /// It will allocate the function in store and add it to the module's code.
     pub(crate) fn add_function(
         &mut self,
         signature: FunctionSignature,
