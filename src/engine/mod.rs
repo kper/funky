@@ -588,7 +588,7 @@ impl Engine {
                 .context("Setting program state failed")?;
 
             let instruction = wrapped_instruction.get_instruction();
-            debug!("Evaluating instruction {:?}", instruction);
+            debug!("Evaluating instruction {}", instruction);
 
             match &instruction {
                 OP_LOCAL_GET(idx) => {
