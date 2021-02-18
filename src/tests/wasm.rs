@@ -16,12 +16,15 @@ macro_rules! test_file_engine {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
         let engine = Engine::new(
             instance,
             &module,
             Box::new(RelativeProgramCounter::default()),
-        );
+            &imports
+        ).unwrap();
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -33,12 +36,15 @@ macro_rules! test_run_engine {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
-        );
+            &imports,
+        ).unwrap();
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
@@ -61,12 +67,15 @@ macro_rules! test_get_exported_global {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
-        );
+            &imports
+        ).unwrap();
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
@@ -80,14 +89,17 @@ macro_rules! allocation {
             sections: $sections,
         };
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
         let engine = Engine::new(
             instance,
             &module,
             Box::new(RelativeProgramCounter::default()),
+            &imports
         );
 
-        engine
+        engine.unwrap()
     }};
 }
 
@@ -235,7 +247,7 @@ fn test_allocation_globals() {
     // Store has a global instance
 
     assert_eq!(1, engine.module.globaladdrs.len());
-    assert_eq!(Some(&0), engine.module.globaladdrs.get(0));
+    assert_eq!(Some(&GlobalAddr::new(0)), engine.module.globaladdrs.get(0));
 
     assert_eq!(1, engine.store.globals.len());
     assert_eq!(

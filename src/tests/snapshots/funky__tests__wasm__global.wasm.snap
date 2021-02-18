@@ -1,6 +1,7 @@
 ---
 source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
+
 ---
 Engine {
     module: ModuleInstance {
@@ -11,7 +12,9 @@ Engine {
         tableaddrs: [],
         memaddrs: [],
         globaladdrs: [
-            0,
+            GlobalAddr(
+                0,
+            ),
         ],
         exports: [
             ExportInstance {
