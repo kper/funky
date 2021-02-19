@@ -11,10 +11,16 @@ Engine {
                 locals: [],
                 code: [
                     InstructionWrapper {
-                        instruction_id: 4,
+                        instruction_id: 5,
+                        instruction: OP_I32_CONST(
+                            2,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 6,
                         instruction: OP_BLOCK(
                             ValueType(
-                                I32,
+                                I64,
                             ),
                             CodeBlock {
                                 id: 1,
@@ -27,13 +33,19 @@ Engine {
                                     },
                                     InstructionWrapper {
                                         instruction_id: 2,
-                                        instruction: OP_I32_CONST(
-                                            1,
+                                        instruction: OP_I64_CONST(
+                                            7,
                                         ),
                                     },
                                     InstructionWrapper {
                                         instruction_id: 3,
-                                        instruction: OP_I32_ADD,
+                                        instruction: OP_BR(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 4,
+                                        instruction: OP_RETURN,
                                     },
                                 ],
                             },
@@ -47,6 +59,7 @@ Engine {
                 param_types: [],
                 return_types: [
                     I32,
+                    I64,
                 ],
             },
         ],
@@ -60,7 +73,7 @@ Engine {
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "main",
+                name: "as-return-values",
                 value: Function {
                     ty: 0,
                 },
@@ -75,16 +88,23 @@ Engine {
                     param_types: [],
                     return_types: [
                         I32,
+                        I64,
                     ],
                 },
                 code: FunctionBody {
                     locals: [],
                     code: [
                         InstructionWrapper {
-                            instruction_id: 4,
+                            instruction_id: 5,
+                            instruction: OP_I32_CONST(
+                                2,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 6,
                             instruction: OP_BLOCK(
                                 ValueType(
-                                    I32,
+                                    I64,
                                 ),
                                 CodeBlock {
                                     id: 1,
@@ -97,13 +117,19 @@ Engine {
                                         },
                                         InstructionWrapper {
                                             instruction_id: 2,
-                                            instruction: OP_I32_CONST(
-                                                1,
+                                            instruction: OP_I64_CONST(
+                                                7,
                                             ),
                                         },
                                         InstructionWrapper {
                                             instruction_id: 3,
-                                            instruction: OP_I32_ADD,
+                                            instruction: OP_BR(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 4,
+                                            instruction: OP_RETURN,
                                         },
                                     ],
                                 },
@@ -116,6 +142,11 @@ Engine {
         tables: [],
         memory: [],
         stack: [
+            Value(
+                I64(
+                    7,
+                ),
+            ),
             Value(
                 I32(
                     2,

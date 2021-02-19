@@ -19,6 +19,7 @@ use funky::engine::store::GlobalInstance;
 use funky::engine::TableInstance;
 use funky::engine::Engine;
 use funky::value::Value;
+use funky::engine::stack::StackContent;
 use funky::{parse, read_wasm, validate};
 
 use log::{debug, error};
@@ -246,12 +247,13 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
             &spectest_import,
         );
 
-        if let Err(err) = e {
+        if let Err(ref err) = e {
             eprintln!("ERROR: {}", err);
             err.chain()
                 .skip(1)
                 .for_each(|cause| eprintln!("because: {}", cause));
-            std::process::exit(1);
+            continue;
+            //std::process::exit(1);
         }
 
         fs_handler.insert(fs_name, Rc::new(RefCell::new(e.unwrap())));
@@ -384,7 +386,7 @@ fn run_spec_test(path: &DirEntry, total_stats: Arc<Stats>, cmd_arguments: &[Stri
                             //.rev()
                             .collect();
 
-                        actuals.into_iter().cloned().collect()
+                        actuals.into_iter().cloned().filter_map(|x| if let StackContent::Value(val) = x { return Some(val); } else { return None; }).collect()
                     }
                     ActionType::Get => {
                         let res = engine.get(&case.action.field);

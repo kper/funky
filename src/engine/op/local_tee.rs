@@ -1,6 +1,6 @@
-use crate::engine::stack::Frame;
+use crate::engine::stack::{Frame, StackContent};
 use crate::engine::Engine;
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use wasm_parser::core::LocalIdx;
 
 impl Engine {
@@ -8,14 +8,17 @@ impl Engine {
         debug!("OP_LOCAL_TEE {:?}", idx);
 
         let value = match self.store.stack.pop() {
-            Some(v) => v,
+            Some(StackContent::Value(v)) => v,
+            Some(_) => {
+                return bail!("Unexpected stack element at local.tee");
+            }
             None => {
-                return Err(anyhow!("Empty stack during local.tee"));
+                return bail!("Empty stack during local.tee");
             }
         };
 
-        self.store.stack.push(value);
-        self.store.stack.push(value);
+        self.store.stack.push(StackContent::Value(value));
+        self.store.stack.push(StackContent::Value(value));
 
         self.local_set(idx, fr)?;
 

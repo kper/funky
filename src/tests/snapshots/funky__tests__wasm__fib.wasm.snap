@@ -459,7 +459,6 @@ Engine {
             },
         ],
         stack: [],
-        ctrl_stack: [],
         globals: [],
     },
     debugger: RelativeProgramCounter(

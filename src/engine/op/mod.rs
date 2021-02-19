@@ -9,3 +9,4 @@ mod memory_grow;
 mod block;
 mod call;
 mod call_indirect;
+mod br;

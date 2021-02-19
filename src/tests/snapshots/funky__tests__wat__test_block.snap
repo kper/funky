@@ -96,11 +96,12 @@ Engine {
         tables: [],
         memory: [],
         stack: [
-            I32(
-                1,
+            Value(
+                I32(
+                    1,
+                ),
             ),
         ],
-        ctrl_stack: [],
         globals: [],
     },
     debugger: RelativeProgramCounter(
