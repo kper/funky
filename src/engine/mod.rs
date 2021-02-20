@@ -153,16 +153,31 @@ macro_rules! load_memorySX {
 
             let module = &$self.module;
 
-            let addr = module.memaddrs.get(0).expect("No memory address found");
+            let addr = module.memaddrs.get(0).context("No memory address found")?;
 
-            let instance = &$self.store.memory[*addr as usize];
+            let instance = &$self
+                .store
+                .memory
+                .get(*addr as usize)
+                .with_context(|| format!("Cannot access memory addr {}", addr))?;
 
             debug!("instance {:?}", instance);
             debug!("Range {:?}", ea..ea + $size);
-            debug!("part {:?}", &instance.data[ea..ea + $size]);
+            debug!(
+                "part {:?}",
+                &instance
+                    .data
+                    .get(ea..ea + $size)
+                    .context("Cannot access range")
+            );
 
             let mut b = vec![0; $size];
-            b.copy_from_slice(&instance.data[ea..ea + $size]);
+            b.copy_from_slice(
+                &instance
+                    .data
+                    .get(ea..ea + $size)
+                    .context("Cannot access range")?,
+            );
             assert!(b.len() == $size);
 
             debug!("b {:?}", b);
@@ -1215,7 +1230,11 @@ impl Engine {
                             debug!("C is not zero, therefore branching");
 
                             let arity_return_count = self.get_return_count_block(&ty)?;
-                            self.setup_stack_for_entering_block(ty, block_instructions_branch, arity_return_count)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch,
+                                arity_return_count,
+                            )?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch.iter())
@@ -1253,7 +1272,11 @@ impl Engine {
                             debug!("C is not zero, therefore branching (1)");
 
                             let arity_return_count = self.get_return_count_block(&ty)?;
-                            self.setup_stack_for_entering_block(ty, block_instructions_branch_1, arity_return_count)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch_1,
+                                arity_return_count,
+                            )?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_1.iter())
@@ -1278,7 +1301,11 @@ impl Engine {
                             debug!("C is zero, therefore branching (2)");
 
                             let arity_return_count = self.get_return_count_block(&ty)?;
-                            self.setup_stack_for_entering_block(ty, block_instructions_branch_2, arity_return_count)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch_2,
+                                arity_return_count,
+                            )?;
 
                             let outcome = self
                                 .run_instructions(fr, &mut block_instructions_branch_2.iter())
