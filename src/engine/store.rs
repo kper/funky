@@ -1,5 +1,5 @@
 use crate::engine::memory::MemoryInstance;
-use crate::engine::stack::CtrlStackContent;
+use crate::engine::stack::StackContent;
 
 use crate::engine::stack::Frame;
 use crate::engine::Variable;
@@ -8,7 +8,7 @@ use crate::value::Value;
 use wasm_parser::core::{FuncAddr, GlobalAddr, FunctionBody, FunctionSignature};
 
 use crate::PAGE_SIZE;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Result, bail};
 
 pub type GlobalInstance = Variable;
 
@@ -17,8 +17,7 @@ pub struct Store {
     pub funcs: Vec<FuncInstance>,
     pub tables: Vec<TableInstance>,
     pub memory: Vec<MemoryInstance>,
-    pub stack: Vec<Value>,
-    pub ctrl_stack: Vec<CtrlStackContent>,
+    pub stack: Vec<StackContent>,
     pub globals: Vec<GlobalInstance>,
 }
 
@@ -27,7 +26,7 @@ impl Store {
     pub(crate) fn default_with_frame() -> Self {
         let mut store = Store::default();
 
-        store.ctrl_stack.push(CtrlStackContent::Frame(Frame {
+        store.stack.push(StackContent::Frame(Frame {
             arity: 0,
             locals: Vec::new(),
         }));
@@ -93,5 +92,24 @@ impl Store {
 
     pub(crate) fn count_functions(&self) -> usize {
         self.funcs.len()
+    }
+
+    /// Pop off `n` elements of the stack and return it.
+    pub fn pop_off_stack(&mut self, mut n: usize) -> Result<Vec<StackContent>> {
+        debug!("pop_off_stack; stack {}; n {}", self.stack.len(), n);
+        let mut result = Vec::with_capacity(n);
+
+        while n > 0 {
+            if let Some(val) = self.stack.pop() {
+                debug!("Popping off {:?}", val);
+                result.push(val);
+                n -= 1;
+            }
+            else {
+                bail!("The stack was unexpectedly empty while popping {} elements of the stack", n);
+            }
+        }
+
+        Ok(result.into_iter().rev().collect())
     }
 }

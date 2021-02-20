@@ -2,26 +2,28 @@ use crate::engine::prelude::*;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum CtrlStackContent {
+pub enum StackContent {
     Frame(Frame),
     Label(Label),
+    Value(Value),
 }
 
-impl CtrlStackContent {
+impl StackContent {
     pub fn is_label(&self) -> bool {
-        matches!(self, CtrlStackContent::Label(_))
+        matches!(self, StackContent::Label(_))
     }
 
     pub fn is_frame(&self) -> bool {
-        matches!(self, CtrlStackContent::Frame(_))
+        matches!(self, StackContent::Frame(_))
     }
 }
 
-impl fmt::Display for CtrlStackContent {
+impl fmt::Display for StackContent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &*self {
-            CtrlStackContent::Label(label) => write!(f, "{:?}", label),
-            CtrlStackContent::Frame(frame) => write!(f, "{:?}", frame),
+            StackContent::Label(label) => write!(f, "{:?}", label),
+            StackContent::Frame(frame) => write!(f, "{:?}", frame),
+            StackContent::Value(vl) => write!(f, "{:?}", vl),
         }
     }
 }

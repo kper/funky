@@ -1,8 +1,8 @@
-use crate::engine::stack::{Frame, Label, CtrlStackContent};
+use crate::engine::stack::{StackContent, Frame, Label};
 use crate::engine::Engine;
 use crate::engine::InstructionOutcome;
 use crate::value::{Arity, Value};
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use wasm_parser::core::{BlockType, CodeBlock};
 
 impl Engine {
@@ -14,20 +14,28 @@ impl Engine {
     ) -> Result<InstructionOutcome> {
         debug!("OP_BLOCK {:?}", ty);
 
-        self.setup_stack_for_entering_block(ty, block_instructions)?;
+        let arity_return_count = self.get_return_count_block(&ty)?;
+
+        self.setup_stack_for_entering_block(ty, block_instructions, arity_return_count)?;
 
         let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
 
         Ok(outcome)
     }
 
-    pub(crate) fn setup_stack_for_entering_block(&mut self, ty: &BlockType, block: &CodeBlock) -> Result<()> {
+    pub(crate) fn setup_stack_for_entering_block(
+        &mut self,
+        ty: &BlockType,
+        block: &CodeBlock,
+        arity: u32,
+    ) -> Result<()> {
         let param_count = self.get_param_count_block(&ty)?;
         let return_count = self.get_return_count_block(&ty)?;
 
         debug!("Arity for block ({:?}) is {}", ty, return_count);
+        debug!("Stack size is {}", self.store.stack.len());
 
-        let label = Label::new(return_count, block.id);
+        let label = Label::new(arity, block.id);
 
         debug!("=> stack {:#?}", self.store.stack);
 
@@ -35,7 +43,7 @@ impl Engine {
         let mut block_args = self.get_stack_elements_entering_block(param_count)?;
 
         // Pushing the label
-        self.store.ctrl_stack.push(CtrlStackContent::Label(label));
+        self.store.stack.push(StackContent::Label(label));
 
         // Pushing arguments back on the stack
         self.store.stack.append(&mut block_args);
@@ -45,10 +53,7 @@ impl Engine {
 
     /// We need to enter block which expects parameters.
     /// We extract `arity` of stack.
-    fn get_stack_elements_entering_block(
-        &mut self,
-        param_count: u32,
-    ) -> Result<Vec<Value>> {
+    fn get_stack_elements_entering_block(&mut self, param_count: u32) -> Result<Vec<StackContent>> {
         debug!(
             "For entering a block, popping off parameters {}",
             param_count
@@ -62,8 +67,8 @@ impl Engine {
         Ok(args)
     }
 
-    /// By given block_ty, return the return count of the block
-    fn get_param_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
+    /// By given block_ty, return the param count of the block
+    pub(crate) fn get_param_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
         let arity = match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 0,
@@ -82,7 +87,7 @@ impl Engine {
     }
 
     /// By given block_ty, return the return count of the block
-    fn get_return_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
+    pub(crate) fn get_return_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
         let arity = match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,

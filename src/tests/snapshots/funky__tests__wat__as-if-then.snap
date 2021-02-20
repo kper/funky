@@ -1,5 +1,5 @@
 ---
-source: src/tests/wasm.rs
+source: src/tests/wat.rs
 expression: "format!(\"{:#?}\", engine)"
 
 ---
@@ -11,40 +11,58 @@ Engine {
                 locals: [],
                 code: [
                     InstructionWrapper {
-                        instruction_id: 6,
+                        instruction_id: 7,
                         instruction: OP_BLOCK(
-                            Empty,
+                            ValueType(
+                                I32,
+                            ),
                             CodeBlock {
-                                id: 2,
+                                id: 3,
                                 instructions: [
                                     InstructionWrapper {
                                         instruction_id: 5,
-                                        instruction: OP_LOOP(
-                                            Empty,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 6,
+                                        instruction: OP_IF_AND_ELSE(
+                                            ValueType(
+                                                I32,
+                                            ),
                                             CodeBlock {
                                                 id: 1,
                                                 instructions: [
                                                     InstructionWrapper {
                                                         instruction_id: 1,
-                                                        instruction: OP_LOCAL_GET(
-                                                            0,
+                                                        instruction: OP_I32_CONST(
+                                                            3,
                                                         ),
                                                     },
                                                     InstructionWrapper {
                                                         instruction_id: 2,
-                                                        instruction: OP_BR_IF(
-                                                            1,
+                                                        instruction: OP_I32_CONST(
+                                                            0,
                                                         ),
                                                     },
                                                     InstructionWrapper {
                                                         instruction_id: 3,
-                                                        instruction: OP_I32_CONST(
-                                                            2,
+                                                        instruction: OP_BR_TABLE(
+                                                            [],
+                                                            1,
                                                         ),
                                                     },
+                                                ],
+                                            },
+                                            CodeBlock {
+                                                id: 2,
+                                                instructions: [
                                                     InstructionWrapper {
                                                         instruction_id: 4,
-                                                        instruction: OP_RETURN,
+                                                        instruction: OP_LOCAL_GET(
+                                                            1,
+                                                        ),
                                                     },
                                                 ],
                                             },
@@ -54,18 +72,13 @@ Engine {
                             },
                         ),
                     },
-                    InstructionWrapper {
-                        instruction_id: 7,
-                        instruction: OP_I32_CONST(
-                            3,
-                        ),
-                    },
                 ],
             },
         ],
         fn_types: [
             FunctionSignature {
                 param_types: [
+                    I32,
                     I32,
                 ],
                 return_types: [
@@ -83,7 +96,7 @@ Engine {
         globaladdrs: [],
         exports: [
             ExportInstance {
-                name: "as-loop-first",
+                name: "as-if-then",
                 value: Function {
                     ty: 0,
                 },
@@ -97,6 +110,7 @@ Engine {
                 ty: FunctionSignature {
                     param_types: [
                         I32,
+                        I32,
                     ],
                     return_types: [
                         I32,
@@ -106,40 +120,58 @@ Engine {
                     locals: [],
                     code: [
                         InstructionWrapper {
-                            instruction_id: 6,
+                            instruction_id: 7,
                             instruction: OP_BLOCK(
-                                Empty,
+                                ValueType(
+                                    I32,
+                                ),
                                 CodeBlock {
-                                    id: 2,
+                                    id: 3,
                                     instructions: [
                                         InstructionWrapper {
                                             instruction_id: 5,
-                                            instruction: OP_LOOP(
-                                                Empty,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 6,
+                                            instruction: OP_IF_AND_ELSE(
+                                                ValueType(
+                                                    I32,
+                                                ),
                                                 CodeBlock {
                                                     id: 1,
                                                     instructions: [
                                                         InstructionWrapper {
                                                             instruction_id: 1,
-                                                            instruction: OP_LOCAL_GET(
-                                                                0,
+                                                            instruction: OP_I32_CONST(
+                                                                3,
                                                             ),
                                                         },
                                                         InstructionWrapper {
                                                             instruction_id: 2,
-                                                            instruction: OP_BR_IF(
-                                                                1,
+                                                            instruction: OP_I32_CONST(
+                                                                0,
                                                             ),
                                                         },
                                                         InstructionWrapper {
                                                             instruction_id: 3,
-                                                            instruction: OP_I32_CONST(
-                                                                2,
+                                                            instruction: OP_BR_TABLE(
+                                                                [],
+                                                                1,
                                                             ),
                                                         },
+                                                    ],
+                                                },
+                                                CodeBlock {
+                                                    id: 2,
+                                                    instructions: [
                                                         InstructionWrapper {
                                                             instruction_id: 4,
-                                                            instruction: OP_RETURN,
+                                                            instruction: OP_LOCAL_GET(
+                                                                1,
+                                                            ),
                                                         },
                                                     ],
                                                 },
@@ -149,22 +181,22 @@ Engine {
                                 },
                             ),
                         },
-                        InstructionWrapper {
-                            instruction_id: 7,
-                            instruction: OP_I32_CONST(
-                                3,
-                            ),
-                        },
                     ],
                 },
             },
         ],
         tables: [],
         memory: [],
-        stack: [],
+        stack: [
+            Value(
+                I32(
+                    3,
+                ),
+            ),
+        ],
         globals: [],
     },
     debugger: RelativeProgramCounter(
-        0,
+        3,
     ),
 }

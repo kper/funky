@@ -418,7 +418,6 @@ Engine {
         tables: [],
         memory: [],
         stack: [],
-        ctrl_stack: [],
         globals: [],
     },
     debugger: RelativeProgramCounter(

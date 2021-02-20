@@ -1,5 +1,6 @@
 use crate::value::Value;
 use crate::value::Value::*;
+use crate::engine::stack::StackContent;
 
 macro_rules! impl_two_op_integer {
     ($f:ident) => {
@@ -234,7 +235,7 @@ pub fn reinterpret(v: Value) -> Value {
 macro_rules! convert {
     ($self:expr, $val:ident, $from_ctr:ident, $to_ctr:ident, $to:ident) => {
         match $val {
-            $from_ctr(i) => $self.store.stack.push($to_ctr(i as $to)),
+            $from_ctr(i) => $self.store.stack.push(StackContent::Value($to_ctr(i as $to))),
             x => return Err(anyhow!("Expected $from_ctr on stack but found {:?}", x)),
         }
     };
@@ -243,7 +244,7 @@ macro_rules! convert {
             $from_ctr(i) => $self
                 .store
                 .stack
-                .push($to_ctr(i as $intermediate as $to)),
+                .push(StackContent::Value($to_ctr(i as $intermediate as $to))),
             x => return Err(anyhow!("Expected $from_ctr on stack but found {:?}", x)),
         }
     };
