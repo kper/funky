@@ -8,7 +8,6 @@ edition = "2018"
 members = [
 	"wasm_parser",
 	"validation",
-	"test_runner",
 	"testrunner2",
 	"hustensaft",
 	"custom_display"
