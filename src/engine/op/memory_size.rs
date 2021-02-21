@@ -1,8 +1,8 @@
-use crate::engine::stack::StackContent::Value;
 use crate::engine::Engine;
 use crate::value::Value::I32;
 use anyhow::{anyhow, Result};
 use crate::PAGE_SIZE;
+use crate::engine::StackContent;
 
 impl Engine {
     pub(crate) fn memory_size(&mut self) -> Result<()> {
@@ -15,7 +15,7 @@ impl Engine {
 
         let sz = instance.data.len() / PAGE_SIZE;
 
-        self.store.stack.push(Value(I32(sz as i32)));
+        self.store.stack.push(StackContent::Value(I32(sz as i32)));
 
         Ok(())
     }

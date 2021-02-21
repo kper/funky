@@ -1,39 +1,6 @@
 use funky::value::Value;
 use serde::Deserialize;
-
-#[derive(Debug, Clone, Deserialize, PartialEq)]
-pub(crate) struct TestFile {
-    pub source_filename: String,
-    commands: Vec<Command>,
-}
-
-impl TestFile {
-    pub fn get_len_cases(&self) -> usize {
-        self.commands
-            .iter()
-            .filter_map(|x| match x {
-                Command::AssertReturn(w) => Some(w),
-                _ => None,
-            })
-            .count()
-    }
-
-    pub fn get_cases(&self) -> impl Iterator<Item = &Command> {
-        self.commands
-            .iter()
-            .filter(|x| matches!(x, Command::Module(_) | Command::AssertReturn(_) | Command::Action(_)))
-    }
-
-    pub fn get_fs_names(&self) -> Vec<&String> {
-        self.commands
-            .iter()
-            .filter_map(|x| match x {
-                Command::Module(w) => Some(&w.filename),
-                _ => None,
-            })
-            .collect::<Vec<_>>()
-    }
-}
+use crate::core::*;
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 #[serde(tag = "type")]
@@ -58,6 +25,23 @@ pub(crate) enum Command {
     Action(AssertReturn),
     #[serde(rename = "assert_uninstantiable")]
     AssertUninstantiable, //TODO
+}
+
+/// Saves additionally to the command also the actuals
+/// for debugging.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct FailedCommand {
+    actuals: Vec<Value>,
+    command: Command,
+}
+
+impl FailedCommand {
+    pub fn new(actuals: Vec<Value>, command: Command) -> Self {
+        Self {
+            actuals,
+            command
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -184,59 +168,6 @@ impl From<Argument> for Value {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    /*
-       #[test]
-       fn parse_file() {
-           let data = r#"
-           {
-    "source_filename": "f64.wast",
-    "commands": [
-     {"type": "module", "line": 5, "filename": "f64.0.wasm"},
-     {"type": "assert_return", "line": 19, "action": {"type": "invoke", "field": "add", "args": [{"type": "f64", "value": "9223372036854775808"}, {"type": "f64", "value": "9223372036854775808"}]}, "expected": [{"type": "f64", "value": "9223372036854775808"}]},
-
-           }"#;
-
-           let v: TestFile = ::serde_json::from_str(data).unwrap();
-
-           /*
-           let acc = Action {
-               field: "add".to_string(),
-               args: vec![
-                   Argument {
-                       ty: "f64".to_string(),
-                       value: "9223372036854775808".to_string(),
-                   },
-                   Argument {
-                       ty: "f64".to_string(),
-                       value: "9223372036854775808".to_string(),
-                   },
-               ],
-
-           };
-
-           let compare = TestFile {
-               source_filename: "f64.wast".to_string(),
-               commands: vec![
-                   Command::Module(Module {
-                       line: 5,
-                       filename: "f64.0.wasm".to_string(),
-                   }),
-                   Command::AssertReturn(AssertReturn {
-                       line: 20,
-                       action: acc,
-               expected: vec![Argument {
-                   ty: "f64".to_string(),
-                   value: "9223372036854775808".to_string(),
-               }],
-                   }),
-               ],
-           };
-
-           assert_eq!(v, compare);
-           */
-       }
-       */
 
     #[test]
     fn parse_action() {

@@ -1,0 +1,202 @@
+---
+source: src/tests/wat.rs
+expression: "format!(\"{:#?}\", engine)"
+
+---
+Engine {
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 7,
+                        instruction: OP_BLOCK(
+                            ValueType(
+                                I32,
+                            ),
+                            CodeBlock {
+                                id: 3,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 5,
+                                        instruction: OP_LOCAL_GET(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 6,
+                                        instruction: OP_IF_AND_ELSE(
+                                            ValueType(
+                                                I32,
+                                            ),
+                                            CodeBlock {
+                                                id: 1,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 1,
+                                                        instruction: OP_I32_CONST(
+                                                            3,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 2,
+                                                        instruction: OP_I32_CONST(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 3,
+                                                        instruction: OP_BR_TABLE(
+                                                            [],
+                                                            1,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                            CodeBlock {
+                                                id: 2,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 4,
+                                                        instruction: OP_LOCAL_GET(
+                                                            1,
+                                                        ),
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+        ],
+        funcaddrs: [
+            FuncAddr(
+                0,
+            ),
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "as-if-then",
+                value: Function {
+                    ty: 0,
+                },
+            },
+        ],
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 7,
+                            instruction: OP_BLOCK(
+                                ValueType(
+                                    I32,
+                                ),
+                                CodeBlock {
+                                    id: 3,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 5,
+                                            instruction: OP_LOCAL_GET(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 6,
+                                            instruction: OP_IF_AND_ELSE(
+                                                ValueType(
+                                                    I32,
+                                                ),
+                                                CodeBlock {
+                                                    id: 1,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 1,
+                                                            instruction: OP_I32_CONST(
+                                                                3,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 2,
+                                                            instruction: OP_I32_CONST(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 3,
+                                                            instruction: OP_BR_TABLE(
+                                                                [],
+                                                                1,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                                CodeBlock {
+                                                    id: 2,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 4,
+                                                            instruction: OP_LOCAL_GET(
+                                                                1,
+                                                            ),
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [],
+        stack: [
+            Value(
+                I32(
+                    3,
+                ),
+            ),
+        ],
+        globals: [],
+    },
+    debugger: RelativeProgramCounter(
+        3,
+    ),
+}

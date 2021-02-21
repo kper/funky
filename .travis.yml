@@ -1,11 +1,14 @@
 language: rust
 rust:
   - stable
+env:
+  - RUST_MIN_STACK=8388608
 before_script:
   - rustup component add clippy 
   - cargo install cargo-audit
+  - apt-get install -y wabt
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
   - cargo clippy --all-features -- -D warnings
-  - cargo audit
+  - cargo audit --deny warnings

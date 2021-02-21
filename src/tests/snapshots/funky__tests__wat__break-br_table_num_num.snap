@@ -1,0 +1,161 @@
+---
+source: src/tests/wat.rs
+expression: "format!(\"{:#?}\", engine)"
+
+---
+Engine {
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 1,
+                        instruction: OP_I32_CONST(
+                            50,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 2,
+                        instruction: OP_I64_CONST(
+                            51,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 3,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 4,
+                        instruction: OP_BR_TABLE(
+                            [
+                                0,
+                            ],
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 5,
+                        instruction: OP_I32_CONST(
+                            51,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 6,
+                        instruction: OP_I64_CONST(
+                            52,
+                        ),
+                    },
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                    I64,
+                ],
+            },
+        ],
+        funcaddrs: [
+            FuncAddr(
+                0,
+            ),
+        ],
+        tableaddrs: [],
+        memaddrs: [],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "break-br_table-num-num",
+                value: Function {
+                    ty: 0,
+                },
+            },
+        ],
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                        I64,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 1,
+                            instruction: OP_I32_CONST(
+                                50,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 2,
+                            instruction: OP_I64_CONST(
+                                51,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 3,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 4,
+                            instruction: OP_BR_TABLE(
+                                [
+                                    0,
+                                ],
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 5,
+                            instruction: OP_I32_CONST(
+                                51,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 6,
+                            instruction: OP_I64_CONST(
+                                52,
+                            ),
+                        },
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [],
+        stack: [
+            Value(
+                I64(
+                    51,
+                ),
+            ),
+            Value(
+                I32(
+                    50,
+                ),
+            ),
+        ],
+        globals: [],
+    },
+    debugger: RelativeProgramCounter(
+        4,
+    ),
+}

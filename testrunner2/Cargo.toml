@@ -1,5 +1,5 @@
 [package]
-name = "test_runner"
+name = "testrunner"
 version = "0.1.0"
 authors = ["Kevin Per <kevin.per@protonmail.com>"]
 edition = "2018"
@@ -14,3 +14,5 @@ funky = { path = "../" }
 wasm-parser = { path = "../wasm_parser" }
 log = "*"
 env_logger = "*"
+structopt = { version = "0.3", default-features = false }
+anyhow = "1.0.32"

@@ -3,18 +3,18 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StackContent {
-    Value(Value),
     Frame(Frame),
     Label(Label),
+    Value(Value),
 }
 
 impl StackContent {
-    pub fn is_value(&self) -> bool {
-        matches!(self, StackContent::Value(_))
-    }
-
     pub fn is_label(&self) -> bool {
         matches!(self, StackContent::Label(_))
+    }
+
+    pub fn is_frame(&self) -> bool {
+        matches!(self, StackContent::Frame(_))
     }
 }
 
@@ -23,7 +23,7 @@ impl fmt::Display for StackContent {
         match &*self {
             StackContent::Label(label) => write!(f, "{:?}", label),
             StackContent::Frame(frame) => write!(f, "{:?}", frame),
-            StackContent::Value(value) => write!(f, "{:?}", value),
+            StackContent::Value(vl) => write!(f, "{:?}", vl),
         }
     }
 }
@@ -33,17 +33,26 @@ impl fmt::Display for StackContent {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Label {
     arity: Arity,
+    /// the `id` of the block to which the
+    /// program counter has to jump for the
+    /// beginning.
+    start_block_id: usize,
 }
 
 impl Label {
     /// Create new label
-    pub fn new(arity: Arity) -> Self {
-        Label { arity }
+    pub fn new(arity: Arity, block_id: usize) -> Self {
+        Label { arity, start_block_id: block_id }
     }
 
     /// Get the arity of the label
     pub fn get_arity(&self) -> Arity {
         self.arity
+    }
+
+    /// Get the `id` of the start block
+    pub fn get_start_block(&self) -> usize {
+        self.start_block_id
     }
 }
 
@@ -51,7 +60,6 @@ impl Label {
 pub struct Frame {
     pub arity: u32,
     pub locals: Vec<Value>,
-    //pub module_instance: Weak<RefCell<ModuleInstance>>,
 }
 
 impl PartialEq for Frame {

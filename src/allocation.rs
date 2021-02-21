@@ -6,7 +6,6 @@ use crate::value::Value;
 use wasm_parser::core::*;
 use wasm_parser::Module;
 
-use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::table::TableInstance;
 use anyhow::{anyhow, Context, Result};
