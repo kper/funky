@@ -1,15 +1,11 @@
-use crate::debugger::RelativeProgramCounter;
-use crate::engine::export::ExportInstance;
 use crate::engine::module::ModuleInstance;
 use crate::engine::*;
 use crate::value::Value::*;
-use crate::value::*;
-use crate::wrap_instructions;
 use insta::assert_snapshot;
 use std::fs::File;
 use std::io::{self, Write};
 use validation::validate;
-use wasm_parser::{parse, read_wasm, Module};
+use wasm_parser::{parse, read_wasm};
 
 macro_rules! wat {
     ($name:expr, $input:expr, $invoke:expr, $init:expr) => {{

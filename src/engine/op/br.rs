@@ -1,9 +1,7 @@
-use crate::engine::stack::{Frame, Label, StackContent};
+use crate::engine::stack::{Frame, StackContent};
 use crate::engine::Engine;
 use crate::engine::InstructionOutcome;
-use crate::value::{Arity, Value};
 use anyhow::{bail, Context, Result};
-use wasm_parser::core::{BlockType, CodeBlock};
 
 impl Engine {
     pub(crate) fn br(&mut self, _fr: &mut Frame, label_idx: u32) -> Result<InstructionOutcome> {

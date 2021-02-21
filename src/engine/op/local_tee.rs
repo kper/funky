@@ -10,10 +10,10 @@ impl Engine {
         let value = match self.store.stack.pop() {
             Some(StackContent::Value(v)) => v,
             Some(_) => {
-                return bail!("Unexpected stack element at local.tee");
+                bail!("Unexpected stack element at local.tee");
             }
             None => {
-                return bail!("Empty stack during local.tee");
+                bail!("Empty stack during local.tee");
             }
         };
 

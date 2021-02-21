@@ -4,7 +4,6 @@ use crate::engine::stack::StackContent;
 use crate::engine::stack::Frame;
 use crate::engine::Variable;
 use crate::engine::{FuncInstance, TableInstance};
-use crate::value::Value;
 use wasm_parser::core::{FuncAddr, GlobalAddr, FunctionBody, FunctionSignature};
 
 use crate::PAGE_SIZE;

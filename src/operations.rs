@@ -1,6 +1,5 @@
 use crate::value::Value;
 use crate::value::Value::*;
-use crate::engine::stack::StackContent;
 
 macro_rules! impl_two_op_integer {
     ($f:ident) => {

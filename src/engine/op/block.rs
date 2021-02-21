@@ -1,7 +1,7 @@
-use crate::engine::stack::{StackContent, Frame, Label};
+use crate::engine::stack::{Frame, Label, StackContent};
 use crate::engine::Engine;
 use crate::engine::InstructionOutcome;
-use crate::value::{Arity, Value};
+use crate::value::Arity;
 use anyhow::{anyhow, Result};
 use wasm_parser::core::{BlockType, CodeBlock};
 
