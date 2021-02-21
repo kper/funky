@@ -10,9 +10,9 @@ use wasm_parser::{parse, read_wasm};
 macro_rules! wat {
     ($name:expr, $input:expr, $invoke:expr, $init:expr) => {{
         use std::process::Command;
-        use tempdir::TempDir;
+        use tempfile::tempdir;
 
-        let tmp_dir = TempDir::new("wat_tests").unwrap();
+        let tmp_dir = tempdir().unwrap();
         let file_path = tmp_dir.path().join("file.wat");
 
         {
