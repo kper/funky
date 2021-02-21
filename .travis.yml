@@ -1,6 +1,9 @@
 language: rust
 rust:
   - stable
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install wabt
 env:
   - RUST_MIN_STACK=8388608
 before_script:
