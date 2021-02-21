@@ -6,7 +6,7 @@ extern crate funky;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs::{create_dir, read_dir, read_to_string, remove_file, DirEntry, File, OpenOptions};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -58,12 +58,6 @@ fn work(opt: &Opt) -> Result<()> {
 
     debug!("=> Detected {} testsuite files", files.len());
 
-    // last defined module
-    //let mut current_engine = None;
-
-    // all saved specfiles
-    //let mut named_specfiles = HashMap::new();
-
     let mut spectests = Vec::new();
 
     for file in files.iter_mut() {
@@ -78,11 +72,52 @@ fn work(opt: &Opt) -> Result<()> {
         spectests.push(statistic);
     }
 
-    println!(
-        "{}% total",
-        spectests.iter().map(|x| x.get_successes()).sum::<usize>() as f64
-            / spectests.iter().map(|x| x.get_total()).sum::<usize>() as f64
-    );
+    let total = spectests.iter().map(|x| x.get_successes()).sum::<usize>() as f64
+        / spectests.iter().map(|x| x.get_total()).sum::<usize>() as f64;
+
+    println!("{}% total", total);
+
+    // Handle total
+    {
+        let mut total_fs = File::open(".testrunner");
+
+        if let Ok(mut file) = total_fs {
+            let mut content = String::new();
+            file.read_to_string(&mut content);
+
+            let old_total = content
+                .parse::<f64>()
+                .context("Total in .testrunner is not a float")?;
+
+            if total >= old_total {
+                debug!("=> Results are better. Replacing old total");
+                report_total(total);
+            } else {
+                eprintln!(
+                    "Current testrun has {} success, while the best run had {}",
+                    total, old_total
+                );
+                std::process::exit(-1);
+            }
+        } else {
+            report_total(total)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn report_total(total: f64) -> Result<()> {
+    use std::fs::OpenOptions;
+
+    let mut file = OpenOptions::new()
+        .read(false)
+        .write(true)
+        .create(true)
+        .open(".testrunner")
+        .context("Cannot create .testrunner")?;
+
+    file.write_all(format!("{}\n", total).as_bytes());
 
     Ok(())
 }
