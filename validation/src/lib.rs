@@ -161,7 +161,7 @@ impl<'a> Context<'a> {
         let imports = get_imports(module);
         for e in imports {
             debug!("Checking import {}/{}", e.module_name, e.name);
-            check_import_ty(e, &self.types)?;
+            check_import_ty(e, &self.types);
         }
 
         debug!("Imports are valid");
@@ -332,7 +332,7 @@ fn check_start(start: &StartSection, functypes: &[FuncType]) -> Result<bool> {
     Ok(true)
 }
 
-fn check_import_ty(import_ty: &ImportEntry, types: &[&FunctionSignature]) -> Result<bool> {
+fn check_import_ty(import_ty: &ImportEntry, types: &[&FunctionSignature]) -> bool {
     check_import_desc(&import_ty.desc, types)
 }
 
@@ -374,15 +374,13 @@ fn get_ty_of_function(types: &[&FunctionSignature], typeidx: usize) -> Result<Fu
     Err(anyhow!("No function with this index"))
 }
 
-fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> Result<bool> {
-    let b = match e {
+fn check_import_desc(e: &ImportDesc, types: &[&FunctionSignature]) -> bool {
+    match e {
         ImportDesc::Function { ty } => get_ty_of_function(types, *ty as usize).is_ok(),
         ImportDesc::Table { .. } => true, //Limits are u32 that's why they are valid
         ImportDesc::Memory { ty } => check_memory_ty(&ty).is_ok(),
         ImportDesc::Global { .. } => true, // this is true, because `mut` is always correct and `valuetype` was correctly parsed
-    };
-
-    Ok(b)
+    }
 }
 
 fn check_memory_ty(memory: &MemoryType) -> Result<()> {
