@@ -85,7 +85,7 @@ fn work(opt: &Opt) -> Result<()> {
             let mut content = String::new();
             file.read_to_string(&mut content);
 
-            let old_total = content
+            let old_total = content.trim()
                 .parse::<f64>()
                 .context("Total in .testrunner is not a float")?;
 
