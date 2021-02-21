@@ -143,13 +143,13 @@ Engine {
         memory: [],
         stack: [
             Value(
-                I64(
-                    51,
+                I32(
+                    50,
                 ),
             ),
             Value(
-                I32(
-                    50,
+                I64(
+                    51,
                 ),
             ),
         ],
