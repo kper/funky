@@ -586,6 +586,8 @@ impl Engine {
             }
         }
 
+        let mut ret = ret.into_iter().rev().collect();
+
         if let Some(Frame(_)) = self.store.stack.pop() {
             debug!("Popping frame");
         } else {
