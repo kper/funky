@@ -4,7 +4,7 @@ rust:
   - stable
 before_install:
   - sudo apt-get update
-  - sudo apt-get -y install wabt
+  - sudo apt-get -y install wabt=1.0.13-1build1
 env:
   - RUST_MIN_STACK=8388608
 before_script:
