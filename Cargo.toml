@@ -21,10 +21,6 @@ path = "src/main.rs"
 name = "funky"
 
 [[bin]]
-path = "test_runner/src/main.rs"
-name = "test_runner"
-
-[[bin]]
 path = "testrunner2/src/main.rs"
 name = "testrunner2"
 
