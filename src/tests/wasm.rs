@@ -806,6 +806,7 @@ fn test_run_fib() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_run_fib_higher() {
     //env_logger::init();
