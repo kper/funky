@@ -10,7 +10,7 @@ impl TableInstance {
     pub fn new(n: u32, max: Option<u32>) -> Self {
         Self {
             elem: vec![None; n as usize],
-            max: max,
+            max,
         }
     }
 }
