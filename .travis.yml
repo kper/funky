@@ -4,10 +4,8 @@ rust:
 env:
   - RUST_MIN_STACK=8388608
 before_script:
-  - sudo apt-get -y update
   - rustup component add clippy 
   - cargo install cargo-audit
-  - sudo apt-get install -y wabt
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
