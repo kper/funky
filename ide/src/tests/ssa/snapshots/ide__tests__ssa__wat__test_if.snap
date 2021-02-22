@@ -5,13 +5,12 @@ expression: "format!(\"{}\", ir . buffer())"
 ---
 define 0 {
 BLOCK 0
-BLOCK 1
-BLOCK 3 // LOOP
 OP_I32_CONST
 
-GOTO 2
-GOTO 4 // BLOCK ended for 3
-BLOCK 4 // THEN block for 3
+IF %0 THEN GOTO 1 ELSE GOTO 2
+BLOCK 1 
+OP_NOP
+
 GOTO 2 // BLOCK ended for 1
 BLOCK 2 // THEN block for 1
 };
