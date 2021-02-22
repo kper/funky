@@ -1,0 +1,22 @@
+---
+source: ide/src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 {
+BLOCK 2
+OP_I32_CONST
+
+GOTO 2
+BLOCK 3
+
+BLOCK 1
+GOTO 5
+BLOCK 4
+
+BLOCK 0
+GOTO 5
+BLOCK 5
+
+};
+

@@ -78,3 +78,9 @@ fn test_simple_block() {
 fn test_simple_loop() {
     wat!("test_simple_loop", "(module (func (result i32) (block (result i32) (loop (result i32) (i32.const 1) (br 1)))))");
 }
+
+#[test]
+fn test_simple_if() {
+    env_logger::init();
+    wat!("test_if", "(module (func (if (i32.const 1) (then nop))))");
+}
