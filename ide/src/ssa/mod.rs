@@ -432,6 +432,18 @@ impl IR {
                     )
                     .unwrap();
                 }
+                OP_I32_CONST(a) => {
+                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                }
+                OP_I64_CONST(a) => {
+                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                }
+                OP_F32_CONST(a) => {
+                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                }
+                OP_F64_CONST(a) => {
+                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                }
                 _ => {
                     writeln!(self.buffer, "{}", instr.get_instruction()).unwrap();
                 }

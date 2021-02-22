@@ -5,9 +5,8 @@ expression: "format!(\"{}\", ir . buffer())"
 ---
 define 0 {
 BLOCK 0
-OP_I32_CONST
-
-IF %0 THEN GOTO 1
+%0 = 1
+IF %1 THEN GOTO 1
 BLOCK 1
 };
 
