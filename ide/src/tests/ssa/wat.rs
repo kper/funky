@@ -54,9 +54,9 @@ macro_rules! wat {
         )
         .unwrap();
 
-        let mut ir = IR::default();
+        let mut ir = IR::new(&engine);
 
-        ir.visit(&engine.store);
+        ir.visit();
 
         assert_snapshot!($name, format!("{}", ir.buffer()));
 
@@ -133,4 +133,42 @@ fn test_nested_block_value() {
             )
           )
         )))))");
+}
+
+#[test]
+fn test_local_tee() {
+  wat!("local_tee", "(module
+    (func (param i32) (result i32) (i32.const 1) (local.tee 0)) 
+  )");
+}
+
+
+#[test]
+fn test_call() {
+    wat!("test_call", "(module
+    (func $fib (export \"fib\") (param i64) (result i64)
+    (if (result i64) (i64.le_u (local.get 0) (i64.const 1))
+      (then (i64.const 1))
+      (else
+        (i64.add
+          (call $fib (i64.sub (local.get 0) (i64.const 2)))
+          (call $fib (i64.sub (local.get 0) (i64.const 1)))
+        )
+      )
+    )
+  )
+
+  (func $even (export \"even\") (param i64) (result i32)
+    (if (result i32) (i64.eqz (local.get 0))
+      (then (i32.const 44))
+      (else (call $odd (i64.sub (local.get 0) (i64.const 1))))
+    )
+  )
+  (func $odd (export \"odd\") (param i64) (result i32)
+    (if (result i32) (i64.eqz (local.get 0))
+      (then (i32.const 99))
+      (else (call $even (i64.sub (local.get 0) (i64.const 1))))
+    )
+  )
+    )");
 }

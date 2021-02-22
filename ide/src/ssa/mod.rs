@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use funky::engine::func::{self, FuncInstance};
-use funky::engine::store::Store;
+use funky::engine::Engine;
 use log::debug;
 use std::fmt::Write;
 use wasm_parser::core::Instruction::*;
@@ -9,19 +9,22 @@ use wasm_parser::core::*;
 
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
-pub struct IR {
+#[derive(Debug)]
+pub struct IR<'a> {
     //functions: Vec<Function>,
     buffer: String,
     counter: Counter,
     block_counter: Counter,
     function_counter: Counter,
     functions: Vec<Function>,
+    engine: &'a Engine,
 }
 
 #[derive(Debug)]
 struct Function {
     name: String,
+    locals: HashMap<usize, usize>,  //key to register
+    globals: HashMap<usize, usize>, //key to register
 }
 
 #[derive(Debug)]
@@ -56,74 +59,41 @@ impl Counter {
     }
 }
 
-impl IR {
+impl<'a> IR<'a> {
+    pub fn new(engine: &'a Engine) -> Self {
+        Self {
+            engine,
+            buffer: String::new(),
+            counter: Counter::default(),
+            block_counter: Counter::default(),
+            function_counter: Counter::default(),
+            functions: Vec::new(),
+        }
+    }
+
     pub fn buffer(&self) -> String {
-        //format!("{:#?}", self.functions)
-
-        /*
-         let mut buffer = String::new();
-         for func in self.functions.iter() {
-             writeln!(buffer, "define {} {{", func.name).unwrap();
-
-             for block in func.blocks.iter() {
-                 writeln!(buffer, "BLOCK {}", block.name).unwrap();
-
-                 for instr in block.instructions.iter() {
-                     writeln!(buffer, "{}", instr).unwrap();
-                 }
-             }
-
-             writeln!(buffer, "}};").unwrap();
-        }*/
-
         self.buffer.clone()
     }
 
-    pub fn visit(&mut self, store: &Store) {
-        for function in store.funcs.iter() {
+    pub fn visit(&mut self) {
+        for function in self.engine.store.funcs.iter() {
             self.visit_function(function);
         }
-    }
-
-    fn get_instructions<'a>(
-        &self,
-        instructions: &'a [InstructionWrapper],
-    ) -> Vec<&'a InstructionWrapper> {
-        let mut result = Vec::new();
-
-        for i in instructions {
-            match i.get_instruction() {
-                Instruction::OP_BLOCK(_, block) => {
-                    result.push(i);
-                    result.extend(&self.get_instructions(block.get_instructions()));
-                }
-                Instruction::OP_LOOP(_, block) => {
-                    result.push(i);
-                    result.extend(&self.get_instructions(block.get_instructions()));
-                }
-                Instruction::OP_IF(_, block) => {
-                    result.push(i);
-                    result.extend(&self.get_instructions(block.get_instructions()));
-                }
-                Instruction::OP_IF_AND_ELSE(_, block1, block2) => {
-                    result.push(i);
-                    result.extend(&self.get_instructions(block1.get_instructions()));
-                    result.extend(&self.get_instructions(block2.get_instructions()));
-                }
-                _ => {
-                    result.push(i);
-                }
-            }
-        }
-
-        result
     }
 
     fn visit_function(&mut self, inst: &FuncInstance) {
         let name = format!("{}", self.function_counter.get());
         writeln!(self.buffer, "define {} {{", name).unwrap();
 
-        let function = Function { name };
+        let mut function = Function {
+            name,
+            locals: HashMap::new(),
+            globals: HashMap::new(),
+        };
+
+        for (i, _) in inst.ty.param_types.iter().enumerate() {
+            function.locals.insert(i, self.counter.get());
+        }
 
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
@@ -432,6 +402,65 @@ impl IR {
                     )
                     .unwrap();
                 }
+                OP_LOCAL_GET(index) => {
+                    writeln!(
+                        self.buffer,
+                        "%{} = %{}",
+                        self.counter.get(),
+                        self.functions
+                            .get(function_index)
+                            .unwrap()
+                            .locals
+                            .get(&(*index as usize))
+                            .unwrap()
+                    )
+                    .unwrap();
+                }
+                OP_LOCAL_SET(index) => {
+                    writeln!(
+                        self.buffer,
+                        "%{} = %{}",
+                        self.functions
+                            .get(function_index)
+                            .unwrap()
+                            .locals
+                            .get(&(*index as usize))
+                            .unwrap(),
+                        self.counter.peek()
+                    )
+                    .unwrap();
+                }
+                OP_LOCAL_TEE(index) => {
+                    let peek = self.counter.peek() - 1;
+                    let peek2 = self.counter.peek();
+                    writeln!(self.buffer, "%{} = %{}", self.counter.get(), peek,).unwrap();
+                    writeln!(
+                        self.buffer,
+                        "%{} = %{}",
+                        self.functions
+                            .get(function_index)
+                            .unwrap()
+                            .locals
+                            .get(&(*index as usize))
+                            .unwrap(),
+                        peek2
+                    )
+                    .unwrap();
+                }
+                OP_CALL(func) => {
+                    let addr = self.engine.module.lookup_function_addr(*func).unwrap();
+                    let instance = self.engine.store.get_func_instance(&addr).unwrap();
+
+                    let num_params = instance.ty.param_types.len();
+
+                    let mut param_regs = Vec::new();
+
+                    for i in 0..num_params {
+                        param_regs.push(format!("{}", self.counter.peek() - i));
+                    }
+
+                    writeln!(self.buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
+                }
                 OP_I32_CONST(a) => {
                     writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
                 }
@@ -511,7 +540,6 @@ impl IR {
                     )
                     .unwrap();
                 }
-
                 OP_I32_ADD | OP_I32_SUB | OP_I32_MUL | OP_I32_DIV_S | OP_I32_DIV_U
                 | OP_I32_REM_S | OP_I32_REM_U | OP_I32_AND | OP_I32_OR | OP_I32_XOR
                 | OP_I32_SHL | OP_I32_SHR_S | OP_I32_SHR_U | OP_I32_ROTL | OP_I32_ROTR

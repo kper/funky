@@ -57,7 +57,7 @@ impl ModuleInstance {
     }
 
     /// Looking up the function's address in the store by given function's module address.
-    pub(crate) fn lookup_function_addr(&self, function_module_addr: FuncIdx) -> Result<FuncAddr> {
+    pub fn lookup_function_addr(&self, function_module_addr: FuncIdx) -> Result<FuncAddr> {
         debug!(
             "Looking up store's func addr for idx {}",
             function_module_addr
