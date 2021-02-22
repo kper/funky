@@ -88,3 +88,8 @@ fn test_simple_if() {
 fn test_simple_if_and_else() {
     wat!("test_if_else", "(module (func (if (i32.const 1) (then nop) (else nop))))");
 }
+
+#[test]
+fn test_simple_br_if() {
+    wat!("test_br_if", "(module (func (i32.const 1) (br_if 0)))");
+}

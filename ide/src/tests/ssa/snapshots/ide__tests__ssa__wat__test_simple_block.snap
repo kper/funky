@@ -3,15 +3,15 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 1 {
+define 0 {
+BLOCK 0
 BLOCK 1
-BLOCK 2
 OP_I32_CONST
 
+GOTO 2
+BLOCK 2
 GOTO 3
 BLOCK 3
-GOTO 4
-BLOCK 4
 
 };
 

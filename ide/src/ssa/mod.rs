@@ -2,10 +2,10 @@
 
 use funky::engine::func::FuncInstance;
 use funky::engine::store::Store;
+use log::debug;
 use std::fmt::Write;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
-use log::debug;
 
 #[derive(Debug, Default)]
 pub struct IR {
@@ -19,16 +19,14 @@ pub struct IR {
 #[derive(Debug)]
 struct Function {
     name: String,
-    blocks: Vec<Block>
+    blocks: Vec<Block>,
 }
 
 #[derive(Debug)]
 struct Block {
     name: String,
-    instructions: Vec<String>
+    instructions: Vec<String>,
 }
-
-
 
 #[derive(Debug, Default)]
 struct Counter {
@@ -36,14 +34,14 @@ struct Counter {
 }
 
 impl Counter {
-    pub fn peek(& self) -> usize {
+    pub fn peek(&self) -> usize {
         self.counter
     }
 
     pub fn get(&mut self) -> usize {
         let counter = self.counter.clone();
         self.counter += 1;
-        counter + 1
+        counter
     }
 
     pub fn peek_next(&self) -> usize {
@@ -113,7 +111,6 @@ impl IR {
 
         //writeln!(self.buffer, "BLOCK {}", name).unwrap();
 
-
         let blk = self.visit_instruction_wrapper(code);
 
         writeln!(self.buffer, "{}", blk).unwrap();
@@ -131,27 +128,81 @@ impl IR {
 
             match instr.get_instruction() {
                 OP_BLOCK(_ty, block) => {
-                    write!(str_block, "{}" ,self.visit_instruction_wrapper(block.get_instructions()));
+                    write!(
+                        str_block,
+                        "{}",
+                        self.visit_instruction_wrapper(block.get_instructions())
+                    )
+                    .unwrap();
+                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
                 }
                 OP_LOOP(_ty, block) => {
-                    write!(str_block, "{}", self.visit_instruction_wrapper(block.get_instructions()));
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek() + 1).unwrap();
-                    jumped = true;
+                    write!(
+                        str_block,
+                        "{}",
+                        self.visit_instruction_wrapper(block.get_instructions())
+                    )
+                    .unwrap();
+                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
                 }
                 OP_IF(_ty, block) => {
-                    writeln!(str_block, "if %{} THEN GOTO {}", self.counter.peek(), self.block_counter.peek_next()).unwrap();
-
-                    write!(str_block, "{}", self.visit_instruction_wrapper(block.get_instructions()));
+                    writeln!(
+                        str_block,
+                        "if %{} THEN GOTO {}",
+                        self.counter.peek(),
+                        self.block_counter.peek_next()
+                    )
+                    .unwrap();
+                    write!(
+                        str_block,
+                        "{}",
+                        self.visit_instruction_wrapper(block.get_instructions())
+                    )
+                    .unwrap();
+                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
                 }
-                OP_IF_AND_ELSE(_ty, code1, code2 ) => {
-                    writeln!(str_block, "if %{} THEN GOTO {} ELSE GOTO {}", self.counter.peek(), self.block_counter.peek_next(), self.block_counter.peek_next() + 1).unwrap();
+                OP_IF_AND_ELSE(_ty, code1, code2) => {
+                    writeln!(
+                        str_block,
+                        "if %{} THEN GOTO {} ELSE GOTO {}",
+                        self.counter.peek(),
+                        self.block_counter.peek(),
+                        self.block_counter.peek_next() + 1
+                    )
+                    .unwrap();
+                    write!(
+                        str_block,
+                        "{}",
+                        self.visit_instruction_wrapper(code1.get_instructions())
+                    )
+                    .unwrap();
+                    writeln!(str_block, "GOTO {}", self.block_counter.peek_next()).unwrap();
 
-                    write!(str_block, "{}", self.visit_instruction_wrapper(code1.get_instructions()));
-                    write!(str_block, "{}", self.visit_instruction_wrapper(code2.get_instructions()));
+                    write!(
+                        str_block,
+                        "{}",
+                        self.visit_instruction_wrapper(code2.get_instructions())
+                    )
+                    .unwrap();
+                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
                 }
                 OP_BR(label) => {
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek() - *label as usize).unwrap();
+                    writeln!(
+                        str_block,
+                        "GOTO {}",
+                        self.block_counter.peek() + 1 - *label as usize
+                    )
+                    .unwrap();
                     jumped = true;
+                }
+                OP_BR_IF(label) => {
+                    writeln!(
+                        str_block,
+                        "if %{} THEN GOTO {}",
+                        self.counter.peek(),
+                        self.block_counter.peek() + 1 - *label as usize
+                    )
+                    .unwrap();
                 }
                 _ => {
                     writeln!(str_block, "{}", instr.get_instruction()).unwrap();
@@ -159,9 +210,10 @@ impl IR {
             }
         }
 
+        /*
         if !jumped {
-            writeln!(str_block, "GOTO {}", self.block_counter.peek_next()).unwrap();
-        }
+            writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
+        }*/
 
         writeln!(str_block, "BLOCK {}", self.block_counter.get()).unwrap();
 

@@ -3,23 +3,22 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 1 {
-BLOCK 1
+define 0 {
+BLOCK 0
 OP_I32_CONST
 
-if %0 THEN GOTO 2 ELSE GOTO 3
+if %0 THEN GOTO 1 ELSE GOTO 3
+BLOCK 1
+OP_NOP
+
 BLOCK 2
-OP_NOP
-
-GOTO 3
+GOTO 4
 BLOCK 3
-BLOCK 4
 OP_NOP
 
+BLOCK 4
 GOTO 5
 BLOCK 5
-GOTO 6
-BLOCK 6
 
 };
 
