@@ -26,6 +26,7 @@ struct Function {
 struct Block {
     name: String,
     instructions: Vec<String>,
+    is_loop: bool,
 }
 
 #[derive(Debug, Default)]
@@ -137,6 +138,7 @@ impl IR {
         let block = Block {
             name: format!("{}", self.block_counter.get()),
             instructions: Vec::new(),
+            is_loop: false,
         };
 
         let function = self.functions.get_mut(function_index).unwrap();
@@ -151,14 +153,26 @@ impl IR {
         let function = self.functions.get_mut(function_index).unwrap();
         function.blocks.push(block);
 
-        function.blocks.len() - 1
+        debug!("New block index's is {}", function.blocks.len() - 1);
+
+        let index = function.blocks.len() - 1;
+
+        function.blocks.push(Block {
+            name: format!("{} // THEN BLOCK", self.block_counter.get()),
+            instructions: Vec::new(),
+            is_loop: false,
+        });
+
+        index
     }
 
     fn goto_next(&mut self, function_index: usize, block_index: usize) {
+        debug!("GOTO next block {}", block_index + 1);
+
         let function = self.functions.get_mut(function_index).unwrap();
         function.blocks[block_index]
             .instructions
-            .push(format!("GOTO {}", block_index + 1));
+            .push(format!("GOTO {} // BLOCK ENDED", block_index + 1));
     }
 
     fn push_instr(&mut self, function_index: usize, block_index: usize, instr: String) {
@@ -187,6 +201,7 @@ impl IR {
                     let block = Block {
                         name: format!("{}", self.block_counter.get()),
                         instructions: Vec::new(),
+                        is_loop: false,
                     };
 
                     let block_index = self.push_block(function_index, block);
@@ -208,7 +223,23 @@ impl IR {
                     .unwrap();
                     writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
-                OP_LOOP(_ty, block) => {
+                OP_LOOP(_ty, code) => {
+                    let block = Block {
+                        name: format!("Loop{}", self.block_counter.get()),
+                        instructions: Vec::new(),
+                        is_loop: true,
+                    };
+
+                    let block_index = self.push_block(function_index, block);
+
+                    self.visit_instruction_wrapper(
+                        code.get_instructions(),
+                        function_index,
+                        block_index,
+                    );
+
+                    self.goto_next(function_index, block_index);
+
                     /*
                     write!(
                         str_block,
@@ -218,7 +249,7 @@ impl IR {
                     .unwrap();
                     writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
-                OP_IF(_ty, block) => {
+                OP_IF(_ty, code) => {
                     /*
                     writeln!(
                         str_block,
@@ -262,6 +293,17 @@ impl IR {
                     writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_BR(label) => {
+                      let function = self.functions.get_mut(function_index).unwrap();
+                        
+                      let jmp_index = function.blocks.len() - 1 - *label as usize;
+                      let block = &function.blocks[jmp_index];
+
+                      if block.is_loop {
+                        self.push_instr(function_index, block_index, format!("GOTO {} // REPEAT", jmp_index));
+                      }
+                      else {
+                        self.push_instr(function_index, block_index, format!("GOTO {} // BREAK LOOP", jmp_index + 1));
+                      }
                     /*
                     writeln!(
                         str_block,

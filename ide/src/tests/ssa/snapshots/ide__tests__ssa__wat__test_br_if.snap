@@ -4,12 +4,5 @@ expression: "format!(\"{}\", ir . buffer())"
 
 ---
 define 0 {
-BLOCK 0
-OP_I32_CONST
-
-if %0 THEN GOTO 2
-GOTO 1
-BLOCK 1
-
 };
 

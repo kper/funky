@@ -76,6 +76,7 @@ fn test_simple_block() {
 
 #[test]
 fn test_simple_loop() {
+    env_logger::init();
     wat!("test_simple_loop", "(module (func (result i32) (block (result i32) (loop (result i32) (i32.const 1) (br 1)))))");
 }
 
@@ -96,7 +97,6 @@ fn test_simple_br_if() {
 
 #[test]
 fn test_simple_br_table() {
-    env_logger::init();
     wat!("test_br_table", "(module (func (param i32) (result i32)
     (block
       (block

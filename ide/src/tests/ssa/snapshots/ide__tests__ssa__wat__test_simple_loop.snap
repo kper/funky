@@ -6,15 +6,13 @@ expression: "format!(\"{}\", ir . buffer())"
 define 0 {
 BLOCK 0
 BLOCK 1
-BLOCK 2
+GOTO 2 // BLOCK ENDED
+BLOCK 2 // THEN BLOCK
+BLOCK Loop3
 OP_I32_CONST
 
-GOTO 3
-BLOCK 3
-GOTO 4
-BLOCK 4
-GOTO 5
-BLOCK 5
-
+GOTO 3 // REPEAT
+GOTO 4 // BLOCK ENDED
+BLOCK 4 // THEN BLOCK
 };
 
