@@ -444,6 +444,29 @@ impl IR {
                 OP_F64_CONST(a) => {
                     writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
                 }
+
+                OP_I32_ADD | OP_I32_SUB | OP_I32_MUL | OP_I32_DIV_S | OP_I32_DIV_U
+                | OP_I32_REM_S | OP_I32_REM_U | OP_I32_AND | OP_I32_OR | OP_I32_XOR
+                | OP_I32_SHL | OP_I32_SHR_S | OP_I32_SHR_U | OP_I32_ROTL | OP_I32_ROTR
+                | OP_I64_ADD | OP_I64_SUB | OP_I64_MUL | OP_I64_DIV_S | OP_I64_DIV_U
+                | OP_I64_REM_S | OP_I64_REM_U | OP_I64_AND | OP_I64_OR | OP_I64_XOR
+                | OP_I64_SHL | OP_I64_SHR_S | OP_I64_SHR_U | OP_I64_ROTL | OP_I64_ROTR
+                | OP_I32_EQZ | OP_I32_EQ | OP_I32_NE | OP_I32_LT_S | OP_I32_LT_U | OP_I32_GT_S
+                | OP_I32_GT_U | OP_I32_LE_S | OP_I32_LE_U | OP_I32_GE_S | OP_I32_GE_U
+                | OP_I64_EQZ | OP_I64_EQ | OP_I64_NE | OP_I64_LT_S | OP_I64_LT_U | OP_I64_GT_S
+                | OP_I64_GT_U | OP_I64_LE_S | OP_I64_LE_U | OP_I64_GE_S | OP_I64_GE_U
+                | OP_F32_EQ | OP_F32_NE | OP_F32_LT | OP_F32_GT | OP_F32_LE | OP_F32_GE
+                | OP_F64_EQ | OP_F64_NE | OP_F64_LT | OP_F64_GT | OP_F64_LE | OP_F64_GE => {
+                    writeln!(
+                        self.buffer,
+                        "%{} = %{} {} %{}",
+                        self.counter.get(),
+                        self.counter.peek() - 2,
+                        "op",
+                        self.counter.peek() - 3
+                    )
+                    .unwrap();
+                }
                 _ => {
                     writeln!(self.buffer, "{}", instr.get_instruction()).unwrap();
                 }
