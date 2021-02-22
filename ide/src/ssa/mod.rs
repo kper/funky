@@ -121,7 +121,6 @@ impl IR {
 
         let mut str_block = String::new();
         writeln!(str_block, "BLOCK {}", self.block_counter.get()).unwrap();
-        let mut jumped = false;
 
         for instr in code.iter() {
             debug!("Instruction {}", instr.get_instruction());
@@ -193,7 +192,6 @@ impl IR {
                         self.block_counter.peek() + 1 - *label as usize
                     )
                     .unwrap();
-                    jumped = true;
                 }
                 OP_BR_IF(label) => {
                     writeln!(
@@ -203,6 +201,27 @@ impl IR {
                         self.block_counter.peek() + 1 - *label as usize
                     )
                     .unwrap();
+                }
+                OP_BR_TABLE(labels, else_lb) => {
+                    debug!("table labels {:?} else {:?}", labels, else_lb);
+                    write!(
+                        str_block,
+                        "GOTO table "
+                    )
+                    .unwrap();
+
+                    for lb in labels {
+                        write!(str_block, "{} ", self.block_counter.peek() - *lb as usize).unwrap();
+                    }
+
+                    write!(
+                        str_block,
+                        "ELSE GOTO {}", self.block_counter.peek() - *else_lb as usize
+                    ).unwrap();
+
+                    writeln!(str_block, "");
+                
+
                 }
                 _ => {
                     writeln!(str_block, "{}", instr.get_instruction()).unwrap();

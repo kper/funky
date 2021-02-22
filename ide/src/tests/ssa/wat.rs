@@ -93,3 +93,18 @@ fn test_simple_if_and_else() {
 fn test_simple_br_if() {
     wat!("test_br_if", "(module (func (i32.const 1) (br_if 0)))");
 }
+
+#[test]
+fn test_simple_br_table() {
+    env_logger::init();
+    wat!("test_br_table", "(module (func (param i32) (result i32)
+    (block
+      (block
+        (br_table 1 0 (local.get 0))
+        (return (i32.const 21))
+      )
+      (return (i32.const 20))
+    )
+    (i32.const 22)
+  ))");
+}
