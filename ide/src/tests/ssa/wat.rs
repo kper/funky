@@ -68,3 +68,13 @@ macro_rules! wat {
 fn test_empty_function() {
     wat!("test_empty_function", "(module (func))");
 }
+
+#[test]
+fn test_simple_block() {
+    wat!("test_simple_block", "(module (func (result i32) (block (result i32) i32.const 1)))");
+}
+
+#[test]
+fn test_simple_loop() {
+    wat!("test_simple_loop", "(module (func (result i32) (block (result i32) (loop (result i32) (i32.const 1) (br 1)))))");
+}
