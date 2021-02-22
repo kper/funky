@@ -1,0 +1,29 @@
+---
+source: ide/src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 {
+BLOCK 0
+BLOCK 2
+BLOCK 4
+OP_LOCAL_GET
+
+BR TABLE GOTO %3 ELSE GOTO 5
+OP_I32_CONST
+
+OP_RETURN
+
+GOTO 5 // BLOCK ended for 4
+BLOCK 5 // THEN block for 4
+OP_I32_CONST
+
+OP_RETURN
+
+GOTO 3 // BLOCK ended for 2
+BLOCK 3 // THEN block for 2
+OP_I32_CONST
+
+BLOCK 1
+};
+

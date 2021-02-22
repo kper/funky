@@ -154,61 +154,6 @@ impl IR {
         writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
     }
 
-    /*
-    fn push_block(&mut self, function_index: usize, block: Block) -> usize {
-        let function = self.functions.get_mut(function_index).unwrap();
-        function.blocks.push(block);
-
-        debug!("New block index's is {}", function.blocks.len() - 1);
-
-        let index = function.blocks.len() - 1;
-
-        function.blocks.push(Block {
-            name: format!("{} // THEN BLOCK", self.block_counter.get()),
-            instructions: Vec::new(),
-            is_loop: false,
-        });
-
-        index
-    }
-
-    fn goto_next(&mut self, function_index: usize, block_index: usize) {
-        debug!("GOTO next block {}", block_index + 1);
-
-        let function = self.functions.get_mut(function_index).unwrap();
-        function.blocks[block_index]
-            .instructions
-            .push(format!("GOTO {} // BLOCK ENDED for {}", block_index + 1, block_index));
-    }
-
-    fn push_instr(&mut self, function_index: usize, block_index: usize, instr: String) {
-        let function = self.functions.get_mut(function_index).unwrap();
-        function.blocks[block_index]
-            .instructions
-            .push(format!("{}", instr));
-    }
-
-    fn br(&mut self, function_index: usize, block_index: usize, label: usize) {
-        let function = self.functions.get_mut(function_index).unwrap();
-
-        let jmp_index = function.blocks.len() - 1 - label;
-        let block = &function.blocks[jmp_index];
-
-        if block.is_loop {
-            self.push_instr(
-                function_index,
-                block_index,
-                format!("GOTO {} // REPEAT", jmp_index),
-            );
-        } else {
-            self.push_instr(
-                function_index,
-                block_index,
-                format!("GOTO {} // BREAK", jmp_index + 1),
-            );
-        }
-    }*/
-
     fn visit_instruction_wrapper(
         &mut self,
         code: &[InstructionWrapper],
@@ -242,9 +187,6 @@ impl IR {
 
                     blocks.push(block);
 
-                    //self.functions[function_index].blocks.insert(name.clone(), block);
-                    //self.functions[function_index].blocks.insert(then_name.clone(), tblock);
-
                     writeln!(self.buffer, "BLOCK {}", name.clone()).unwrap();
 
                     self.visit_instruction_wrapper(code.get_instructions(), function_index, blocks);
@@ -264,15 +206,6 @@ impl IR {
                         then_name, name
                     )
                     .unwrap();
-
-                    /*
-                    write!(
-                        str_block,
-                        "{}",
-                        self.visit_instruction_wrapper(block.get_instructions())
-                    )
-                    .unwrap();
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_LOOP(_ty, code) => {
                     let name = self.block_counter.get();
@@ -309,15 +242,6 @@ impl IR {
                         then_name, name
                     )
                     .unwrap();
-
-                    /*
-                    write!(
-                        str_block,
-                        "{}",
-                        self.visit_instruction_wrapper(block.get_instructions())
-                    )
-                    .unwrap();
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_IF(_ty, code) => {
                     let name = self.block_counter.get();
@@ -334,9 +258,6 @@ impl IR {
                     };
 
                     blocks.push(block);
-
-                    //self.functions[function_index].blocks.insert(name.clone(), block);
-                    //self.functions[function_index].blocks.insert(then_name.clone(), tblock);
 
                     writeln!(
                         self.buffer,
@@ -365,21 +286,6 @@ impl IR {
                         then_name, name
                     )
                     .unwrap();
-                    /*
-                    writeln!(
-                        str_block,
-                        "if %{} THEN GOTO {}",
-                        self.counter.peek(),
-                        self.block_counter.peek_next()
-                    )
-                    .unwrap();
-                    write!(
-                        str_block,
-                        "{}",
-                        self.visit_instruction_wrapper(block.get_instructions())
-                    )
-                    .unwrap();
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_IF_AND_ELSE(_ty, code1, code2) => {
                     let name = self.block_counter.get();
@@ -402,9 +308,6 @@ impl IR {
                     };
 
                     blocks.push(block);
-
-                    //self.functions[function_index].blocks.insert(name.clone(), block);
-                    //self.functions[function_index].blocks.insert(then_name.clone(), tblock);
 
                     writeln!(
                         self.buffer,
@@ -462,31 +365,6 @@ impl IR {
                         done_name, then_name
                     )
                     .unwrap();
-
-                    /*
-                    writeln!(
-                        str_block,
-                        "if %{} THEN GOTO {} ELSE GOTO {}",
-                        self.counter.peek(),
-                        self.block_counter.peek(),
-                        self.block_counter.peek_next() + 1
-                    )
-                    .unwrap();
-                    write!(
-                        str_block,
-                        "{}",
-                        self.visit_instruction_wrapper(code1.get_instructions())
-                    )
-                    .unwrap();
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek_next()).unwrap();
-
-                    write!(
-                        str_block,
-                        "{}",
-                        self.visit_instruction_wrapper(code2.get_instructions())
-                    )
-                    .unwrap();
-                    writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_BR(label) => {
                     let jmp_index = blocks_len - 1 - *label as usize;
@@ -494,19 +372,10 @@ impl IR {
                     let block = blocks.get(jmp_index).unwrap();
 
                     if block.is_loop {
-                        writeln!(self.buffer, "GOTO {}", block.name);
-                    //self.block_counter.peek() + 1 - *label as usize
+                        writeln!(self.buffer, "GOTO {}", block.name).unwrap();
                     } else {
-                        writeln!(self.buffer, "GOTO {}", block.name + 1);
+                        writeln!(self.buffer, "GOTO {}", block.name + 1).unwrap();
                     }
-
-                    /*
-                    writeln!(
-                        str_block,
-                        "GOTO {}",
-                        self.block_counter.peek() + 1 - *label as usize
-                    )
-                    .unwrap();*/
                 }
                 OP_BR_IF(label) => {
                     let jmp_index = blocks_len - 1 - *label as usize;
@@ -519,27 +388,50 @@ impl IR {
                             "IF %{} THEN GOTO {}",
                             self.counter.peek(),
                             block.name
-                        );
-                    //self.block_counter.peek() + 1 - *label as usize
+                        )
+                        .unwrap();
                     } else {
                         writeln!(
                             self.buffer,
                             "IF %{} THEN GOTO {}",
                             self.counter.peek(),
                             block.name + 1
-                        );
+                        )
+                        .unwrap();
                     }
-
-                    /*
-                    writeln!(
-                        str_block,
-                        "if %{} THEN GOTO {}",
-                        self.counter.peek(),
-                        self.block_counter.peek() + 1 - *label as usize
-                    )
-                    .unwrap();*/
                 }
+                OP_BR_TABLE(labels, else_lb) => {
+                    let indices: Vec<_> = labels
+                        .iter()
+                        .map(|x| {
+                            let i = blocks_len - 1 - *x as usize;
 
+                            let block = blocks.get(i).unwrap();
+                            if block.is_loop {
+                                block.name
+                            } else {
+                                block.name + 1
+                            }
+                        })
+                        .map(|x| format!("{}", x))
+                        .collect();
+
+                    let jmp_index = blocks_len - 1 - *else_lb as usize;
+                    let block = blocks.get(jmp_index).unwrap();
+
+                    let jmp_index = match block.is_loop {
+                        true => block.name,
+                        false => block.name + 1,
+                    };
+
+                    writeln!(
+                        self.buffer,
+                        "BR TABLE GOTO %{} ELSE GOTO {}",
+                        indices.join(" "),
+                        jmp_index
+                    )
+                    .unwrap();
+                }
                 _ => {
                     writeln!(self.buffer, "{}", instr.get_instruction()).unwrap();
                 }

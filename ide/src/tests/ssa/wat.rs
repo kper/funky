@@ -96,7 +96,6 @@ fn test_simple_if_and_else() {
 
 #[test]
 fn test_simple_br_if() {
-    env_logger::init();
     wat!("test_br_if", "(module (func (i32.const 1) (br_if 0)))");
 }
 
