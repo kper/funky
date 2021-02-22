@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 pub(crate) mod export;
-pub(crate) mod func;
+pub mod func;
 pub mod import_resolver;
 pub(crate) mod memory;
 pub mod module;

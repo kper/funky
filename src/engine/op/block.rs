@@ -59,12 +59,10 @@ impl Engine {
             param_count
         );
 
-        let args = self
+        self
             .store
             .stack
-            .split_off(self.store.stack.len() - param_count as usize);
-
-        args
+            .split_off(self.store.stack.len() - param_count as usize)
     }
 
     /// By given block_ty, return the param count of the block
