@@ -182,6 +182,27 @@ impl IR {
             .push(format!("{}", instr));
     }
 
+    fn br(&mut self, function_index: usize, block_index: usize, label: usize) {
+        let function = self.functions.get_mut(function_index).unwrap();
+
+        let jmp_index = function.blocks.len() - 1 - label;
+        let block = &function.blocks[jmp_index];
+
+        if block.is_loop {
+            self.push_instr(
+                function_index,
+                block_index,
+                format!("GOTO {} // REPEAT", jmp_index),
+            );
+        } else {
+            self.push_instr(
+                function_index,
+                block_index,
+                format!("GOTO {} // BREAK", jmp_index + 1),
+            );
+        }
+    }
+
     fn visit_instruction_wrapper(
         &mut self,
         code: &[InstructionWrapper],
@@ -293,17 +314,7 @@ impl IR {
                     writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_BR(label) => {
-                      let function = self.functions.get_mut(function_index).unwrap();
-                        
-                      let jmp_index = function.blocks.len() - 1 - *label as usize;
-                      let block = &function.blocks[jmp_index];
-
-                      if block.is_loop {
-                        self.push_instr(function_index, block_index, format!("GOTO {} // REPEAT", jmp_index));
-                      }
-                      else {
-                        self.push_instr(function_index, block_index, format!("GOTO {} // BREAK LOOP", jmp_index + 1));
-                      }
+                    self.br(function_index, block_index, *label as usize);
                     /*
                     writeln!(
                         str_block,
@@ -313,6 +324,32 @@ impl IR {
                     .unwrap();*/
                 }
                 OP_BR_IF(label) => {
+                    let function = self.functions.get_mut(function_index).unwrap();
+
+                    let jmp_index = function.blocks.len() - 1 - *label as usize;
+                    let block = &function.blocks[jmp_index];
+
+                    if block.is_loop {
+                        self.push_instr(
+                            function_index,
+                            block_index,
+                            format!(
+                                "IF %{} THEN GOTO {} // REPEAT",
+                                self.counter.peek(),
+                                jmp_index
+                            ),
+                        );
+                    } else {
+                        self.push_instr(
+                            function_index,
+                            block_index,
+                            format!(
+                                "IF %{} THEN GOTO {} // BREAK",
+                                self.counter.peek(),
+                                jmp_index + 1
+                            ),
+                        );
+                    }
                     /*
                     writeln!(
                         str_block,
@@ -323,6 +360,43 @@ impl IR {
                     .unwrap();*/
                 }
                 OP_BR_TABLE(labels, else_lb) => {
+                    let function = self.functions.get_mut(function_index).unwrap();
+
+                    let jmp_index: Vec<_> = labels
+                        .iter()
+                        .map(|label| {
+                            let jmp = function.blocks.len() - 1 - *label as usize;
+
+                            if function.blocks[jmp].is_loop {
+                                jmp
+                            } else {
+                                jmp + 1
+                            }
+                        })
+                        .collect();
+
+                    let else_index = function.blocks.len() - 1 - *else_lb as usize;
+                    let else_block = &function.blocks[else_index];
+
+                    let else_index = match else_block.is_loop {
+                        true => else_index,
+                        false => else_index + 1,
+                    };
+
+                    self.push_instr(
+                        function_index,
+                        block_index,
+                        format!(
+                            "BR TABLE GOTO %{} ELSE GOTO {}",
+                            jmp_index
+                                .into_iter()
+                                .map(|x| format!("{}", x))
+                                .collect::<Vec<_>>()
+                                .join(" "),
+                            else_index
+                        ),
+                    );
+
                     /*
                         debug!("table labels {:?} else {:?}", labels, else_lb);
                         write!(
@@ -345,7 +419,11 @@ impl IR {
                     */
                 }
                 _ => {
-                    self.push_instr(function_index, block_index, format!("{}", instr.get_instruction()));
+                    self.push_instr(
+                        function_index,
+                        block_index,
+                        format!("{}", instr.get_instruction()),
+                    );
                     //writeln!(str_block, "{}", instr.get_instruction()).unwrap();
                 }
             }
