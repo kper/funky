@@ -85,7 +85,8 @@ fn work(opt: &Opt) -> Result<()> {
             let mut content = String::new();
             file.read_to_string(&mut content);
 
-            let old_total = content.trim()
+            let old_total = content
+                .trim()
                 .parse::<f64>()
                 .context("Total in .testrunner is not a float")?;
 
@@ -127,7 +128,7 @@ fn report_spectest(stat: &Statistic) {
 }
 
 fn get_testfiles() -> Vec<TestFile> {
-    let files = read_dir("./testsuite")
+    read_dir("./testsuite")
         .expect("Cannot read ./testsuite")
         .filter(|w| {
             w.as_ref()
@@ -150,7 +151,5 @@ fn get_testfiles() -> Vec<TestFile> {
 
             fs
         })
-        .collect::<Vec<_>>();
-
-    files
+        .collect::<Vec<_>>()
 }
