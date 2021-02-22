@@ -38,9 +38,10 @@ pub(crate) struct Statistic {
 
 impl Statistic {
     pub fn new(name: String) -> Self {
-        let mut stat = Statistic::default();
-        stat.file = name;
-        stat
+        Self {
+            file: name,
+            ..Default::default()
+        }
     }
 
     pub fn register(&mut self, count: usize) {
@@ -156,7 +157,7 @@ impl TestFile {
                     }
 
                     let mut actuals = Vec::new();
-                    let result = self.run_assert_return(&mut engine, x, &mut actuals)?;
+                    let result = self.run_assert_return(&mut engine, x, &mut actuals);
 
                     match result {
                         true => statistic.success(),
@@ -175,7 +176,7 @@ impl TestFile {
         engine: &mut Engine,
         case: &AssertReturn,
         actuals: &mut Vec<Value>,
-    ) -> Result<bool> {
+    ) -> bool {
         let expected: Vec<_> = case.get_expected().iter().copied().collect();
         let args = case.get_args();
 
@@ -184,14 +185,14 @@ impl TestFile {
                 debug!(
                     "Invoking with {} and {:?}",
                     &case.action.field,
-                    args.clone()
+                    args
                 );
 
                 if let Err(err) =
-                    engine.invoke_exported_function_by_name(&case.action.field, args.clone())
+                    engine.invoke_exported_function_by_name(&case.action.field, args)
                 {
                     debug!("failed for lineno {}", case.line);
-                    return Ok(false);
+                    return false;
                 }
 
                 let mut actuals = Vec::new();
@@ -206,7 +207,7 @@ impl TestFile {
                 let res = engine.get(&case.action.field);
                 if let Err(ref err) = res {
                     debug!("failed for lineno {}", case.line);
-                    return Ok(false);
+                    return false;
                 } else {
                     vec![res.unwrap()]
                 }
@@ -228,7 +229,7 @@ impl TestFile {
             total_do_match &= do_match;
         }
 
-        Ok(total_do_match)
+        total_do_match
     }
 
     /// The default imports
@@ -258,7 +259,7 @@ impl TestFile {
             GlobalInstance::immutable(funky::value::Value::F64(666.6)),
         ));
         imports.push(Import::Table(
-            module.clone(),
+            module,
             "table".to_string(),
             TableInstance::new(10, Some(20)),
         ));

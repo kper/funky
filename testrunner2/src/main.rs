@@ -54,7 +54,7 @@ fn main() {
 
 fn work(opt: &Opt) -> Result<()> {
     //TODO implement filtering
-    let mut files = get_testfiles().context("Trying to fetch the testfiles")?;
+    let mut files = get_testfiles();
 
     debug!("=> Detected {} testsuite files", files.len());
 
@@ -126,7 +126,7 @@ fn report_spectest(stat: &Statistic) {
     println!("{:#?}", stat);
 }
 
-fn get_testfiles() -> Result<Vec<TestFile>> {
+fn get_testfiles() -> Vec<TestFile> {
     let files = read_dir("./testsuite")
         .expect("Cannot read ./testsuite")
         .filter(|w| {
@@ -141,10 +141,6 @@ fn get_testfiles() -> Result<Vec<TestFile>> {
                 == "json"
         })
         .map(|w| w.unwrap())
-        .collect::<Vec<_>>();
-
-    let testfiles = files
-        .into_iter()
         .map(|x| {
             let path = x.path();
             let p = path.to_str().unwrap();
@@ -156,5 +152,5 @@ fn get_testfiles() -> Result<Vec<TestFile>> {
         })
         .collect::<Vec<_>>();
 
-    Ok(testfiles)
+    files
 }
