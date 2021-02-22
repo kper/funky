@@ -47,7 +47,7 @@ impl ImportResolver {
     }
 
     /// Get the imported global by module and name
-    pub fn resolve_global(&self, module: &String, name: &String) -> Result<GlobalInstance> {
+    pub fn resolve_global(&self, module: &str, name: &str) -> Result<GlobalInstance> {
         debug!("resolve global {} {}", module, name);
 
         if let Some(Import::Global(_, _, instance)) = self.imports.lookup(module, name) {
@@ -58,7 +58,7 @@ impl ImportResolver {
     }
 
     /// Get the imported table by module and name
-    pub fn resolve_table(&self, module: &String, name: &String) -> Result<TableInstance> {
+    pub fn resolve_table(&self, module: &str, name: &str) -> Result<TableInstance> {
         debug!("resolve table {} {}", module, name);
 
         if let Some(Import::Table(_, _, instance)) = self.imports.lookup(module, name) {

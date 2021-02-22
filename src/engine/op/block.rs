@@ -40,7 +40,7 @@ impl Engine {
         debug!("=> stack {:#?}", self.store.stack);
 
         // Extracting the parameters of the stack
-        let mut block_args = self.get_stack_elements_entering_block(param_count)?;
+        let mut block_args = self.get_stack_elements_entering_block(param_count);
 
         // Pushing the label
         self.store.stack.push(StackContent::Label(label));
@@ -53,7 +53,7 @@ impl Engine {
 
     /// We need to enter block which expects parameters.
     /// We extract `arity` of stack.
-    fn get_stack_elements_entering_block(&mut self, param_count: u32) -> Result<Vec<StackContent>> {
+    fn get_stack_elements_entering_block(&mut self, param_count: u32) -> Vec<StackContent> {
         debug!(
             "For entering a block, popping off parameters {}",
             param_count
@@ -64,7 +64,7 @@ impl Engine {
             .stack
             .split_off(self.store.stack.len() - param_count as usize);
 
-        Ok(args)
+        args
     }
 
     /// By given block_ty, return the param count of the block

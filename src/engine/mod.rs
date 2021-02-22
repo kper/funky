@@ -19,10 +19,10 @@ use crate::convert;
 pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
-use crate::engine::import_resolver::Imports;
 use crate::engine::module::ModuleInstance;
 pub use crate::engine::store::GlobalInstance;
 pub use crate::engine::table::TableInstance;
+use crate::engine::import_resolver::Import;
 use crate::operations::*;
 pub use crate::page::Page;
 use crate::value::{Value, Value::*};
@@ -267,7 +267,7 @@ impl Engine {
         mi: ModuleInstance,
         module: &Module,
         debugger: Box<dyn ProgramCounter>,
-        imports: &Imports,
+        imports: &[Import],
     ) -> Result<Engine> {
         let mut e = Engine {
             module: mi,
@@ -297,7 +297,7 @@ impl Engine {
         res
     }
 
-    fn allocate(&mut self, m: &Module, imports: &Imports) -> Result<()> {
+    fn allocate(&mut self, m: &Module, imports: &[Import]) -> Result<()> {
         info!("Allocation");
         crate::allocation::allocate(m, &mut self.module, &mut self.store, imports)
             .context("Allocation failed")?;
@@ -357,13 +357,10 @@ impl Engine {
         &mut self,
         signature: FunctionSignature,
         body: FunctionBody,
-    ) -> Result<()> {
+    ) {
         self.module.code.push(body.clone());
         self.store
-            .allocate_func_instance(signature, body)
-            .context("Adding function failed")?;
-
-        Ok(())
+            .allocate_func_instance(signature, body);
     }
 
     /// Take only exported functions into consideration
@@ -580,9 +577,8 @@ impl Engine {
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
             debug!("Popping {:?}", self.store.stack.last());
-            match self.store.stack.pop() {
-                Some(v) => ret.push(v),
-                None => {} //None => panic!("Unexpected empty stack!"),
+            if let Some(val) = self.store.stack.pop() {
+                ret.push(val);
             }
         }
 

@@ -45,7 +45,7 @@ impl ModuleInstance {
     /// Adding a new function type.
     /// We need this function to test blocks, with multiple
     /// return values.
-    pub(crate) fn add_func_type(&mut self, r: Vec<ValueType>) -> Result<usize> {
+    pub(crate) fn add_func_type(&mut self, r: Vec<ValueType>) -> usize {
         let instance = FunctionSignature {
             param_types: vec![],
             return_types: r,
@@ -53,7 +53,7 @@ impl ModuleInstance {
 
         self.fn_types.push(instance);
 
-        Ok(self.fn_types.len() - 1)
+        self.fn_types.len() - 1
     }
 
     /// Looking up the function's address in the store by given function's module address.

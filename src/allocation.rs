@@ -1,4 +1,4 @@
-use crate::engine::import_resolver::{Import, ImportResolver, Imports};
+use crate::engine::import_resolver::{Import, ImportResolver};
 use crate::engine::memory::MemoryInstance;
 use crate::engine::store::Store;
 use crate::engine::*;
@@ -14,12 +14,12 @@ pub fn allocate(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-    imports: &Imports,
+    imports: &[Import],
 ) -> Result<()> {
     debug!("allocate");
 
     // Step 1
-    let imports_entries = get_extern_values_in_imports(m)?;
+    let imports_entries = get_extern_values_in_imports(m);
 
     let imports = create_import_resolver(&imports_entries, imports)?;
 
@@ -32,7 +32,7 @@ pub fn allocate(
         .context("Allocating table instances failed")?;
 
     // Step 4a and 8
-    allocate_memories(m, mod_instance, store).context("Allocating memory instances failed")?;
+    allocate_memories(m, mod_instance, store);
 
     // Step 5a and 9
     allocate_globals(m, mod_instance, store, &imports)
@@ -42,31 +42,25 @@ pub fn allocate(
 
     // Step 14.
 
-    allocate_exports(m, mod_instance, store).context("Allocating export instances failed")?;
+    allocate_exports(m, mod_instance, store);
 
     // Step 15.
 
     Ok(())
 }
 
-fn get_extern_values_in_imports(m: &Module) -> Result<Vec<&ImportEntry>> {
-    let ty: Vec<_> = m
-        .sections
+fn get_extern_values_in_imports(m: &Module) -> Vec<&ImportEntry> {
+    m.sections
         .iter()
         .filter_map(|ref w| match w {
             Section::Import(t) => Some(&t.entries),
             _ => None,
         })
         .flatten()
-        .collect();
-
-    Ok(ty)
+        .collect()
 }
 
-fn create_import_resolver(
-    _entries: &Vec<&ImportEntry>,
-    imports: &Imports,
-) -> Result<ImportResolver> {
+fn create_import_resolver(_entries: &[&ImportEntry], imports: &[Import]) -> Result<ImportResolver> {
     debug!("match imports");
     let mut resolver = ImportResolver::new();
 
@@ -125,7 +119,7 @@ fn allocate_functions(
                 }
             };
 
-            store.allocate_func_instance(fbody.clone(), fcode.clone())?;
+            store.allocate_func_instance(fbody.clone(), fcode.clone());
         }
 
         mod_instance
@@ -140,7 +134,7 @@ fn allocate_tables(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     store: &mut Store,
-    imports: &Vec<&ImportEntry>,
+    imports: &[&ImportEntry],
     import_resolver: &ImportResolver,
 ) -> Result<()> {
     debug!("allocate tables");
@@ -176,11 +170,7 @@ fn allocate_tables(
     Ok(())
 }
 
-fn allocate_memories(
-    m: &Module,
-    mod_instance: &mut ModuleInstance,
-    store: &mut Store,
-) -> Result<()> {
+fn allocate_memories(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) {
     debug!("allocate memories");
     // Gets all memories and imports
     let ty = validation::extract::get_mems(&m);
@@ -204,8 +194,6 @@ fn allocate_memories(
 
     debug!("Memories in mod_i {:?}", mod_instance.memaddrs);
     debug!("Memories in store {:#?}", store.memory);
-
-    Ok(())
 }
 
 fn allocate_globals(
@@ -259,7 +247,7 @@ fn allocate_exports(
     m: &Module,
     mod_instance: &mut ModuleInstance,
     _store: &mut Store,
-) -> Result<()> {
+) {
     debug!("allocate exports");
 
     // Gets all exports
@@ -272,8 +260,6 @@ fn allocate_exports(
     }
 
     debug!("Exports in mod_i {:?}", mod_instance.exports);
-
-    Ok(())
 }
 
 pub(crate) fn get_expr_const_ty_global(

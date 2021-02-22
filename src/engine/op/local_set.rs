@@ -1,6 +1,6 @@
 use crate::engine::stack::{Frame, StackContent};
 use crate::engine::Engine;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use wasm_parser::core::LocalIdx;
 
 impl Engine {
@@ -18,8 +18,8 @@ impl Engine {
                     }
                 }
             }
-            Some(x) => panic!("Expected value but found {:?}", x),
-            None => panic!("Empty stack during local.set"),
+            Some(x) => bail!("Expected value but found {:?}", x),
+            None => bail!("Empty stack during local.set"),
         }
 
         Ok(())

@@ -22,7 +22,7 @@ impl Engine {
         );
         let label = labels
             .get(labels.len() - 1 - label_idx as usize)
-            .map(|x| x.clone());
+            .copied();
 
         if let Some(StackContent::Label(lb)) = label {
             let arity = lb.get_arity();
@@ -52,6 +52,6 @@ impl Engine {
             bail!("Label not found");
         }
 
-        return Ok(InstructionOutcome::BRANCH(label_idx));
+        Ok(InstructionOutcome::BRANCH(label_idx))
     }
 }

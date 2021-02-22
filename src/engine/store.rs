@@ -76,7 +76,7 @@ impl Store {
         &mut self,
         signature: FunctionSignature,
         code: FunctionBody,
-    ) -> Result<()> {
+    ) {
         debug!("Allocation function {:?}", signature);
 
         let instance = FuncInstance {
@@ -85,8 +85,6 @@ impl Store {
         };
 
         self.funcs.push(instance);
-
-        Ok(())
     }
 
     pub(crate) fn count_functions(&self) -> usize {
