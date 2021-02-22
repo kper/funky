@@ -3,16 +3,16 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 1 {
-BLOCK 1
-BLOCK 3
-BLOCK 5 // LOOP
-%1 = 1
-GOTO 4
-GOTO 6 // BLOCK ended for 5
-BLOCK 6 // THEN block for 5
-GOTO 4 // BLOCK ended for 3
-BLOCK 4 // THEN block for 3
+define 0 {
+BLOCK 0
 BLOCK 2
+BLOCK 4 // LOOP
+%0 = 1
+GOTO 3
+GOTO 5 // BLOCK ended for 4
+BLOCK 5 // THEN block for 4
+GOTO 3 // BLOCK ended for 2
+BLOCK 3 // THEN block for 2
+BLOCK 1
 };
 

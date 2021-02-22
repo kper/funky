@@ -1,7 +1,11 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
+#[macro_use] extern crate lalrpop_util;
 
 mod ssa;
+
+lalrpop_mod!(pub grammar);
+
 #[cfg(test)]
 mod tests;
 

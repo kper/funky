@@ -6,28 +6,27 @@ expression: "format!(\"{}\", ir . buffer())"
 define 0 {
 BLOCK 0
 BLOCK 2
-%0 = -1
+%1 = -1
 OP_DROP
 
-%1 = 1
+%2 = 1
 BLOCK 4
-%2 = 2
+%3 = 2
 BLOCK 6
-%3 = 4
+%4 = 4
 OP_DROP
 
-%4 = 8
-%5 = 16
-OP_LOCAL_GET
-
-BR TABLE GOTO %7 5 ELSE GOTO 3
-%6 = %5 op %4
+%5 = 8
+%6 = 16
+%7 = %0
+BR TABLE GOTO 7 5 ELSE GOTO 3
+%8 = %7 op %6
 GOTO 7 // BLOCK ended for 6
 BLOCK 7 // THEN block for 6
-%7 = %6 op %5
+%9 = %8 op %7
 GOTO 5 // BLOCK ended for 4
 BLOCK 5 // THEN block for 4
-%8 = %7 op %6
+%10 = %9 op %8
 GOTO 3 // BLOCK ended for 2
 BLOCK 3 // THEN block for 2
 BLOCK 1

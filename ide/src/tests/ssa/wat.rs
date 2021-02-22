@@ -1,12 +1,11 @@
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
-use funky::value::Value::*;
 use insta::assert_snapshot;
 use std::fs::File;
 use std::io::{self, Write};
 use wasm_parser::{parse, read_wasm};
 use validation::validate;
-use crate::ssa::IR;
+use crate::ssa::wasm_ast::IR;
 
 macro_rules! wat {
     ($name:expr, $input:expr) => {{
@@ -76,7 +75,7 @@ fn test_simple_block() {
 
 #[test]
 fn test_nested_block() {
-    wat!("test_simple_block", "(module (func (result i32) (block (result i32) (block (result i32) i32.const 1))))");
+    wat!("test_nested_block", "(module (func (result i32) (block (result i32) (block (result i32) i32.const 1))))");
 }
 
 #[test]

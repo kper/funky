@@ -1,0 +1,49 @@
+use std::str::FromStr;
+use crate::ssa::ast::*;
+
+grammar;
+
+pub Program : Program = {
+    
+};
+
+pub Function : Function = {
+    "define" <name:Name> "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+        }
+    }
+}
+
+pub Instruction : Vec<Instruction> = {
+    "BLOCK" <n:Id> => vec![Instruction::Block(n)],
+    <dest:Reg> "=" <src:Reg> => vec![Instruction::Assign(dest, src)],
+    <dest:Reg> "=" <n:Num> => vec![Instruction::Const(dest, n)],
+    <dest:Reg> "=" "op" <src:Reg> => vec![Instruction::Unop(dest, src)],
+    <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => vec![Instruction::BinOp(dest, src1, src2)],
+    "GOTO" <n:Id> => vec![Instruction::Jump(n)],
+    "IF" <reg:Reg> "THEN" "GOTO" <j1:Id> "ELSE" "GOTO" <j2:Id> => vec![Instruction::Jump(j1), Instruction::Jump(j2)],
+    "BR" "TABLE" "GOTO" <n:Id*> "ELSE" "GOTO" <e:Id> => {
+        let mut result = Vec::new();
+        for i in n {
+            result.push(Instruction::Jump(i));
+        }
+
+        result.push(Instruction::Jump(e));
+
+        result
+    }
+};
+
+Id : String = {
+    <n:Num> => (n as usize).to_string()
+};
+
+pub Reg: String = {
+    "%" <n:Num> => format!("%{}", n),
+    "%" <n:Name> => format!("%{}", n),
+};
+
+pub Num: f64 = <s:r"[+-]?[0-9]*[.,]?[0-9]+"> => f64::from_str(s).unwrap();
+pub Name: String = <s:r"[a-zA-Z]+"> => s.to_string();

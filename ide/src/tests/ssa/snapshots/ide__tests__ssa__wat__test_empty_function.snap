@@ -3,8 +3,8 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 1 {
+define 0 {
+BLOCK 0
 BLOCK 1
-BLOCK 2
 };
 

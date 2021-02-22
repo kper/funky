@@ -1,0 +1,63 @@
+---
+source: ide/src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 {
+BLOCK 0
+%1 = %0
+%2 = 1
+%3 = %2 op %1
+IF %4 THEN GOTO 2 ELSE GOTO 3
+BLOCK 2 
+%4 = 1
+GOTO 4 // BLOCK ended for 2
+BLOCK 3 // THEN block for 2
+%5 = %0
+%6 = 2
+%7 = %6 op %5
+CALL 0(8)
+%8 = %0
+%9 = 1
+%10 = %9 op %8
+CALL 0(11)
+%11 = %10 op %9
+GOTO 4 // BLOCK ended for 2
+BLOCK 4 // THEN block for 3
+BLOCK 1
+};
+define 1 {
+BLOCK 5
+%13 = %12
+%14 = %13 op %12
+IF %15 THEN GOTO 7 ELSE GOTO 8
+BLOCK 7 
+%15 = 44
+GOTO 9 // BLOCK ended for 7
+BLOCK 8 // THEN block for 7
+%16 = %12
+%17 = 1
+%18 = %17 op %16
+CALL 2(19)
+GOTO 9 // BLOCK ended for 7
+BLOCK 9 // THEN block for 8
+BLOCK 6
+};
+define 2 {
+BLOCK 10
+%20 = %19
+%21 = %20 op %19
+IF %22 THEN GOTO 12 ELSE GOTO 13
+BLOCK 12 
+%22 = 99
+GOTO 14 // BLOCK ended for 12
+BLOCK 13 // THEN block for 12
+%23 = %19
+%24 = 1
+%25 = %24 op %23
+CALL 1(26)
+GOTO 14 // BLOCK ended for 12
+BLOCK 14 // THEN block for 13
+BLOCK 11
+};
+

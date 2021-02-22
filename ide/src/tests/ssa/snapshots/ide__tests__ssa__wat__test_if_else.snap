@@ -3,19 +3,19 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 1 {
-BLOCK 1
-%1 = 1
-IF %1 THEN GOTO 3 ELSE GOTO 4
-BLOCK 3 
+define 0 {
+BLOCK 0
+%0 = 1
+IF %1 THEN GOTO 2 ELSE GOTO 3
+BLOCK 2 
 OP_NOP
 
-GOTO 5 // BLOCK ended for 3
+GOTO 4 // BLOCK ended for 2
+BLOCK 3 // THEN block for 2
+OP_NOP
+
+GOTO 4 // BLOCK ended for 2
 BLOCK 4 // THEN block for 3
-OP_NOP
-
-GOTO 5 // BLOCK ended for 3
-BLOCK 5 // THEN block for 4
-BLOCK 2
+BLOCK 1
 };
 
