@@ -138,14 +138,20 @@ impl IR {
         let code = &body.code;
 
         let name = self.block_counter.get();
+        let then_name = self.block_counter.get();
+
         let block = Block {
             name: name.clone(),
             is_loop: false,
         };
 
+        let mut blocks = vec![block];
+
         writeln!(self.buffer, "BLOCK {}", name).unwrap();
 
-        self.visit_instruction_wrapper(code, function_index, &mut vec![]);
+        self.visit_instruction_wrapper(code, function_index, &mut blocks);
+
+        writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
     }
 
     /*
@@ -410,7 +416,11 @@ impl IR {
                     .unwrap();
                     writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
 
-                    self.visit_instruction_wrapper(code1.get_instructions(), function_index, blocks);
+                    self.visit_instruction_wrapper(
+                        code1.get_instructions(),
+                        function_index,
+                        blocks,
+                    );
 
                     writeln!(
                         self.buffer,
@@ -430,7 +440,11 @@ impl IR {
 
                     blocks.push(tblock);
 
-                    self.visit_instruction_wrapper(code2.get_instructions(), function_index, blocks);
+                    self.visit_instruction_wrapper(
+                        code2.get_instructions(),
+                        function_index,
+                        blocks,
+                    );
 
                     blocks.pop();
 
@@ -448,8 +462,6 @@ impl IR {
                         done_name, then_name
                     )
                     .unwrap();
-
-
 
                     /*
                     writeln!(
@@ -497,6 +509,26 @@ impl IR {
                     .unwrap();*/
                 }
                 OP_BR_IF(label) => {
+                    let jmp_index = blocks_len - 1 - *label as usize;
+
+                    let block = blocks.get(jmp_index).unwrap();
+
+                    if block.is_loop {
+                        writeln!(
+                            self.buffer,
+                            "IF %{} THEN GOTO {}",
+                            self.counter.peek(),
+                            block.name
+                        );
+                    //self.block_counter.peek() + 1 - *label as usize
+                    } else {
+                        writeln!(
+                            self.buffer,
+                            "IF %{} THEN GOTO {}",
+                            self.counter.peek(),
+                            block.name + 1
+                        );
+                    }
 
                     /*
                     writeln!(

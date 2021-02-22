@@ -81,7 +81,6 @@ fn test_nested_block() {
 
 #[test]
 fn test_simple_loop() {
-    env_logger::init();
     wat!("test_simple_loop", "(module (func (result i32) (block (result i32) (loop (result i32) (i32.const 1) (br 1)))))");
 }
 
@@ -97,6 +96,7 @@ fn test_simple_if_and_else() {
 
 #[test]
 fn test_simple_br_if() {
+    env_logger::init();
     wat!("test_br_if", "(module (func (i32.const 1) (br_if 0)))");
 }
 
