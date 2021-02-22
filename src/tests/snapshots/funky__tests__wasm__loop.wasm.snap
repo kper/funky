@@ -1,6 +1,7 @@
 ---
 source: src/tests/wasm.rs
 expression: "format!(\"{:#?}\", engine)"
+
 ---
 Engine {
     module: ModuleInstance {
@@ -609,12 +610,24 @@ Engine {
             },
         ],
         funcaddrs: [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
+            FuncAddr(
+                0,
+            ),
+            FuncAddr(
+                1,
+            ),
+            FuncAddr(
+                2,
+            ),
+            FuncAddr(
+                3,
+            ),
+            FuncAddr(
+                4,
+            ),
+            FuncAddr(
+                5,
+            ),
         ],
         tableaddrs: [],
         memaddrs: [],

@@ -56,7 +56,7 @@ pub fn get_start(module: &Module) -> Vec<&StartSection> {
     ty
 }
 
-pub fn get_elemens(module: &Module) -> Vec<&ElementSegment> {
+pub fn get_elements(module: &Module) -> Vec<&ElementSegment> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -123,8 +123,8 @@ pub fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
     all
 }
 
-pub fn get_tables(module: &Module) -> Vec<&TableType> {
-    let ty: Vec<_> = module
+pub fn get_defined_tables(module: &Module) -> Vec<&TableType> {
+    module
         .sections
         .iter()
         .filter_map(|ref w| match w {
@@ -132,7 +132,11 @@ pub fn get_tables(module: &Module) -> Vec<&TableType> {
             _ => None,
         })
         .flatten()
-        .collect();
+        .collect()
+}
+
+pub fn get_tables(module: &Module) -> Vec<&TableType> {
+    let ty = get_defined_tables(module);
 
     let imported: Vec<_> = module
         .sections
@@ -202,6 +206,23 @@ pub fn get_mems(module: &Module) -> Vec<&MemoryType> {
 }
 
 pub fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) {
+    let ty = get_defined_globals(module);
+    let imported = get_imported_globals(module)
+        .into_iter()
+        .filter_map(|entry| match &entry.desc {
+            ImportDesc::Global { ty: k } => Some(k),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    let mut all = Vec::with_capacity(ty.len() + imported.len());
+    all.extend(ty.iter().map(|w| &w.ty).collect::<Vec<&GlobalType>>());
+    all.extend(imported);
+
+    (ty, all)
+}
+
+pub fn get_defined_globals(module: &Module) -> Vec<&GlobalVariable> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -210,9 +231,12 @@ pub fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) 
             _ => None,
         })
         .flatten()
-        //.map(|w| &w.ty)
         .collect();
 
+    ty
+}
+
+pub fn get_imported_globals(module: &Module) -> Vec<&ImportEntry> {
     let imported: Vec<_> = module
         .sections
         .iter()
@@ -221,10 +245,12 @@ pub fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) 
                 let entries = section
                     .entries
                     .iter()
+                    .filter(|x| matches!(&x.desc, ImportDesc::Global { .. }))
+                    /*
                     .filter_map(|entry| match &entry.desc {
-                        ImportDesc::Global { ty: k } => Some(k),
+                        ImportDesc::Global { ty } => Some()),
                         _ => None,
-                    })
+                    })*/
                     .collect::<Vec<_>>();
 
                 Some(entries)
@@ -234,9 +260,5 @@ pub fn get_globals(module: &Module) -> (Vec<&GlobalVariable>, Vec<&GlobalType>) 
         .flatten()
         .collect();
 
-    let mut all = Vec::with_capacity(ty.len() + imported.len());
-    all.extend(ty.iter().map(|w| &w.ty).collect::<Vec<&GlobalType>>());
-    all.extend(imported);
-
-    (ty, all)
+    imported
 }

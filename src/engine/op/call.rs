@@ -1,25 +1,71 @@
-use wasm_parser::core::FuncIdx;
-use anyhow::Result;
-use crate::engine::Engine;
-use crate::engine::map_stackcontent_to_value;
+use crate::engine::{Engine};
+use crate::engine::stack::StackContent;
+use crate::value::Value;
+use anyhow::{bail, Context, Result};
+use wasm_parser::core::FuncAddr;
 
 impl Engine {
-    pub(crate) fn call_function(&mut self, idx: &FuncIdx) -> Result<()> {
-        debug!("OP_CALL {:?}", idx);
+    pub(crate) fn call_function(&mut self, func_addr: &FuncAddr) -> Result<()> {
+        debug!("OP_CALL {:?}", func_addr);
 
-        trace!("fn_types: {:#?}", self.module.fn_types);
-        let t = self.store.funcs[*idx as usize].ty.clone();
-
-        let args = self
+        let param_count = &self
             .store
-            .stack
-            .split_off(self.store.stack.len() - t.param_types.len())
-            .into_iter()
-            .map(map_stackcontent_to_value)
-            .collect::<Result<_>>()?;
+            .get_func_instance(func_addr)?
+            .ty
+            .param_types
+            .len();
 
-        self.invoke_function(*idx, args)?;
+        debug!("=> Function with {:?} found", func_addr);
+        debug!("=> Stack is {:#?}", self.store.stack);
+
+        let args = self.extract_args_of_stack(*param_count).with_context(|| {
+            format!(
+                "Cannot extract args out of stack for function {:?}",
+                func_addr
+            )
+        })?;
+
+        //debug!("=> Resetting stack");
+        //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
+
+        self.invoke_function(func_addr, args)
+            .with_context(|| format!("Invoking function {:?} failed", func_addr))?;
+
+        //debug!("=> Restoring stack");
+        // Insert `stack` before the values of `self.store.stack`
+        //let mut new_stack: Vec<_> = self.store.stack.drain(0..).collect();
+        //self.store.stack = stack.drain(0..).collect();
+        //self.store.stack.append(&mut new_stack);
 
         Ok(())
+    }
+
+    /// Drops the `param_count` off the stack and returns it
+    /// so it can be used as arguments for a web assembly function.
+    /// However, we are ignoring labels and frames.
+    pub(crate) fn extract_args_of_stack(&mut self, mut param_count: usize) -> Result<Vec<Value>> {
+        if param_count == 0 {
+            return Ok(vec![]);
+        }
+
+        let mut args =  Vec::new();
+
+        while param_count > 0 {
+            if let Some(StackContent::Value(val)) = self.store.stack.pop() {
+                args.push(val);
+            } 
+            else {
+                bail!("No value left at the stack.");
+            }
+
+            param_count -= 1;
+        }
+
+        let args  = args.into_iter().rev().collect::<Vec<_>>();
+
+        debug!("=> Stack is {:#?}", self.store.stack);
+        debug!("=> args {:#?}", args);
+
+        Ok(args)
     }
 }

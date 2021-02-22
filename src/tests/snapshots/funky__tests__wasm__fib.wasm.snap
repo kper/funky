@@ -1,0 +1,467 @@
+---
+source: src/tests/wasm.rs
+expression: "format!(\"{:#?}\", engine)"
+
+---
+Engine {
+    module: ModuleInstance {
+        start: 0,
+        code: [
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 23,
+                        instruction: OP_BLOCK(
+                            Empty,
+                            CodeBlock {
+                                id: 3,
+                                instructions: [
+                                    InstructionWrapper {
+                                        instruction_id: 20,
+                                        instruction: OP_BLOCK(
+                                            Empty,
+                                            CodeBlock {
+                                                id: 2,
+                                                instructions: [
+                                                    InstructionWrapper {
+                                                        instruction_id: 6,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 7,
+                                                        instruction: OP_I32_CONST(
+                                                            1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 8,
+                                                        instruction: OP_I32_LE_U,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 9,
+                                                        instruction: OP_IF(
+                                                            Empty,
+                                                            CodeBlock {
+                                                                id: 1,
+                                                                instructions: [
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 1,
+                                                                        instruction: OP_LOCAL_GET(
+                                                                            0,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 2,
+                                                                        instruction: OP_I32_CONST(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 3,
+                                                                        instruction: OP_I32_SUB,
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 4,
+                                                                        instruction: OP_BR_IF(
+                                                                            1,
+                                                                        ),
+                                                                    },
+                                                                    InstructionWrapper {
+                                                                        instruction_id: 5,
+                                                                        instruction: OP_BR(
+                                                                            2,
+                                                                        ),
+                                                                    },
+                                                                ],
+                                                            },
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 10,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 11,
+                                                        instruction: OP_I32_CONST(
+                                                            -1,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 12,
+                                                        instruction: OP_I32_ADD,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 13,
+                                                        instruction: OP_CALL(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 14,
+                                                        instruction: OP_LOCAL_GET(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 15,
+                                                        instruction: OP_I32_CONST(
+                                                            -2,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 16,
+                                                        instruction: OP_I32_ADD,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 17,
+                                                        instruction: OP_CALL(
+                                                            0,
+                                                        ),
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 18,
+                                                        instruction: OP_I32_ADD,
+                                                    },
+                                                    InstructionWrapper {
+                                                        instruction_id: 19,
+                                                        instruction: OP_RETURN,
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 21,
+                                        instruction: OP_I32_CONST(
+                                            0,
+                                        ),
+                                    },
+                                    InstructionWrapper {
+                                        instruction_id: 22,
+                                        instruction: OP_LOCAL_SET(
+                                            0,
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 24,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 25,
+                        instruction: OP_LOCAL_GET(
+                            0,
+                        ),
+                    },
+                    InstructionWrapper {
+                        instruction_id: 26,
+                        instruction: OP_CALL(
+                            0,
+                        ),
+                    },
+                ],
+            },
+            FunctionBody {
+                locals: [],
+                code: [
+                    InstructionWrapper {
+                        instruction_id: 27,
+                        instruction: OP_NOP,
+                    },
+                ],
+            },
+        ],
+        fn_types: [
+            FunctionSignature {
+                param_types: [
+                    I32,
+                ],
+                return_types: [
+                    I32,
+                ],
+            },
+            FunctionSignature {
+                param_types: [],
+                return_types: [],
+            },
+        ],
+        funcaddrs: [
+            FuncAddr(
+                0,
+            ),
+            FuncAddr(
+                1,
+            ),
+            FuncAddr(
+                2,
+            ),
+        ],
+        tableaddrs: [],
+        memaddrs: [
+            0,
+        ],
+        globaladdrs: [],
+        exports: [
+            ExportInstance {
+                name: "memory",
+                value: Memory {
+                    ty: 0,
+                },
+            },
+            ExportInstance {
+                name: "fib",
+                value: Function {
+                    ty: 1,
+                },
+            },
+            ExportInstance {
+                name: "main",
+                value: Function {
+                    ty: 2,
+                },
+            },
+            ExportInstance {
+                name: "__wbindgen_start",
+                value: Function {
+                    ty: 2,
+                },
+            },
+        ],
+    },
+    started: false,
+    store: Store {
+        funcs: [
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 23,
+                            instruction: OP_BLOCK(
+                                Empty,
+                                CodeBlock {
+                                    id: 3,
+                                    instructions: [
+                                        InstructionWrapper {
+                                            instruction_id: 20,
+                                            instruction: OP_BLOCK(
+                                                Empty,
+                                                CodeBlock {
+                                                    id: 2,
+                                                    instructions: [
+                                                        InstructionWrapper {
+                                                            instruction_id: 6,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 7,
+                                                            instruction: OP_I32_CONST(
+                                                                1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 8,
+                                                            instruction: OP_I32_LE_U,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 9,
+                                                            instruction: OP_IF(
+                                                                Empty,
+                                                                CodeBlock {
+                                                                    id: 1,
+                                                                    instructions: [
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 1,
+                                                                            instruction: OP_LOCAL_GET(
+                                                                                0,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 2,
+                                                                            instruction: OP_I32_CONST(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 3,
+                                                                            instruction: OP_I32_SUB,
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 4,
+                                                                            instruction: OP_BR_IF(
+                                                                                1,
+                                                                            ),
+                                                                        },
+                                                                        InstructionWrapper {
+                                                                            instruction_id: 5,
+                                                                            instruction: OP_BR(
+                                                                                2,
+                                                                            ),
+                                                                        },
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 10,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 11,
+                                                            instruction: OP_I32_CONST(
+                                                                -1,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 12,
+                                                            instruction: OP_I32_ADD,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 13,
+                                                            instruction: OP_CALL(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 14,
+                                                            instruction: OP_LOCAL_GET(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 15,
+                                                            instruction: OP_I32_CONST(
+                                                                -2,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 16,
+                                                            instruction: OP_I32_ADD,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 17,
+                                                            instruction: OP_CALL(
+                                                                0,
+                                                            ),
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 18,
+                                                            instruction: OP_I32_ADD,
+                                                        },
+                                                        InstructionWrapper {
+                                                            instruction_id: 19,
+                                                            instruction: OP_RETURN,
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 21,
+                                            instruction: OP_I32_CONST(
+                                                0,
+                                            ),
+                                        },
+                                        InstructionWrapper {
+                                            instruction_id: 22,
+                                            instruction: OP_LOCAL_SET(
+                                                0,
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 24,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [
+                        I32,
+                    ],
+                    return_types: [
+                        I32,
+                    ],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 25,
+                            instruction: OP_LOCAL_GET(
+                                0,
+                            ),
+                        },
+                        InstructionWrapper {
+                            instruction_id: 26,
+                            instruction: OP_CALL(
+                                0,
+                            ),
+                        },
+                    ],
+                },
+            },
+            FuncInstance {
+                ty: FunctionSignature {
+                    param_types: [],
+                    return_types: [],
+                },
+                code: FunctionBody {
+                    locals: [],
+                    code: [
+                        InstructionWrapper {
+                            instruction_id: 27,
+                            instruction: OP_NOP,
+                        },
+                    ],
+                },
+            },
+        ],
+        tables: [],
+        memory: [
+            MemoryInstance {
+                data (only length): 1114112,
+                max: None,
+            },
+        ],
+        stack: [],
+        globals: [],
+    },
+    debugger: RelativeProgramCounter(
+        0,
+    ),
+}

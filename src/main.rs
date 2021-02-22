@@ -9,6 +9,7 @@ use funky::cli::parse_args;
 use funky::debugger::RelativeProgramCounter;
 use funky::engine::module::ModuleInstance;
 use funky::engine::Engine;
+use funky::engine::import_resolver::Imports;
 use serde::Deserialize;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
@@ -68,25 +69,39 @@ fn main() {
     let mi = ModuleInstance::new(&module);
     info!("Constructing engine");
 
-    let mut e = Engine::new(mi, &module, Box::new(RelativeProgramCounter::default()));
+    let e = Engine::new(
+        mi,
+        &module,
+        Box::new(RelativeProgramCounter::default()),
+        &Imports::new(),
+    );
     debug!("engine {:#?}", e);
 
     debug!("Instantiation engine");
 
-    if let Err(err) = e.instantiation(&module) {
-        panic!("{}", err);
+    if let Err(err) = e {
+        eprintln!("ERROR: {}", err);
+        err.chain()
+            .skip(1)
+            .for_each(|cause| eprintln!("because: {}", cause));
+        std::process::exit(1);
     }
+
+    let mut engine = e.unwrap();
 
     info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
-    if let Err(err) = e.invoke_exported_function_by_name(&args.arg_function, inv_args) {
-        panic!("{}", err);
+    if let Err(err) = engine.invoke_exported_function_by_name(&args.arg_function, inv_args) {
+        eprintln!("ERROR: {}", err);
+        err.chain()
+            .skip(1)
+            .for_each(|cause| eprintln!("because: {}", cause));
+        std::process::exit(1);
     }
 
-    if args.flag_spec {
-        println!("{:?}", e.store.stack.last())
-    } else {
-        println!("Last value on stack was: {:?}", e.store.stack.last())
+    if engine.store.stack.last().is_some() {
+        let value = engine.store.stack.pop();
+        println!("{:?}", value);
     }
 }

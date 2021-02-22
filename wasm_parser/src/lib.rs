@@ -47,7 +47,6 @@ pub fn parse(content: Vec<u8>) -> Result<Module> {
 
     let parsed = parse_module(slice).expect("Parsing failed");
 
-    debug!("{:#?}", parsed);
     let (_, sections) = parsed;
     Ok(Module { sections })
 }
@@ -76,8 +75,6 @@ fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
     let mut counter = Counter::default();
 
     debug!("SECTION {:?} {:?}", n, size);
-
-    debug!("{:x?}", i);
 
     let (i, m) = match n[0] {
         0 => parse_custom_section(i, size)?,
@@ -167,7 +164,6 @@ fn parse_global_section<'a, 'b>(
 ) -> IResult<&'a [u8], Section> {
     debug!("parse global function");
     let (mut i, times) = take_leb_u32(i)?;
-    //let (i, globals) = count(take_global, times as usize)(i)?;
     let mut globals = Vec::with_capacity(times as usize);
 
     for _ in 0..times {
@@ -257,7 +253,6 @@ fn take_code<'a, 'b>(i: &'a [u8], counter: &'b mut Counter) -> IResult<&'a [u8],
     debug!("parse_code");
 
     let (i, _size) = take_leb_u32(i)?;
-    debug!("_size {}", _size);
     let (i, k) = take_func(i, counter)?;
 
     Ok((i, k))
@@ -372,8 +367,6 @@ pub(crate) fn take_expr<'a, 'b>(
         instructions.push(ii);
         i = w;
     }
-
-    debug!("instructions {:#?}", instructions);
 
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
@@ -556,9 +549,11 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
         0x40 => (u, BlockType::Empty),
         0x7F | 0x7E | 0x7D | 0x7C => (u, BlockType::ValueType(n[0].into())),
         _ => {
+            // This must be signed 33 bit
+            // Weird, Page 96 spec
             let (i, k) = take_leb_i33(i)?;
 
-            (i, BlockType::ValueTypeTy(k))
+            (i, BlockType::FuncTy(k))
         }
     };
 
@@ -661,17 +656,6 @@ pub(crate) fn take_leb_i33(i: &[u8]) -> IResult<&[u8], i64> {
         Ok((i, leb.0))
     }
 }
-
-/*
-fn take_leb_u8(i: &[u8]) -> IResult<&[u8], u8> {
-    debug!("take_leb_u8");
-    let (_, bytes) = take(1u8)(i)?;
-    let leb = read_u8_leb128(bytes);
-    let (i, _) = take(leb.1)(i)?;
-
-    Ok((i, leb.0))
-}
-*/
 
 #[cfg(test)]
 mod tests {
@@ -842,7 +826,12 @@ mod tests {
 
     #[test]
     fn test_as_loop_mid_br_if() {
-        env_logger::init();
+        //env_logger::init();
         test_file!("as_loop_mid_br_if.wasm");
+    }
+
+    #[test]
+    fn test_global() {
+        test_file!("global.wasm");
     }
 }

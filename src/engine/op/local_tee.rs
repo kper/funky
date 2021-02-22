@@ -1,7 +1,6 @@
-use crate::engine::stack::Frame;
-use crate::engine::stack::StackContent;
+use crate::engine::stack::{Frame, StackContent};
 use crate::engine::Engine;
-use anyhow::{anyhow, Result};
+use anyhow::{bail, Result};
 use wasm_parser::core::LocalIdx;
 
 impl Engine {
@@ -10,11 +9,11 @@ impl Engine {
 
         let value = match self.store.stack.pop() {
             Some(StackContent::Value(v)) => v,
-            Some(x) => {
-                return Err(anyhow!("Expected value but found {:?}", x));
+            Some(_) => {
+                bail!("Unexpected stack element at local.tee");
             }
             None => {
-                return Err(anyhow!("Empty stack during local.tee"));
+                bail!("Empty stack during local.tee");
             }
         };
 

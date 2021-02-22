@@ -6,3 +6,4 @@ test_runner.output
 report.csv
 perf.data*
 wolkentreiber.csv
+.vscode

@@ -1,13 +1,14 @@
 #![allow(dead_code)]
 
 pub(crate) mod export;
-pub(crate) mod func;
+pub mod func;
+pub mod import_resolver;
 pub(crate) mod memory;
 pub mod module;
 mod op;
 pub(crate) mod prelude;
 pub mod stack;
-pub(crate) mod store;
+pub mod store;
 pub(crate) mod table;
 
 use self::stack::StackContent;
@@ -19,12 +20,14 @@ pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
 use crate::engine::module::ModuleInstance;
-use crate::engine::table::TableInstance;
+pub use crate::engine::store::GlobalInstance;
+pub use crate::engine::table::TableInstance;
+use crate::engine::import_resolver::Import;
 use crate::operations::*;
 pub use crate::page::Page;
-use crate::value::{Arity, Value, Value::*};
+use crate::value::{Value, Value::*};
 pub use crate::PAGE_SIZE;
-pub use anyhow::{anyhow, Context, Result};
+pub use anyhow::{anyhow, bail, Context, Result};
 pub use wasm_parser::core::Instruction::*;
 pub use wasm_parser::core::*;
 pub use wasm_parser::Module;
@@ -59,16 +62,7 @@ pub(crate) fn empty_engine() -> Engine {
 
     Engine {
         started: true,
-        store: Store {
-            funcs: Vec::new(),
-            tables: Vec::new(),
-            globals: Vec::new(),
-            memory: Vec::new(),
-            stack: vec![StackContent::Frame(Frame {
-                arity: 0,
-                locals: Vec::new(),
-            })],
-        },
+        store: Store::default_with_frame(),
         module: mi,
         debugger: Box::new(RelativeProgramCounter::default()),
     }
@@ -80,12 +74,22 @@ pub struct Variable {
     pub val: Value,
 }
 
+impl Variable {
+    pub fn immutable(val: Value) -> Self {
+        Self {
+            mutable: false,
+            val,
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! fetch_unop {
     ($stack: expr) => {{
+        use crate::engine::stack::StackContent;
         debug!("Popping {:?}", $stack.last());
         let v1 = match $stack.pop().unwrap() {
-            Value(v) => v,
+            StackContent::Value(v) => v,
             x => panic!("Top of stack was not a value, but instead {:?}", x),
         };
         (v1)
@@ -125,7 +129,7 @@ macro_rules! load_memory {
             b.copy_from_slice(&instance.data[ea..ea + $size]);
             assert!(b.len() == $size);
 
-            debug!("b {:?}", b);
+            debug!("b {:?}", b);
 
             unsafe {
                 //Convert [u8] to [number]
@@ -149,19 +153,34 @@ macro_rules! load_memorySX {
 
             let module = &$self.module;
 
-            let addr = module.memaddrs.get(0).expect("No memory address found");
+            let addr = module.memaddrs.get(0).context("No memory address found")?;
 
-            let instance = &$self.store.memory[*addr as usize];
+            let instance = &$self
+                .store
+                .memory
+                .get(*addr as usize)
+                .with_context(|| format!("Cannot access memory addr {}", addr))?;
 
             debug!("instance {:?}", instance);
             debug!("Range {:?}", ea..ea + $size);
-            debug!("part {:?}", &instance.data[ea..ea + $size]);
+            debug!(
+                "part {:?}",
+                &instance
+                    .data
+                    .get(ea..ea + $size)
+                    .context("Cannot access range")
+            );
 
             let mut b = vec![0; $size];
-            b.copy_from_slice(&instance.data[ea..ea + $size]);
+            b.copy_from_slice(
+                &instance
+                    .data
+                    .get(ea..ea + $size)
+                    .context("Cannot access range")?,
+            );
             assert!(b.len() == $size);
 
-            debug!("b {:?}", b);
+            debug!("b {:?}", b);
 
             unsafe {
                 // Convert [u8] to [number]
@@ -244,25 +263,24 @@ macro_rules! store_memoryN {
 }
 
 impl Engine {
-    pub fn new(mi: ModuleInstance, module: &Module, debugger: Box<dyn ProgramCounter>) -> Engine {
+    pub fn new(
+        mi: ModuleInstance,
+        module: &Module,
+        debugger: Box<dyn ProgramCounter>,
+        imports: &[Import],
+    ) -> Result<Engine> {
         let mut e = Engine {
             module: mi,
             started: false,
-            store: Store {
-                funcs: Vec::new(),
-                tables: Vec::new(),
-                stack: Vec::new(),
-                globals: Vec::new(),
-                memory: Vec::new(),
-            },
+            store: Store::default(),
             debugger,
         };
 
-        debug!("before allocate {:#?}", e);
-        e.allocate(module);
-        debug!("after allocate {:#?}", e);
+        e.allocate(module, &imports)
+            .context("Allocation instance failed")?;
+        e.instantiation(module).context("Instantiation failed")?;
 
-        e
+        Ok(e)
     }
 
     /// Initializes `n` pages in memory
@@ -279,31 +297,80 @@ impl Engine {
         res
     }
 
-    fn allocate(&mut self, m: &Module) {
+    fn allocate(&mut self, m: &Module, imports: &[Import]) -> Result<()> {
         info!("Allocation");
-        crate::allocation::allocate(m, &mut self.module, &mut self.store)
-            .expect("Allocation failed");
+        crate::allocation::allocate(m, &mut self.module, &mut self.store, imports)
+            .context("Allocation failed")?;
+
+        Ok(())
     }
 
     pub fn instantiation(&mut self, m: &Module) -> Result<()> {
         info!("Instantiation");
-        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)?;
+        let start_function = crate::instantiation::instantiation(m, &self.module, &mut self.store)
+            .context("Instantiation failed")?;
 
         if let Some(func_addr) = start_function {
             debug!("Invoking start function with {:?}", func_addr);
-            self.invoke_function(func_addr, vec![])?;
+            self.invoke_function(&func_addr, vec![])
+                .context("Invoking function failed")?;
         }
 
         Ok(())
     }
 
+    /// Get a global value
+    pub fn get(&mut self, name: &str) -> Result<Value> {
+        debug!("get global for {:?}", name);
+
+        let module = &self.module.exports;
+
+        let filtered: Vec<_> = module.iter().filter(|x| x.name == name).take(1).collect();
+
+        let export_instance = filtered
+            .get(0)
+            .context("Exported function not found or found something else")?;
+
+        debug!("Exports {:#?}", export_instance);
+
+        match export_instance.value {
+            ExternalKindType::Global { ty } => {
+                let global_addr = self
+                    .module
+                    .globaladdrs
+                    .get(ty as usize)
+                    .ok_or_else(|| anyhow!("Global not found"))?;
+
+                return Ok(self
+                    .store
+                    .get_global_instance(&global_addr)
+                    .context("Global not found in the store")?
+                    .val);
+            }
+            _ => Err(anyhow!("Exported global not found")),
+        }
+    }
+
+    /// Adding new function to the engine
+    /// It will allocate the function in store and add it to the module's code.
+    pub(crate) fn add_function(
+        &mut self,
+        signature: FunctionSignature,
+        body: FunctionBody,
+    ) {
+        self.module.code.push(body.clone());
+        self.store
+            .allocate_func_instance(signature, body);
+    }
+
     /// Take only exported functions into consideration
+    /// `idx` is the id of the export instance, not the function
     pub fn invoke_exported_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
-        debug!("invoke_exported_function {:?}", idx);
+        debug!("invoke_exported_function {} with args {:?}", idx, args);
         let k = {
             let x = &self.module;
 
-            debug!("x's element {:?}", x.exports.get(idx as usize));
+            debug!("the export instance is {:?}", x.exports.get(idx as usize));
 
             let w = x
                 .exports
@@ -317,13 +384,14 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = *self
+                let func_addr = self
                     .module
                     .funcaddrs
                     .get(ty as usize)
-                    .ok_or_else(|| anyhow!("Function not found"))?;
+                    .ok_or_else(|| anyhow!("Function not found"))?
+                    .clone();
 
-                self.invoke_function(func_addr, args)
+                self.invoke_function(&func_addr, args)
                     .context("Invoking the function failed")?;
             }
             _ => {
@@ -335,6 +403,10 @@ impl Engine {
     }
 
     pub fn invoke_exported_function_by_name(&mut self, name: &str, args: Vec<Value>) -> Result<()> {
+        debug!(
+            "Invoking exporting function by name {} with args {:?}",
+            name, args
+        );
         let idx = self
             .module
             .exports
@@ -342,18 +414,27 @@ impl Engine {
             .position(|e| e.name == name)
             .context("Cannot find function in exports")?;
 
+        debug!("=> Export instance found");
+        debug!("The function addr is {}", idx);
+
         self.invoke_exported_function(idx as u32, args)
             .context("Invoking the exported function failed")?;
 
         Ok(())
     }
 
-    pub(crate) fn invoke_function(&mut self, idx: u32, args: Vec<Value>) -> Result<()> {
-        self.check_parameters_of_function(idx, &args);
+    pub(crate) fn invoke_function(&mut self, func_addr: &FuncAddr, args: Vec<Value>) -> Result<()> {
+        self.check_parameters_of_function(func_addr, &args)
+            .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
-        let t = &self.store.funcs[idx as usize].ty;
+        let count_return_types = self
+            .store
+            .get_func_instance(func_addr)?
+            .ty
+            .return_types
+            .len() as u32;
 
-        let typed_locals = &self.store.funcs[idx as usize].code.locals;
+        let typed_locals = &self.store.get_func_instance(func_addr)?.code.locals;
 
         debug!("defined locals are {:#?}", typed_locals);
 
@@ -377,31 +458,41 @@ impl Engine {
             }
         }
 
-        self.store.stack.push(Frame(Frame {
-            arity: t.return_types.len() as u32,
+        let mut frame = Frame {
+            arity: count_return_types,
             locals,
-            //module_instance: Rc::downgrade(&self.module),
-        }));
+        };
+
+        self.store.stack.push(StackContent::Frame(frame.clone()));
+
+        self.store
+            .stack
+            .push(StackContent::Label(Label::new(count_return_types, 0)));
 
         trace!("stack before invoking {:#?}", self.store.stack);
 
         debug!("Invoking function");
-        self.run_function(idx)
-            .with_context(|| format!("Function with id {} failed", idx))?;
+        self.run_function(&mut frame, &func_addr)
+            .with_context(|| format!("Function with addr {:?} failed", func_addr))?;
 
         Ok(())
     }
 
-    fn check_parameters_of_function(&self, idx: u32, args: &[Value]) {
+    fn check_parameters_of_function(&self, func_addr: &FuncAddr, args: &[Value]) -> Result<()> {
+        debug!(
+            "Required type of function {:?} is {:?}",
+            func_addr,
+            self.store.get_func_instance(func_addr)?.ty
+        );
+
         let fn_types = self
             .store
-            .funcs
-            .get(idx as usize)
-            .expect("Function not found")
+            .get_func_instance(func_addr)?
             .ty
             .param_types
             .iter();
 
+        // Extract the ValueType
         let argtypes = args.iter().map(|w| match *w {
             Value::I32(_) => ValueType::I32,
             Value::I64(_) => ValueType::I64,
@@ -416,25 +507,67 @@ impl Engine {
         let is_same = fn_types.zip(argtypes).map(|(x, y)| *x == y).all(|w| w);
 
         if !is_same || len_1 != len_2 {
-            panic!("Function expected different parameters!");
+            // Report error
+
+            let argtypes2 = args
+                .iter()
+                .map(|w| match *w {
+                    Value::I32(_) => ValueType::I32,
+                    Value::I64(_) => ValueType::I64,
+                    Value::F32(_) => ValueType::F32,
+                    Value::F64(_) => ValueType::F64,
+                })
+                .collect::<Vec<_>>();
+
+            let fn_types2 = self
+                .store
+                .get_func_instance(func_addr)?
+                .ty
+                .param_types
+                .iter()
+                .collect::<Vec<_>>();
+
+            return Err(anyhow!(
+                "Function expected different parameters! {:?} != {:?}",
+                argtypes2,
+                fn_types2
+            ));
         }
+
+        debug!("=> Parameters of functions and args are equal");
+
+        Ok(())
     }
 
     #[allow(clippy::cognitive_complexity)]
-    pub(crate) fn run_function(&mut self, idx: u32) -> Result<()> {
-        debug!("Running function {:?}", idx);
+    pub(crate) fn run_function(&mut self, fr: &mut Frame, func_addr: &FuncAddr) -> Result<()> {
+        debug!("Running function with addr {:?}", func_addr);
 
         //FIXME this `.clone` is extremly expensive!!!
         // But there is a problem
         // Because, we iterate over the borrowed iterator,
         // we cannot easily run the block
-        let f = &self.module.code[idx as usize].clone();
+        //let f = &self.module.code[idx as usize].clone();
+        let f = &self.store.get_func_instance(func_addr)?.code.clone();
 
-        let mut fr = self.get_frame()?;
+        //let f = &self.module.code[func_addr.get() as usize].clone();
+        //debug!("mod {:#?}", f);
+        //debug!("instance {:#?}", self.store.get_func_instance(func_addr)?.code.clone());
+
+        //let mut fr = self.get_frame()?;
 
         debug!("frame {:#?}", fr);
 
-        self.run_instructions(&mut fr, &mut f.code.iter())?;
+        match self
+            .run_instructions(fr, &mut f.code.iter())
+            .with_context(|| format!("Running instructions for function addr {:?}", func_addr))?
+        {
+            InstructionOutcome::EXIT | InstructionOutcome::RETURN => {
+                self.exit_block()
+                    .context("Exiting block for end of function failed")?;
+            }
+            _ => {}
+        }
 
         // implicit return
         debug!("Implicit return (arity {:?})", fr.arity);
@@ -444,24 +577,20 @@ impl Engine {
         let mut ret = Vec::new();
         for _ in 0..fr.arity {
             debug!("Popping {:?}", self.store.stack.last());
-            match self.store.stack.pop() {
-                Some(Value(v)) => ret.push(Value(v)),
-                Some(x) => {
-                    return Err(anyhow!("Expected value but found {:?}", x));
-                }
-                None => {} //None => panic!("Unexpected empty stack!"),
+            if let Some(val) = self.store.stack.pop() {
+                ret.push(val);
             }
         }
 
-        debug!("Popping frames");
-        while let Some(Frame(_)) = self.store.stack.last() {
-            debug!("Removing {:?}", self.store.stack.last());
-            self.store.stack.pop();
+        let mut ret = ret.into_iter().rev().collect();
+
+        if let Some(Frame(_)) = self.store.stack.pop() {
+            debug!("Popping frame");
+        } else {
+            bail!("Cannot remove frame");
         }
 
-        while let Some(val) = ret.pop() {
-            self.store.stack.push(val);
-        }
+        self.store.stack.append(&mut ret);
 
         debug!("Stack after function return {:#?}", self.store.stack);
 
@@ -485,64 +614,69 @@ impl Engine {
                 .context("Setting program state failed")?;
 
             let instruction = wrapped_instruction.get_instruction();
-            debug!("Evaluating instruction {:?}", instruction);
+            debug!("Evaluating instruction {}", instruction);
 
             match &instruction {
                 OP_LOCAL_GET(idx) => {
-                    self.local_get(idx, fr)?;
+                    self.local_get(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_GET({})", idx))?;
                 }
                 OP_LOCAL_SET(idx) => {
-                    self.local_set(idx, fr)?;
+                    self.local_set(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_SET({})", idx))?;
                 }
                 OP_LOCAL_TEE(idx) => {
-                    self.local_tee(idx, fr)?;
+                    self.local_tee(idx, fr)
+                        .with_context(|| format!("OP_LOCAL_TEE({})", idx))?;
                 }
                 OP_GLOBAL_GET(idx) => {
-                    self.global_get(idx, fr)?;
+                    self.global_get(idx, fr)
+                        .with_context(|| format!("OP_GLOBAL_GET({})", idx))?;
                 }
                 OP_GLOBAL_SET(idx) => {
-                    self.global_set(idx, fr)?;
+                    self.global_set(idx, fr)
+                        .with_context(|| format!("OP_GLOBAL_SET({})", idx))?;
                 }
                 OP_I32_CONST(v) => {
                     debug!("OP_I32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I32(*v)));
+                    self.store.stack.push(StackContent::Value(I32(*v)));
                     debug!("stack {:#?}", self.store.stack);
                 }
                 OP_I64_CONST(v) => {
                     debug!("OP_I64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(I64(*v)))
+                    self.store.stack.push(StackContent::Value(I64(*v)))
                 }
                 OP_F32_CONST(v) => {
                     debug!("OP_F32_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F32(*v)))
+                    self.store.stack.push(StackContent::Value(F32(*v)))
                 }
                 OP_F64_CONST(v) => {
                     debug!("OP_F64_CONST: pushing {} to stack", v);
-                    self.store.stack.push(Value(F64(*v)))
+                    self.store.stack.push(StackContent::Value(F64(*v)))
                 }
                 OP_F32_COPYSIGN => {
                     let (z1, z2) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(copysign(z1, z2)))
+                    self.store.stack.push(StackContent::Value(copysign(z1, z2)))
                 }
                 OP_F64_COPYSIGN => {
                     let (z1, z2) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(copysign(z1, z2)))
+                    self.store.stack.push(StackContent::Value(copysign(z1, z2)))
                 }
                 OP_I32_ADD | OP_I64_ADD | OP_F32_ADD | OP_F64_ADD => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 + v2))
+                    self.store.stack.push(StackContent::Value(v1 + v2))
                 }
                 OP_I32_SUB | OP_I64_SUB | OP_F32_SUB | OP_F64_SUB => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 - v2))
+                    self.store.stack.push(StackContent::Value(v1 - v2))
                 }
                 OP_I32_MUL | OP_I64_MUL | OP_F32_MUL | OP_F64_MUL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 * v2))
+                    self.store.stack.push(StackContent::Value(v1 * v2))
                 }
                 OP_I32_DIV_S | OP_I64_DIV_S | OP_F32_DIV | OP_F64_DIV => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 / v2))
+                    self.store.stack.push(StackContent::Value(v1 / v2))
                 }
                 OP_I32_DIV_U | OP_I64_DIV_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -550,17 +684,17 @@ impl Engine {
                         (I32(x1), I32(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u32) / (x2 as u32)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u32) / (x2 as u32)) as i32))),
                         (I64(x1), I64(x2)) => self
                             .store
                             .stack
-                            .push(Value(I64(((x1 as u64) / (x2 as u64)) as i64))),
+                            .push(StackContent::Value(I64(((x1 as u64) / (x2 as u64)) as i64))),
                         _ => return Err(anyhow!("Invalid types for DIV_U")),
                     }
                 }
                 OP_I32_REM_S | OP_I64_REM_S => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 % v2))
+                    self.store.stack.push(StackContent::Value(v1 % v2))
                 }
                 OP_I32_REM_U | OP_I64_REM_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -568,33 +702,33 @@ impl Engine {
                         (I32(x1), I32(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u32) % (x2 as u32)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u32) % (x2 as u32)) as i32))),
                         (I64(x1), I64(x2)) => self
                             .store
                             .stack
-                            .push(Value(I64(((x1 as u64) % (x2 as u64)) as i64))),
-                        _ => panic!("Invalid types for REM_U"),
+                            .push(StackContent::Value(I64(((x1 as u64) % (x2 as u64)) as i64))),
+                        _ => return Err(anyhow!("Invalid types for REM_U")),
                     }
                 }
                 OP_I32_AND | OP_I64_AND => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 & v2))
+                    self.store.stack.push(StackContent::Value(v1 & v2))
                 }
                 OP_I32_OR | OP_I64_OR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 | v2))
+                    self.store.stack.push(StackContent::Value(v1 | v2))
                 }
                 OP_I32_XOR | OP_I64_XOR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 ^ v2))
+                    self.store.stack.push(StackContent::Value(v1 ^ v2))
                 }
                 OP_I32_SHL | OP_I64_SHL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 << v2))
+                    self.store.stack.push(StackContent::Value(v1 << v2))
                 }
                 OP_I32_SHR_S | OP_I64_SHR_S => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(v1 >> v2))
+                    self.store.stack.push(StackContent::Value(v1 >> v2))
                 }
                 OP_I32_SHR_U | OP_I64_SHR_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -603,14 +737,16 @@ impl Engine {
                             let k = x2 as u32 % 32;
                             self.store
                                 .stack
-                                .push(Value(I32(((x1 as u32).checked_shr(k)).unwrap_or(0) as i32)));
+                                .push(StackContent::Value(I32(((x1 as u32).checked_shr(k))
+                                    .unwrap_or(0)
+                                    as i32)));
                         }
                         (I64(x1), I64(x2)) => {
                             let k = x2 as u64 % 64;
                             self.store
                                 .stack
-                                .push(Value(I64(
-                                    ((x1 as u64).checked_shr(k as u32)).unwrap_or(0) as i64
+                                .push(StackContent::Value(I64(
+                                    ((x1 as u64).checked_shr(k as u32)).unwrap_or(0) as i64,
                                 )));
                         }
                         _ => return Err(anyhow!("Invalid types for SHR_U")),
@@ -618,28 +754,36 @@ impl Engine {
                 }
                 OP_I32_ROTL | OP_I64_ROTL => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(rotate_left(v1, v2)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(rotate_left(v1, v2)))
                 }
                 OP_I32_ROTR | OP_I64_ROTR => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(rotate_right(v1, v2)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(rotate_right(v1, v2)))
                 }
                 OP_I32_CLZ | OP_I64_CLZ => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(leading_zeros(v1)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(leading_zeros(v1)))
                 }
                 OP_I32_CTZ | OP_I64_CTZ => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trailing_zeros(v1)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(trailing_zeros(v1)))
                 }
                 OP_I32_POPCNT | OP_I64_POPCNT => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(count_ones(v1)))
+                    self.store.stack.push(StackContent::Value(count_ones(v1)))
                 }
                 OP_I32_EQZ | OP_I64_EQZ => {
                     let v1 = fetch_unop!(self.store.stack);
 
-                    self.store.stack.push(Value(eqz(v1)))
+                    self.store.stack.push(StackContent::Value(eqz(v1)))
                 }
                 OP_I32_EQ | OP_I64_EQ | OP_F32_EQ | OP_F64_EQ => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
@@ -666,7 +810,7 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(lt(v1, v2).convert(ValueType::I32)))
+                        .push(StackContent::Value(lt(v1, v2).convert(ValueType::I32)))
                 }
                 OP_I32_LT_U | OP_I64_LT_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -674,11 +818,11 @@ impl Engine {
                         (I32(x1), I32(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u32) < (x2 as u32)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u32) < (x2 as u32)) as i32))),
                         (I64(x1), I64(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u64) < (x2 as u64)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u64) < (x2 as u64)) as i32))),
                         _ => return Err(anyhow!("Invalid types for LT_U comparison")),
                     }
                 }
@@ -687,7 +831,7 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(gt(v1, v2).convert(ValueType::I32)))
+                        .push(StackContent::Value(gt(v1, v2).convert(ValueType::I32)))
                 }
                 OP_I32_GT_U | OP_I64_GT_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
@@ -695,11 +839,11 @@ impl Engine {
                         (I32(x1), I32(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u32) > (x2 as u32)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u32) > (x2 as u32)) as i32))),
                         (I64(x1), I64(x2)) => self
                             .store
                             .stack
-                            .push(Value(I32(((x1 as u64) > (x2 as u64)) as i32))),
+                            .push(StackContent::Value(I32(((x1 as u64) > (x2 as u64)) as i32))),
                         _ => return Err(anyhow!("Invalid types for GT_U comparison")),
                     }
                 }
@@ -708,19 +852,21 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(le(v1, v2).convert(ValueType::I32)))
+                        .push(StackContent::Value(le(v1, v2).convert(ValueType::I32)))
                 }
                 OP_I32_LE_U | OP_I64_LE_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
-                        (I32(x1), I32(x2)) => self
-                            .store
-                            .stack
-                            .push(Value(I32(((x1 as u32) <= (x2 as u32)) as i32))),
-                        (I64(x1), I64(x2)) => self
-                            .store
-                            .stack
-                            .push(Value(I32(((x1 as u64) <= (x2 as u64)) as i32))),
+                        (I32(x1), I32(x2)) => {
+                            self.store.stack.push(StackContent::Value(I32(((x1 as u32)
+                                <= (x2 as u32))
+                                as i32)))
+                        }
+                        (I64(x1), I64(x2)) => {
+                            self.store.stack.push(StackContent::Value(I32(((x1 as u64)
+                                <= (x2 as u64))
+                                as i32)))
+                        }
                         _ => return Err(anyhow!("Invalid types for LE_U comparison")),
                     }
                 }
@@ -729,89 +875,95 @@ impl Engine {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(ge(v1, v2).convert(ValueType::I32)))
+                        .push(StackContent::Value(ge(v1, v2).convert(ValueType::I32)))
                 }
                 OP_I32_GE_U | OP_I64_GE_U => {
                     let (v2, v1) = fetch_binop!(self.store.stack);
                     match (v1, v2) {
-                        (I32(x1), I32(x2)) => self
-                            .store
-                            .stack
-                            .push(Value(I32(((x1 as u32) >= (x2 as u32)) as i32))),
-                        (I64(x1), I64(x2)) => self
-                            .store
-                            .stack
-                            .push(Value(I32(((x1 as u64) >= (x2 as u64)) as i32))),
+                        (I32(x1), I32(x2)) => {
+                            self.store.stack.push(StackContent::Value(I32(((x1 as u32)
+                                >= (x2 as u32))
+                                as i32)))
+                        }
+                        (I64(x1), I64(x2)) => {
+                            self.store.stack.push(StackContent::Value(I32(((x1 as u64)
+                                >= (x2 as u64))
+                                as i32)))
+                        }
                         _ => return Err(anyhow!("Invalid types for GE_U comparison")),
                     }
                 }
                 OP_F32_ABS | OP_F64_ABS => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(abs(v1)))
+                    self.store.stack.push(StackContent::Value(abs(v1)))
                 }
                 OP_F32_NEG | OP_F64_NEG => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(neg(v1)))
+                    self.store.stack.push(StackContent::Value(neg(v1)))
                 }
                 OP_F32_CEIL | OP_F64_CEIL => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(ceil(v1)))
+                    self.store.stack.push(StackContent::Value(ceil(v1)))
                 }
                 OP_F32_FLOOR | OP_F64_FLOOR => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(floor(v1)))
+                    self.store.stack.push(StackContent::Value(floor(v1)))
                 }
                 OP_F32_TRUNC | OP_F64_TRUNC => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trunc(v1)))
+                    self.store.stack.push(StackContent::Value(trunc(v1)))
                 }
                 OP_I32_TRUNC_SAT_F32_S | OP_I32_TRUNC_SAT_F64_S => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trunc_sat_i32_s(v1)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(trunc_sat_i32_s(v1)))
                 }
                 OP_I64_TRUNC_SAT_F32_S | OP_I64_TRUNC_SAT_F64_S => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(trunc_sat_i64_s(v1)))
+                    self.store
+                        .stack
+                        .push(StackContent::Value(trunc_sat_i64_s(v1)))
                 }
                 OP_I32_TRUNC_SAT_F32_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(trunc_sat_from_f32_to_i32_u(v1)))
+                        .push(StackContent::Value(trunc_sat_from_f32_to_i32_u(v1)))
                 }
                 OP_I32_TRUNC_SAT_F64_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(trunc_sat_from_f64_to_i32_u(v1)))
+                        .push(StackContent::Value(trunc_sat_from_f64_to_i32_u(v1)))
                 }
                 OP_I64_TRUNC_SAT_F32_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(trunc_sat_from_f32_to_i64_u(v1)))
+                        .push(StackContent::Value(trunc_sat_from_f32_to_i64_u(v1)))
                 }
                 OP_I64_TRUNC_SAT_F64_U => {
                     let v1 = fetch_unop!(self.store.stack);
                     self.store
                         .stack
-                        .push(Value(trunc_sat_from_f64_to_i64_u(v1)))
+                        .push(StackContent::Value(trunc_sat_from_f64_to_i64_u(v1)))
                 }
                 OP_F32_NEAREST | OP_F64_NEAREST => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(nearest(v1)))
+                    self.store.stack.push(StackContent::Value(nearest(v1)))
                 }
                 OP_F32_SQRT | OP_F64_SQRT => {
                     let v1 = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(sqrt(v1)))
+                    self.store.stack.push(StackContent::Value(sqrt(v1)))
                 }
                 OP_F32_MIN | OP_F64_MIN => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(min(v1, v2)))
+                    self.store.stack.push(StackContent::Value(min(v1, v2)))
                 }
                 OP_F32_MAX | OP_F64_MAX => {
                     let (v1, v2) = fetch_binop!(self.store.stack);
-                    self.store.stack.push(Value(max(v1, v2)))
+                    self.store.stack.push(StackContent::Value(max(v1, v2)))
                 }
                 OP_I32_WRAP_I64 => {
                     let v = fetch_unop!(self.store.stack);
@@ -926,7 +1078,7 @@ impl Engine {
                 | OP_F32_REINTERPRET_I32
                 | OP_F64_REINTERPRET_I64 => {
                     let v = fetch_unop!(self.store.stack);
-                    self.store.stack.push(Value(reinterpret(v)));
+                    self.store.stack.push(StackContent::Value(reinterpret(v)));
                 }
                 OP_DROP => {
                     debug!("OP_DROP");
@@ -1006,60 +1158,65 @@ impl Engine {
                     store_memoryN!(self, arg, 4, i64, I64, i32, 32);
                 }
                 OP_MEMORY_SIZE => {
-                    self.memory_size()?;
+                    self.memory_size().context("Memory size failed")?;
                 }
                 OP_MEMORY_GROW => {
-                    self.memory_grow()?;
+                    self.memory_grow().context("Memory grow failed")?;
                 }
                 OP_BLOCK(ty, block_instructions) => {
-                    let outcome = self.block(fr, ty, block_instructions)?;
+                    let outcome = self
+                        .block(fr, ty, block_instructions)
+                        .with_context(|| format!("OP_BLOCK with ty {:?} failed", ty))?;
 
                     match outcome {
-                        InstructionOutcome::BRANCH(0) => {}
+                        InstructionOutcome::BRANCH(0) => {
+                            debug!("Instruction outcome was 0.");
+                        }
                         InstructionOutcome::BRANCH(x) => {
-                            self.exit_block()?;
+                            debug!("Instruction outcome was {}.", x - 1);
                             return Ok(InstructionOutcome::BRANCH(x - 1));
                         }
                         InstructionOutcome::RETURN => {
+                            debug!("Instruction outcome was return.");
+                            self.exit_block()?;
                             return Ok(InstructionOutcome::RETURN);
                         }
-                        InstructionOutcome::EXIT => {}
+                        InstructionOutcome::EXIT => {
+                            debug!("Instruction outcome was exit.");
+                            self.exit_block()?;
+                        }
                     }
-
-                    self.exit_block()?;
                 }
                 OP_LOOP(ty, block_instructions) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    let arity = self.get_block_ty_arity(&ty)?;
-
-                    debug!("Arity for loop ({:?}) is {}", ty, arity);
-
-                    let label = Label::new(arity);
-
-                    self.store.stack.push(StackContent::Label(label));
-
+                    let param_count = self.get_param_count_block(&ty)?;
                     loop {
-                        let outcome = self.run_instructions(fr, &mut block_instructions.iter())?;
+                        self.setup_stack_for_entering_block(ty, block_instructions, param_count)?;
+
+                        let outcome = self
+                            .run_instructions(fr, &mut block_instructions.iter())
+                            .with_context(|| {
+                                format!("OP_LOOP({:?}) `run_instructions` failed", ty)
+                            })?;
 
                         match outcome {
                             InstructionOutcome::BRANCH(0) => {
                                 continue;
                             }
                             InstructionOutcome::BRANCH(x) => {
-                                self.exit_block()?;
                                 return Ok(InstructionOutcome::BRANCH(x - 1));
                             }
                             InstructionOutcome::RETURN => {
+                                self.exit_block()?;
                                 return Ok(InstructionOutcome::RETURN);
                             }
                             InstructionOutcome::EXIT => {
+                                self.exit_block()?;
                                 break;
                             }
                         }
                     }
-
-                    self.exit_block()?;
                 }
                 OP_IF(ty, block_instructions_branch) => {
                     debug!("OP_IF {:?}", ty);
@@ -1067,101 +1224,124 @@ impl Engine {
                     debug!("Popping value {:?}", element);
 
                     if let Some(StackContent::Value(Value::I32(v))) = element {
-                        let arity = self.get_block_ty_arity(&ty)?;
-
-                        debug!("Arity for if ({:?}) is {}", ty, arity);
-
                         if v != 0 {
                             debug!("C is not zero, therefore branching");
 
-                            let label = Label::new(arity);
+                            let arity_return_count = self.get_return_count_block(&ty)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch,
+                                arity_return_count,
+                            )?;
 
-                            self.store.stack.push(StackContent::Label(label));
-
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch.iter())?;
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch.iter())
+                                .with_context(|| {
+                                    format!("OP_IF({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
                                 InstructionOutcome::BRANCH(x) => {
-                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::BRANCH(x - 1));
                                 }
                                 InstructionOutcome::RETURN => {
+                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::RETURN);
                                 }
-                                InstructionOutcome::EXIT => {}
+                                InstructionOutcome::EXIT => {
+                                    self.exit_block()?;
+                                }
                             }
-
-                            self.exit_block()?;
                         } else {
                             debug!("C is zero, therefore not branching");
                         }
                     } else {
-                        panic!("Value must be i32.const. Instead {:#?}", element);
+                        return Err(anyhow!("Value must be i32.const. Instead {:#?}", element));
                     }
                 }
                 OP_IF_AND_ELSE(ty, block_instructions_branch_1, block_instructions_branch_2) => {
                     debug!("OP_IF_AND_ELSE {:?}", ty);
-                    if let Some(StackContent::Value(Value::I32(v))) = self.store.stack.pop() {
-                        let arity = self.get_block_ty_arity(&ty)?;
+                    let element = self.store.stack.pop();
+                    debug!("Popping value {:?}", element);
 
-                        let label = Label::new(arity);
-
-                        self.store.stack.push(StackContent::Label(label));
+                    if let Some(StackContent::Value(Value::I32(v))) = element {
                         if v != 0 {
                             debug!("C is not zero, therefore branching (1)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_1.iter())?;
+                            let arity_return_count = self.get_return_count_block(&ty)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch_1,
+                                arity_return_count,
+                            )?;
+
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch_1.iter())
+                                .with_context(|| {
+                                    format!("OP_IF_AND_ELSE({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
                                 InstructionOutcome::BRANCH(x) => {
-                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::BRANCH(x - 1));
                                 }
                                 InstructionOutcome::RETURN => {
+                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::RETURN);
                                 }
-                                InstructionOutcome::EXIT => {}
+                                InstructionOutcome::EXIT => {
+                                    self.exit_block()?;
+                                }
                             }
                         } else {
                             debug!("C is zero, therefore branching (2)");
 
-                            let outcome =
-                                self.run_instructions(fr, &mut block_instructions_branch_2.iter())?;
+                            let arity_return_count = self.get_return_count_block(&ty)?;
+                            self.setup_stack_for_entering_block(
+                                ty,
+                                block_instructions_branch_2,
+                                arity_return_count,
+                            )?;
+
+                            let outcome = self
+                                .run_instructions(fr, &mut block_instructions_branch_2.iter())
+                                .with_context(|| {
+                                    format!("OP_IF_AND_ELSE({:?}) `run_instructions` failed", ty)
+                                })?;
 
                             match outcome {
                                 InstructionOutcome::BRANCH(0) => {}
                                 InstructionOutcome::BRANCH(x) => {
-                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::BRANCH(x - 1));
                                 }
                                 InstructionOutcome::RETURN => {
+                                    self.exit_block()?;
                                     return Ok(InstructionOutcome::RETURN);
                                 }
-                                InstructionOutcome::EXIT => {}
+                                InstructionOutcome::EXIT => {
+                                    self.exit_block()?;
+                                }
                             }
                         }
-
-                        self.exit_block()?;
                     } else {
-                        panic!("Value must be i32.const");
+                        return Err(anyhow!("Value must be i32.const"));
                     }
                 }
                 OP_BR(label_idx) => {
-                    debug!("OP_BR {}", label_idx);
-
-                    return Ok(InstructionOutcome::BRANCH(*label_idx));
+                    return self.br(fr, *label_idx);
                 }
                 OP_BR_IF(label_idx) => {
                     debug!("OP_BR_IF {}", label_idx);
-                    if let Some(StackContent::Value(Value::I32(c))) = self.store.stack.pop() {
+                    let element = self.store.stack.pop();
+                    debug!("Popping value {:?}", element);
+
+                    if let Some(StackContent::Value(Value::I32(c))) = element {
                         debug!("c is {}", c);
                         if c != 0 {
                             debug!("Branching to {}", label_idx);
-                            return Ok(InstructionOutcome::BRANCH(*label_idx));
+                            return self.br(fr, *label_idx);
                         } else {
                             debug!("Not Branching to {}", label_idx);
                         }
@@ -1170,6 +1350,7 @@ impl Engine {
                 OP_BR_TABLE(table, default) => {
                     debug!("OP_BR_TABLE {:?}, {:?}", table, default);
                     let ival = fetch_unop!(self.store.stack);
+
                     if let I32(index) = ival {
                         let label_idx = if (index as usize) < table.len() {
                             table[index as usize]
@@ -1177,16 +1358,29 @@ impl Engine {
                             debug!("Using default case");
                             *default
                         };
-                        return Ok(InstructionOutcome::BRANCH(label_idx));
+
+                        return self.br(fr, label_idx);
                     } else {
-                        panic!("invalid index type: {:?}", ival);
+                        return Err(anyhow!("invalid index type: {:?}", ival));
                     }
                 }
-                OP_CALL(idx) => {
-                    self.call_function(idx)?;
+                OP_CALL(function_module_addr) => {
+                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
+                    self.call_function(&func_addr).with_context(|| {
+                        format!(
+                            "OP_CALL for function {:?} and module addr ({}) failed",
+                            func_addr, function_module_addr
+                        )
+                    })?;
                 }
-                OP_CALL_INDIRECT(idx) => {
-                    self.call_indirect_function(idx)?;
+                OP_CALL_INDIRECT(function_module_addr) => {
+                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
+                    self.call_indirect_function(&func_addr).with_context(|| {
+                        format!(
+                            "OP_CALL_INDIRECT for function {:?} failed and module addr ({}) failed",
+                            func_addr, function_module_addr
+                        )
+                    })?;
                 }
                 OP_RETURN => {
                     debug!("Return");
@@ -1194,7 +1388,6 @@ impl Engine {
                 }
                 OP_NOP => {}
                 OP_UNREACHABLE => return Err(anyhow!("Reached unreachable => trap!")),
-                //x => return Err(anyhow!("Instruction {:?} not implemented", x)),
             }
 
             trace!("stack {:#?}", self.store.stack);
@@ -1204,9 +1397,10 @@ impl Engine {
     }
 
     /// Get the frame at the top of the stack
-    fn get_frame(&mut self) -> Result<Frame> {
+    fn get_frame(&mut self) -> Result<&Frame> {
         debug!("get_frame");
-        match self.store.stack.pop() {
+        // -2 because label
+        match self.store.stack.get(self.store.stack.len() - 2) {
             Some(Frame(fr)) => Ok(fr),
             Some(x) => Err(anyhow!("Expected frame but found {:?}", x)),
             None => Err(anyhow!("Empty stack on function call")),
@@ -1247,31 +1441,5 @@ impl Engine {
         self.store.stack.append(&mut val_m);
 
         Ok(())
-    }
-
-    fn get_block_ty_arity(&mut self, block_ty: &BlockType) -> Result<Arity> {
-        let arity = match block_ty {
-            BlockType::Empty => 0,
-            BlockType::ValueType(_) => 1,
-            BlockType::ValueTypeTy(ty) => self
-                .module
-                .fn_types
-                .get(*ty as usize)
-                .ok_or_else(|| anyhow!("Trap"))?
-                .return_types
-                .len(),
-        };
-
-        debug!("Arity is {}", arity);
-
-        Ok(arity as u32)
-    }
-}
-
-/// Maps `StackContent` to `Value`, if not then throw error
-fn map_stackcontent_to_value(x: StackContent) -> Result<Value> {
-    match x {
-        Value(v) => Ok(v),
-        other => Err(anyhow!("Expected value but found {:?}", other)),
     }
 }

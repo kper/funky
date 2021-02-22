@@ -1,15 +1,13 @@
 use crate::debugger::RelativeProgramCounter;
 use crate::engine::export::ExportInstance;
 use crate::engine::module::ModuleInstance;
-use crate::engine::stack::StackContent;
 use crate::engine::*;
+use crate::engine::stack::StackContent;
 use crate::value::Value::*;
 use crate::value::*;
 use crate::wrap_instructions;
 use insta::assert_snapshot;
 use validation::validate;
-use wasm_parser::core::Instruction::*;
-use wasm_parser::core::*;
 use wasm_parser::{parse, read_wasm, Module};
 
 macro_rules! test_file_engine {
@@ -18,8 +16,15 @@ macro_rules! test_file_engine {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
+        let engine = Engine::new(
+            instance,
+            &module,
+            Box::new(RelativeProgramCounter::default()),
+            &imports
+        ).unwrap();
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
     };
@@ -31,19 +36,50 @@ macro_rules! test_run_engine {
         let module = parse(file).expect("Parsing failed");
         assert!(validate(&module).is_ok());
 
+        let imports = Vec::new();
+
         let instance = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
-        );
+            &imports,
+        ).unwrap();
 
         assert_snapshot!($fs_name, format!("{:#?}", engine));
 
+        if let Err(err) = engine.invoke_exported_function($num_f, $init) {
+            error!("ERROR: {}", err);
+            err.chain()
+                .skip(1)
+                .for_each(|cause| error!("because: {}", cause));
+
+            panic!("Test failed");
+        }
+
         engine
-            .invoke_exported_function($num_f, $init)
-            .expect("Invoke exported function failed");
-        engine
+    }};
+}
+
+macro_rules! test_get_exported_global {
+    ($fs_name:expr, $num_f:expr) => {{
+        let file = read_wasm!(&format!("tests/{}", $fs_name));
+        let module = parse(file).expect("Parsing failed");
+        assert!(validate(&module).is_ok());
+
+        let imports = Vec::new();
+
+        let instance = ModuleInstance::new(&module);
+        let mut engine = Engine::new(
+            instance,
+            &module,
+            Box::new(crate::debugger::RelativeProgramCounter::default()),
+            &imports
+        ).unwrap();
+
+        assert_snapshot!($fs_name, format!("{:#?}", engine));
+
+        engine.get($num_f)
     }};
 }
 
@@ -53,10 +89,17 @@ macro_rules! allocation {
             sections: $sections,
         };
 
-        let instance = ModuleInstance::new(&module);
-        let engine = Engine::new(instance, &module, Box::new(RelativeProgramCounter::default()));
+        let imports = Vec::new();
 
-        engine
+        let instance = ModuleInstance::new(&module);
+        let engine = Engine::new(
+            instance,
+            &module,
+            Box::new(RelativeProgramCounter::default()),
+            &imports
+        );
+
+        engine.unwrap()
     }};
 }
 
@@ -97,13 +140,13 @@ fn test_allocation_funcs() {
     assert_eq!(1, mi.code.len());
     assert_eq!(body, mi.code[0]);
     assert_eq!(1, mi.funcaddrs.len());
-    assert_eq!(Some(&0), mi.funcaddrs.get(0));
+    assert_eq!(0, mi.funcaddrs.get(0).unwrap().get());
 
     // Store has an entry for func instance
 
-    assert_eq!(1, engine.store.funcs.len());
-    assert_eq!(sig, engine.store.funcs[0].ty);
-    assert_eq!(body, engine.store.funcs[0].code);
+    assert_eq!(1, engine.store.count_functions());
+    assert_eq!(sig, engine.store.get_func_instance(&FuncAddr::new(0)).unwrap().ty);
+    assert_eq!(body, engine.store.get_func_instance(&FuncAddr::new(0)).unwrap().code);
 }
 
 #[test]
@@ -204,7 +247,7 @@ fn test_allocation_globals() {
     // Store has a global instance
 
     assert_eq!(1, engine.module.globaladdrs.len());
-    assert_eq!(Some(&0), engine.module.globaladdrs.get(0));
+    assert_eq!(Some(&GlobalAddr::new(0)), engine.module.globaladdrs.get(0));
 
     assert_eq!(1, engine.store.globals.len());
     assert_eq!(
@@ -308,7 +351,7 @@ fn test_gcd() {
 fn test_run_add() {
     let engine = test_run_engine!("add.wasm", 0, vec![I32(1), I32(2)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(3))),
+        Some(&(StackContent::Value(I32(3)))),
         engine.store.stack.last()
     )
 }
@@ -326,7 +369,7 @@ fn test_run_call() {
 
     let engine = test_run_engine!("call.wasm", 0, vec![]);
     assert_eq!(
-        Some(&StackContent::Value(I32(43))),
+        Some(&(StackContent::Value(I32(43)))),
         engine.store.stack.last()
     )
 }
@@ -336,7 +379,7 @@ fn test_run_gcd_loop() {
     //env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 1, vec![I32(50), I32(10)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(10))),
+        Some(&(StackContent::Value(I32(10)))),
         engine.store.stack.last()
     )
 }
@@ -346,7 +389,7 @@ fn test_run_gcd_recursive() {
     //env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 2, vec![I32(50), I32(10)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(10))),
+        Some(&(StackContent::Value(I32(10)))),
         engine.store.stack.last()
     )
 }
@@ -356,7 +399,7 @@ fn test_run_gcd_recursive2() {
     //env_logger::init();
     let engine = test_run_engine!("gcd.wasm", 2, vec![I32(31), I32(674)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(1))),
+        Some(&(StackContent::Value(I32(1)))),
         engine.store.stack.last()
     )
 }
@@ -372,7 +415,7 @@ fn test_run_incr_counter() {
 fn test_run_gt() {
     let engine = test_run_engine!("gt.wasm", 0, vec![I32(10), I32(11)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(0))),
+        Some(&(StackContent::Value(I32(0)))),
         engine.store.stack.last()
     )
 }
@@ -381,7 +424,7 @@ fn test_run_gt() {
 fn test_run_gt_2() {
     let engine = test_run_engine!("gt.wasm", 0, vec![I32(11), I32(10)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(1))),
+        Some(&(StackContent::Value(I32(1)))),
         engine.store.stack.last()
     )
 }
@@ -390,7 +433,7 @@ fn test_run_gt_2() {
 fn test_run_sub() {
     let engine = test_run_engine!("sub.wasm", 0, vec![I32(10), I32(11)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(-1))),
+        Some(&(StackContent::Value(I32(-1)))),
         engine.store.stack.last()
     )
 }
@@ -399,7 +442,7 @@ fn test_run_sub() {
 fn test_run_sub2() {
     let engine = test_run_engine!("sub.wasm", 0, vec![I32(11), I32(10)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(1))),
+        Some(&(StackContent::Value(I32(1)))),
         engine.store.stack.last()
     )
 }
@@ -486,7 +529,7 @@ fn test_run_local_tee_5() {
 fn test_run_local_tee_6() {
     let engine = test_run_engine!("local.tee.wasm", 6, vec![F32(4.4)]);
     assert_eq!(
-        Some(&StackContent::Value(F32(11.1))),
+        Some(&(StackContent::Value(F32(11.1)))),
         engine.store.stack.last()
     )
 }
@@ -502,13 +545,6 @@ fn test_run_local_tee_7() {
 
 #[test]
 fn test_run_as_loop_first_br_if_1() {
-    /*
-      (func (export "as-loop-first") (param i32) (result i32)
-        (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
-      )
-    */
-
-    //env_logger::init();
     let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(0)]);
     assert_eq!(
         Some(&StackContent::Value(I32(2))),
@@ -518,103 +554,12 @@ fn test_run_as_loop_first_br_if_1() {
 
 #[test]
 fn test_run_as_loop_first_br_if_2() {
-    /*
-      (func (export "as-loop-first") (param i32) (result i32)
-        (block (loop (br_if 1 (local.get 0)) (return (i32.const 2)))) (i32.const 3)
-      )
-    */
-    //    env_logger::init();
     let engine = test_run_engine!("as_loop_br_if.wasm", 0, vec![I32(1)]);
     assert_eq!(
         Some(&StackContent::Value(I32(3))),
         engine.store.stack.last()
     )
 }
-
-/*
-(func (export "br_if0") (result i32)
-    (local $i i32)
-    (local.set $i (i32.const 0))
-    (block $outer (result i32)
-      (block $inner
-        (br_if $inner (i32.const 0))
-        (local.set $i (i32.or (local.get $i) (i32.const 0x1)))
-        (br_if $inner (i32.const 1))
-        (local.set $i (i32.or (local.get $i) (i32.const 0x2)))
-      )
-      (drop (br_if $outer
-        (block (result i32)
-          (local.set $i (i32.or (local.get $i) (i32.const 0x4)))
-          (local.get $i)
-        )
-        (i32.const 0)
-      ))
-      (local.set $i (i32.or (local.get $i) (i32.const 0x8)))
-      (drop (br_if $outer
-        (block (result i32)
-          (local.set $i (i32.or (local.get $i) (i32.const 0x10)))
-          (local.get $i)
-        )
-        (i32.const 1)
-      ))
-      (local.set $i (i32.or (local.get $i) (i32.const 0x20))) (local.get $i)
-    )
-  )
-
-  (func (export "br_if1") (result i32)
-    (block $l0 (result i32)
-      (drop
-        (br_if $l0
-          (block $l1 (result i32) (br $l1 (i32.const 1)))
-          (i32.const 1)
-        )
-      )
-      (i32.const 0)
-    )
-  )
-
-  (func (export "br_if2") (result i32)
-    (block $l0 (result i32)
-      (if (i32.const 1)
-        (then
-          (drop
-            (br_if $l0
-              (block $l1 (result i32) (br $l1 (i32.const 1)))
-              (i32.const 1)
-            )
-          )
-        )
-      )
-      (i32.const 0)
-    )
-  )
-
-  (func (export "br_if3") (result i32)
-    (local $i1 i32)
-    (drop
-      (i32.add
-        (block $l0 (result i32)
-          (drop (br_if $l0
-            (block (result i32) (local.set $i1 (i32.const 1)) (local.get $i1))
-            (block (result i32) (local.set $i1 (i32.const 2)) (local.get $i1))
-          ))
-          (i32.const 0)
-        )
-        (i32.const 0)
-      )
-    )
-    (local.get $i1)
-  )
-
-  (func (export "br") (result i32)
-    (block $l0 (result i32)
-      (if (i32.const 1)
-        (then (br $l0 (block $l1 (result i32) (br $l1 (i32.const 1)))))
-        (else (block (drop (block $l1 (result i32) (br $l1 (i32.const 1))))))
-      )
-      (i32.const 1)
-    )
-))*/
 
 #[test]
 fn test_run_br_if0() {
@@ -691,12 +636,11 @@ fn test_run_loop2() {
 
 #[test]
 fn test_run_loop3() {
-    //env_logger::init();
     let engine = test_run_engine!("loop.wasm", 2, vec![]);
     assert_eq!(
         Some(&StackContent::Value(I32(1))),
         engine.store.stack.last()
-    )
+    );
 }
 
 /*
@@ -718,7 +662,7 @@ fn test_run_loop5() {
     assert_eq!(
         Some(&StackContent::Value(I32(2))),
         engine.store.stack.last()
-    )
+    );
 }
 
 #[test]
@@ -743,7 +687,7 @@ fn test_run_as_loop_mid_br1() {
     //env_logger::init();
     let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(0)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(2))),
+        Some(&(StackContent::Value(I32(2)))),
         engine.store.stack.last()
     )
 }
@@ -753,7 +697,7 @@ fn test_run_as_loop_mid_br2() {
     //env_logger::init();
     let engine = test_run_engine!("as_loop_mid_br_if.wasm", 0, vec![I32(1)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(4))),
+        Some(&(StackContent::Value(I32(4)))),
         engine.store.stack.last()
     )
 }
@@ -770,7 +714,7 @@ fn test_run_if_singular() {
     //env_logger::init();
     let engine = test_run_engine!("if.wasm", 1, vec![I32(0)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(8))),
+        Some(&(StackContent::Value(I32(8)))),
         engine.store.stack.last()
     )
 }
@@ -780,32 +724,32 @@ fn test_run_br_table() {
     //env_logger::init();
     let mut engine = test_run_engine!("br_table.wasm", 0, vec![I32(0)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(103))),
+        Some(&(StackContent::Value(I32(103)))),
         engine.store.stack.last()
     );
     engine = test_run_engine!("br_table.wasm", 0, vec![I32(1)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(102))),
+        Some(&(StackContent::Value(I32(102)))),
         engine.store.stack.last()
     );
     engine = test_run_engine!("br_table.wasm", 0, vec![I32(2)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(101))),
+        Some(&(StackContent::Value(I32(101)))),
         engine.store.stack.last()
     );
     engine = test_run_engine!("br_table.wasm", 0, vec![I32(3)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(100))),
+        Some(&(StackContent::Value(I32(100)))),
         engine.store.stack.last()
     );
     engine = test_run_engine!("br_table.wasm", 0, vec![I32(4)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(104))),
+        Some(&(StackContent::Value(I32(104)))),
         engine.store.stack.last()
     );
     engine = test_run_engine!("br_table.wasm", 0, vec![I32(-4)]);
     assert_eq!(
-        Some(&StackContent::Value(I32(104))),
+        Some(&(StackContent::Value(I32(104)))),
         engine.store.stack.last()
     );
 }
@@ -815,27 +759,60 @@ fn test_run_memory_size() {
     //env_logger::init();
     let engine = test_run_engine!("memory.wasm", 5, vec![]);
     assert_eq!(
-        Some(&StackContent::Value(I32(0))),
+        Some(&(StackContent::Value(I32(0)))),
         engine.store.stack.last()
     );
 }
 
-#[ignore]
 #[test]
 fn test_memory_redundancy() {
-    env_logger::init();
+    //env_logger::init();
     let mut engine = test_run_engine!("memory_redundancy.wasm", 1, vec![]);
     assert_eq!(
-        Some(&StackContent::Value(I32(128))),
+        Some(&(StackContent::Value(I32(128)))),
         engine.store.stack.last()
     );
+
+    engine
+        .invoke_exported_function(0, vec![])
+        .expect("Invoke exported function failed");
 
     engine
         .invoke_exported_function(2, vec![])
         .expect("Invoke exported function failed");
 
     assert_eq!(
-        Some(&StackContent::Value(I32(128))),
+        Some(&(StackContent::Value(I32(128)))),
+        engine.store.stack.last()
+    );
+}
+
+#[test]
+fn test_get_exported_global() {
+    //env_logger::init();
+    let value = test_get_exported_global!("global.wasm", "e");
+
+    assert!(value.is_ok(), "Global should exists");
+    assert_eq!(I32(42), value.unwrap());
+}
+
+#[test]
+fn test_run_fib() {
+    //env_logger::init();
+    let engine = test_run_engine!("fib.wasm", 1, vec![I32(10)]);
+    assert_eq!(
+        Some(&(StackContent::Value(I32(55)))),
+        engine.store.stack.last()
+    );
+}
+
+#[ignore]
+#[test]
+fn test_run_fib_higher() {
+    //env_logger::init();
+    let engine = test_run_engine!("fib.wasm", 1, vec![I32(25)]);
+    assert_eq!(
+        Some(&(StackContent::Value(I32(75025)))),
         engine.store.stack.last()
     );
 }

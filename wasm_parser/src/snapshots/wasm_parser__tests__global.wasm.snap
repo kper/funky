@@ -1,0 +1,40 @@
+---
+source: wasm_parser/src/lib.rs
+expression: "format!(\"{:#?}\", ast)"
+---
+Module {
+    sections: [
+        Global(
+            GlobalSection {
+                globals: [
+                    GlobalVariable {
+                        ty: GlobalType {
+                            value_type: I32,
+                            mu: Const,
+                        },
+                        init: [
+                            InstructionWrapper {
+                                instruction_id: 1,
+                                instruction: OP_I32_CONST(
+                                    42,
+                                ),
+                            },
+                        ],
+                    },
+                ],
+            },
+        ),
+        Export(
+            ExportSection {
+                entries: [
+                    ExportEntry {
+                        name: "e",
+                        kind: Global {
+                            ty: 0,
+                        },
+                    },
+                ],
+            },
+        ),
+    ],
+}

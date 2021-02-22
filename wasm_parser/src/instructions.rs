@@ -17,7 +17,6 @@ pub(crate) fn parse_instr<'a, 'b>(
     debug!("---------------");
     let (i, instr) = take(1u8)(i)?;
     debug!("HEAD {:x?}", instr);
-    debug!("i {:x?}", i);
 
     let (i, expr) = match instr[0] {
         0x00 => (i, Instruction::OP_UNREACHABLE),
@@ -627,7 +626,7 @@ mod test {
         assert_eq!(
             instructions.1,
             Instruction::OP_BLOCK(
-                BlockType::ValueTypeTy(-128),
+                BlockType::FuncTy(-128),
                 CodeBlock::new(&mut counter, vec![Instruction::OP_NOP, Instruction::OP_NOP])
             )
         );

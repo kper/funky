@@ -1,12 +1,13 @@
 use crate::engine::module::ModuleInstance;
+use crate::engine::stack::Frame;
 use crate::engine::stack::StackContent;
-use crate::engine::stack::{Frame};
 use crate::engine::store::Store;
 use crate::value::Value;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
+use wasm_parser::core::FuncAddr;
 use wasm_parser::Module;
 
-type StartFunctionAddr = u32;
+type StartFunctionAddr = FuncAddr;
 
 /// Returns the addr of the start function, which needs to be invoked
 pub fn instantiation(
@@ -69,31 +70,37 @@ fn instantiate_elements(
 ) -> Result<()> {
     debug!("instantiate elements");
 
-    let ty = validation::extract::get_elemens(&m);
+    let ty = validation::extract::get_elements(&m);
+
+    info!("Module has {} elements defined", ty.len());
 
     for e in ty.iter() {
-        let eoval = crate::allocation::get_expr_const_ty_global(&e.offset)
+        debug!("Instantiate element {:?}", e.offset);
+        let eoval = crate::allocation::get_expr_const_ty_global(&e.offset, mod_instance, store)
             .map_err(|_| anyhow!("Fetching const expr failed"))?;
 
-        if let Value::I32(table_index) = eoval {
-            //table_index = eo_i
+        let table_index = e.table as i32;
+        debug!("=> element's table_index {}", table_index);
+
+        if let Value::I32(eo) = eoval {
+            debug!("Assertion correct: Element's offset is I32({})", eo);
 
             let borrow = &mod_instance;
 
             let table_addr = borrow
                 .tableaddrs
                 .get(table_index as usize)
-                .ok_or_else(|| anyhow!("Table index does not exists"))?;
+                .ok_or_else(|| anyhow!("Table index {} does not exists", table_index))?;
 
             let table_inst = store
                 .tables
                 .get_mut(*table_addr as usize)
-                .ok_or_else(|| anyhow!("Table addr does not exists"))?;
+                .ok_or_else(|| anyhow!("Table addr {:?} does not exists", table_addr))?;
 
             let eend = table_index + e.init.len() as i32;
 
             if eend > table_inst.elem.len() as i32 {
-                return Err(anyhow!("eend is larger than table_inst.elem"));
+                return Err(anyhow!("end is larger than table_inst.elem"));
             }
 
             // Step 13
@@ -101,20 +108,26 @@ fn instantiate_elements(
             for (j, funcindex) in e.init.iter().enumerate() {
                 use std::mem::replace;
 
+                debug!("Updating function's addr in table");
+
                 let funcaddr = borrow
                     .funcaddrs
                     .get(*funcindex as usize)
                     .ok_or_else(|| anyhow!("No function with funcindex"))?;
 
+                debug!("=> Updating for function {:?}", funcaddr);
+
                 let _ = replace(
-                    &mut table_inst.elem[table_index as usize + j],
-                    Some(*funcaddr),
+                    &mut table_inst.elem[eo as usize + j],
+                    Some(funcaddr.clone()),
                 );
             }
         } else {
             panic!("Assertion failed. Element's offset is not I32");
         }
     }
+
+    debug!("Updated tables in store {:#?}", store.tables);
 
     Ok(())
 }
@@ -127,7 +140,7 @@ fn instantiate_data(m: &Module, mod_instance: &ModuleInstance, store: &mut Store
     for data in ty.iter() {
         debug!("data offset {:?}", data.offset);
 
-        let doval = crate::allocation::get_expr_const_ty_global(&data.offset)
+        let doval = crate::allocation::get_expr_const_ty_global(&data.offset, mod_instance, store)
             .map_err(|_| anyhow!("Fetching const expr failed"))?;
 
         if let Value::I32(mem_idx) = doval {
@@ -169,7 +182,7 @@ fn instantiate_start(
     m: &Module,
     mod_instance: &ModuleInstance,
     store: &mut Store,
-) -> Result<Option<u32>> {
+) -> Result<Option<StartFunctionAddr>> {
     debug!("instantiate start");
 
     if let Some(start_section) = validation::extract::get_start(m).first() {
@@ -178,16 +191,15 @@ fn instantiate_start(
         let borrow = &mod_instance;
         let func_addr = borrow
             .funcaddrs
-            .get((start_section.index) as usize)
-            .ok_or_else(|| anyhow!("got no func_addr"))?;
+            .get(start_section.index as usize)
+            .ok_or_else(|| anyhow!("Start function addr was not found"))?;
 
         // Check if the functions really exists
-        let _func_instance = store
-            .funcs
-            .get(*func_addr as usize)
-            .ok_or_else(|| anyhow!("Function does not exist"))?;
+        store
+            .get_func_instance(&func_addr)
+            .context("Checking if start function exists failed")?;
 
-        return Ok(Some(*func_addr));
+        return Ok(Some(func_addr.clone()));
     } else {
         debug!("No start section");
     }

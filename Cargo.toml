@@ -8,7 +8,7 @@ edition = "2018"
 members = [
 	"wasm_parser",
 	"validation",
-	"test_runner",
+	"testrunner2",
 	"hustensaft",
 	"custom_display"
 ]
@@ -21,8 +21,8 @@ path = "src/main.rs"
 name = "funky"
 
 [[bin]]
-path = "test_runner/src/main.rs"
-name = "test_runner"
+path = "testrunner2/src/main.rs"
+name = "testrunner2"
 
 [[bin]]
 path = "hustensaft/src/main.rs"
@@ -40,6 +40,8 @@ regex = "1"
 anyhow = "1.0.32"
 tui = "0.13"
 termion = "1.5"
+structopt = { version = "0.3", default-features = false }
 
 [dev-dependencies]
 insta = "*"
+tempfile = "*"

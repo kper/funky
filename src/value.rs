@@ -1,7 +1,9 @@
-use wasm_parser::core::*;
-use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
-use log::trace;
 use crate::value::Value::*;
+use log::trace;
+use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
+use wasm_parser::core::*;
+use std::fmt;
+use crate::engine::stack::StackContent;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Value {
@@ -179,5 +181,17 @@ impl Rem for Value {
             (F64(v1), F64(v2)) => F64(v1 % v2),
             _ => panic!("Type missmatch during remainder"),
         }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Into<StackContent> for Value {
+    fn into(self) -> StackContent {
+        StackContent::Value(self)
     }
 }

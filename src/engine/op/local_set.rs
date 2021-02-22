@@ -1,7 +1,6 @@
-use crate::engine::stack::Frame;
-use crate::engine::stack::StackContent::Value;
+use crate::engine::stack::{Frame, StackContent};
 use crate::engine::Engine;
-use anyhow::Result;
+use anyhow::{Result, bail};
 use wasm_parser::core::LocalIdx;
 
 impl Engine {
@@ -10,7 +9,7 @@ impl Engine {
         debug!("locals {:#?}", fr.locals);
 
         match self.store.stack.pop() {
-            Some(Value(v)) => {
+            Some(StackContent::Value(v)) => {
                 match fr.locals.get_mut(*idx as usize) {
                     Some(k) => *k = v, //Exists replace
                     None => {
@@ -19,8 +18,8 @@ impl Engine {
                     }
                 }
             }
-            Some(x) => panic!("Expected value but found {:?}", x),
-            None => panic!("Empty stack during local.set"),
+            Some(x) => bail!("Expected value but found {:?}", x),
+            None => bail!("Empty stack during local.set"),
         }
 
         Ok(())

@@ -1,11 +1,15 @@
 language: rust
 rust:
   - stable
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install cmake make build-essential
+env:
+  - RUST_MIN_STACK=8388608
 before_script:
+  - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
-  - cargo install cargo-audit
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
   - cargo clippy --all-features -- -D warnings
-  - cargo audit

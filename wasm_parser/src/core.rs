@@ -2,11 +2,32 @@ use custom_display::CustomDisplay;
 use serde::{Deserialize, Serialize};
 
 pub type FuncIdx = u32;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FuncAddr(usize);
 pub type TableIdx = u32;
 pub type MemoryIdx = u32;
 pub type GlobalIdx = u32;
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GlobalAddr(usize);
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
+
+macro_rules! implAddr {
+    ($name:ident) => {
+        impl $name {
+            pub fn new(value: u32) -> Self {
+                Self(value as usize)
+            }
+
+            pub fn get(&self) -> usize {
+                self.0
+            }
+        }
+    };
+}
+
+implAddr!(FuncAddr);
+implAddr!(GlobalAddr);
 
 pub type Expr = Vec<InstructionWrapper>;
 
@@ -41,8 +62,9 @@ pub enum ValueType {
 pub enum BlockType {
     Empty,
     ValueType(ValueType),
-    ValueTypeTy(i64),
-    //    S33(i64), //actually signed 33
+    /// The signature of the block
+    /// is defined as function definition
+    FuncTy(i64), // this is actually a FuncIdx, but it is required to have s33
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -62,7 +84,6 @@ pub enum ImportDesc {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Copy)]
 pub enum ExternalKindType {
-    //TODO refactor to tuple construct?
     Function { ty: u32 },
     Table { ty: u32 },
     Memory { ty: u32 },
