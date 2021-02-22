@@ -43,7 +43,7 @@ impl Counter {
     pub fn get(&mut self) -> usize {
         let counter = self.counter.clone();
         self.counter += 1;
-        counter
+        counter + 1
     }
 
     pub fn peek_next(&self) -> usize {
@@ -143,6 +143,12 @@ impl IR {
 
                     write!(str_block, "{}", self.visit_instruction_wrapper(block.get_instructions()));
                 }
+                OP_IF_AND_ELSE(_ty, code1, code2 ) => {
+                    writeln!(str_block, "if %{} THEN GOTO {} ELSE GOTO {}", self.counter.peek(), self.block_counter.peek_next(), self.block_counter.peek_next() + 1).unwrap();
+
+                    write!(str_block, "{}", self.visit_instruction_wrapper(code1.get_instructions()));
+                    write!(str_block, "{}", self.visit_instruction_wrapper(code2.get_instructions()));
+                }
                 OP_BR(label) => {
                     writeln!(str_block, "GOTO {}", self.block_counter.peek() - *label as usize).unwrap();
                     jumped = true;
@@ -154,7 +160,7 @@ impl IR {
         }
 
         if !jumped {
-            writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
+            writeln!(str_block, "GOTO {}", self.block_counter.peek_next()).unwrap();
         }
 
         writeln!(str_block, "BLOCK {}", self.block_counter.get()).unwrap();

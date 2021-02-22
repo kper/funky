@@ -81,6 +81,10 @@ fn test_simple_loop() {
 
 #[test]
 fn test_simple_if() {
-    env_logger::init();
     wat!("test_if", "(module (func (if (i32.const 1) (then nop))))");
+}
+
+#[test]
+fn test_simple_if_and_else() {
+    wat!("test_if_else", "(module (func (if (i32.const 1) (then nop) (else nop))))");
 }
