@@ -3,6 +3,7 @@ name = "ide"
 version = "0.1.0"
 authors = ["Kevin Per <kevin.per@protonmail.com>"]
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 env_logger = "0.7"
@@ -12,7 +13,12 @@ anyhow = "1.0.32"
 wasm-parser = { path = "./../wasm_parser" }
 validation = { path = "./../validation" }
 funky = { path = "../" }
+lalrpop-util = "0.19.4"
+regex = "1"
 
 [dev-dependencies]
 insta = "*"
 tempfile = "*"
+
+[build-dependencies]
+lalrpop = "0.19.4"
