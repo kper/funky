@@ -3,10 +3,10 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 0 {
-BLOCK 0
-GOTO 1
+define 1 {
 BLOCK 1
+GOTO 2
+BLOCK 2
 
 };
 
