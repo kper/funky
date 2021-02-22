@@ -10,7 +10,8 @@ members = [
 	"validation",
 	"testrunner2",
 	"hustensaft",
-	"custom_display"
+	"custom_display",
+	"ide"
 ]
 
 [lib]
@@ -27,6 +28,10 @@ name = "testrunner2"
 [[bin]]
 path = "hustensaft/src/main.rs"
 name = "hustensaft"
+
+[[bin]]
+path = "ide/src/main.rs"
+name = "ide"
 
 [dependencies]
 validation = { path = "./validation" }

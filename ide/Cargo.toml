@@ -1,0 +1,18 @@
+[package]
+name = "ide"
+version = "0.1.0"
+authors = ["Kevin Per <kevin.per@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+env_logger = "0.7"
+log = { version = "*", features = ["release_max_level_off"] }
+structopt = { version = "0.3", default-features = false }
+anyhow = "1.0.32"
+wasm-parser = { path = "./../wasm_parser" }
+validation = { path = "./../validation" }
+funky = { path = "../" }
+
+[dev-dependencies]
+insta = "*"
+tempfile = "*"

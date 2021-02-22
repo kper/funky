@@ -202,6 +202,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ide"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "env_logger",
+ "funky",
+ "insta",
+ "log",
+ "structopt",
+ "tempfile",
+ "validation",
+ "wasm-parser",
+]
+
+[[package]]
 name = "insta"
 version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
