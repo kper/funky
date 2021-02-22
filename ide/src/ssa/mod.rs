@@ -256,17 +256,34 @@ impl IR {
                     writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();*/
                 }
                 OP_LOOP(_ty, code) => {
+                    let name = format!("{} // LOOP", self.block_counter.get());
+                    let then_name = format!("{}", self.block_counter.get());
+
                     let block = Block {
-                        name: format!("Loop{}", self.block_counter.get()),
+                        name: name.clone(),
                         is_loop: true,
+
                     };
 
-                    //let block_index = self.push_block(function_index, block);
+                    let tblock = Block {
+                        name: then_name.clone(),
+                        is_loop: false,
+                    };
+
+                    self.functions[function_index].blocks.insert(name.clone(), block);
+                    self.functions[function_index].blocks.insert(then_name.clone(), tblock);
+
+
+                    writeln!(self.buffer, "BLOCK {}", name.clone()).unwrap();
 
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
                     );
+
+                    writeln!(self.buffer, "GOTO {} // BLOCK ended for {}", then_name, name.clone()).unwrap();
+                    writeln!(self.buffer, "BLOCK {} // THEN block for {}", then_name, name).unwrap();
+
 
                     /*
                     write!(
