@@ -75,6 +75,11 @@ fn test_simple_block() {
 }
 
 #[test]
+fn test_nested_block() {
+    wat!("test_simple_block", "(module (func (result i32) (block (result i32) (block (result i32) i32.const 1))))");
+}
+
+#[test]
 fn test_simple_loop() {
     env_logger::init();
     wat!("test_simple_loop", "(module (func (result i32) (block (result i32) (loop (result i32) (i32.const 1) (br 1)))))");

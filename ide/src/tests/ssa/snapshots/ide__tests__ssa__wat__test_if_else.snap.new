@@ -1,8 +1,0 @@
----
-source: ide/src/tests/ssa/wat.rs
-expression: "format!(\"{}\", ir . buffer())"
-
----
-define 0 {
-};
-
