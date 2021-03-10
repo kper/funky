@@ -57,7 +57,7 @@ impl Convert {
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
-                        graph.add_assignment(&dest, &src)?;
+                        graph.add_assignment(&dest, &src); //TODO check return
                     }
                     /* 
                     Instruction::Block(id) => {
@@ -67,7 +67,7 @@ impl Convert {
                     _ => {}
                 }
 
-                graph.add_row();
+                graph.add_row(format!("{:?}", instruction));
             }
 
             return Ok(graph);

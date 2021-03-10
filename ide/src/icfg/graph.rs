@@ -1,5 +1,5 @@
 use crate::counter::Counter;
-use anyhow::{bail, Result};
+use anyhow::{bail, Result, Context};
 
 type VarId = String;
 
@@ -14,17 +14,18 @@ pub struct SubGraph {
 #[derive(Debug, Default)]
 pub struct Variable {
     id: VarId,
-    last_fact: usize,
+    last_fact: Fact,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Fact {
     pub id: usize,
+    pub note: String,
 }
 
 #[derive(Debug, Clone)]
 pub enum Edge {
-    Normal { from: usize, to: usize },
+    Normal { from: Fact, to: Fact },
 }
 
 impl SubGraph {
@@ -38,24 +39,25 @@ impl SubGraph {
         graph
     }
 
-    fn new_fact(&mut self) -> usize {
+    fn new_fact(&mut self) -> Fact {
         let fact = Fact {
             id: self.counter.get(),
+            note: "".to_string(),
         };
 
-        self.facts.push(fact);
+        self.facts.push(fact.clone());
 
-        self.counter.peek() - 1
+        fact
     }
 
-    fn get_taut_id(&self) -> usize {
+    fn get_taut_id(&self) -> Fact {
         let taut = self.vars.get(0).unwrap();
         assert_eq!(taut.id, "taut".to_string(), "Expected to be tautology");
 
-        taut.last_fact
+        taut.last_fact.clone()
     }
 
-    fn get_fact(&self, val: &String) -> Result<usize> {
+    fn get_fact(&self, val: &String) -> Result<Fact> {
         let nodes = self
             .vars
             .iter()
@@ -64,7 +66,7 @@ impl SubGraph {
             .collect::<Vec<_>>();
 
         if let Some(node) = nodes.get(0) {
-            return Ok(node.last_fact);
+            return Ok(node.last_fact.clone());
         }
 
         bail!("Fact for {} not found", val);
@@ -85,7 +87,7 @@ impl SubGraph {
 
     /// add assignment
     pub fn add_assignment(&mut self, dest: &String, src: &String) -> Result<()> {
-        let src_node = self.get_fact(src)?;
+        let src_node = self.get_fact(src).context("Could not add assignment")?;
 
         self.vars.push(Variable {
             id: dest.clone(),
@@ -95,23 +97,24 @@ impl SubGraph {
         Ok(())
     }
 
-    pub fn add_row(&mut self) {
+    pub fn add_row(&mut self, note: String) {
         for var in self.vars.iter_mut() {
             // Create a new fact
             let fact = {
                 let fact = Fact {
                     id: self.counter.get(),
+                    note: format!("<b>{}</b><br/>{}", var.id, note),
                 };
 
-                self.facts.push(fact);
+                self.facts.push(fact.clone());
 
-                self.counter.peek() - 1
+                fact
             };
 
             //Normal
             self.edges.push(Edge::Normal {
-                from: var.last_fact,
-                to: fact,
+                from: var.last_fact.clone(),
+                to: fact.clone(),
             });
 
             var.last_fact = fact;

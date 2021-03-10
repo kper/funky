@@ -7,28 +7,46 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: 2,
+            last_fact: Fact {
+                id: 2,
+                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            },
         },
     ],
     facts: [
         Fact {
             id: 0,
+            note: "",
         },
         Fact {
             id: 1,
+            note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
         },
         Fact {
             id: 2,
+            note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
         },
     ],
     edges: [
         Normal {
-            from: 0,
-            to: 1,
+            from: Fact {
+                id: 0,
+                note: "",
+            },
+            to: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            },
         },
         Normal {
-            from: 1,
-            to: 2,
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            },
         },
     ],
     counter: Counter {

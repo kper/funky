@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 use std::io::Write;
 
+use dot::LabelText;
+
 use crate::icfg::graph::{Edge, Fact, SubGraph, Variable};
 
 pub fn render_to<W: Write>(graph: &SubGraph, output: &mut W) {
@@ -16,6 +18,10 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for SubGraph {
     fn node_id(&'a self, n: &Fact) -> dot::Id<'a> {
         dot::Id::new(format!("Fact{}", n.id)).unwrap()
     }
+
+    fn node_label(&'a self, n: &Fact) -> LabelText<'a> {
+        dot::LabelText::html(format!("{}", n.note))
+    }
 }
 
 impl<'a> dot::GraphWalk<'a, Fact, Edge> for SubGraph {
@@ -25,8 +31,8 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for SubGraph {
         for edge in &self.edges {
             match edge {
                 Edge::Normal { from, to } => {
-                    nodes.push(Fact { id: *from });
-                    nodes.push(Fact { id: *to });
+                    nodes.push(from.clone());
+                    nodes.push(to.clone());
                 }
                 _ => {}
             }
@@ -43,14 +49,14 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for SubGraph {
 
     fn source(&self, e: &Edge) -> Fact {
         match e {
-            Edge::Normal { from, to } => Fact { id: from.clone() },
+            Edge::Normal { from, to: _to } => from.clone(),
             _ => unimplemented!("Please add"),
         }
     }
 
     fn target(&self, e: &Edge) -> Fact {
         match e {
-            Edge::Normal { from, to } => Fact { id: to.clone() },
+            Edge::Normal { from: _from, to } => to.clone(),
             _ => unimplemented!("Please add"),
         }
     }

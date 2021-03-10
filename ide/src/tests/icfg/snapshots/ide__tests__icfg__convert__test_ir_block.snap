@@ -7,78 +7,144 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: 6,
+            last_fact: Fact {
+                id: 6,
+                note: "<b>taut</b><br/>Const(\"%1\", 2.0)",
+            },
         },
         Variable {
             id: "%0",
-            last_fact: 7,
+            last_fact: Fact {
+                id: 7,
+                note: "<b>%0</b><br/>Const(\"%1\", 2.0)",
+            },
         },
         Variable {
             id: "%1",
-            last_fact: 8,
+            last_fact: Fact {
+                id: 8,
+                note: "<b>%1</b><br/>Const(\"%1\", 2.0)",
+            },
         },
     ],
     facts: [
         Fact {
             id: 0,
+            note: "",
         },
         Fact {
             id: 1,
+            note: "<b>taut</b><br/>Block(\"0\")",
         },
         Fact {
             id: 2,
+            note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 3,
+            note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 4,
+            note: "<b>taut</b><br/>Block(\"1\")",
         },
         Fact {
             id: 5,
+            note: "<b>%0</b><br/>Block(\"1\")",
         },
         Fact {
             id: 6,
+            note: "<b>taut</b><br/>Const(\"%1\", 2.0)",
         },
         Fact {
             id: 7,
+            note: "<b>%0</b><br/>Const(\"%1\", 2.0)",
         },
         Fact {
             id: 8,
+            note: "<b>%1</b><br/>Const(\"%1\", 2.0)",
         },
     ],
     edges: [
         Normal {
-            from: 0,
-            to: 1,
+            from: Fact {
+                id: 0,
+                note: "",
+            },
+            to: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Block(\"0\")",
+            },
         },
         Normal {
-            from: 1,
-            to: 2,
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Block(\"0\")",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            },
         },
         Normal {
-            from: 1,
-            to: 3,
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Block(\"0\")",
+            },
+            to: Fact {
+                id: 3,
+                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+            },
         },
         Normal {
-            from: 2,
-            to: 4,
+            from: Fact {
+                id: 2,
+                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 4,
+                note: "<b>taut</b><br/>Block(\"1\")",
+            },
         },
         Normal {
-            from: 3,
-            to: 5,
+            from: Fact {
+                id: 3,
+                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 5,
+                note: "<b>%0</b><br/>Block(\"1\")",
+            },
         },
         Normal {
-            from: 4,
-            to: 6,
+            from: Fact {
+                id: 4,
+                note: "<b>taut</b><br/>Block(\"1\")",
+            },
+            to: Fact {
+                id: 6,
+                note: "<b>taut</b><br/>Const(\"%1\", 2.0)",
+            },
         },
         Normal {
-            from: 5,
-            to: 7,
+            from: Fact {
+                id: 5,
+                note: "<b>%0</b><br/>Block(\"1\")",
+            },
+            to: Fact {
+                id: 7,
+                note: "<b>%0</b><br/>Const(\"%1\", 2.0)",
+            },
         },
         Normal {
-            from: 4,
-            to: 8,
+            from: Fact {
+                id: 4,
+                note: "<b>taut</b><br/>Block(\"1\")",
+            },
+            to: Fact {
+                id: 8,
+                note: "<b>%1</b><br/>Const(\"%1\", 2.0)",
+            },
         },
     ],
     counter: Counter {

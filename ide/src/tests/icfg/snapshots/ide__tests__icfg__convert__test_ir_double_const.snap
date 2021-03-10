@@ -7,57 +7,102 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: 3,
+            last_fact: Fact {
+                id: 3,
+                note: "<b>taut</b><br/>Const(\"%1\", 1.0)",
+            },
         },
         Variable {
             id: "%0",
-            last_fact: 4,
+            last_fact: Fact {
+                id: 4,
+                note: "<b>%0</b><br/>Const(\"%1\", 1.0)",
+            },
         },
         Variable {
             id: "%1",
-            last_fact: 5,
+            last_fact: Fact {
+                id: 5,
+                note: "<b>%1</b><br/>Const(\"%1\", 1.0)",
+            },
         },
     ],
     facts: [
         Fact {
             id: 0,
+            note: "",
         },
         Fact {
             id: 1,
+            note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 2,
+            note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 3,
+            note: "<b>taut</b><br/>Const(\"%1\", 1.0)",
         },
         Fact {
             id: 4,
+            note: "<b>%0</b><br/>Const(\"%1\", 1.0)",
         },
         Fact {
             id: 5,
+            note: "<b>%1</b><br/>Const(\"%1\", 1.0)",
         },
     ],
     edges: [
         Normal {
-            from: 0,
-            to: 1,
+            from: Fact {
+                id: 0,
+                note: "",
+            },
+            to: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            },
         },
         Normal {
-            from: 0,
-            to: 2,
+            from: Fact {
+                id: 0,
+                note: "",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+            },
         },
         Normal {
-            from: 1,
-            to: 3,
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 3,
+                note: "<b>taut</b><br/>Const(\"%1\", 1.0)",
+            },
         },
         Normal {
-            from: 2,
-            to: 4,
+            from: Fact {
+                id: 2,
+                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 4,
+                note: "<b>%0</b><br/>Const(\"%1\", 1.0)",
+            },
         },
         Normal {
-            from: 1,
-            to: 5,
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 5,
+                note: "<b>%1</b><br/>Const(\"%1\", 1.0)",
+            },
         },
     ],
     counter: Counter {

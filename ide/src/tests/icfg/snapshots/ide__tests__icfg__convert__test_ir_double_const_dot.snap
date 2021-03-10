@@ -4,12 +4,12 @@ expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
 
 ---
 digraph example1 {
-    Fact0[label="Fact0"];
-    Fact1[label="Fact1"];
-    Fact2[label="Fact2"];
-    Fact3[label="Fact3"];
-    Fact4[label="Fact4"];
-    Fact5[label="Fact5"];
+    Fact0[label=<>];
+    Fact1[label=<<b>taut</b><br/>Const("%0", 1.0)>];
+    Fact2[label=<<b>%0</b><br/>Const("%0", 1.0)>];
+    Fact3[label=<<b>taut</b><br/>Const("%1", 1.0)>];
+    Fact4[label=<<b>%0</b><br/>Const("%1", 1.0)>];
+    Fact5[label=<<b>%1</b><br/>Const("%1", 1.0)>];
     Fact0 -> Fact1[label=""];
     Fact0 -> Fact2[label=""];
     Fact1 -> Fact3[label=""];
