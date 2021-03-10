@@ -71,3 +71,17 @@ fn test_ir_double_assignment() {
     "
     );
 }
+
+#[test]
+fn test_ir_block() {
+    ir!(
+        "test_ir_block",
+        "define test {
+            BLOCK 0
+            %0 = 1
+            GOTO 1
+            BLOCK 1
+            %1 = 2
+        };"
+    );
+}

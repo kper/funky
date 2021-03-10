@@ -1,0 +1,87 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "format!(\"{:#?}\", res)"
+
+---
+SubGraph {
+    vars: [
+        Variable {
+            id: "taut",
+            last_fact: 6,
+        },
+        Variable {
+            id: "%0",
+            last_fact: 7,
+        },
+        Variable {
+            id: "%1",
+            last_fact: 8,
+        },
+    ],
+    facts: [
+        Fact {
+            id: 0,
+        },
+        Fact {
+            id: 1,
+        },
+        Fact {
+            id: 2,
+        },
+        Fact {
+            id: 3,
+        },
+        Fact {
+            id: 4,
+        },
+        Fact {
+            id: 5,
+        },
+        Fact {
+            id: 6,
+        },
+        Fact {
+            id: 7,
+        },
+        Fact {
+            id: 8,
+        },
+    ],
+    edges: [
+        Normal {
+            from: 0,
+            to: 1,
+        },
+        Normal {
+            from: 1,
+            to: 2,
+        },
+        Normal {
+            from: 1,
+            to: 3,
+        },
+        Normal {
+            from: 2,
+            to: 4,
+        },
+        Normal {
+            from: 3,
+            to: 5,
+        },
+        Normal {
+            from: 4,
+            to: 6,
+        },
+        Normal {
+            from: 5,
+            to: 7,
+        },
+        Normal {
+            from: 4,
+            to: 8,
+        },
+    ],
+    counter: Counter {
+        counter: 9,
+    },
+}
