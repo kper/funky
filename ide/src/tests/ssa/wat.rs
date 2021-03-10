@@ -55,7 +55,7 @@ macro_rules! wat {
 
         let mut ir = IR::new(&engine);
 
-        ir.visit();
+        ir.visit().unwrap();
 
         assert_snapshot!($name, format!("{}", ir.buffer()));
 

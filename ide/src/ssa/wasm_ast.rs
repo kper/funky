@@ -222,7 +222,7 @@ impl<'a> IR<'a> {
                         is_loop: false,
                     };
 
-                    let tblock = Block {
+                    let _tblock = Block {
                         name: then_name.clone(),
                         is_loop: false,
                     };
@@ -262,7 +262,7 @@ impl<'a> IR<'a> {
                         is_loop: true,
                     };
 
-                    let tblock = Block {
+                    let _tblock = Block {
                         name: then_name.clone(),
                         is_loop: false,
                     };
@@ -302,7 +302,7 @@ impl<'a> IR<'a> {
                         is_loop: false,
                     };
 
-                    let tblock = Block {
+                    let _tblock = Block {
                         name: then_name.clone(),
                         is_loop: false,
                     };
@@ -356,7 +356,7 @@ impl<'a> IR<'a> {
                         is_loop: false,
                     };
 
-                    let done_block = Block {
+                    let _done_block = Block {
                         name: done_name.clone(),
                         is_loop: false,
                     };

@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 /// This module is responsible for converting the IR to an AST.
 
-use funky::engine::Engine;
-
 #[derive(Debug)]
 pub struct Program {
     pub(crate) functions: Function
