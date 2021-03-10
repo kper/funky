@@ -135,6 +135,13 @@ impl<'a> std::iter::Iterator for &mut InstructionIterator<'a> {
         self.current += 1;
         let item = item.map(|x| *x);
 
+        match item {
+            Some(Instruction::Block(_)) => {
+                return self.next();
+            }
+            _ => {}
+        }
+
         if let Some(&Instruction::Jump(ref id)) = item {
             if self.jump_to(id).is_ok() {
                 self.next()

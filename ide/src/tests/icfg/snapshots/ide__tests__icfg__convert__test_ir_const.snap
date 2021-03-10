@@ -23,7 +23,7 @@ SubGraph {
     facts: [
         Fact {
             id: 0,
-            note: "",
+            note: "taut",
         },
         Fact {
             id: 1,
@@ -38,7 +38,7 @@ SubGraph {
         Normal {
             from: Fact {
                 id: 0,
-                note: "",
+                note: "taut",
             },
             to: Fact {
                 id: 1,
@@ -48,7 +48,7 @@ SubGraph {
         Normal {
             from: Fact {
                 id: 0,
-                note: "",
+                note: "taut",
             },
             to: Fact {
                 id: 2,

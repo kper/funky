@@ -43,7 +43,7 @@ impl SubGraph {
     fn new_fact(&mut self) -> Fact {
         let fact = Fact {
             id: self.counter.get(),
-            note: "".to_string(),
+            note: "taut".to_string(),
         };
 
         self.facts.push(fact.clone());
