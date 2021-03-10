@@ -37,11 +37,36 @@ fn test_ir_const() {
 #[test]
 fn test_ir_double_const() {
     ir!(
-        "test_ir_const",
+        "test_ir_double_const",
         "
          define test {
             %0 = 1
             %1 = 1
+         };
+    "
+    );
+}
+
+#[test]
+fn test_ir_assignment() {
+    ir!(
+        "test_ir_assignment",
+        "
+         define test {
+            %0 = %1
+         };
+    "
+    );
+}
+
+#[test]
+fn test_ir_double_assignment() {
+    ir!(
+        "test_ir_double_assignment",
+        "
+         define test {
+            %0 = %1
+            %0 = %1
          };
     "
     );

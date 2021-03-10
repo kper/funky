@@ -1,4 +1,5 @@
 use crate::counter::Counter;
+use anyhow::{bail, Result};
 
 type VarId = String;
 
@@ -54,7 +55,22 @@ impl SubGraph {
         taut.last_fact
     }
 
-    /// add a new node in the graph
+    fn get_fact(&self, val: &String) -> Result<usize> {
+        let nodes = self
+            .vars
+            .iter()
+            .rev()
+            .filter(|x| &x.id == val)
+            .collect::<Vec<_>>();
+
+        if let Some(node) = nodes.get(0) {
+            return Ok(node.last_fact);
+        }
+
+        bail!("Fact for {} not found", val);
+    }
+
+    /// add a new node in the graph from taut
     pub fn add_var(&mut self, reg: &String) -> &mut Variable {
         let len = self.vars.len();
 
@@ -65,6 +81,18 @@ impl SubGraph {
             last_fact: fact,
         });
         self.vars.get_mut(len).unwrap()
+    }
+
+    /// add assignment
+    pub fn add_assignment(&mut self, dest: &String, src: &String) -> Result<()> {
+        let src_node = self.get_fact(src)?;
+
+        self.vars.push(Variable {
+            id: dest.clone(),
+            last_fact: src_node,
+        });
+
+        Ok(())
     }
 
     pub fn add_row(&mut self) {

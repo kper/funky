@@ -7,11 +7,15 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: 1,
+            last_fact: 3,
         },
         Variable {
             id: "%0",
-            last_fact: 2,
+            last_fact: 4,
+        },
+        Variable {
+            id: "%1",
+            last_fact: 5,
         },
     ],
     facts: [
@@ -24,6 +28,15 @@ SubGraph {
         Fact {
             id: 2,
         },
+        Fact {
+            id: 3,
+        },
+        Fact {
+            id: 4,
+        },
+        Fact {
+            id: 5,
+        },
     ],
     edges: [
         Normal {
@@ -34,8 +47,20 @@ SubGraph {
             from: 0,
             to: 2,
         },
+        Normal {
+            from: 1,
+            to: 3,
+        },
+        Normal {
+            from: 2,
+            to: 4,
+        },
+        Normal {
+            from: 1,
+            to: 5,
+        },
     ],
     counter: Counter {
-        counter: 3,
+        counter: 6,
     },
 }

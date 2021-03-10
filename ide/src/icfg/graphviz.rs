@@ -37,7 +37,6 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for SubGraph {
     }
 
     fn edges(&'a self) -> dot::Edges<'a, Edge> {
-        //let &Edges(ref edges) = self;
         let edges = &self.edges;
         Cow::Borrowed(&edges[..])
     }

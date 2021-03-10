@@ -51,6 +51,10 @@ impl Convert {
                         debug!("Adding const");
                         graph.add_var(reg);
                     }
+                    Instruction::Assign(dest, src) => {
+                        debug!("Assignment");
+                        graph.add_assignment(dest, src);
+                    }
                     _ => {}
                 }
 

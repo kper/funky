@@ -7,10 +7,6 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: 1,
-        },
-        Variable {
-            id: "%0",
             last_fact: 2,
         },
     ],
@@ -31,7 +27,7 @@ SubGraph {
             to: 1,
         },
         Normal {
-            from: 0,
+            from: 1,
             to: 2,
         },
     ],
