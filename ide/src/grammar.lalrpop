@@ -4,7 +4,9 @@ use crate::ssa::ast::*;
 grammar;
 
 pub Program : Program = {
-    
+   <functions:Function*> => Program {
+       functions: functions
+   } 
 };
 
 pub Function : Function = {

@@ -1,2 +1,2 @@
 mod graph;
-mod convert;
+pub mod convert;

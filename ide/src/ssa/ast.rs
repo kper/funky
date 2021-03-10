@@ -3,7 +3,7 @@
 
 #[derive(Debug)]
 pub struct Program {
-    pub(crate) functions: Function
+    pub(crate) functions: Vec<Function>
 }
 
 #[derive(Debug)]
