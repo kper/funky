@@ -85,3 +85,14 @@ fn test_ir_block() {
         };"
     );
 }
+
+#[test]
+fn test_ir_killing() {
+    ir!(
+        "test_ir_killing",
+        "define test {
+            %0 = 1
+            %0 = 2
+        };"
+    );
+}

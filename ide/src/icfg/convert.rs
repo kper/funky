@@ -49,25 +49,23 @@ impl Convert {
             let mut graph = SubGraph::new();
 
             let mut iterator = InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+            let mut killing_set = Vec::new();
+
             for instruction in &mut iterator {
                 match instruction {
                     Instruction::Const(reg, _val) => {
                         debug!("Adding const");
-                        graph.add_var(&reg);
+                        graph.add_var(&reg, &mut killing_set);
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
-                        graph.add_assignment(&dest, &src); //TODO check return
+                        graph.add_assignment(&dest, &src, &mut killing_set); //TODO check return
                     }
-                    /* 
-                    Instruction::Block(id) => {
-                        debug!("Block");
-                        iterator.jump_to(&id)?;
-                    }*/
                     _ => {}
                 }
 
-                graph.add_row(format!("{:?}", instruction));
+                graph.add_row(format!("{:?}", instruction), &mut killing_set);
+                killing_set.clear();
             }
 
             return Ok(graph);

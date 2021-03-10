@@ -1,5 +1,7 @@
+use std::ops::DerefMut;
+
 use crate::counter::Counter;
-use anyhow::{bail, Result, Context};
+use anyhow::{bail, private::kind, Context, Result};
 
 type VarId = String;
 
@@ -74,20 +76,36 @@ impl SubGraph {
     }
 
     /// add a new node in the graph from taut
-    pub fn add_var(&mut self, reg: &String) -> &mut Variable {
+    pub fn add_var(&mut self, reg: &String, killing_set: &mut Vec<Variable>) {
         let len = self.vars.len();
-
-        // Get the last tautology fact
         let fact = self.get_taut_id();
-        self.vars.push(Variable {
-            id: reg.clone(),
-            last_fact: fact,
-        });
-        self.vars.get_mut(len).unwrap()
+
+        if let Some(var) = 
+        self
+            .vars
+            .iter_mut()
+            .filter(|x| &x.id == reg)
+            .collect::<Vec<_>>().get_mut(0)
+         {
+            //killing_set.push(reg.clone());
+            var.last_fact = fact;
+        } else {
+            // Get the last tautology fact
+            let fact = self.get_taut_id();
+            self.vars.push(Variable {
+                id: reg.clone(),
+                last_fact: fact,
+            });
+        }
     }
 
     /// add assignment
-    pub fn add_assignment(&mut self, dest: &String, src: &String) -> Result<()> {
+    pub fn add_assignment(
+        &mut self,
+        dest: &String,
+        src: &String,
+        killing_set: &mut Vec<Variable>,
+    ) -> Result<()> {
         let src_node = self.get_fact(src).context("Could not add assignment")?;
 
         self.vars.push(Variable {
@@ -98,7 +116,7 @@ impl SubGraph {
         Ok(())
     }
 
-    pub fn add_row(&mut self, note: String) {
+    pub fn add_row(&mut self, note: String, killing_set: &mut Vec<Variable>) {
         let epoch = self.epoch.get();
         for var in self.vars.iter_mut() {
             // Create a new fact

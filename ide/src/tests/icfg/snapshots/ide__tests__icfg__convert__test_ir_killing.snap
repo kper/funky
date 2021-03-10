@@ -1,0 +1,93 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "format!(\"{:#?}\", res)"
+
+---
+SubGraph {
+    vars: [
+        Variable {
+            id: "taut",
+            last_fact: Fact {
+                id: 3,
+                note: "<b>taut</b> at 1<br/>Const(\"%0\", 2.0)",
+            },
+        },
+        Variable {
+            id: "%0",
+            last_fact: Fact {
+                id: 4,
+                note: "<b>%0</b> at 1<br/>Const(\"%0\", 2.0)",
+            },
+        },
+    ],
+    facts: [
+        Fact {
+            id: 0,
+            note: "taut",
+        },
+        Fact {
+            id: 1,
+            note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+        },
+        Fact {
+            id: 2,
+            note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+        },
+        Fact {
+            id: 3,
+            note: "<b>taut</b> at 1<br/>Const(\"%0\", 2.0)",
+        },
+        Fact {
+            id: 4,
+            note: "<b>%0</b> at 1<br/>Const(\"%0\", 2.0)",
+        },
+    ],
+    edges: [
+        Normal {
+            from: Fact {
+                id: 0,
+                note: "taut",
+            },
+            to: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 0,
+                note: "taut",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 3,
+                note: "<b>taut</b> at 1<br/>Const(\"%0\", 2.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 4,
+                note: "<b>%0</b> at 1<br/>Const(\"%0\", 2.0)",
+            },
+        },
+    ],
+    counter: Counter {
+        counter: 5,
+    },
+    epoch: Counter {
+        counter: 2,
+    },
+}
