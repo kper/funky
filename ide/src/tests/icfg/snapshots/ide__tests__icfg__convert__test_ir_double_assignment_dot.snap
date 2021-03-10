@@ -5,8 +5,8 @@ expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
 ---
 digraph example1 {
     Fact0[label=<>];
-    Fact1[label=<<b>taut</b><br/>Assign("%0", "%1")>];
-    Fact2[label=<<b>taut</b><br/>Assign("%0", "%1")>];
+    Fact1[label=<<b>taut</b> at 0<br/>Assign("%0", "%1")>];
+    Fact2[label=<<b>taut</b> at 1<br/>Assign("%0", "%1")>];
     Fact0 -> Fact1[label=""];
     Fact1 -> Fact2[label=""];
 }

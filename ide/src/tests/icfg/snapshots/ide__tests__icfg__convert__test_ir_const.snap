@@ -9,14 +9,14 @@ SubGraph {
             id: "taut",
             last_fact: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
             },
         },
         Variable {
             id: "%0",
             last_fact: Fact {
                 id: 2,
-                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
             },
         },
     ],
@@ -27,11 +27,11 @@ SubGraph {
         },
         Fact {
             id: 1,
-            note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+            note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 2,
-            note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+            note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
         },
     ],
     edges: [
@@ -42,7 +42,7 @@ SubGraph {
             },
             to: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Const(\"%0\", 1.0)",
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
             },
         },
         Normal {
@@ -52,11 +52,14 @@ SubGraph {
             },
             to: Fact {
                 id: 2,
-                note: "<b>%0</b><br/>Const(\"%0\", 1.0)",
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
             },
         },
     ],
     counter: Counter {
         counter: 3,
+    },
+    epoch: Counter {
+        counter: 1,
     },
 }

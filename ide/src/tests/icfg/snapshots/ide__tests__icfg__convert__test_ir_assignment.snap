@@ -9,7 +9,7 @@ SubGraph {
             id: "taut",
             last_fact: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
@@ -20,7 +20,7 @@ SubGraph {
         },
         Fact {
             id: 1,
-            note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
         },
     ],
     edges: [
@@ -31,11 +31,14 @@ SubGraph {
             },
             to: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
     counter: Counter {
         counter: 2,
+    },
+    epoch: Counter {
+        counter: 1,
     },
 }

@@ -9,6 +9,7 @@ pub struct SubGraph {
     facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     counter: Counter,
+    epoch: Counter,
 }
 
 #[derive(Debug, Default)]
@@ -98,12 +99,13 @@ impl SubGraph {
     }
 
     pub fn add_row(&mut self, note: String) {
+        let epoch = self.epoch.get();
         for var in self.vars.iter_mut() {
             // Create a new fact
             let fact = {
                 let fact = Fact {
                     id: self.counter.get(),
-                    note: format!("<b>{}</b><br/>{}", var.id, note),
+                    note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
                 };
 
                 self.facts.push(fact.clone());

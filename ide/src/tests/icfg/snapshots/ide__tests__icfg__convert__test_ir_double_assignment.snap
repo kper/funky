@@ -9,7 +9,7 @@ SubGraph {
             id: "taut",
             last_fact: Fact {
                 id: 2,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
@@ -20,11 +20,11 @@ SubGraph {
         },
         Fact {
             id: 1,
-            note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
         },
         Fact {
             id: 2,
-            note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+            note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
         },
     ],
     edges: [
@@ -35,21 +35,24 @@ SubGraph {
             },
             to: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
             },
         },
         Normal {
             from: Fact {
                 id: 1,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
             },
             to: Fact {
                 id: 2,
-                note: "<b>taut</b><br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
     counter: Counter {
         counter: 3,
+    },
+    epoch: Counter {
+        counter: 2,
     },
 }
