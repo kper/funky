@@ -1,0 +1,13 @@
+---
+source: ide/src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 {
+BLOCK 0
+%0 = 1
+OP_IF_AND_ELSE
+
+BLOCK 1
+};
+

@@ -1,0 +1,43 @@
+---
+source: ide/src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 {
+BLOCK 0
+BLOCK 2
+%1 = -1
+OP_DROP
+
+%2 = 1
+BLOCK 4
+%3 = 2
+BLOCK 6
+%4 = 4
+OP_DROP
+
+%5 = 8
+%6 = 16
+%7 = %0
+BR TABLE GOTO 7 5 ELSE GOTO 3
+%8 = %7 op %6
+KILL %7
+KILL %6
+KILL %5
+KILL %4
+GOTO 7 // BLOCK ended for 6
+BLOCK 7 // THEN block for 6
+%9 = %8 op %3
+KILL %8
+KILL %3
+GOTO 5 // BLOCK ended for 4
+BLOCK 5 // THEN block for 4
+%10 = %9 op %2
+KILL %9
+KILL %2
+KILL %1
+GOTO 3 // BLOCK ended for 2
+BLOCK 3 // THEN block for 2
+BLOCK 1
+};
+

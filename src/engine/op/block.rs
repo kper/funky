@@ -85,7 +85,7 @@ impl Engine {
     }
 
     /// By given block_ty, return the return count of the block
-    pub(crate) fn get_return_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
+    pub fn get_return_count_block(&self, block_ty: &BlockType) -> Result<Arity> {
         let arity = match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,

@@ -2,9 +2,12 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 #[macro_use] extern crate lalrpop_util;
 
-mod ssa;
-
 lalrpop_mod!(pub grammar);
+
+mod ssa;
+mod icfg;
+mod counter;
+mod symbol_table;
 
 #[cfg(test)]
 mod tests;
