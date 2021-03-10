@@ -24,6 +24,7 @@ pub Instruction : Vec<Instruction> = {
     <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => vec![Instruction::BinOp(dest, src1, src2)],
     "GOTO" <n:Id> => vec![Instruction::Jump(n)],
     "IF" <reg:Reg> "THEN" "GOTO" <j1:Id> "ELSE" "GOTO" <j2:Id> => vec![Instruction::Jump(j1), Instruction::Jump(j2)],
+    "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
     "BR" "TABLE" "GOTO" <n:Id*> "ELSE" "GOTO" <e:Id> => {
         let mut result = Vec::new();
         for i in n {
