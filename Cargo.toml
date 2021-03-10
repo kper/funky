@@ -47,6 +47,7 @@ tui = "0.13"
 termion = "1.5"
 structopt = { version = "0.3", default-features = false }
 lalrpop-util = "0.19.4"
+dot = "0.1.4"
 
 [dev-dependencies]
 insta = "*"

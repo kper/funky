@@ -1,0 +1,13 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
+
+---
+digraph example1 {
+    Fact0[label="Fact0"];
+    Fact1[label="Fact1"];
+    Fact2[label="Fact2"];
+    Fact0 -> Fact1[label=""];
+    Fact0 -> Fact2[label=""];
+}
+

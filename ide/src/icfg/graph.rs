@@ -6,7 +6,7 @@ type VarId = String;
 pub struct SubGraph {
     vars: Vec<Variable>,
     facts: Vec<Fact>,
-    edges: Vec<Edge>,
+    pub edges: Vec<Edge>,
     counter: Counter,
 }
 
@@ -16,12 +16,12 @@ pub struct Variable {
     last_fact: usize,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Fact {
-    id: usize,
+    pub id: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Edge {
     Normal { from: usize, to: usize },
 }

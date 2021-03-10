@@ -15,6 +15,7 @@ validation = { path = "./../validation" }
 funky = { path = "../" }
 lalrpop-util = "0.19.4"
 regex = "1"
+dot = "0.1.4"
 
 [dev-dependencies]
 insta = "*"
