@@ -27,7 +27,9 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(FunctionName)
+    Call(FunctionName),
+    /// kill the variable
+    Kill(Dest),
 }
 
 

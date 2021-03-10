@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use anyhow::{bail, Result};
 /// This module is responsible to parse
 /// the webassembly AST to an IR
 use funky::engine::func::FuncInstance;
@@ -14,7 +15,8 @@ use std::collections::HashMap;
 pub struct IR<'a> {
     //functions: Vec<Function>,
     buffer: String,
-    counter: Counter,
+    //counter: Counter,
+    symbol_table: SymbolTable,
     block_counter: Counter,
     function_counter: Counter,
     functions: Vec<Function>,
@@ -60,12 +62,75 @@ impl Counter {
     }
 }
 
+#[derive(Debug, Default)]
+struct Variable {
+    reg: usize,
+    is_killed: bool,
+}
+
+#[derive(Debug, Default)]
+struct SymbolTable {
+    vars: Vec<Variable>,
+    counter: Counter,
+}
+
+impl SymbolTable {
+    pub fn peek(&self) -> Result<usize> {
+        for var in self.vars.iter().rev() {
+            if !var.is_killed {
+                return Ok(var.reg);
+            }
+        }
+
+        bail!("No active variable in symbol table");
+    }
+
+    /// Peek the last variable, but skip `offset` variables.
+    pub fn peek_offset(&self, offset: usize) -> Result<usize> {
+        for var in self.vars.iter().filter(|x| !x.is_killed).rev().skip(offset) {
+            return Ok(var.reg);
+        }
+
+        bail!("No active variable in symbol table");
+    }
+
+    pub fn new_var(&mut self) -> Result<usize> {
+        let val = self.counter.get();
+
+        self.vars.push(Variable {
+            reg: val,
+            is_killed: false,
+        });
+
+        Ok(val)
+    }
+
+    /// Kill the variable with `reg`.
+    /// The search starts at the end, because
+    /// it is more likely that the killed variable is there.
+    pub fn kill(&mut self, reg: usize) -> Result<()> {
+        for var in self.vars.iter_mut().rev() {
+            if var.reg == reg {
+                if !var.is_killed {
+                    var.is_killed = true;
+                    return Ok(());
+                } else {
+                    bail!("Variable %{} was already killed", reg);
+                }
+            }
+        }
+
+        bail!("Variable %{} was not found", reg);
+    }
+}
+
 impl<'a> IR<'a> {
     pub fn new(engine: &'a Engine) -> Self {
         Self {
             engine,
             buffer: String::new(),
-            counter: Counter::default(),
+            //counter: Counter::default(),
+            symbol_table: SymbolTable::default(),
             block_counter: Counter::default(),
             function_counter: Counter::default(),
             functions: Vec::new(),
@@ -76,13 +141,15 @@ impl<'a> IR<'a> {
         self.buffer.clone()
     }
 
-    pub fn visit(&mut self) {
+    pub fn visit(&mut self) -> Result<()> {
         for function in self.engine.store.funcs.iter() {
-            self.visit_function(function);
+            self.visit_function(function)?;
         }
+
+        Ok(())
     }
 
-    fn visit_function(&mut self, inst: &FuncInstance) {
+    fn visit_function(&mut self, inst: &FuncInstance) -> Result<()> {
         let name = format!("{}", self.function_counter.get());
         writeln!(self.buffer, "define {} {{", name).unwrap();
 
@@ -93,19 +160,21 @@ impl<'a> IR<'a> {
         };
 
         for (i, _) in inst.ty.param_types.iter().enumerate() {
-            function.locals.insert(i, self.counter.get());
+            function.locals.insert(i, self.symbol_table.new_var()?);
         }
 
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
 
         debug!("code {:#?}", inst.code);
-        self.visit_body(&inst.code, func_index);
+        self.visit_body(&inst.code, func_index)?;
 
         writeln!(self.buffer, "}};").unwrap();
+
+        Ok(())
     }
 
-    fn visit_body(&mut self, body: &FunctionBody, function_index: usize) {
+    fn visit_body(&mut self, body: &FunctionBody, function_index: usize) -> Result<()> {
         let code = &body.code;
 
         let name = self.block_counter.get();
@@ -120,9 +189,11 @@ impl<'a> IR<'a> {
 
         writeln!(self.buffer, "BLOCK {}", name).unwrap();
 
-        self.visit_instruction_wrapper(code, function_index, &mut blocks);
+        self.visit_instruction_wrapper(code, function_index, &mut blocks)?;
 
         writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
+
+        Ok(())
     }
 
     fn visit_instruction_wrapper(
@@ -130,7 +201,7 @@ impl<'a> IR<'a> {
         code: &[InstructionWrapper],
         function_index: usize,
         blocks: &mut Vec<Block>,
-    ) {
+    ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
         //let mut str_block = String::new();
@@ -160,7 +231,11 @@ impl<'a> IR<'a> {
 
                     writeln!(self.buffer, "BLOCK {}", name.clone()).unwrap();
 
-                    self.visit_instruction_wrapper(code.get_instructions(), function_index, blocks);
+                    self.visit_instruction_wrapper(
+                        code.get_instructions(),
+                        function_index,
+                        blocks,
+                    )?;
 
                     blocks.pop();
 
@@ -196,7 +271,11 @@ impl<'a> IR<'a> {
 
                     writeln!(self.buffer, "BLOCK {} // LOOP", name.clone()).unwrap();
 
-                    self.visit_instruction_wrapper(code.get_instructions(), function_index, blocks);
+                    self.visit_instruction_wrapper(
+                        code.get_instructions(),
+                        function_index,
+                        blocks,
+                    )?;
 
                     blocks.pop();
 
@@ -233,14 +312,18 @@ impl<'a> IR<'a> {
                     writeln!(
                         self.buffer,
                         "IF %{} THEN GOTO {} ELSE GOTO {}",
-                        self.counter.peek(),
+                        self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
                     )
                     .unwrap();
                     writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
 
-                    self.visit_instruction_wrapper(code.get_instructions(), function_index, blocks);
+                    self.visit_instruction_wrapper(
+                        code.get_instructions(),
+                        function_index,
+                        blocks,
+                    )?;
 
                     blocks.pop();
 
@@ -283,7 +366,7 @@ impl<'a> IR<'a> {
                     writeln!(
                         self.buffer,
                         "IF %{} THEN GOTO {} ELSE GOTO {}",
-                        self.counter.peek(),
+                        self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
                     )
@@ -294,7 +377,7 @@ impl<'a> IR<'a> {
                         code1.get_instructions(),
                         function_index,
                         blocks,
-                    );
+                    )?;
 
                     writeln!(
                         self.buffer,
@@ -318,7 +401,7 @@ impl<'a> IR<'a> {
                         code2.get_instructions(),
                         function_index,
                         blocks,
-                    );
+                    )?;
 
                     blocks.pop();
 
@@ -357,7 +440,7 @@ impl<'a> IR<'a> {
                         writeln!(
                             self.buffer,
                             "IF %{} THEN GOTO {}",
-                            self.counter.peek(),
+                            self.symbol_table.peek()?,
                             block.name
                         )
                         .unwrap();
@@ -365,7 +448,7 @@ impl<'a> IR<'a> {
                         writeln!(
                             self.buffer,
                             "IF %{} THEN GOTO {}",
-                            self.counter.peek(),
+                            self.symbol_table.peek()?,
                             block.name + 1
                         )
                         .unwrap();
@@ -407,7 +490,7 @@ impl<'a> IR<'a> {
                     writeln!(
                         self.buffer,
                         "%{} = %{}",
-                        self.counter.get(),
+                        self.symbol_table.new_var()?,
                         self.functions
                             .get(function_index)
                             .unwrap()
@@ -427,14 +510,15 @@ impl<'a> IR<'a> {
                             .locals
                             .get(&(*index as usize))
                             .unwrap(),
-                        self.counter.peek()
+                        self.symbol_table.peek()?
                     )
                     .unwrap();
                 }
                 OP_LOCAL_TEE(index) => {
-                    let peek = self.counter.peek() - 1;
-                    let peek2 = self.counter.peek();
-                    writeln!(self.buffer, "%{} = %{}", self.counter.get(), peek,).unwrap();
+                    println!("{:?}", self.symbol_table);
+                    let peek = self.symbol_table.peek()?;
+                    // Push only once because the old still lives
+                    writeln!(self.buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
                     writeln!(
                         self.buffer,
                         "%{} = %{}",
@@ -444,35 +528,35 @@ impl<'a> IR<'a> {
                             .locals
                             .get(&(*index as usize))
                             .unwrap(),
-                        peek2
+                        peek
                     )
                     .unwrap();
                 }
                 OP_CALL(func) => {
-                    let addr = self.engine.module.lookup_function_addr(*func).unwrap();
-                    let instance = self.engine.store.get_func_instance(&addr).unwrap();
+                    let addr = self.engine.module.lookup_function_addr(*func)?;
+                    let instance = self.engine.store.get_func_instance(&addr)?;
 
                     let num_params = instance.ty.param_types.len();
 
                     let mut param_regs = Vec::new();
 
                     for i in 0..num_params {
-                        param_regs.push(format!("{}", self.counter.peek() - i));
+                        param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
                     }
 
                     writeln!(self.buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
                 }
                 OP_I32_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_I64_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F32_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F64_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.counter.get(), a).unwrap();
+                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_RETURN => {
                     writeln!(self.buffer, "return").unwrap();
@@ -538,9 +622,9 @@ impl<'a> IR<'a> {
                     writeln!(
                         self.buffer,
                         "%{} = {} %{}",
-                        self.counter.get(),
+                        self.symbol_table.new_var()?,
                         "op",
-                        self.counter.peek() - 2,
+                        self.symbol_table.peek_offset(2)?, // TODO Check why `2`
                     )
                     .unwrap();
                 }
@@ -562,10 +646,10 @@ impl<'a> IR<'a> {
                     writeln!(
                         self.buffer,
                         "%{} = %{} {} %{}",
-                        self.counter.get(),
-                        self.counter.peek() - 2,
+                        self.symbol_table.new_var()?,
+                        self.symbol_table.peek_offset(1)?,
                         "op",
-                        self.counter.peek() - 3
+                        self.symbol_table.peek_offset(2)?
                     )
                     .unwrap();
                 }
@@ -574,6 +658,8 @@ impl<'a> IR<'a> {
                 }
             }
         }
+
+        Ok(())
 
         /*
         if !jumped {
