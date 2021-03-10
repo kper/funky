@@ -8,8 +8,22 @@ SubGraph {
         Variable {
             id: "taut",
             last_fact: Fact {
-                id: 2,
-                note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                id: 6,
+                note: "<b>taut</b> at 2<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Variable {
+            id: "%1",
+            last_fact: Fact {
+                id: 7,
+                note: "<b>%1</b> at 2<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Variable {
+            id: "%0",
+            last_fact: Fact {
+                id: 8,
+                note: "<b>%0</b> at 2<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
@@ -20,11 +34,35 @@ SubGraph {
         },
         Fact {
             id: 1,
-            note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
+            note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
         },
         Fact {
             id: 2,
+            note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+        },
+        Fact {
+            id: 3,
             note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+        },
+        Fact {
+            id: 4,
+            note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+        },
+        Fact {
+            id: 5,
+            note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+        },
+        Fact {
+            id: 6,
+            note: "<b>taut</b> at 2<br/>Assign(\"%0\", \"%1\")",
+        },
+        Fact {
+            id: 7,
+            note: "<b>%1</b> at 2<br/>Assign(\"%0\", \"%1\")",
+        },
+        Fact {
+            id: 8,
+            note: "<b>%0</b> at 2<br/>Assign(\"%0\", \"%1\")",
         },
     ],
     edges: [
@@ -35,24 +73,84 @@ SubGraph {
             },
             to: Fact {
                 id: 1,
-                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 0,
+                note: "taut",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
             },
         },
         Normal {
             from: Fact {
                 id: 1,
-                note: "<b>taut</b> at 0<br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
             },
             to: Fact {
-                id: 2,
+                id: 3,
                 note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 2,
+                note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 4,
+                note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 2,
+                note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 5,
+                note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 3,
+                note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 6,
+                note: "<b>taut</b> at 2<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 4,
+                note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 7,
+                note: "<b>%1</b> at 2<br/>Assign(\"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 4,
+                note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 8,
+                note: "<b>%0</b> at 2<br/>Assign(\"%0\", \"%1\")",
             },
         },
     ],
     counter: Counter {
-        counter: 3,
+        counter: 9,
     },
     epoch: Counter {
-        counter: 2,
+        counter: 3,
     },
 }

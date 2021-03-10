@@ -1,4 +1,5 @@
 use std::ops::DerefMut;
+use log::debug;
 
 use crate::counter::Counter;
 use anyhow::{bail, private::kind, Context, Result};
@@ -80,13 +81,13 @@ impl SubGraph {
         let len = self.vars.len();
         let fact = self.get_taut_id();
 
-        if let Some(var) = 
-        self
+        if let Some(var) = self
             .vars
             .iter_mut()
             .filter(|x| &x.id == reg)
-            .collect::<Vec<_>>().get_mut(0)
-         {
+            .collect::<Vec<_>>()
+            .get_mut(0)
+        {
             //killing_set.push(reg.clone());
             var.last_fact = fact;
         } else {
@@ -106,12 +107,26 @@ impl SubGraph {
         src: &String,
         killing_set: &mut Vec<Variable>,
     ) -> Result<()> {
+        debug!("add assignment src={} dest={}", src, dest);
         let src_node = self.get_fact(src).context("Could not add assignment")?;
 
-        self.vars.push(Variable {
-            id: dest.clone(),
-            last_fact: src_node,
-        });
+        if let Some(var) = self
+            .vars
+            .iter_mut()
+            .filter(|x| &x.id == dest)
+            .collect::<Vec<_>>()
+            .get_mut(0)
+        {
+            debug!("Variable is already defined");
+            var.last_fact = src_node;
+        } else {
+            debug!("Variable does not exist");
+            // dest does not exist
+            self.vars.push(Variable {
+                id: dest.clone(),
+                last_fact: src_node,
+            });
+        }
 
         Ok(())
     }

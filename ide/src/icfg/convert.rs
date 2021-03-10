@@ -59,7 +59,7 @@ impl Convert {
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
-                        graph.add_assignment(&dest, &src, &mut killing_set); //TODO check return
+                        graph.add_assignment(&dest, &src, &mut killing_set)?;
                     }
                     _ => {}
                 }

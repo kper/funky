@@ -53,6 +53,7 @@ fn test_ir_assignment() {
         "test_ir_assignment",
         "
          define test {
+            %1 = 1
             %0 = %1
          };
     "
@@ -65,6 +66,7 @@ fn test_ir_double_assignment() {
         "test_ir_double_assignment",
         "
          define test {
+            %1 = 1
             %0 = %1
             %0 = %1
          };
