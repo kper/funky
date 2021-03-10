@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use crate::symbol_table::SymbolTable;
 use anyhow::{bail, Result};
 /// This module is responsible to parse
 /// the webassembly AST to an IR
@@ -8,7 +9,6 @@ use log::debug;
 use std::fmt::Write;
 use wasm_parser::core::Instruction::*;
 use wasm_parser::core::*;
-use crate::symbol_table::SymbolTable;
 
 use std::collections::HashMap;
 
@@ -63,7 +63,6 @@ impl Counter {
     }
 }
 
-
 impl<'a> IR<'a> {
     pub fn new(engine: &'a Engine) -> Self {
         Self {
@@ -83,6 +82,8 @@ impl<'a> IR<'a> {
 
     pub fn visit(&mut self) -> Result<()> {
         for function in self.engine.store.funcs.iter() {
+            debug!("Visiting function");
+
             self.visit_function(function)?;
         }
 
@@ -100,7 +101,9 @@ impl<'a> IR<'a> {
         };
 
         for (i, _) in inst.ty.param_types.iter().enumerate() {
-            function.locals.insert(i, self.symbol_table.new_var()?);
+            let var = self.symbol_table.new_var()?;
+            debug!("Adding parameter %{}", var);
+            function.locals.insert(i, var);
         }
 
         self.functions.push(function);
@@ -114,7 +117,12 @@ impl<'a> IR<'a> {
         Ok(())
     }
 
-    fn visit_body(&mut self, body: &FunctionBody, function_index: usize, return_count: usize) -> Result<()> {
+    fn visit_body(
+        &mut self,
+        body: &FunctionBody,
+        function_index: usize,
+        return_count: usize,
+    ) -> Result<()> {
         let code = &body.code;
 
         let name = self.block_counter.get();
@@ -129,7 +137,14 @@ impl<'a> IR<'a> {
 
         writeln!(self.buffer, "BLOCK {}", name).unwrap();
 
-        self.visit_instruction_wrapper(code, function_index, &mut blocks, return_count)?;
+        let current_reg = self.symbol_table.peek().ok();
+        self.visit_instruction_wrapper(
+            code,
+            function_index,
+            &mut blocks,
+            return_count,
+            current_reg,
+        )?;
 
         writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
 
@@ -138,11 +153,9 @@ impl<'a> IR<'a> {
 
     /// If the execution exits a block (with no jump),
     /// then kill all variables which are not returned.
-    fn exit_block(&mut self, block_ty: &BlockType, old_state: usize) -> Result<()> {
-        let arity = self.engine.get_return_count_block(block_ty)?;
-
-        for reg in self.symbol_table.vars.iter_mut().rev().skip(arity as usize) {
-            if reg.val() <= old_state {
+    fn exit_block(&mut self, arity: usize, old_state: Option<usize>) -> Result<()> {
+        for reg in self.symbol_table.vars.iter_mut().rev().skip(arity) {
+            if reg.val() <= old_state.unwrap_or(0) {
                 break;
             }
 
@@ -161,6 +174,8 @@ impl<'a> IR<'a> {
         function_index: usize,
         blocks: &mut Vec<Block>,
         return_arity: usize,
+        // reg number of the start current_reg: usize,
+        current_reg: Option<usize>
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
@@ -192,17 +207,18 @@ impl<'a> IR<'a> {
                     writeln!(self.buffer, "BLOCK {}", name.clone()).unwrap();
 
                     // If the block exits, then kill all variable to `current_reg`
-                    let current_reg = self.symbol_table.peek()?;
+                    let current_reg = self.symbol_table.peek().ok();
 
                     let arity = self.engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
                         blocks,
-                        arity as usize
+                        arity as usize,
+                        current_reg,
                     )?;
 
-                    self.exit_block(ty, current_reg)?;
+                    self.exit_block(arity as usize, current_reg)?;
 
                     blocks.pop();
 
@@ -220,7 +236,6 @@ impl<'a> IR<'a> {
                     )
                     .unwrap();
                 }
-                /*
                 OP_LOOP(ty, code) => {
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
@@ -245,6 +260,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
+                        current_reg
                     )?;
 
                     blocks.pop();
@@ -295,6 +311,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
+                        current_reg
                     )?;
 
                     blocks.pop();
@@ -351,6 +368,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
+                        current_reg
                     )?;
 
                     writeln!(
@@ -376,6 +394,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
+                        current_reg
                     )?;
 
                     blocks.pop();
@@ -394,11 +413,13 @@ impl<'a> IR<'a> {
                         done_name, then_name
                     )
                     .unwrap();
-                }*/
+                }
                 OP_BR(label) => {
                     let jmp_index = blocks_len - 1 - *label as usize;
 
                     let block = blocks.get(jmp_index).unwrap();
+
+                    self.exit_block(return_arity, current_reg)?;
 
                     if block.is_loop {
                         writeln!(self.buffer, "GOTO {}", block.name).unwrap();
@@ -534,7 +555,9 @@ impl<'a> IR<'a> {
                     writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_RETURN => {
-                    let mut regs = Vec::new(); 
+                    let mut regs = Vec::new();
+
+                    self.exit_block(return_arity, current_reg)?;
 
                     for i in 0..return_arity {
                         regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
