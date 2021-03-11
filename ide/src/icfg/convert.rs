@@ -18,7 +18,6 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Convert {
-    symbol_table: SymbolTable,
     block_counter: Counter,
 }
 
@@ -31,7 +30,6 @@ struct Block {
 impl Convert {
     pub fn new() -> Self {
         Self {
-            symbol_table: SymbolTable::default(),
             block_counter: Counter::default(),
         }
     }
@@ -43,10 +41,9 @@ impl Convert {
             .parse(ir)
             .context("Parsing IR failed")?;
 
+        let mut graph = Graph::new();
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
-
-            let mut graph = Graph::new();
 
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
@@ -80,11 +77,9 @@ impl Convert {
                 graph.add_row(format!("{:?}", instruction), &mut killing_set);
                 killing_set.clear();
             }
-
-            return Ok(graph);
         }
 
-        bail!("Nothing")
+        return Ok(graph);
     }
 }
 
@@ -135,6 +130,10 @@ impl<'a> InstructionIterator<'a> {
         } else {
             bail!("Block {} does not exist", block_id);
         }
+    }
+
+    pub fn peek(&self) -> Option<&'a Instruction> {
+        self.instructions.get(self.current).map(|x| *x)
     }
 }
 

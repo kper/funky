@@ -137,3 +137,17 @@ fn test_ir_killing_op() {
         };"
     );
 }
+
+#[test]
+fn test_ir_functions() {
+    ir!(
+        "test_ir_functions",
+        "define test {
+            %0 = 1
+            CALL mytest()
+        };
+        define mytest {
+            %0 = 1   
+        };"
+    );
+}
