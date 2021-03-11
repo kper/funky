@@ -40,8 +40,12 @@ impl Convert {
         let mut graph = Graph::new();
 
         for function in prog.functions.iter() {
+            debug!("Init function {}", function.name);
             graph.init_function(function);
+            //graph.add_row(&function.name, "init".to_string(), &mut Vec::new())?;
         }
+
+        //debug!("graph {:#?}", graph);
 
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
@@ -55,36 +59,88 @@ impl Convert {
                     Instruction::Const(reg, _val) => {
                         debug!("Adding const");
                         graph.add_var(&function.name, &reg, &mut killing_set)?;
+
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
                         graph.add_assignment(&function.name, &dest, &src, &mut killing_set)?;
+
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
                     }
                     Instruction::Unop(dest, src) => {
                         debug!("Unop");
                         graph.add_unop(&function.name, &dest, &src, &mut killing_set)?;
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
                     }
                     Instruction::BinOp(dest, src1, src2) => {
                         debug!("Binop");
                         graph.add_binop(&function.name, &dest, &src1, &src2, &mut killing_set)?;
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
                     }
                     Instruction::Kill(dest) => {
                         debug!("Kill");
                         graph.kill_var(&function.name, &dest, &mut killing_set)?;
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
                     }
-                    Instruction::Call(name) => {
-                        debug!("Call {}", name);
-                        graph.add_call(name)?;
+                    Instruction::Call(name, _regs) => {
+                        graph.add_row(
+                            &function.name,
+                            format!("{:?}", instruction),
+                            &mut killing_set,
+                        )?;
+                        graph.add_row(
+                            &function.name,
+                            format!("Return from {}", name),
+                            &mut killing_set,
+                        )?;
                     }
                     _ => {}
                 }
 
-                graph.add_row(
-                    &function.name,
-                    format!("{:?}", instruction),
-                    &mut killing_set,
-                )?;
                 killing_set.clear();
+            }
+        }
+
+        for function in prog.functions.iter() {
+            let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+            for instruction in &mut iterator {
+                match instruction {
+                    Instruction::Call(name, regs) => {
+                        debug!("Call {}", name);
+
+                        let lookup_function = prog
+                            .functions
+                            .iter()
+                            .find(|x| &x.name == name)
+                            .expect("Function not found");
+
+                        graph.add_call(&function.name, &lookup_function, name, regs)?;
+                    }
+                    _ => {}
+                }
             }
         }
 

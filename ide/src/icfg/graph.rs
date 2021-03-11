@@ -20,7 +20,10 @@ pub struct Graph {
 #[derive(Debug, Default)]
 pub struct Variable {
     id: VarId,
+    /// the predessors
     last_fact: Vec<Fact>,
+    /// the first fact which defines the var
+    first_fact: Option<Fact>,
     killed: bool,
 }
 
@@ -33,6 +36,7 @@ pub struct Fact {
 #[derive(Debug, Clone)]
 pub enum Edge {
     Normal { from: Fact, to: Fact },
+    Call { from: Fact, to: Fact},
 }
 
 impl Graph {
@@ -41,12 +45,20 @@ impl Graph {
     }
 
     pub fn init_function(&mut self, function: &Function) {
-        let fact = self.new_fact();
-        let vars = vec![Variable {
+        let mut vars = vec![Variable {
             id: "taut".to_string(),
-            last_fact: vec![fact],
+            last_fact: vec![],
             ..Default::default()
         }];
+
+        for param in function.params.iter() {
+            vars.push(Variable {
+                id: param.clone(),
+                last_fact: vec![],
+                ..Default::default()
+            });
+        }
+
         self.vars.insert(function.name.clone(), vars);
     }
 
@@ -265,15 +277,7 @@ impl Graph {
     ) -> Result<()> {
         debug!("Killing var={}", dest);
 
-        if let Some(var) = self
-            .vars
-            .get_mut(function_name)
-            .context("Cannot find function's vars")?
-            .iter_mut()
-            .filter(|x| &x.id == dest)
-            .collect::<Vec<_>>()
-            .get_mut(0)
-        {
+        if let Some(var) = self.get_mut_var(function_name, dest) {
             debug!("Variable is already defined");
             var.killed = true;
         } else {
@@ -283,7 +287,66 @@ impl Graph {
         Ok(())
     }
 
-    pub fn add_call(&mut self, name: &String) -> Result<()> {
+    fn get_var(&self, function_name: &String, name: &String) -> Option<&Variable> {
+        self.vars
+            .get(function_name)?
+            .iter()
+            .find(|x| &x.id == name)
+    }
+
+    fn get_mut_var(&mut self, function_name: &String, name: &String) -> Option<&mut Variable> {
+        self.vars
+            .get_mut(function_name)?
+            .iter_mut()
+            .find(|x| &x.id == name)
+    }
+
+    pub fn add_call(
+        &mut self,
+        function_name: &String, //current function
+        function: &Function,
+        name: &String,      //name of calling function
+        regs: &Vec<String>, //passing arguments
+    ) -> Result<()> {
+        debug!("Add call {}", name);
+        debug!("=> function {:#?}", function);
+
+        let params_facts = {
+            let mut facts = Vec::new();
+            for param in function.params.iter() {
+                if let Some(param_fact) = self
+                    .get_mut_var(&function.name, param)
+                    .and_then(|x| x.first_fact.as_ref())
+                {
+                    facts.push(param_fact.clone());
+                } else {
+                    bail!("Fact does not exist");
+                }
+            }
+
+            facts
+        };
+
+        debug!("param facts are {:?}", params_facts);
+        assert!(params_facts.len() == function.params.len(), "Expected to match parameters");
+
+        //TODO tau call edges
+
+        for (from_var, to_fact) in regs.iter().zip(params_facts.iter()) {
+            if let Some(from) = self.get_var(function_name, from_var) {
+                debug!("Creating call edge from={:?} to={:?}", from.last_fact.get(0), to_fact);
+
+                assert!(from.last_fact.len() == 1, "Only one pred is allowed");
+                //Call edges
+                self.edges.push(Edge::Call {
+                    from: from.last_fact.get(0).unwrap().clone(),
+                    to: to_fact.clone(),
+                });
+            } else {
+                bail!("Variable does not exist");
+            }
+        }
+
         Ok(())
     }
 
@@ -323,6 +386,11 @@ impl Graph {
                 }
             } else {
                 debug!("Variable {} killed, therefore not creating edges", var.id);
+            }
+
+            if var.first_fact.is_none() {
+                // Set it as first fact
+                var.first_fact = Some(fact.clone());
             }
 
             var.last_fact = vec![fact];

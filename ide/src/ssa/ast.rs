@@ -26,7 +26,7 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(String),
+    Call(String, Vec<Src>),
     /// kill the variable
     Kill(Dest),
 }

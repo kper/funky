@@ -22,6 +22,15 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for Graph {
     fn node_label(&'a self, n: &Fact) -> LabelText<'a> {
         dot::LabelText::html(format!("{}", n.note))
     }
+
+    fn edge_color(&'a self, e: &Edge) -> Option<LabelText<'a>> {
+        match e {
+            Edge::Call { .. } => {
+                Some(LabelText::LabelStr(Cow::Borrowed("firebrick1")))
+            }
+            _ => None,
+        }
+    }
 }
 
 impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
@@ -31,6 +40,10 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
         for edge in &self.edges {
             match edge {
                 Edge::Normal { from, to } => {
+                    nodes.push(from.clone());
+                    nodes.push(to.clone());
+                }
+                Edge::Call { from, to } => {
                     nodes.push(from.clone());
                     nodes.push(to.clone());
                 }
@@ -50,6 +63,7 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
     fn source(&self, e: &Edge) -> Fact {
         match e {
             Edge::Normal { from, to: _to } => from.clone(),
+            Edge::Call { from, to: _to } => from.clone(),
             _ => unimplemented!("Please add"),
         }
     }
@@ -57,6 +71,7 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
     fn target(&self, e: &Edge) -> Fact {
         match e {
             Edge::Normal { from: _from, to } => to.clone(),
+            Edge::Call { from: _from, to } => to.clone(),
             _ => unimplemented!("Please add"),
         }
     }

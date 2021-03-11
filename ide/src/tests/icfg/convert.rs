@@ -145,7 +145,7 @@ fn test_ir_functions() {
         "test_ir_functions",
         "define test {
             %0 = 1
-            CALL mytest()
+            CALL mytest(%0)
         };
         define mytest (param %0) {
             %0 = 2   
