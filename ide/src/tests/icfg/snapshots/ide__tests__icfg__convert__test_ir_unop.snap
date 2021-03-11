@@ -3,7 +3,7 @@ source: ide/src/tests/icfg/convert.rs
 expression: "format!(\"{:#?}\", res)"
 
 ---
-SubGraph {
+Graph {
     vars: [
         Variable {
             id: "taut",

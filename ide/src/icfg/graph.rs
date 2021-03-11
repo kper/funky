@@ -7,7 +7,7 @@ use anyhow::{bail, private::kind, Context, Result};
 type VarId = String;
 
 #[derive(Debug, Default)]
-pub struct SubGraph {
+pub struct Graph {
     vars: Vec<Variable>,
     facts: Vec<Fact>,
     pub edges: Vec<Edge>,
@@ -33,7 +33,7 @@ pub enum Edge {
     Normal { from: Fact, to: Fact },
 }
 
-impl SubGraph {
+impl Graph {
     pub fn new() -> Self {
         let mut graph = Self::default();
         let fact = graph.new_fact();

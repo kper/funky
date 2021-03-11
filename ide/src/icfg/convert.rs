@@ -1,7 +1,7 @@
 use std::ops::Sub;
 
 use crate::counter::Counter;
-use crate::icfg::graph::SubGraph;
+use crate::icfg::graph::Graph;
 use crate::ssa::ast::Instruction;
 use crate::ssa::ast::Instruction::*;
 use crate::symbol_table::SymbolTable;
@@ -36,7 +36,7 @@ impl Convert {
         }
     }
 
-    pub fn visit(&mut self, ir: &'static str) -> Result<SubGraph> {
+    pub fn visit(&mut self, ir: &'static str) -> Result<Graph> {
         debug!("Convert intermediate repr to graph");
 
         let prog = ProgramParser::new()
@@ -46,7 +46,7 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
-            let mut graph = SubGraph::new();
+            let mut graph = Graph::new();
 
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());

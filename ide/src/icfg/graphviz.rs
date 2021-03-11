@@ -3,13 +3,13 @@ use std::io::Write;
 
 use dot::LabelText;
 
-use crate::icfg::graph::{Edge, Fact, SubGraph, Variable};
+use crate::icfg::graph::{Edge, Fact, Graph, Variable};
 
-pub fn render_to<W: Write>(graph: &SubGraph, output: &mut W) {
+pub fn render_to<W: Write>(graph: &Graph, output: &mut W) {
     dot::render(graph, output).unwrap()
 }
 
-impl<'a> dot::Labeller<'a, Fact, Edge> for SubGraph {
+impl<'a> dot::Labeller<'a, Fact, Edge> for Graph {
     //TODO name of the graph
     fn graph_id(&'a self) -> dot::Id<'a> {
         dot::Id::new("example1").unwrap()
@@ -24,7 +24,7 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for SubGraph {
     }
 }
 
-impl<'a> dot::GraphWalk<'a, Fact, Edge> for SubGraph {
+impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
     fn nodes(&self) -> dot::Nodes<'a, Fact> {
         // (assumes that |N| * 2 \approxeq |E|)
         let mut nodes = Vec::with_capacity(self.edges.len() * 2);
