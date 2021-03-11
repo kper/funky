@@ -110,3 +110,17 @@ fn test_ir_unop() {
         };"
     );
 }
+
+#[test]
+fn test_ir_binop() {
+    env_logger::init();
+    ir!(
+        "test_ir_binop",
+        "define test {
+            %0 = 1
+            %1 = 1
+            %2 = %0 op %1
+            %2 = %1 op %0   
+        };"
+    );
+}

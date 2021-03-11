@@ -1,0 +1,37 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
+
+---
+digraph example1 {
+    Fact0[label=<taut>];
+    Fact1[label=<<b>taut</b> at 0<br/>Const("%0", 1.0)>];
+    Fact2[label=<<b>%0</b> at 0<br/>Const("%0", 1.0)>];
+    Fact3[label=<<b>taut</b> at 1<br/>Const("%1", 1.0)>];
+    Fact4[label=<<b>%0</b> at 1<br/>Const("%1", 1.0)>];
+    Fact5[label=<<b>%1</b> at 1<br/>Const("%1", 1.0)>];
+    Fact6[label=<<b>taut</b> at 2<br/>BinOp("%2", "%0", "%1")>];
+    Fact7[label=<<b>%0</b> at 2<br/>BinOp("%2", "%0", "%1")>];
+    Fact8[label=<<b>%1</b> at 2<br/>BinOp("%2", "%0", "%1")>];
+    Fact9[label=<<b>%2</b> at 2<br/>BinOp("%2", "%0", "%1")>];
+    Fact10[label=<<b>taut</b> at 3<br/>BinOp("%2", "%1", "%0")>];
+    Fact11[label=<<b>%0</b> at 3<br/>BinOp("%2", "%1", "%0")>];
+    Fact12[label=<<b>%1</b> at 3<br/>BinOp("%2", "%1", "%0")>];
+    Fact13[label=<<b>%2</b> at 3<br/>BinOp("%2", "%1", "%0")>];
+    Fact0 -> Fact1[label=""];
+    Fact0 -> Fact2[label=""];
+    Fact1 -> Fact3[label=""];
+    Fact2 -> Fact4[label=""];
+    Fact1 -> Fact5[label=""];
+    Fact3 -> Fact6[label=""];
+    Fact4 -> Fact7[label=""];
+    Fact5 -> Fact8[label=""];
+    Fact4 -> Fact9[label=""];
+    Fact5 -> Fact9[label=""];
+    Fact6 -> Fact10[label=""];
+    Fact7 -> Fact11[label=""];
+    Fact8 -> Fact12[label=""];
+    Fact8 -> Fact13[label=""];
+    Fact7 -> Fact13[label=""];
+}
+

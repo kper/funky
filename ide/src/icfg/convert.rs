@@ -66,6 +66,10 @@ impl Convert {
                         debug!("Unop");
                         graph.add_unop(&dest, &src, &mut killing_set)?;
                     }
+                    Instruction::BinOp(dest, src1, src2) => {
+                        debug!("Binop");
+                        graph.add_binop(&dest, &src1, &src2, &mut killing_set)?;
+                    }
                     _ => {}
                 }
 

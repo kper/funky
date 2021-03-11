@@ -1,0 +1,261 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "format!(\"{:#?}\", res)"
+
+---
+SubGraph {
+    vars: [
+        Variable {
+            id: "taut",
+            last_fact: [
+                Fact {
+                    id: 10,
+                    note: "<b>taut</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+            ],
+        },
+        Variable {
+            id: "%0",
+            last_fact: [
+                Fact {
+                    id: 11,
+                    note: "<b>%0</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+            ],
+        },
+        Variable {
+            id: "%1",
+            last_fact: [
+                Fact {
+                    id: 12,
+                    note: "<b>%1</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+            ],
+        },
+        Variable {
+            id: "%2",
+            last_fact: [
+                Fact {
+                    id: 13,
+                    note: "<b>%2</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+            ],
+        },
+    ],
+    facts: [
+        Fact {
+            id: 0,
+            note: "taut",
+        },
+        Fact {
+            id: 1,
+            note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+        },
+        Fact {
+            id: 2,
+            note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+        },
+        Fact {
+            id: 3,
+            note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
+        },
+        Fact {
+            id: 4,
+            note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+        },
+        Fact {
+            id: 5,
+            note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+        },
+        Fact {
+            id: 6,
+            note: "<b>taut</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+        },
+        Fact {
+            id: 7,
+            note: "<b>%0</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+        },
+        Fact {
+            id: 8,
+            note: "<b>%1</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+        },
+        Fact {
+            id: 9,
+            note: "<b>%2</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+        },
+        Fact {
+            id: 10,
+            note: "<b>taut</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+        },
+        Fact {
+            id: 11,
+            note: "<b>%0</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+        },
+        Fact {
+            id: 12,
+            note: "<b>%1</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+        },
+        Fact {
+            id: 13,
+            note: "<b>%2</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+        },
+    ],
+    edges: [
+        Normal {
+            from: Fact {
+                id: 0,
+                note: "taut",
+            },
+            to: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 0,
+                note: "taut",
+            },
+            to: Fact {
+                id: 2,
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 3,
+                note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 2,
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 4,
+                note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 1,
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 5,
+                note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 3,
+                note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 6,
+                note: "<b>taut</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 4,
+                note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 7,
+                note: "<b>%0</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 5,
+                note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 8,
+                note: "<b>%1</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 4,
+                note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 9,
+                note: "<b>%2</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 5,
+                note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+            },
+            to: Fact {
+                id: 9,
+                note: "<b>%2</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 6,
+                note: "<b>taut</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 10,
+                note: "<b>taut</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 7,
+                note: "<b>%0</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 11,
+                note: "<b>%0</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 8,
+                note: "<b>%1</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 12,
+                note: "<b>%1</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 8,
+                note: "<b>%1</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 13,
+                note: "<b>%2</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+            },
+        },
+        Normal {
+            from: Fact {
+                id: 7,
+                note: "<b>%0</b> at 2<br/>BinOp(\"%2\", \"%0\", \"%1\")",
+            },
+            to: Fact {
+                id: 13,
+                note: "<b>%2</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+            },
+        },
+    ],
+    counter: Counter {
+        counter: 14,
+    },
+    epoch: Counter {
+        counter: 4,
+    },
+}

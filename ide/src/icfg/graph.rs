@@ -1,5 +1,5 @@
-use std::ops::DerefMut;
 use log::debug;
+use std::ops::DerefMut;
 
 use crate::counter::Counter;
 use anyhow::{bail, private::kind, Context, Result};
@@ -18,7 +18,7 @@ pub struct SubGraph {
 #[derive(Debug, Default)]
 pub struct Variable {
     id: VarId,
-    last_fact: Fact,
+    last_fact: Vec<Fact>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -38,7 +38,7 @@ impl SubGraph {
         let fact = graph.new_fact();
         graph.vars.push(Variable {
             id: "taut".to_string(),
-            last_fact: fact,
+            last_fact: vec![fact],
         });
         graph
     }
@@ -54,14 +54,14 @@ impl SubGraph {
         fact
     }
 
-    fn get_taut_id(&self) -> Fact {
+    fn get_taut_id(&self) -> Vec<Fact> {
         let taut = self.vars.get(0).unwrap();
         assert_eq!(taut.id, "taut".to_string(), "Expected to be tautology");
 
         taut.last_fact.clone()
     }
 
-    fn get_fact(&self, val: &String) -> Result<Fact> {
+    fn get_fact(&self, val: &String) -> Result<Vec<Fact>> {
         let nodes = self
             .vars
             .iter()
@@ -163,6 +163,44 @@ impl SubGraph {
         Ok(())
     }
 
+    /// add binop
+    pub fn add_binop(
+        &mut self,
+        dest: &String,
+        src1: &String,
+        src2: &String,
+        killing_set: &mut Vec<Variable>,
+    ) -> Result<()> {
+        debug!("Binop src1={} src2={} dest={}", src1, src2, dest);
+
+        let mut src_node = self.get_fact(src1).context("Could not binop assignment")?;
+        let mut src_node2 = self.get_fact(src2).context("Could not binop assignment")?;
+
+        src_node.append(&mut src_node2);
+
+        debug!("src nodes are {:?}", src_node);
+
+        if let Some(var) = self
+            .vars
+            .iter_mut()
+            .filter(|x| &x.id == dest)
+            .collect::<Vec<_>>()
+            .get_mut(0)
+        {
+            debug!("Variable is already defined");
+            var.last_fact = src_node;
+        } else {
+            debug!("Variable does not exist");
+            // dest does not exist
+            self.vars.push(Variable {
+                id: dest.clone(),
+                last_fact: src_node,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_row(&mut self, note: String, killing_set: &mut Vec<Variable>) {
         let epoch = self.epoch.get();
         for var in self.vars.iter_mut() {
@@ -178,13 +216,16 @@ impl SubGraph {
                 fact
             };
 
-            //Normal
-            self.edges.push(Edge::Normal {
-                from: var.last_fact.clone(),
-                to: fact.clone(),
-            });
+            for node in var.last_fact.iter() {
+                debug!("Creating edge from={:?} to={:?}", node.id, fact.id);
+                //Normal
+                self.edges.push(Edge::Normal {
+                    from: node.clone(),
+                    to: fact.clone(),
+                });
+            }
 
-            var.last_fact = fact;
+            var.last_fact = vec![fact];
         }
     }
 }

@@ -7,24 +7,30 @@ SubGraph {
     vars: [
         Variable {
             id: "taut",
-            last_fact: Fact {
-                id: 6,
-                note: "<b>taut</b> at 2<br/>Unop(\"%1\", \"%0\")",
-            },
+            last_fact: [
+                Fact {
+                    id: 6,
+                    note: "<b>taut</b> at 2<br/>Unop(\"%1\", \"%0\")",
+                },
+            ],
         },
         Variable {
             id: "%0",
-            last_fact: Fact {
-                id: 7,
-                note: "<b>%0</b> at 2<br/>Unop(\"%1\", \"%0\")",
-            },
+            last_fact: [
+                Fact {
+                    id: 7,
+                    note: "<b>%0</b> at 2<br/>Unop(\"%1\", \"%0\")",
+                },
+            ],
         },
         Variable {
             id: "%1",
-            last_fact: Fact {
-                id: 8,
-                note: "<b>%1</b> at 2<br/>Unop(\"%1\", \"%0\")",
-            },
+            last_fact: [
+                Fact {
+                    id: 8,
+                    note: "<b>%1</b> at 2<br/>Unop(\"%1\", \"%0\")",
+                },
+            ],
         },
     ],
     facts: [
