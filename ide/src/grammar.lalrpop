@@ -13,6 +13,14 @@ pub Function : Function = {
     "define" <name:Name> "{" <instr:Instruction*>  "}" ";" => {
         Function {
             name,
+            params: Vec::new(),
+            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+        }
+    },
+    "define" <name:Name> "(param" <reg:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: reg,
             instructions: instr.into_iter().flatten().collect::<Vec<_>>()
         }
     }

@@ -9,6 +9,7 @@ pub struct Program {
 #[derive(Debug)]
 pub struct Function {
     pub(crate) name: String,
+    pub(crate) params: Vec<String>,
     pub(crate) instructions: Vec<Instruction>,
 }
 
@@ -25,7 +26,7 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(FunctionName),
+    Call(String),
     /// kill the variable
     Kill(Dest),
 }

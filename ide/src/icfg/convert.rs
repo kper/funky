@@ -19,18 +19,14 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Convert {
     block_counter: Counter,
-}
-
-#[derive(Debug)]
-struct Block {
-    name: usize,
-    is_loop: bool,
+    functions: HashMap<String, usize>, // function name to fact id
 }
 
 impl Convert {
     pub fn new() -> Self {
         Self {
             block_counter: Counter::default(),
+            functions: HashMap::new(),
         }
     }
 
@@ -42,6 +38,11 @@ impl Convert {
             .context("Parsing IR failed")?;
 
         let mut graph = Graph::new();
+
+        for function in prog.functions.iter() {
+            graph.init_function(function);
+        }
+
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
@@ -53,28 +54,36 @@ impl Convert {
                 match instruction {
                     Instruction::Const(reg, _val) => {
                         debug!("Adding const");
-                        graph.add_var(&reg, &mut killing_set);
+                        graph.add_var(&function.name, &reg, &mut killing_set)?;
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
-                        graph.add_assignment(&dest, &src, &mut killing_set)?;
+                        graph.add_assignment(&function.name, &dest, &src, &mut killing_set)?;
                     }
                     Instruction::Unop(dest, src) => {
                         debug!("Unop");
-                        graph.add_unop(&dest, &src, &mut killing_set)?;
+                        graph.add_unop(&function.name, &dest, &src, &mut killing_set)?;
                     }
                     Instruction::BinOp(dest, src1, src2) => {
                         debug!("Binop");
-                        graph.add_binop(&dest, &src1, &src2, &mut killing_set)?;
+                        graph.add_binop(&function.name, &dest, &src1, &src2, &mut killing_set)?;
                     }
                     Instruction::Kill(dest) => {
                         debug!("Kill");
-                        graph.kill_var(&dest, &mut killing_set)?;
+                        graph.kill_var(&function.name, &dest, &mut killing_set)?;
+                    }
+                    Instruction::Call(name) => {
+                        debug!("Call {}", name);
+                        graph.add_call(name)?;
                     }
                     _ => {}
                 }
 
-                graph.add_row(format!("{:?}", instruction), &mut killing_set);
+                graph.add_row(
+                    &function.name,
+                    format!("{:?}", instruction),
+                    &mut killing_set,
+                )?;
                 killing_set.clear();
             }
         }

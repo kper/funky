@@ -4,38 +4,40 @@ expression: "format!(\"{:#?}\", res)"
 
 ---
 Graph {
-    vars: [
-        Variable {
-            id: "taut",
-            last_fact: [
-                Fact {
-                    id: 3,
-                    note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
-                },
-            ],
-            killed: false,
-        },
-        Variable {
-            id: "%0",
-            last_fact: [
-                Fact {
-                    id: 4,
-                    note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
-                },
-            ],
-            killed: false,
-        },
-        Variable {
-            id: "%1",
-            last_fact: [
-                Fact {
-                    id: 5,
-                    note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
-                },
-            ],
-            killed: false,
-        },
-    ],
+    vars: {
+        "test": [
+            Variable {
+                id: "taut",
+                last_fact: [
+                    Fact {
+                        id: 3,
+                        note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
+                    },
+                ],
+                killed: false,
+            },
+            Variable {
+                id: "%0",
+                last_fact: [
+                    Fact {
+                        id: 4,
+                        note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+                    },
+                ],
+                killed: false,
+            },
+            Variable {
+                id: "%1",
+                last_fact: [
+                    Fact {
+                        id: 5,
+                        note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+                    },
+                ],
+                killed: false,
+            },
+        ],
+    },
     facts: [
         Fact {
             id: 0,
