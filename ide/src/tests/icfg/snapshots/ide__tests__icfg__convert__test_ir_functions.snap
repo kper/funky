@@ -10,8 +10,8 @@ Graph {
                 id: "taut",
                 last_fact: [
                     Fact {
-                        id: 4,
-                        note: "<b>taut</b> at 2<br/>Return from mytest",
+                        id: 2,
+                        note: "<b>taut</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
                     },
                 ],
                 first_fact: Some(
@@ -26,8 +26,8 @@ Graph {
                 id: "%0",
                 last_fact: [
                     Fact {
-                        id: 5,
-                        note: "<b>%0</b> at 2<br/>Return from mytest",
+                        id: 3,
+                        note: "<b>%0</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
                     },
                 ],
                 first_fact: Some(
@@ -129,7 +129,7 @@ Graph {
                 note: "<b>%0</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
             },
         },
-        Normal {
+        CallToReturn {
             from: Fact {
                 id: 2,
                 note: "<b>taut</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
@@ -139,7 +139,7 @@ Graph {
                 note: "<b>taut</b> at 2<br/>Return from mytest",
             },
         },
-        Normal {
+        CallToReturn {
             from: Fact {
                 id: 3,
                 note: "<b>%0</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
@@ -151,8 +151,8 @@ Graph {
         },
         Call {
             from: Fact {
-                id: 5,
-                note: "<b>%0</b> at 2<br/>Return from mytest",
+                id: 3,
+                note: "<b>%0</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
             },
             to: Fact {
                 id: 7,

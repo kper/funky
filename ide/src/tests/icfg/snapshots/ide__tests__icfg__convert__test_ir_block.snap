@@ -10,14 +10,14 @@ Graph {
                 id: "taut",
                 last_fact: [
                     Fact {
-                        id: 3,
-                        note: "<b>taut</b> at 2<br/>Const(\"%1\", 2.0)",
+                        id: 2,
+                        note: "<b>taut</b> at 1<br/>Const(\"%1\", 2.0)",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 0,
-                        note: "<b>taut</b> at 0<br/>init",
+                        note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -26,14 +26,14 @@ Graph {
                 id: "%0",
                 last_fact: [
                     Fact {
-                        id: 4,
-                        note: "<b>%0</b> at 2<br/>Const(\"%1\", 2.0)",
+                        id: 3,
+                        note: "<b>%0</b> at 1<br/>Const(\"%1\", 2.0)",
                     },
                 ],
                 first_fact: Some(
                     Fact {
-                        id: 2,
-                        note: "<b>%0</b> at 1<br/>Const(\"%0\", 1.0)",
+                        id: 1,
+                        note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -42,14 +42,14 @@ Graph {
                 id: "%1",
                 last_fact: [
                     Fact {
-                        id: 5,
-                        note: "<b>%1</b> at 2<br/>Const(\"%1\", 2.0)",
+                        id: 4,
+                        note: "<b>%1</b> at 1<br/>Const(\"%1\", 2.0)",
                     },
                 ],
                 first_fact: Some(
                     Fact {
-                        id: 5,
-                        note: "<b>%1</b> at 2<br/>Const(\"%1\", 2.0)",
+                        id: 4,
+                        note: "<b>%1</b> at 1<br/>Const(\"%1\", 2.0)",
                     },
                 ),
                 killed: false,
@@ -59,85 +59,61 @@ Graph {
     facts: [
         Fact {
             id: 0,
-            note: "<b>taut</b> at 0<br/>init",
+            note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 1,
-            note: "<b>taut</b> at 1<br/>Const(\"%0\", 1.0)",
+            note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
         },
         Fact {
             id: 2,
-            note: "<b>%0</b> at 1<br/>Const(\"%0\", 1.0)",
+            note: "<b>taut</b> at 1<br/>Const(\"%1\", 2.0)",
         },
         Fact {
             id: 3,
-            note: "<b>taut</b> at 2<br/>Const(\"%1\", 2.0)",
+            note: "<b>%0</b> at 1<br/>Const(\"%1\", 2.0)",
         },
         Fact {
             id: 4,
-            note: "<b>%0</b> at 2<br/>Const(\"%1\", 2.0)",
-        },
-        Fact {
-            id: 5,
-            note: "<b>%1</b> at 2<br/>Const(\"%1\", 2.0)",
+            note: "<b>%1</b> at 1<br/>Const(\"%1\", 2.0)",
         },
     ],
     edges: [
         Normal {
             from: Fact {
                 id: 0,
-                note: "<b>taut</b> at 0<br/>init",
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
             },
             to: Fact {
+                id: 2,
+                note: "<b>taut</b> at 1<br/>Const(\"%1\", 2.0)",
+            },
+        },
+        Normal {
+            from: Fact {
                 id: 1,
-                note: "<b>taut</b> at 1<br/>Const(\"%0\", 1.0)",
+                note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+            },
+            to: Fact {
+                id: 3,
+                note: "<b>%0</b> at 1<br/>Const(\"%1\", 2.0)",
             },
         },
         Normal {
             from: Fact {
                 id: 0,
-                note: "<b>taut</b> at 0<br/>init",
-            },
-            to: Fact {
-                id: 2,
-                note: "<b>%0</b> at 1<br/>Const(\"%0\", 1.0)",
-            },
-        },
-        Normal {
-            from: Fact {
-                id: 1,
-                note: "<b>taut</b> at 1<br/>Const(\"%0\", 1.0)",
-            },
-            to: Fact {
-                id: 3,
-                note: "<b>taut</b> at 2<br/>Const(\"%1\", 2.0)",
-            },
-        },
-        Normal {
-            from: Fact {
-                id: 2,
-                note: "<b>%0</b> at 1<br/>Const(\"%0\", 1.0)",
+                note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
             },
             to: Fact {
                 id: 4,
-                note: "<b>%0</b> at 2<br/>Const(\"%1\", 2.0)",
-            },
-        },
-        Normal {
-            from: Fact {
-                id: 1,
-                note: "<b>taut</b> at 1<br/>Const(\"%0\", 1.0)",
-            },
-            to: Fact {
-                id: 5,
-                note: "<b>%1</b> at 2<br/>Const(\"%1\", 2.0)",
+                note: "<b>%1</b> at 1<br/>Const(\"%1\", 2.0)",
             },
         },
     ],
     counter: Counter {
-        counter: 6,
+        counter: 5,
     },
     epoch: Counter {
-        counter: 3,
+        counter: 2,
     },
 }

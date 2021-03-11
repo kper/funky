@@ -109,7 +109,7 @@ impl Convert {
                             format!("{:?}", instruction),
                             &mut killing_set,
                         )?;
-                        graph.add_row(
+                        graph.add_call_to_return(
                             &function.name,
                             format!("Return from {}", name),
                             &mut killing_set,

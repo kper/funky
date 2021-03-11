@@ -13,8 +13,8 @@ digraph example1 {
     Fact7[label=<<b>%0</b> at 3<br/>Const("%0", 2.0)>];
     Fact0 -> Fact2[label=""];
     Fact1 -> Fact3[label=""];
-    Fact2 -> Fact4[label=""];
-    Fact3 -> Fact5[label=""];
-    Fact5 -> Fact7[label=""][color="firebrick1"];
+    Fact2 -> Fact4[label=""][color="chocolate1"];
+    Fact3 -> Fact5[label=""][color="chocolate1"];
+    Fact3 -> Fact7[label=""][color="firebrick1"];
 }
 

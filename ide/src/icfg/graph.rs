@@ -37,6 +37,7 @@ pub struct Fact {
 pub enum Edge {
     Normal { from: Fact, to: Fact },
     Call { from: Fact, to: Fact},
+    CallToReturn { from: Fact, to: Fact },
 }
 
 impl Graph {
@@ -394,6 +395,48 @@ impl Graph {
             }
 
             var.last_fact = vec![fact];
+        }
+
+        Ok(())
+    }
+
+    pub fn add_call_to_return(
+        &mut self,
+        function_name: &String,
+        note: String,
+        killing_set: &mut Vec<Variable>,
+    ) -> Result<()> {
+        let epoch = self.epoch.get();
+        for var in self
+            .vars
+            .get_mut(function_name)
+            .context("Cannot find function's vars")?
+            .iter_mut()
+        {
+            // Create a new fact
+            let fact = {
+                let fact = Fact {
+                    id: self.counter.get(),
+                    note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
+                };
+
+                self.facts.push(fact.clone());
+
+                fact
+            };
+
+            if !var.killed {
+                for node in var.last_fact.iter() {
+                    debug!("Creating edge from={:?} to={:?}", node.id, fact.id);
+                    //Normal
+                    self.edges.push(Edge::CallToReturn {
+                        from: node.clone(),
+                        to: fact.clone(),
+                    });
+                }
+            } else {
+                debug!("Variable {} killed, therefore not creating edges", var.id);
+            }
         }
 
         Ok(())
