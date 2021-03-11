@@ -98,3 +98,15 @@ fn test_ir_killing() {
         };"
     );
 }
+
+#[test]
+fn test_ir_unop() {
+    ir!(
+        "test_ir_unop",
+        "define test {
+            %0 = 1
+            %1 = op %0
+            %1 = op %0   
+        };"
+    );
+}

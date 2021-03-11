@@ -131,6 +131,38 @@ impl SubGraph {
         Ok(())
     }
 
+    /// add unop
+    pub fn add_unop(
+        &mut self,
+        dest: &String,
+        src: &String,
+        killing_set: &mut Vec<Variable>,
+    ) -> Result<()> {
+        debug!("Unop src={} dest={}", src, dest);
+
+        let src_node = self.get_fact(src).context("Could not unop assignment")?;
+
+        if let Some(var) = self
+            .vars
+            .iter_mut()
+            .filter(|x| &x.id == dest)
+            .collect::<Vec<_>>()
+            .get_mut(0)
+        {
+            debug!("Variable is already defined");
+            var.last_fact = src_node;
+        } else {
+            debug!("Variable does not exist");
+            // dest does not exist
+            self.vars.push(Variable {
+                id: dest.clone(),
+                last_fact: src_node,
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn add_row(&mut self, note: String, killing_set: &mut Vec<Variable>) {
         let epoch = self.epoch.get();
         for var in self.vars.iter_mut() {

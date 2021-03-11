@@ -48,7 +48,8 @@ impl Convert {
 
             let mut graph = SubGraph::new();
 
-            let mut iterator = InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+            let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
             let mut killing_set = Vec::new();
 
             for instruction in &mut iterator {
@@ -60,6 +61,10 @@ impl Convert {
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
                         graph.add_assignment(&dest, &src, &mut killing_set)?;
+                    }
+                    Instruction::Unop(dest, src) => {
+                        debug!("Unop");
+                        graph.add_unop(&dest, &src, &mut killing_set)?;
                     }
                     _ => {}
                 }
@@ -143,13 +148,11 @@ impl<'a> std::iter::Iterator for &mut InstructionIterator<'a> {
         if let Some(&Instruction::Jump(ref id)) = item {
             if self.jump_to(id).is_ok() {
                 self.next()
-            }
-            else {
+            } else {
                 debug!("Block not found, therefore ending");
                 None
             }
-        }
-        else {
+        } else {
             item
         }
     }
