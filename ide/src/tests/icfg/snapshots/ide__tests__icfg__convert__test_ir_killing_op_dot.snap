@@ -1,0 +1,29 @@
+---
+source: ide/src/tests/icfg/convert.rs
+expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
+
+---
+digraph example1 {
+    Fact0[label=<taut>];
+    Fact1[label=<<b>taut</b> at 0<br/>Const("%0", 1.0)>];
+    Fact2[label=<<b>%0</b> at 0<br/>Const("%0", 1.0)>];
+    Fact3[label=<<b>taut</b> at 1<br/>Const("%1", 1.0)>];
+    Fact4[label=<<b>%0</b> at 1<br/>Const("%1", 1.0)>];
+    Fact5[label=<<b>%1</b> at 1<br/>Const("%1", 1.0)>];
+    Fact6[label=<<b>taut</b> at 2<br/>Kill("%0")>];
+    Fact8[label=<<b>%1</b> at 2<br/>Kill("%0")>];
+    Fact9[label=<<b>taut</b> at 3<br/>Kill("%1")>];
+    Fact12[label=<<b>taut</b> at 4<br/>Const("%2", 1.0)>];
+    Fact15[label=<<b>%2</b> at 4<br/>Const("%2", 1.0)>];
+    Fact0 -> Fact1[label=""];
+    Fact0 -> Fact2[label=""];
+    Fact1 -> Fact3[label=""];
+    Fact2 -> Fact4[label=""];
+    Fact1 -> Fact5[label=""];
+    Fact3 -> Fact6[label=""];
+    Fact5 -> Fact8[label=""];
+    Fact6 -> Fact9[label=""];
+    Fact9 -> Fact12[label=""];
+    Fact9 -> Fact15[label=""];
+}
+

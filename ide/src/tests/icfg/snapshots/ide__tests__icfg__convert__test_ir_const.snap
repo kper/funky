@@ -13,6 +13,7 @@ SubGraph {
                     note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
                 },
             ],
+            killed: false,
         },
         Variable {
             id: "%0",
@@ -22,6 +23,7 @@ SubGraph {
                     note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
                 },
             ],
+            killed: false,
         },
     ],
     facts: [

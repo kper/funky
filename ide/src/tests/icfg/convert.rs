@@ -113,7 +113,6 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
-    env_logger::init();
     ir!(
         "test_ir_binop",
         "define test {
@@ -121,6 +120,20 @@ fn test_ir_binop() {
             %1 = 1
             %2 = %0 op %1
             %2 = %1 op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_killing_op() {
+    ir!(
+        "test_ir_killing_op",
+        "define test {
+            %0 = 1
+            %1 = 1
+            KILL %0
+            KILL %1
+            %2 = 1
         };"
     );
 }

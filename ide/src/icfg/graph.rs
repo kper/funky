@@ -19,6 +19,7 @@ pub struct SubGraph {
 pub struct Variable {
     id: VarId,
     last_fact: Vec<Fact>,
+    killed: bool,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -39,6 +40,7 @@ impl SubGraph {
         graph.vars.push(Variable {
             id: "taut".to_string(),
             last_fact: vec![fact],
+            ..Default::default()
         });
         graph
     }
@@ -96,6 +98,7 @@ impl SubGraph {
             self.vars.push(Variable {
                 id: reg.clone(),
                 last_fact: fact,
+                ..Default::default()
             });
         }
     }
@@ -125,6 +128,7 @@ impl SubGraph {
             self.vars.push(Variable {
                 id: dest.clone(),
                 last_fact: src_node,
+                ..Default::default()
             });
         }
 
@@ -157,6 +161,7 @@ impl SubGraph {
             self.vars.push(Variable {
                 id: dest.clone(),
                 last_fact: src_node,
+                ..Default::default()
             });
         }
 
@@ -195,7 +200,27 @@ impl SubGraph {
             self.vars.push(Variable {
                 id: dest.clone(),
                 last_fact: src_node,
+                ..Default::default()
             });
+        }
+
+        Ok(())
+    }
+
+    pub fn kill_var(&mut self, dest: &String, killing_set: &mut Vec<Variable>) -> Result<()> {
+        debug!("Killing var={}", dest);
+
+        if let Some(var) = self
+            .vars
+            .iter_mut()
+            .filter(|x| &x.id == dest)
+            .collect::<Vec<_>>()
+            .get_mut(0)
+        {
+            debug!("Variable is already defined");
+            var.killed = true;
+        } else {
+            bail!("Variable does not exist");
         }
 
         Ok(())
@@ -216,13 +241,18 @@ impl SubGraph {
                 fact
             };
 
-            for node in var.last_fact.iter() {
-                debug!("Creating edge from={:?} to={:?}", node.id, fact.id);
-                //Normal
-                self.edges.push(Edge::Normal {
-                    from: node.clone(),
-                    to: fact.clone(),
-                });
+            if !var.killed {
+                for node in var.last_fact.iter() {
+                    debug!("Creating edge from={:?} to={:?}", node.id, fact.id);
+                    //Normal
+                    self.edges.push(Edge::Normal {
+                        from: node.clone(),
+                        to: fact.clone(),
+                    });
+                }
+            }
+            else {
+                debug!("Variable {} killed, therefore not creating edges", var.id);
             }
 
             var.last_fact = vec![fact];

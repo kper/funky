@@ -70,6 +70,10 @@ impl Convert {
                         debug!("Binop");
                         graph.add_binop(&dest, &src1, &src2, &mut killing_set)?;
                     }
+                    Instruction::Kill(dest) => {
+                        debug!("Kill");
+                        graph.kill_var(&dest, &mut killing_set)?;
+                    }
                     _ => {}
                 }
 

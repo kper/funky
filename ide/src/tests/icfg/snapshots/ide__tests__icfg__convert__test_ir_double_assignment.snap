@@ -13,6 +13,7 @@ SubGraph {
                     note: "<b>taut</b> at 2<br/>Assign(\"%0\", \"%1\")",
                 },
             ],
+            killed: false,
         },
         Variable {
             id: "%1",
@@ -22,6 +23,7 @@ SubGraph {
                     note: "<b>%1</b> at 2<br/>Assign(\"%0\", \"%1\")",
                 },
             ],
+            killed: false,
         },
         Variable {
             id: "%0",
@@ -31,6 +33,7 @@ SubGraph {
                     note: "<b>%0</b> at 2<br/>Assign(\"%0\", \"%1\")",
                 },
             ],
+            killed: false,
         },
     ],
     facts: [
