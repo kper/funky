@@ -16,6 +16,8 @@ pub struct Function {
 type Dest = String;
 type Src = String;
 type Name = usize;
+type Reg = String;
+type Regs = Vec<String>;
 type FunctionName = usize;
 
 #[derive(Debug)]
@@ -26,7 +28,7 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(String, Vec<Src>),
+    Call(String, Vec<Src>, Regs),
     /// kill the variable
     Kill(Dest),
 }

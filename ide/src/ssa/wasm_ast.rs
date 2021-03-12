@@ -556,7 +556,7 @@ impl<'a> IR<'a> {
 
                         writeln!(
                             self.buffer,
-                            "{} = CALL {}({})",
+                            "{} <- CALL {}({})",
                             return_regs.join(" "),
                             func,
                             param_regs.join(",")

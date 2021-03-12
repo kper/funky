@@ -3,6 +3,17 @@ use crate::ssa::ast::*;
 
 grammar;
 
+Comma<T>: Vec<T> = { 
+    <v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
 pub Program : Program = {
    <functions:Function*> => Program {
        functions: functions
@@ -35,7 +46,8 @@ pub Instruction : Vec<Instruction> = {
     "GOTO" <n:Id> => vec![Instruction::Jump(n)],
     "IF" <reg:Reg> "THEN" "GOTO" <j1:Id> "ELSE" "GOTO" <j2:Id> => vec![Instruction::Jump(j1), Instruction::Jump(j2)],
     "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
-    "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r)],
+    "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
+    <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
     "BR" "TABLE" "GOTO" <n:Id*> "ELSE" "GOTO" <e:Id> => {
         let mut result = Vec::new();
         for i in n {
