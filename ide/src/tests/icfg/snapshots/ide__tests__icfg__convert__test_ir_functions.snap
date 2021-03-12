@@ -74,6 +74,36 @@ Graph {
             },
         ],
     },
+    functions: {
+        "test": Function {
+            name: "test",
+            first_facts: [],
+            last_facts: [
+                Fact {
+                    id: 2,
+                    note: "<b>taut</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
+                },
+                Fact {
+                    id: 3,
+                    note: "<b>%0</b> at 1<br/>Call(\"mytest\", [\"%0\"])",
+                },
+            ],
+        },
+        "mytest": Function {
+            name: "mytest",
+            first_facts: [],
+            last_facts: [
+                Fact {
+                    id: 6,
+                    note: "<b>taut</b> at 3<br/>Const(\"%0\", 2.0)",
+                },
+                Fact {
+                    id: 7,
+                    note: "<b>%0</b> at 3<br/>Const(\"%0\", 2.0)",
+                },
+            ],
+        },
+    },
     facts: [
         Fact {
             id: 0,

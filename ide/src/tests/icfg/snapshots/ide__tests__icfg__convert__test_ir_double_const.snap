@@ -56,6 +56,26 @@ Graph {
             },
         ],
     },
+    functions: {
+        "test": Function {
+            name: "test",
+            first_facts: [],
+            last_facts: [
+                Fact {
+                    id: 2,
+                    note: "<b>taut</b> at 1<br/>Const(\"%1\", 1.0)",
+                },
+                Fact {
+                    id: 3,
+                    note: "<b>%0</b> at 1<br/>Const(\"%1\", 1.0)",
+                },
+                Fact {
+                    id: 4,
+                    note: "<b>%1</b> at 1<br/>Const(\"%1\", 1.0)",
+                },
+            ],
+        },
+    },
     facts: [
         Fact {
             id: 0,

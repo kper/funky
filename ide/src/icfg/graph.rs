@@ -2,15 +2,17 @@ use log::debug;
 use std::ops::DerefMut;
 
 use crate::counter::Counter;
-use crate::ssa::ast::Function;
+use crate::ssa::ast::Function as AstFunction;
 use anyhow::{bail, private::kind, Context, Result};
 use std::collections::HashMap;
 
 type VarId = String;
+type FunctionName = String;
 
 #[derive(Debug, Default)]
 pub struct Graph {
-    vars: HashMap<String, Vec<Variable>>,
+    vars: HashMap<FunctionName, Vec<Variable>>,
+    functions: HashMap<FunctionName, Function>, 
     facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     counter: Counter,
@@ -21,13 +23,20 @@ pub struct Graph {
 pub struct Variable {
     id: VarId,
     /// the predessors
-    last_fact: Vec<Fact>,
+    pub last_fact: Vec<Fact>,
     /// the first fact which defines the var
     first_fact: Option<Fact>,
     killed: bool,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug)]
+pub struct Function {
+    name: String,
+    first_facts: Vec<Fact>,
+    last_facts: Vec<Fact>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub struct Fact {
     pub id: usize,
     pub note: String,
@@ -45,13 +54,15 @@ impl Graph {
         Self::default()
     }
 
-    pub fn init_function(&mut self, function: &Function) {
+    pub fn init_function(&mut self, function: &AstFunction) {
+        // add taut
         let mut vars = vec![Variable {
             id: "taut".to_string(),
             last_fact: vec![],
             ..Default::default()
         }];
 
+        // add variables because parameters
         for param in function.params.iter() {
             vars.push(Variable {
                 id: param.clone(),
@@ -61,6 +72,14 @@ impl Graph {
         }
 
         self.vars.insert(function.name.clone(), vars);
+
+        // init function for tracking
+
+        self.functions.insert(function.name.clone(), Function {
+            name: function.name.clone(),
+            first_facts: Vec::new(),
+            last_facts: Vec::new(),
+        });
     }
 
     fn new_fact(&mut self) -> Fact {
@@ -305,7 +324,7 @@ impl Graph {
     pub fn add_call(
         &mut self,
         function_name: &String, //current function
-        function: &Function,
+        function: &AstFunction,
         name: &String,      //name of calling function
         regs: &Vec<String>, //passing arguments
     ) -> Result<()> {
@@ -357,6 +376,7 @@ impl Graph {
         note: String,
         killing_set: &mut Vec<Variable>,
     ) -> Result<()> {
+        let mut facts = Vec::new();
         let epoch = self.epoch.get();
         for var in self
             .vars
@@ -394,7 +414,13 @@ impl Graph {
                 var.first_fact = Some(fact.clone());
             }
 
-            var.last_fact = vec![fact];
+            var.last_fact = vec![fact.clone()];
+
+            facts.push(fact);
+        }
+
+        if let Some(func_ref) = self.functions.get_mut(function_name) {
+            func_ref.last_facts = facts;
         }
 
         Ok(())
@@ -405,7 +431,8 @@ impl Graph {
         function_name: &String,
         note: String,
         killing_set: &mut Vec<Variable>,
-    ) -> Result<()> {
+    ) -> Result<Vec<Fact>> {
+        let mut facts = Vec::new();
         let epoch = self.epoch.get();
         for var in self
             .vars
@@ -437,8 +464,10 @@ impl Graph {
             } else {
                 debug!("Variable {} killed, therefore not creating edges", var.id);
             }
+
+            facts.push(fact);
         }
 
-        Ok(())
+        Ok(facts)
     }
 }

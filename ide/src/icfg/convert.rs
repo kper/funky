@@ -14,12 +14,14 @@ use log::debug;
 use wasm_parser::core::*;
 
 use crate::grammar::*;
+use crate::icfg::graph::Fact;
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Convert {
     block_counter: Counter,
     functions: HashMap<String, usize>, // function name to fact id
+    registration_returns: HashMap<String, Vec<Fact>>, // function name to facts
 }
 
 impl Convert {
@@ -27,6 +29,7 @@ impl Convert {
         Self {
             block_counter: Counter::default(),
             functions: HashMap::new(),
+            registration_returns: HashMap::new(),
         }
     }
 
@@ -109,17 +112,29 @@ impl Convert {
                             format!("{:?}", instruction),
                             &mut killing_set,
                         )?;
-                        graph.add_call_to_return(
+                        let meeting_facts = graph.add_call_to_return(
                             &function.name,
                             format!("Return from {}", name),
                             &mut killing_set,
                         )?;
+
+                        //self.registration_returns.insert(function.name.clone(), meeting_facts);
                     }
                     _ => {}
                 }
 
+
                 killing_set.clear();
             }
+
+            // Register end
+            /* 
+            if let Some(vars) = graph.vars.get(function.name) {
+
+                let facts : Vec<_> = vars.iter().map(|x| x.last_fact).collect();
+
+                self.registration_returns.insert(function.name.clone(), )
+            }*/
         }
 
         for function in prog.functions.iter() {

@@ -56,6 +56,26 @@ Graph {
             },
         ],
     },
+    functions: {
+        "test": Function {
+            name: "test",
+            first_facts: [],
+            last_facts: [
+                Fact {
+                    id: 5,
+                    note: "<b>taut</b> at 2<br/>Assign(\"%0\", \"%1\")",
+                },
+                Fact {
+                    id: 6,
+                    note: "<b>%1</b> at 2<br/>Assign(\"%0\", \"%1\")",
+                },
+                Fact {
+                    id: 7,
+                    note: "<b>%0</b> at 2<br/>Assign(\"%0\", \"%1\")",
+                },
+            ],
+        },
+    },
     facts: [
         Fact {
             id: 0,

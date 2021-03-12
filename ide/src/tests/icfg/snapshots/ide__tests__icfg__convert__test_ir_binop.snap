@@ -72,6 +72,30 @@ Graph {
             },
         ],
     },
+    functions: {
+        "test": Function {
+            name: "test",
+            first_facts: [],
+            last_facts: [
+                Fact {
+                    id: 9,
+                    note: "<b>taut</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+                Fact {
+                    id: 10,
+                    note: "<b>%0</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+                Fact {
+                    id: 11,
+                    note: "<b>%1</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+                Fact {
+                    id: 12,
+                    note: "<b>%2</b> at 3<br/>BinOp(\"%2\", \"%1\", \"%0\")",
+                },
+            ],
+        },
+    },
     facts: [
         Fact {
             id: 0,

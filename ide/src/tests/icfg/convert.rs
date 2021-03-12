@@ -140,7 +140,6 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_functions() {
-    env_logger::init();
     ir!(
         "test_ir_functions",
         "define test {
