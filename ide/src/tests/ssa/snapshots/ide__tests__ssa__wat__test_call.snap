@@ -16,46 +16,46 @@ BLOCK 3 // THEN block for 2
 %5 = %0
 %6 = 2
 %7 = %6 op %5
-CALL 0(7)
-%8 = %0
-%9 = 1
-%10 = %9 op %8
-CALL 0(10)
+%8 = CALL 0(7)
+%9 = %0
+%10 = 1
 %11 = %10 op %9
+%12 = CALL 0(11)
+%13 = %12 op %11
 GOTO 4 // BLOCK ended for 2
 BLOCK 4 // THEN block for 3
 BLOCK 1
 };
 define 1 {
 BLOCK 5
-%13 = %12
-%14 = %13 op %12
-IF %14 THEN GOTO 7 ELSE GOTO 8
+%15 = %14
+%16 = %15 op %14
+IF %16 THEN GOTO 7 ELSE GOTO 8
 BLOCK 7 
-%15 = 44
+%17 = 44
 GOTO 9 // BLOCK ended for 7
 BLOCK 8 // THEN block for 7
-%16 = %12
-%17 = 1
-%18 = %17 op %16
-CALL 2(18)
+%18 = %14
+%19 = 1
+%20 = %19 op %18
+%21 = CALL 2(20)
 GOTO 9 // BLOCK ended for 7
 BLOCK 9 // THEN block for 8
 BLOCK 6
 };
 define 2 {
 BLOCK 10
-%20 = %19
-%21 = %20 op %19
-IF %21 THEN GOTO 12 ELSE GOTO 13
+%23 = %22
+%24 = %23 op %22
+IF %24 THEN GOTO 12 ELSE GOTO 13
 BLOCK 12 
-%22 = 99
+%25 = 99
 GOTO 14 // BLOCK ended for 12
 BLOCK 13 // THEN block for 12
-%23 = %19
-%24 = 1
-%25 = %24 op %23
-CALL 1(25)
+%26 = %22
+%27 = 1
+%28 = %27 op %26
+%29 = CALL 1(28)
 GOTO 14 // BLOCK ended for 12
 BLOCK 14 // THEN block for 13
 BLOCK 11

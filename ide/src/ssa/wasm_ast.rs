@@ -175,7 +175,7 @@ impl<'a> IR<'a> {
         blocks: &mut Vec<Block>,
         return_arity: usize,
         // reg number of the start current_reg: usize,
-        current_reg: Option<usize>
+        current_reg: Option<usize>,
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
@@ -260,7 +260,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg
+                        current_reg,
                     )?;
 
                     blocks.pop();
@@ -311,7 +311,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg
+                        current_reg,
                     )?;
 
                     blocks.pop();
@@ -368,7 +368,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg
+                        current_reg,
                     )?;
 
                     writeln!(
@@ -394,7 +394,7 @@ impl<'a> IR<'a> {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg
+                        current_reg,
                     )?;
 
                     blocks.pop();
@@ -533,6 +533,7 @@ impl<'a> IR<'a> {
                     let instance = self.engine.store.get_func_instance(&addr)?;
 
                     let num_params = instance.ty.param_types.len();
+                    let num_results = instance.ty.return_types.len();
 
                     let mut param_regs = Vec::new();
 
@@ -540,7 +541,28 @@ impl<'a> IR<'a> {
                         param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
                     }
 
-                    writeln!(self.buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
+                    // Function returns no variables
+                    if num_results == 0 {
+                        writeln!(self.buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
+                    } else {
+                        let return_regs: Vec<_> = (0..num_results)
+                            .map(|_| {
+                                format!(
+                                    "%{}",
+                                    self.symbol_table.new_var().expect("Cannot get new var")
+                                )
+                            })
+                            .collect();
+
+                        writeln!(
+                            self.buffer,
+                            "{} = CALL {}({})",
+                            return_regs.join(" "),
+                            func,
+                            param_regs.join(",")
+                        )
+                        .unwrap();
+                    }
                 }
                 OP_I32_CONST(a) => {
                     writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
