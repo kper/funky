@@ -332,9 +332,12 @@ impl Graph {
         debug!("Add call {}", name);
         debug!("=> function {:#?}", function);
 
-        let params_facts = {
+        let mut params_facts = {
             let mut facts = Vec::new();
-            for param in function.params.iter() {
+            for param in vec!["taut".to_string()]
+                .iter()
+                .chain(function.params.iter())
+            {
                 if let Some(param_fact) = self
                     .get_mut_var(&function.name, param)
                     .and_then(|x| x.first_fact.as_ref())
@@ -349,14 +352,12 @@ impl Graph {
         };
 
         debug!("param facts are {:?}", params_facts);
-        assert!(
-            params_facts.len() == function.params.len(),
-            "Expected to match parameters"
-        );
 
-        //TODO tau call edges
-
-        for (from_var, to_fact) in regs.iter().zip(params_facts.iter()) {
+        for (from_var, to_fact) in vec!["taut".to_string()]
+            .iter()
+            .chain(regs.iter())
+            .zip(params_facts.iter())
+        {
             if let Some(from) = self.get_var(function_name, from_var) {
                 debug!(
                     "Creating call edge from={:?} to={:?}",

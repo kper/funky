@@ -171,7 +171,7 @@ impl Convert {
                             .functions
                             .iter()
                             .find(|x| &x.name == name)
-                            .expect("Function not found");
+                            .context("Function not found")?;
 
                         graph.add_call(&function.name, &lookup_function, name, regs)?;
                     }

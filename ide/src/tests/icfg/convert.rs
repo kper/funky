@@ -148,6 +148,7 @@ fn test_ir_functions() {
         };
         define mytest (param %0) {
             %0 = 2   
+            %1 = 3
         };"
     );
 }

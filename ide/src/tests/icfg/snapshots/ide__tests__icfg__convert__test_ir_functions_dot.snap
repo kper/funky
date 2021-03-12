@@ -15,6 +15,11 @@ digraph example1 {
     Fact8[label=<<b>%0</b> at 4<br/>before Const("%0", 2.0)>];
     Fact9[label=<<b>taut</b> at 5<br/>after Const("%0", 2.0)>];
     Fact10[label=<<b>%0</b> at 5<br/>after Const("%0", 2.0)>];
+    Fact11[label=<<b>taut</b> at 6<br/>before Const("%1", 3.0)>];
+    Fact12[label=<<b>%0</b> at 6<br/>before Const("%1", 3.0)>];
+    Fact13[label=<<b>taut</b> at 7<br/>after Const("%1", 3.0)>];
+    Fact14[label=<<b>%0</b> at 7<br/>after Const("%1", 3.0)>];
+    Fact15[label=<<b>%1</b> at 7<br/>after Const("%1", 3.0)>];
     Fact0 -> Fact1[label=""];
     Fact0 -> Fact2[label=""];
     Fact1 -> Fact3[label=""];
@@ -23,8 +28,14 @@ digraph example1 {
     Fact4 -> Fact6[label="Call to Return"][color="chocolate1"];
     Fact7 -> Fact9[label=""];
     Fact7 -> Fact10[label=""];
+    Fact9 -> Fact11[label=""];
+    Fact10 -> Fact12[label=""];
+    Fact11 -> Fact13[label=""];
+    Fact12 -> Fact14[label=""];
+    Fact11 -> Fact15[label=""];
+    Fact3 -> Fact7[label="Call"][color="firebrick1"];
     Fact4 -> Fact8[label="Call"][color="firebrick1"];
-    Fact9 -> Fact5[label="Return"][color="forestgreen"];
-    Fact10 -> Fact6[label="Return"][color="forestgreen"];
+    Fact13 -> Fact5[label="Return"][color="forestgreen"];
+    Fact14 -> Fact6[label="Return"][color="forestgreen"];
 }
 
