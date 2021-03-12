@@ -25,12 +25,9 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for Graph {
 
     fn edge_color(&'a self, e: &Edge) -> Option<LabelText<'a>> {
         match e {
-            Edge::Call { .. } => {
-                Some(LabelText::LabelStr(Cow::Borrowed("firebrick1")))
-            }
-            Edge::CallToReturn { .. } => {
-                Some(LabelText::LabelStr(Cow::Borrowed("chocolate1")))
-            }
+            Edge::Call { .. } => Some(LabelText::LabelStr(Cow::Borrowed("firebrick1"))),
+            Edge::CallToReturn { .. } => Some(LabelText::LabelStr(Cow::Borrowed("chocolate1"))),
+            Edge::Return { .. } => Some(LabelText::LabelStr(Cow::Borrowed("forestgreen"))),
             _ => None,
         }
     }
@@ -54,6 +51,10 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
                     nodes.push(from.clone());
                     nodes.push(to.clone());
                 }
+                Edge::Return { from, to } => {
+                    nodes.push(from.clone());
+                    nodes.push(to.clone());
+                }
                 _ => {}
             }
         }
@@ -72,6 +73,7 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
             Edge::Normal { from, to: _to } => from.clone(),
             Edge::Call { from, to: _to } => from.clone(),
             Edge::CallToReturn { from, to: _to } => from.clone(),
+            Edge::Return { from, to: _to } => from.clone(),
             _ => unimplemented!("Please add"),
         }
     }
@@ -81,6 +83,7 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
             Edge::Normal { from: _from, to } => to.clone(),
             Edge::Call { from: _from, to } => to.clone(),
             Edge::CallToReturn { from: _from, to } => to.clone(),
+            Edge::Return { from: _from, to } => to.clone(),
             _ => unimplemented!("Please add"),
         }
     }

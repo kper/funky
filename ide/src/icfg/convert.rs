@@ -65,7 +65,7 @@ impl Convert {
 
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("after {:?}", instruction),
                             &mut killing_set,
                         )?;
                     }
@@ -75,7 +75,7 @@ impl Convert {
 
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("after {:?}", instruction),
                             &mut killing_set,
                         )?;
                     }
@@ -84,7 +84,7 @@ impl Convert {
                         graph.add_unop(&function.name, &dest, &src, &mut killing_set)?;
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("after {:?}", instruction),
                             &mut killing_set,
                         )?;
                     }
@@ -93,7 +93,7 @@ impl Convert {
                         graph.add_binop(&function.name, &dest, &src1, &src2, &mut killing_set)?;
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("after {:?}", instruction),
                             &mut killing_set,
                         )?;
                     }
@@ -102,14 +102,14 @@ impl Convert {
                         graph.kill_var(&function.name, &dest, &mut killing_set)?;
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("after {:?}", instruction),
                             &mut killing_set,
                         )?;
                     }
                     Instruction::Call(name, _regs) => {
                         graph.add_row(
                             &function.name,
-                            format!("{:?}", instruction),
+                            format!("before {:?}", instruction),
                             &mut killing_set,
                         )?;
                         let meeting_facts = graph.add_call_to_return(
@@ -118,23 +118,14 @@ impl Convert {
                             &mut killing_set,
                         )?;
 
-                        //self.registration_returns.insert(function.name.clone(), meeting_facts);
+                        // Expect a return edge from `name` with function.name to the meeting facts
+                        self.registration_returns.insert(name.clone(), meeting_facts);
                     }
                     _ => {}
                 }
 
-
                 killing_set.clear();
             }
-
-            // Register end
-            /* 
-            if let Some(vars) = graph.vars.get(function.name) {
-
-                let facts : Vec<_> = vars.iter().map(|x| x.last_fact).collect();
-
-                self.registration_returns.insert(function.name.clone(), )
-            }*/
         }
 
         for function in prog.functions.iter() {
@@ -156,6 +147,12 @@ impl Convert {
                     }
                     _ => {}
                 }
+            }
+        }
+
+        for (goal_function, meeting_facts) in self.registration_returns.drain() {
+            if let Some(goal_function_ref) = graph.functions.get(&goal_function) {
+                graph.add_return(&goal_function_ref.last_facts.clone(), meeting_facts)?;
             }
         }
 

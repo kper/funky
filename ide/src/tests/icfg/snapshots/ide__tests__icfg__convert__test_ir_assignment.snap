@@ -11,13 +11,13 @@ Graph {
                 last_fact: [
                     Fact {
                         id: 2,
-                        note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                        note: "<b>taut</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 0,
-                        note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
+                        note: "<b>taut</b> at 0<br/>after Const(\"%1\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -27,13 +27,13 @@ Graph {
                 last_fact: [
                     Fact {
                         id: 3,
-                        note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                        note: "<b>%1</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 1,
-                        note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+                        note: "<b>%1</b> at 0<br/>after Const(\"%1\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -43,13 +43,13 @@ Graph {
                 last_fact: [
                     Fact {
                         id: 4,
-                        note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                        note: "<b>%0</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 4,
-                        note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                        note: "<b>%0</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                     },
                 ),
                 killed: false,
@@ -63,15 +63,15 @@ Graph {
             last_facts: [
                 Fact {
                     id: 2,
-                    note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                    note: "<b>taut</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                 },
                 Fact {
                     id: 3,
-                    note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                    note: "<b>%1</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                 },
                 Fact {
                     id: 4,
-                    note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                    note: "<b>%0</b> at 1<br/>after Assign(\"%0\", \"%1\")",
                 },
             ],
         },
@@ -79,54 +79,54 @@ Graph {
     facts: [
         Fact {
             id: 0,
-            note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
+            note: "<b>taut</b> at 0<br/>after Const(\"%1\", 1.0)",
         },
         Fact {
             id: 1,
-            note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+            note: "<b>%1</b> at 0<br/>after Const(\"%1\", 1.0)",
         },
         Fact {
             id: 2,
-            note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            note: "<b>taut</b> at 1<br/>after Assign(\"%0\", \"%1\")",
         },
         Fact {
             id: 3,
-            note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            note: "<b>%1</b> at 1<br/>after Assign(\"%0\", \"%1\")",
         },
         Fact {
             id: 4,
-            note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+            note: "<b>%0</b> at 1<br/>after Assign(\"%0\", \"%1\")",
         },
     ],
     edges: [
         Normal {
             from: Fact {
                 id: 0,
-                note: "<b>taut</b> at 0<br/>Const(\"%1\", 1.0)",
+                note: "<b>taut</b> at 0<br/>after Const(\"%1\", 1.0)",
             },
             to: Fact {
                 id: 2,
-                note: "<b>taut</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                note: "<b>taut</b> at 1<br/>after Assign(\"%0\", \"%1\")",
             },
         },
         Normal {
             from: Fact {
                 id: 1,
-                note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+                note: "<b>%1</b> at 0<br/>after Const(\"%1\", 1.0)",
             },
             to: Fact {
                 id: 3,
-                note: "<b>%1</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                note: "<b>%1</b> at 1<br/>after Assign(\"%0\", \"%1\")",
             },
         },
         Normal {
             from: Fact {
                 id: 1,
-                note: "<b>%1</b> at 0<br/>Const(\"%1\", 1.0)",
+                note: "<b>%1</b> at 0<br/>after Const(\"%1\", 1.0)",
             },
             to: Fact {
                 id: 4,
-                note: "<b>%0</b> at 1<br/>Assign(\"%0\", \"%1\")",
+                note: "<b>%0</b> at 1<br/>after Assign(\"%0\", \"%1\")",
             },
         },
     ],

@@ -11,13 +11,13 @@ Graph {
                 last_fact: [
                     Fact {
                         id: 0,
-                        note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+                        note: "<b>taut</b> at 0<br/>after Const(\"%0\", 1.0)",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 0,
-                        note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+                        note: "<b>taut</b> at 0<br/>after Const(\"%0\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -27,13 +27,13 @@ Graph {
                 last_fact: [
                     Fact {
                         id: 1,
-                        note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+                        note: "<b>%0</b> at 0<br/>after Const(\"%0\", 1.0)",
                     },
                 ],
                 first_fact: Some(
                     Fact {
                         id: 1,
-                        note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+                        note: "<b>%0</b> at 0<br/>after Const(\"%0\", 1.0)",
                     },
                 ),
                 killed: false,
@@ -47,11 +47,11 @@ Graph {
             last_facts: [
                 Fact {
                     id: 0,
-                    note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+                    note: "<b>taut</b> at 0<br/>after Const(\"%0\", 1.0)",
                 },
                 Fact {
                     id: 1,
-                    note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+                    note: "<b>%0</b> at 0<br/>after Const(\"%0\", 1.0)",
                 },
             ],
         },
@@ -59,11 +59,11 @@ Graph {
     facts: [
         Fact {
             id: 0,
-            note: "<b>taut</b> at 0<br/>Const(\"%0\", 1.0)",
+            note: "<b>taut</b> at 0<br/>after Const(\"%0\", 1.0)",
         },
         Fact {
             id: 1,
-            note: "<b>%0</b> at 0<br/>Const(\"%0\", 1.0)",
+            note: "<b>%0</b> at 0<br/>after Const(\"%0\", 1.0)",
         },
     ],
     edges: [],

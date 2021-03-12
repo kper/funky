@@ -12,7 +12,7 @@ type FunctionName = String;
 #[derive(Debug, Default)]
 pub struct Graph {
     vars: HashMap<FunctionName, Vec<Variable>>,
-    functions: HashMap<FunctionName, Function>, 
+    pub functions: HashMap<FunctionName, Function>,
     facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     counter: Counter,
@@ -33,7 +33,7 @@ pub struct Variable {
 pub struct Function {
     name: String,
     first_facts: Vec<Fact>,
-    last_facts: Vec<Fact>,
+    pub last_facts: Vec<Fact>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -45,8 +45,9 @@ pub struct Fact {
 #[derive(Debug, Clone)]
 pub enum Edge {
     Normal { from: Fact, to: Fact },
-    Call { from: Fact, to: Fact},
+    Call { from: Fact, to: Fact },
     CallToReturn { from: Fact, to: Fact },
+    Return { from: Fact, to: Fact },
 }
 
 impl Graph {
@@ -75,11 +76,14 @@ impl Graph {
 
         // init function for tracking
 
-        self.functions.insert(function.name.clone(), Function {
-            name: function.name.clone(),
-            first_facts: Vec::new(),
-            last_facts: Vec::new(),
-        });
+        self.functions.insert(
+            function.name.clone(),
+            Function {
+                name: function.name.clone(),
+                first_facts: Vec::new(),
+                last_facts: Vec::new(),
+            },
+        );
     }
 
     fn new_fact(&mut self) -> Fact {
@@ -308,10 +312,7 @@ impl Graph {
     }
 
     fn get_var(&self, function_name: &String, name: &String) -> Option<&Variable> {
-        self.vars
-            .get(function_name)?
-            .iter()
-            .find(|x| &x.id == name)
+        self.vars.get(function_name)?.iter().find(|x| &x.id == name)
     }
 
     fn get_mut_var(&mut self, function_name: &String, name: &String) -> Option<&mut Variable> {
@@ -348,13 +349,20 @@ impl Graph {
         };
 
         debug!("param facts are {:?}", params_facts);
-        assert!(params_facts.len() == function.params.len(), "Expected to match parameters");
+        assert!(
+            params_facts.len() == function.params.len(),
+            "Expected to match parameters"
+        );
 
         //TODO tau call edges
 
         for (from_var, to_fact) in regs.iter().zip(params_facts.iter()) {
             if let Some(from) = self.get_var(function_name, from_var) {
-                debug!("Creating call edge from={:?} to={:?}", from.last_fact.get(0), to_fact);
+                debug!(
+                    "Creating call edge from={:?} to={:?}",
+                    from.last_fact.get(0),
+                    to_fact
+                );
 
                 assert!(from.last_fact.len() == 1, "Only one pred is allowed");
                 //Call edges
@@ -469,5 +477,21 @@ impl Graph {
         }
 
         Ok(facts)
+    }
+
+    pub fn add_return(&mut self, src_facts: &Vec<Fact>, goal_facts: Vec<Fact>) -> Result<()> {
+        debug!("Add return");
+
+        //TODO compare, because not all merge together
+
+        for (src, target) in src_facts.iter().zip(goal_facts) {
+            debug!("Creating edge from={:?} to={:?}", src.id, target.id);
+            self.edges.push(Edge::Return {
+                from: src.clone(),
+                to: target,
+            });
+        }
+
+        Ok(())
     }
 }
