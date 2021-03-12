@@ -31,6 +31,15 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for Graph {
             _ => None,
         }
     }
+
+    fn edge_label(&'a self, e: &Edge) -> LabelText<'a> {
+         match e {
+            Edge::Call { .. } => LabelText::LabelStr(Cow::Borrowed("Call")),
+            Edge::CallToReturn { .. } => LabelText::LabelStr(Cow::Borrowed("Call to Return")),
+            Edge::Return { .. } => LabelText::LabelStr(Cow::Borrowed("Return")),
+            _ => LabelText::LabelStr(Cow::Borrowed("")),
+        }
+    }
 }
 
 impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {

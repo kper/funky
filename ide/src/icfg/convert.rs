@@ -45,7 +45,7 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Init function {}", function.name);
             graph.init_function(function);
-            //graph.add_row(&function.name, "init".to_string(), &mut Vec::new())?;
+            //graph.add_row(&function.name, format!("init {}", function.name), &mut Vec::new())?;
         }
 
         //debug!("graph {:#?}", graph);
@@ -61,6 +61,13 @@ impl Convert {
                 match instruction {
                     Instruction::Const(reg, _val) => {
                         debug!("Adding const");
+
+                        graph.add_row(
+                            &function.name,
+                            format!("before {:?}", instruction),
+                            &mut killing_set,
+                        )?;
+
                         graph.add_var(&function.name, &reg, &mut killing_set)?;
 
                         graph.add_row(
@@ -71,6 +78,13 @@ impl Convert {
                     }
                     Instruction::Assign(dest, src) => {
                         debug!("Assignment");
+
+                        graph.add_row(
+                            &function.name,
+                            format!("before {:?}", instruction),
+                            &mut killing_set,
+                        )?;
+
                         graph.add_assignment(&function.name, &dest, &src, &mut killing_set)?;
 
                         graph.add_row(
@@ -81,6 +95,11 @@ impl Convert {
                     }
                     Instruction::Unop(dest, src) => {
                         debug!("Unop");
+                        graph.add_row(
+                            &function.name,
+                            format!("before {:?}", instruction),
+                            &mut killing_set,
+                        )?;
                         graph.add_unop(&function.name, &dest, &src, &mut killing_set)?;
                         graph.add_row(
                             &function.name,
@@ -90,6 +109,12 @@ impl Convert {
                     }
                     Instruction::BinOp(dest, src1, src2) => {
                         debug!("Binop");
+                        graph.add_row(
+                            &function.name,
+                            format!("before {:?}", instruction),
+                            &mut killing_set,
+                        )?;
+
                         graph.add_binop(&function.name, &dest, &src1, &src2, &mut killing_set)?;
                         graph.add_row(
                             &function.name,
@@ -99,6 +124,11 @@ impl Convert {
                     }
                     Instruction::Kill(dest) => {
                         debug!("Kill");
+                        graph.add_row(
+                            &function.name,
+                            format!("before {:?}", instruction),
+                            &mut killing_set,
+                        )?;
                         graph.kill_var(&function.name, &dest, &mut killing_set)?;
                         graph.add_row(
                             &function.name,

@@ -4,5 +4,10 @@ expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
 
 ---
 digraph example1 {
+    Fact0[label=<<b>taut</b> at 0<br/>before Const("%0", 1.0)>];
+    Fact1[label=<<b>taut</b> at 1<br/>after Const("%0", 1.0)>];
+    Fact2[label=<<b>%0</b> at 1<br/>after Const("%0", 1.0)>];
+    Fact0 -> Fact1[label=""];
+    Fact0 -> Fact2[label=""];
 }
 

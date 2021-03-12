@@ -9,7 +9,7 @@ macro_rules! ir {
 
         let res = convert.visit($ir).unwrap();
 
-        assert_snapshot!($name, format!("{:#?}", res));
+        //assert_snapshot!($name, format!("{:#?}", res));
 
         //let mut dot = String::new();
         let mut dot = Cursor::new(Vec::new());
