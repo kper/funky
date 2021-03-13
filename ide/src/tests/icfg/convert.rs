@@ -27,7 +27,7 @@ fn test_ir_const() {
     ir!(
         "test_ir_const",
         "
-         define test {
+         define test (result 0) {
             %0 = 1
          };
     "
@@ -39,7 +39,7 @@ fn test_ir_double_const() {
     ir!(
         "test_ir_double_const",
         "
-         define test {
+         define test (result 0) {
             %0 = 1
             %1 = 1
          };
@@ -52,7 +52,7 @@ fn test_ir_assignment() {
     ir!(
         "test_ir_assignment",
         "
-         define test {
+         define test (result 0) {
             %1 = 1
             %0 = %1
          };
@@ -65,7 +65,7 @@ fn test_ir_double_assignment() {
     ir!(
         "test_ir_double_assignment",
         "
-         define test {
+         define test (result 0) {
             %1 = 1
             %0 = %1
             %0 = %1
@@ -78,7 +78,7 @@ fn test_ir_double_assignment() {
 fn test_ir_block() {
     ir!(
         "test_ir_block",
-        "define test {
+        "define test (result 0) {
             BLOCK 0
             %0 = 1
             GOTO 1
@@ -92,7 +92,7 @@ fn test_ir_block() {
 fn test_ir_killing() {
     ir!(
         "test_ir_killing",
-        "define test {
+        "define test (result 0) {
             %0 = 1
             %0 = 2
         };"
@@ -103,7 +103,7 @@ fn test_ir_killing() {
 fn test_ir_unop() {
     ir!(
         "test_ir_unop",
-        "define test {
+        "define test (result 0)  {
             %0 = 1
             %1 = op %0
             %1 = op %0   
@@ -115,7 +115,7 @@ fn test_ir_unop() {
 fn test_ir_binop() {
     ir!(
         "test_ir_binop",
-        "define test {
+        "define test (result 0)  {
             %0 = 1
             %1 = 1
             %2 = %0 op %1
@@ -128,7 +128,7 @@ fn test_ir_binop() {
 fn test_ir_killing_op() {
     ir!(
         "test_ir_killing_op",
-        "define test {
+        "define test (result 0)  {
             %0 = 1
             %1 = 1
             KILL %0
@@ -142,11 +142,26 @@ fn test_ir_killing_op() {
 fn test_ir_functions() {
     ir!(
         "test_ir_functions",
-        "define test {
+        "define test (result 0) {
             %0 = 1
             CALL mytest(%0)
         };
-        define mytest (param %0) {
+        define mytest (param %0) (result 0)  {
+            %0 = 2   
+            %1 = 3
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values() {
+    ir!(
+        "test_ir_functions",
+        "define test (result 0) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) {
             %0 = 2   
             %1 = 3
         };"

@@ -7,8 +7,8 @@ digraph example1 {
     Fact0[label=<<b>taut</b> at 0<br/>before Const("%0", 1.0)>];
     Fact1[label=<<b>taut</b> at 1<br/>after Const("%0", 1.0)>];
     Fact2[label=<<b>%0</b> at 1<br/>after Const("%0", 1.0)>];
-    Fact3[label=<<b>taut</b> at 2<br/>before Call("mytest", ["%0"])>];
-    Fact4[label=<<b>%0</b> at 2<br/>before Call("mytest", ["%0"])>];
+    Fact3[label=<<b>taut</b> at 2<br/>before Call("mytest", ["%0"], [])>];
+    Fact4[label=<<b>%0</b> at 2<br/>before Call("mytest", ["%0"], [])>];
     Fact5[label=<<b>taut</b> at 3<br/>Return from mytest>];
     Fact6[label=<<b>%0</b> at 3<br/>Return from mytest>];
     Fact7[label=<<b>taut</b> at 4<br/>before Const("%0", 2.0)>];
@@ -36,6 +36,5 @@ digraph example1 {
     Fact3 -> Fact7[label="Call"][color="firebrick1"];
     Fact4 -> Fact8[label="Call"][color="firebrick1"];
     Fact13 -> Fact5[label="Return"][color="forestgreen"];
-    Fact14 -> Fact6[label="Return"][color="forestgreen"];
 }
 

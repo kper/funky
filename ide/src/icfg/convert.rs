@@ -21,7 +21,7 @@ use std::collections::HashMap;
 pub struct Convert {
     block_counter: Counter,
     functions: HashMap<String, usize>, // function name to fact id
-    registration_returns: HashMap<String, Vec<Fact>>, // function name to facts
+    registration_returns: HashMap<String, (Vec<Fact>, Vec<String>)>, // function name to (all facts + dest regs)
 }
 
 impl Convert {
@@ -136,7 +136,8 @@ impl Convert {
                             &mut killing_set,
                         )?;
                     }
-                    Instruction::Call(name, _regs) => {
+                    Instruction::Call(name, _params, dest_regs) => {
+                        graph.add_empty_vars(&function.name, &dest_regs)?;
                         graph.add_row(
                             &function.name,
                             format!("before {:?}", instruction),
@@ -149,7 +150,11 @@ impl Convert {
                         )?;
 
                         // Expect a return edge from `name` with function.name to the meeting facts
-                        self.registration_returns.insert(name.clone(), meeting_facts);
+                        self.registration_returns.insert(
+                            name.clone(),
+                            (meeting_facts,
+                            dest_regs.clone()),
+                        );
                     }
                     _ => {}
                 }
@@ -164,7 +169,7 @@ impl Convert {
 
             for instruction in &mut iterator {
                 match instruction {
-                    Instruction::Call(name, regs) => {
+                    Instruction::Call(name, params, dest_regs) => {
                         debug!("Call {}", name);
 
                         let lookup_function = prog
@@ -173,16 +178,16 @@ impl Convert {
                             .find(|x| &x.name == name)
                             .context("Function not found")?;
 
-                        graph.add_call(&function.name, &lookup_function, name, regs)?;
+                        graph.add_call(&function.name, &lookup_function, name, params)?;
                     }
                     _ => {}
                 }
             }
         }
 
-        for (goal_function, meeting_facts) in self.registration_returns.drain() {
+        for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
             if let Some(goal_function_ref) = graph.functions.get(&goal_function) {
-                graph.add_return(&goal_function_ref.last_facts.clone(), meeting_facts)?;
+                graph.add_return(&goal_function_ref.last_facts.clone(), meeting_facts, &dest_regs)?;
             }
         }
 

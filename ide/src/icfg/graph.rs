@@ -40,6 +40,7 @@ pub struct Function {
 pub struct Fact {
     pub id: usize,
     pub note: String,
+    pub belongs_to_var: String,
 }
 
 #[derive(Debug, Clone)]
@@ -90,6 +91,7 @@ impl Graph {
         let fact = Fact {
             id: self.counter.get(),
             note: "taut".to_string(),
+            belongs_to_var: "taut".to_string(),
         };
 
         self.facts.push(fact.clone());
@@ -158,6 +160,27 @@ impl Graph {
                     last_fact: fact,
                     ..Default::default()
                 });
+        }
+
+        Ok(())
+    }
+
+    /// Add a variable which is not derived from taut
+    pub fn add_empty_vars(&mut self, function_name: &String, regs: &Vec<String>) -> Result<()> {
+        for reg in regs.iter() {
+            if self.vars.get(reg).is_none() {
+                self.vars
+                    .get_mut(function_name)
+                    .context("Cannot find function's vars")?
+                    .push(Variable {
+                        id: reg.clone(),
+                        last_fact: vec![],
+                        killed: true,
+                        ..Default::default()
+                    });
+            } else {
+                bail!("Variable does already exist {}", reg);
+            }
         }
 
         Ok(())
@@ -398,6 +421,7 @@ impl Graph {
                 let fact = Fact {
                     id: self.counter.get(),
                     note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
+                    belongs_to_var: format!("{}", var.id),
                 };
 
                 self.facts.push(fact.clone());
@@ -454,6 +478,7 @@ impl Graph {
                 let fact = Fact {
                     id: self.counter.get(),
                     note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
+                    belongs_to_var: format!("{}", var.id),
                 };
 
                 self.facts.push(fact.clone());
@@ -480,12 +505,36 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn add_return(&mut self, src_facts: &Vec<Fact>, goal_facts: Vec<Fact>) -> Result<()> {
+    pub fn add_return(
+        &mut self,
+        src_facts: &Vec<Fact>,
+        goal_facts: Vec<Fact>,
+        dest_regs: &Vec<String>,
+    ) -> Result<()> {
         debug!("Add return");
 
-        //TODO compare, because not all merge together
+        let mut goals = Vec::with_capacity(dest_regs.len() + 1);
 
-        for (src, target) in src_facts.iter().zip(goal_facts) {
+        // Add taut
+        let taut = goal_facts
+            .iter()
+            .find(|x| x.belongs_to_var == "taut".to_string())
+            .context("Cannot find taut")?;
+        goals.push(taut.clone());
+
+        // Match other params
+        for fact in goal_facts.into_iter() {
+            debug!("Comparing {} with {:?}", fact.belongs_to_var, dest_regs);
+            if dest_regs.contains(&fact.belongs_to_var) {
+                goals.push(fact);
+            }
+        }
+
+        assert_eq!(dest_regs.len() + 1, goals.len());
+
+        debug!("The src facts of the callee are {:?}", src_facts);
+        debug!("Filtered facts which match caller: {:?}", goals);
+        for (src, target) in src_facts.iter().zip(goals) {
             debug!("Creating edge from={:?} to={:?}", src.id, target.id);
             self.edges.push(Edge::Return {
                 from: src.clone(),
