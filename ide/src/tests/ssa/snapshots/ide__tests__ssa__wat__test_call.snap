@@ -3,7 +3,7 @@ source: ide/src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 0 {
+define 0 (param %0) (result 1) {
 BLOCK 0
 %1 = %0
 %2 = 1
@@ -16,17 +16,17 @@ BLOCK 3 // THEN block for 2
 %5 = %0
 %6 = 2
 %7 = %6 op %5
-%8 = CALL 0(7)
+%8 <- CALL 0(7)
 %9 = %0
 %10 = 1
 %11 = %10 op %9
-%12 = CALL 0(11)
+%12 <- CALL 0(11)
 %13 = %12 op %11
 GOTO 4 // BLOCK ended for 2
 BLOCK 4 // THEN block for 3
 BLOCK 1
 };
-define 1 {
+define 1 (param %14) (result 1) {
 BLOCK 5
 %15 = %14
 %16 = %15 op %14
@@ -38,12 +38,12 @@ BLOCK 8 // THEN block for 7
 %18 = %14
 %19 = 1
 %20 = %19 op %18
-%21 = CALL 2(20)
+%21 <- CALL 2(20)
 GOTO 9 // BLOCK ended for 7
 BLOCK 9 // THEN block for 8
 BLOCK 6
 };
-define 2 {
+define 2 (param %22) (result 1) {
 BLOCK 10
 %23 = %22
 %24 = %23 op %22
@@ -55,7 +55,7 @@ BLOCK 13 // THEN block for 12
 %26 = %22
 %27 = 1
 %28 = %27 op %26
-%29 = CALL 1(28)
+%29 <- CALL 1(28)
 GOTO 14 // BLOCK ended for 12
 BLOCK 14 // THEN block for 13
 BLOCK 11

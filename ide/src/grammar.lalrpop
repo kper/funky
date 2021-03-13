@@ -21,17 +21,19 @@ pub Program : Program = {
 };
 
 pub Function : Function = {
-    "define" <name:Name> "{" <instr:Instruction*>  "}" ";" => {
+    "define" <name:Name> "(result" <result:Num> ")" "{" <instr:Instruction*>  "}" ";" => {
         Function {
             name,
             params: Vec::new(),
+            results_len: result as usize,
             instructions: instr.into_iter().flatten().collect::<Vec<_>>()
         }
     },
-    "define" <name:Name> "(param" <reg:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+    "define" <name:Name> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "{" <instr:Instruction*>  "}" ";" => {
         Function {
             name,
             params: reg,
+            results_len: result as usize,
             instructions: instr.into_iter().flatten().collect::<Vec<_>>()
         }
     }

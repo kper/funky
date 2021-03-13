@@ -10,6 +10,7 @@ pub struct Program {
 pub struct Function {
     pub(crate) name: String,
     pub(crate) params: Vec<String>,
+    pub(crate) results_len: usize,
     pub(crate) instructions: Vec<Instruction>,
 }
 

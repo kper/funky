@@ -92,7 +92,7 @@ impl<'a> IR<'a> {
 
     fn visit_function(&mut self, inst: &FuncInstance) -> Result<()> {
         let name = format!("{}", self.function_counter.get());
-        writeln!(self.buffer, "define {} {{", name).unwrap();
+        write!(self.buffer, "define {} ", name).unwrap();
 
         let mut function = Function {
             name,
@@ -100,11 +100,28 @@ impl<'a> IR<'a> {
             globals: HashMap::new(),
         };
 
+        let mut params = Vec::new();
+
         for (i, _) in inst.ty.param_types.iter().enumerate() {
             let var = self.symbol_table.new_var()?;
             debug!("Adding parameter %{}", var);
             function.locals.insert(i, var);
+            params.push(var);
         }
+
+        if inst.ty.param_types.len() > 0 {
+            let params = params
+                .into_iter()
+                .map(|x| format!("%{}", x))
+                .collect::<Vec<String>>()
+                .join(" ");
+            let param_str = format!("(param {})", params);
+            write!(self.buffer, "{} ", param_str).unwrap();
+        }
+
+        let result_str = format!("(result {})", inst.ty.return_types.len());
+        write!(self.buffer, "{} ", result_str).unwrap();
+        writeln!(self.buffer, "{{").unwrap();
 
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
