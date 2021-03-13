@@ -156,10 +156,44 @@ fn test_ir_functions() {
 #[test]
 fn test_ir_return_values() {
     ir!(
-        "test_ir_functions",
+        "test_ir_return_values",
         "define test (result 0) {
             %0 = 1
             %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) {
+            %0 = 2   
+            %1 = 3
+        };"
+    );
+}
+
+#[should_panic]
+#[test]
+fn test_ir_return_mismatched_values() {
+    // Assigning %1 but `result 0`
+    ir!(
+        "test_ir_mismatched_functions",
+        "define test (result 0) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 0) {
+            %0 = 2   
+            %1 = 3
+        };"
+    );
+}
+
+#[should_panic]
+#[test]
+fn test_ir_return_mismatched_values2() {
+    // Assigning void but `result 1`
+    ir!(
+        "test_ir_mismatched_functions",
+        "define test (result 0) {
+            %0 = 1
+            CALL mytest(%0)
         };
         define mytest (param %0) (result 1) {
             %0 = 2   

@@ -150,11 +150,8 @@ impl Convert {
                         )?;
 
                         // Expect a return edge from `name` with function.name to the meeting facts
-                        self.registration_returns.insert(
-                            name.clone(),
-                            (meeting_facts,
-                            dest_regs.clone()),
-                        );
+                        self.registration_returns
+                            .insert(name.clone(), (meeting_facts, dest_regs.clone()));
                     }
                     _ => {}
                 }
@@ -187,7 +184,18 @@ impl Convert {
 
         for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
             if let Some(goal_function_ref) = graph.functions.get(&goal_function) {
-                graph.add_return(&goal_function_ref.last_facts.clone(), meeting_facts, &dest_regs)?;
+                if goal_function_ref.results_len != dest_regs.len() {
+                    bail!("Mismatch results with call of {}.\nExpected results: {}\nActual results: {}", 
+                        goal_function_ref.name, 
+                        goal_function_ref.results_len, 
+                        dest_regs.len());
+                }
+
+                graph.add_return(
+                    &goal_function_ref.last_facts.clone(),
+                    meeting_facts,
+                    &dest_regs,
+                )?;
             }
         }
 

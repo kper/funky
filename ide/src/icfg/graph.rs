@@ -1,9 +1,8 @@
 use log::debug;
-use std::ops::DerefMut;
 
 use crate::counter::Counter;
 use crate::ssa::ast::Function as AstFunction;
-use anyhow::{bail, private::kind, Context, Result};
+use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
 
 type VarId = String;
@@ -31,9 +30,10 @@ pub struct Variable {
 
 #[derive(Debug)]
 pub struct Function {
-    name: String,
+    pub name: String,
     first_facts: Vec<Fact>,
     pub last_facts: Vec<Fact>,
+    pub results_len: usize,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
@@ -83,6 +83,7 @@ impl Graph {
                 name: function.name.clone(),
                 first_facts: Vec::new(),
                 last_facts: Vec::new(),
+                results_len: function.results_len
             },
         );
     }
@@ -516,10 +517,7 @@ impl Graph {
         let mut goals = Vec::with_capacity(dest_regs.len() + 1);
 
         // Add taut
-        let taut = goal_facts
-            .iter()
-            .find(|x| x.belongs_to_var == "taut".to_string())
-            .context("Cannot find taut")?;
+        let taut = goal_facts.iter().find(|x| x.belongs_to_var == "taut".to_string()).context("Cannot find taut")?;
         goals.push(taut.clone());
 
         // Match other params
