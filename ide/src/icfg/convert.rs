@@ -17,6 +17,8 @@ use crate::grammar::*;
 use crate::icfg::graph::Fact;
 use std::collections::HashMap;
 
+use crate::ssa::ast::Program;
+
 #[derive(Debug)]
 pub struct Convert {
     block_counter: Counter,
@@ -33,12 +35,8 @@ impl Convert {
         }
     }
 
-    pub fn visit(&mut self, ir: &'static str) -> Result<Graph> {
+    pub fn visit(&mut self, prog: Program) -> Result<Graph> {
         debug!("Convert intermediate repr to graph");
-
-        let prog = ProgramParser::new()
-            .parse(ir)
-            .context("Parsing IR failed")?;
 
         let mut graph = Graph::new();
 

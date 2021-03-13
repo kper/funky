@@ -3,15 +3,16 @@ use crate::icfg::graphviz::render_to;
 use insta::assert_snapshot;
 use std::io::Cursor;
 
+use crate::grammar::*;
+
 macro_rules! ir {
     ($name:expr, $ir:expr) => {
         let mut convert = Convert::new();
 
-        let res = convert.visit($ir).unwrap();
+        let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        //assert_snapshot!($name, format!("{:#?}", res));
+        let res = convert.visit(prog).unwrap();
 
-        //let mut dot = String::new();
         let mut dot = Cursor::new(Vec::new());
         render_to(&res, &mut dot);
 

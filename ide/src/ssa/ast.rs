@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 /// This module is responsible for converting the IR to an AST.
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Program {
     pub(crate) functions: Vec<Function>
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub(crate) name: String,
     pub(crate) params: Vec<String>,
@@ -21,7 +21,7 @@ type Reg = String;
 type Regs = Vec<String>;
 type FunctionName = usize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     Block(String),
     Unop(Dest, Src),
