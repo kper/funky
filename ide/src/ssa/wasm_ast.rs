@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::symbol_table::SymbolTable;
-use anyhow::{bail, Result};
+use anyhow::Result;
 /// This module is responsible to parse
 /// the webassembly AST to an IR
 use funky::engine::func::FuncInstance;

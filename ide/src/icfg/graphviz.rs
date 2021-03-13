@@ -83,7 +83,6 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
             Edge::Call { from, to: _to } => from.clone(),
             Edge::CallToReturn { from, to: _to } => from.clone(),
             Edge::Return { from, to: _to } => from.clone(),
-            _ => unimplemented!("Please add"),
         }
     }
 
@@ -93,7 +92,6 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
             Edge::Call { from: _from, to } => to.clone(),
             Edge::CallToReturn { from: _from, to } => to.clone(),
             Edge::Return { from: _from, to } => to.clone(),
-            _ => unimplemented!("Please add"),
         }
     }
 }

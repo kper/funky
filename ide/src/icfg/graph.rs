@@ -83,7 +83,7 @@ impl Graph {
                 name: function.name.clone(),
                 first_facts: Vec::new(),
                 last_facts: Vec::new(),
-                results_len: function.results_len
+                results_len: function.results_len,
             },
         );
     }
@@ -130,12 +130,7 @@ impl Graph {
     }
 
     /// add a new node in the graph from taut
-    pub fn add_var(
-        &mut self,
-        function_name: &String,
-        reg: &String,
-        killing_set: &mut Vec<Variable>,
-    ) -> Result<()> {
+    pub fn add_var(&mut self, function_name: &String, reg: &String) -> Result<()> {
         let len = self.vars.len();
         let fact = self.get_taut_id(function_name)?;
 
@@ -148,7 +143,6 @@ impl Graph {
             .collect::<Vec<_>>()
             .get_mut(0)
         {
-            //killing_set.push(reg.clone());
             var.last_fact = fact;
         } else {
             // Get the last tautology fact
@@ -193,7 +187,6 @@ impl Graph {
         function_name: &String,
         dest: &String,
         src: &String,
-        killing_set: &mut Vec<Variable>,
     ) -> Result<()> {
         debug!("add assignment src={} dest={}", src, dest);
         let src_node = self
@@ -228,13 +221,7 @@ impl Graph {
     }
 
     /// add unop
-    pub fn add_unop(
-        &mut self,
-        function_name: &String,
-        dest: &String,
-        src: &String,
-        killing_set: &mut Vec<Variable>,
-    ) -> Result<()> {
+    pub fn add_unop(&mut self, function_name: &String, dest: &String, src: &String) -> Result<()> {
         debug!("Unop src={} dest={}", src, dest);
 
         let src_node = self
@@ -275,7 +262,6 @@ impl Graph {
         dest: &String,
         src1: &String,
         src2: &String,
-        killing_set: &mut Vec<Variable>,
     ) -> Result<()> {
         debug!("Binop src1={} src2={} dest={}", src1, src2, dest);
 
@@ -317,12 +303,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn kill_var(
-        &mut self,
-        function_name: &String,
-        dest: &String,
-        killing_set: &mut Vec<Variable>,
-    ) -> Result<()> {
+    pub fn kill_var(&mut self, function_name: &String, dest: &String) -> Result<()> {
         debug!("Killing var={}", dest);
 
         if let Some(var) = self.get_mut_var(function_name, dest) {
@@ -403,12 +384,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn add_row(
-        &mut self,
-        function_name: &String,
-        note: String,
-        killing_set: &mut Vec<Variable>,
-    ) -> Result<()> {
+    pub fn add_row(&mut self, function_name: &String, note: String) -> Result<()> {
         let mut facts = Vec::new();
         let epoch = self.epoch.get();
         for var in self
@@ -464,7 +440,6 @@ impl Graph {
         &mut self,
         function_name: &String,
         note: String,
-        killing_set: &mut Vec<Variable>,
     ) -> Result<Vec<Fact>> {
         let mut facts = Vec::new();
         let epoch = self.epoch.get();
@@ -517,7 +492,10 @@ impl Graph {
         let mut goals = Vec::with_capacity(dest_regs.len() + 1);
 
         // Add taut
-        let taut = goal_facts.iter().find(|x| x.belongs_to_var == "taut".to_string()).context("Cannot find taut")?;
+        let taut = goal_facts
+            .iter()
+            .find(|x| x.belongs_to_var == "taut".to_string())
+            .context("Cannot find taut")?;
         goals.push(taut.clone());
 
         // Match other params
