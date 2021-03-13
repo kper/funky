@@ -88,18 +88,6 @@ impl Graph {
         );
     }
 
-    fn new_fact(&mut self) -> Fact {
-        let fact = Fact {
-            id: self.counter.get(),
-            note: "taut".to_string(),
-            belongs_to_var: "taut".to_string(),
-        };
-
-        self.facts.push(fact.clone());
-
-        fact
-    }
-
     fn get_taut_id(&self, function_name: &String) -> Result<Vec<Fact>> {
         let taut = self
             .vars
@@ -131,18 +119,9 @@ impl Graph {
 
     /// add a new node in the graph from taut
     pub fn add_var(&mut self, function_name: &String, reg: &String) -> Result<()> {
-        let len = self.vars.len();
         let fact = self.get_taut_id(function_name)?;
 
-        if let Some(var) = self
-            .vars
-            .get_mut(function_name)
-            .context("Cannot find function's vars")?
-            .iter_mut()
-            .filter(|x| &x.id == reg)
-            .collect::<Vec<_>>()
-            .get_mut(0)
-        {
+        if let Some(var) = self.get_mut_var(function_name, reg) {
             var.last_fact = fact;
         } else {
             // Get the last tautology fact
@@ -337,7 +316,7 @@ impl Graph {
         debug!("Add call {}", name);
         debug!("=> function {:#?}", function);
 
-        let mut params_facts = {
+        let params_facts = {
             let mut facts = Vec::new();
             for param in vec!["taut".to_string()]
                 .iter()
@@ -363,17 +342,18 @@ impl Graph {
             .chain(regs.iter())
             .zip(params_facts.iter())
         {
-            if let Some(from) = self.get_var(function_name, from_var) {
+            if let Some(last_fact_of_from) = self
+                .get_var(function_name, from_var)
+                .map(|from| from.last_fact.get(0).unwrap().clone())
+            {
                 debug!(
                     "Creating call edge from={:?} to={:?}",
-                    from.last_fact.get(0),
-                    to_fact
+                    last_fact_of_from, to_fact
                 );
 
-                assert!(from.last_fact.len() == 1, "Only one pred is allowed");
                 //Call edges
                 self.edges.push(Edge::Call {
-                    from: from.last_fact.get(0).unwrap().clone(),
+                    from: last_fact_of_from,
                     to: to_fact.clone(),
                 });
             } else {

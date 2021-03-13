@@ -3,7 +3,7 @@ use std::io::Write;
 
 use dot::LabelText;
 
-use crate::icfg::graph::{Edge, Fact, Graph, Variable};
+use crate::icfg::graph::{Edge, Fact, Graph};
 
 pub fn render_to<W: Write>(graph: &Graph, output: &mut W) {
     dot::render(graph, output).unwrap()
@@ -33,7 +33,7 @@ impl<'a> dot::Labeller<'a, Fact, Edge> for Graph {
     }
 
     fn edge_label(&'a self, e: &Edge) -> LabelText<'a> {
-         match e {
+        match e {
             Edge::Call { .. } => LabelText::LabelStr(Cow::Borrowed("Call")),
             Edge::CallToReturn { .. } => LabelText::LabelStr(Cow::Borrowed("Call to Return")),
             Edge::Return { .. } => LabelText::LabelStr(Cow::Borrowed("Return")),
@@ -64,7 +64,6 @@ impl<'a> dot::GraphWalk<'a, Fact, Edge> for Graph {
                     nodes.push(from.clone());
                     nodes.push(to.clone());
                 }
-                _ => {}
             }
         }
         nodes.sort();

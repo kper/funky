@@ -1,19 +1,13 @@
-use std::ops::Sub;
+/// This module is responsible to parse
+/// the webassembly AST to a graph
 
 use crate::counter::Counter;
 use crate::icfg::graph::Graph;
 use crate::ssa::ast::Instruction;
-use crate::ssa::ast::Instruction::*;
-use crate::symbol_table::SymbolTable;
 use anyhow::{bail, Context, Result};
-use funky::engine::Engine;
-/// This module is responsible to parse
-/// the webassembly AST to a graph
-use funky::engine::{func::FuncInstance, FunctionBody, InstructionWrapper};
-use log::debug;
-use wasm_parser::core::*;
 
-use crate::grammar::*;
+use log::debug;
+
 use crate::icfg::graph::Fact;
 use std::collections::HashMap;
 
@@ -149,7 +143,7 @@ impl Convert {
 
             for instruction in &mut iterator {
                 match instruction {
-                    Instruction::Call(name, params, dest_regs) => {
+                    Instruction::Call(name, params, _dest_regs) => {
                         debug!("Call {}", name);
 
                         let lookup_function = prog
@@ -166,16 +160,18 @@ impl Convert {
         }
 
         for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
-            if let Some(goal_function_ref) = graph.functions.get(&goal_function) {
-                if goal_function_ref.results_len != dest_regs.len() {
+            if let Some((goal_function_name, goal_function_results_len, goal_function_last_facts)) = 
+                graph.functions.get(&goal_function).map(|x| (&x.name, x.results_len, x.last_facts.clone())) {
+
+                if goal_function_results_len != dest_regs.len() {
                     bail!("Mismatch results with call of {}.\nExpected results: {}\nActual results: {}", 
-                        goal_function_ref.name, 
-                        goal_function_ref.results_len, 
+                        goal_function_name, 
+                        goal_function_results_len, 
                         dest_regs.len());
                 }
 
                 graph.add_return(
-                    &goal_function_ref.last_facts.clone(),
+                    &goal_function_last_facts,
                     meeting_facts,
                     &dest_regs,
                 )?;
@@ -235,6 +231,7 @@ impl<'a> InstructionIterator<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn peek(&self) -> Option<&'a Instruction> {
         self.instructions.get(self.current).map(|x| *x)
     }

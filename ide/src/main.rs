@@ -3,7 +3,7 @@ use crate::ssa::wasm_ast::IR;
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
 use std::fs::File;
-use std::io::{self, Write};
+use std::io::{self};
 use std::{io::Read, path::PathBuf};
 use structopt::StructOpt;
 use validation::validate;
@@ -86,9 +86,7 @@ fn main() {
             let mut buffer = String::new();
             fs.read_to_string(&mut buffer).unwrap();
 
-            let prog = ProgramParser::new()
-                .parse(&buffer)
-                .unwrap();
+            let prog = ProgramParser::new().parse(&buffer).unwrap();
 
             let res = convert.visit(prog).unwrap();
 
