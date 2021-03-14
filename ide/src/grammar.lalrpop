@@ -21,6 +21,22 @@ pub Program : Program = {
 };
 
 pub Function : Function = {
+    "define" <name:Id> "(result" <result:Num> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: Vec::new(),
+            results_len: result as usize,
+            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+        }
+    },
+    "define" <name:Id> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: reg,
+            results_len: result as usize,
+            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+        }
+    },
     "define" <name:Name> "(result" <result:Num> ")" "{" <instr:Instruction*>  "}" ";" => {
         Function {
             name,
@@ -37,6 +53,7 @@ pub Function : Function = {
             instructions: instr.into_iter().flatten().collect::<Vec<_>>()
         }
     }
+
 }
 
 pub Instruction : Vec<Instruction> = {
