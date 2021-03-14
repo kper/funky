@@ -444,6 +444,7 @@ impl Engine {
         // we can additionaly define more of them.
         // This is done in the function definition of locals
         // It is very important to use the correct type
+        debug!("Adding additional locals");
         for i in 0..typed_locals.len() {
             let entry = typed_locals.get(i).unwrap();
 
@@ -457,6 +458,8 @@ impl Engine {
                 }
             }
         }
+
+        debug!("Locals for frame are {:?}", locals);
 
         let mut frame = Frame {
             arity: count_return_types,

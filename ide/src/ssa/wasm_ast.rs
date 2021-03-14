@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::symbol_table::SymbolTable;
-use anyhow::Result;
+use anyhow::{Context, Result};
 /// This module is responsible to parse
 /// the webassembly AST to an IR
 use funky::engine::func::FuncInstance;
@@ -102,12 +102,30 @@ impl<'a> IR<'a> {
 
         let mut params = Vec::new();
 
+        debug!("Signature {:?}", inst.ty.param_types);
+        debug!("Body code {:?}", inst.code.locals);
+
         for (i, _) in inst.ty.param_types.iter().enumerate() {
             let var = self.symbol_table.new_var()?;
             debug!("Adding parameter %{}", var);
             function.locals.insert(i, var);
             params.push(var);
         }
+
+        debug!("Adding additional locals");
+        for local in inst.code.locals.iter() {
+            for _ in 0..local.count {
+                match local.ty {
+                    _ => {
+                        let var = self.symbol_table.new_var()?;
+                        debug!("Adding local %{}", var);
+                        function.locals.insert(function.locals.len(), var);
+                    }
+                }
+            }
+        }
+
+        debug!("locals are {:?}", function.locals);
 
         if inst.ty.param_types.len() > 0 {
             let params = params
@@ -126,7 +144,6 @@ impl<'a> IR<'a> {
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
 
-        debug!("code {:#?}", inst.code);
         self.visit_body(&inst.code, func_index, inst.ty.return_types.len())?;
 
         writeln!(self.buffer, "}};").unwrap();
@@ -532,15 +549,22 @@ impl<'a> IR<'a> {
                     let peek = self.symbol_table.peek()?;
                     // Push only once because the old still lives
                     writeln!(self.buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
+                    let locals = &self
+                        .functions
+                        .get(function_index)
+                        .with_context(|| format!("Cannot find function at {}", function_index))?
+                        .locals;
+
+                    debug!("locals {:?}", locals);
+
                     writeln!(
                         self.buffer,
                         "%{} = %{}",
-                        self.functions
-                            .get(function_index)
-                            .unwrap()
-                            .locals
-                            .get(&(*index as usize))
-                            .unwrap(),
+                        locals.get(&(*index as usize)).with_context(|| format!(
+                            "Cannot local at {} when locals length is {}",
+                            index,
+                            locals.values().count()
+                        ))?,
                         peek
                     )
                     .unwrap();

@@ -53,6 +53,7 @@ enum Opt {
 }
 
 fn main() {
+    env_logger::init();
     let opt = Opt::from_args();
     println!("{:?}", opt);
 
