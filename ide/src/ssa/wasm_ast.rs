@@ -517,35 +517,38 @@ impl<'a> IR<'a> {
                     .unwrap();
                 }
                 OP_LOCAL_GET(index) => {
+                    let locals = &self
+                        .functions
+                        .get(function_index)
+                        .with_context(|| format!("Cannot find function at {}", function_index))?
+                        .locals;
+
                     writeln!(
                         self.buffer,
                         "%{} = %{}",
                         self.symbol_table.new_var()?,
-                        self.functions
-                            .get(function_index)
-                            .unwrap()
-                            .locals
-                            .get(&(*index as usize))
-                            .unwrap()
+                        locals.get(&(*index as usize)).unwrap()
                     )
                     .unwrap();
                 }
                 OP_LOCAL_SET(index) => {
+                    let locals = &self
+                        .functions
+                        .get(function_index)
+                        .with_context(|| format!("Cannot find function at {}", function_index))?
+                        .locals;
+
+                    debug!("locals {:?}", locals);
+
                     writeln!(
                         self.buffer,
                         "%{} = %{}",
-                        self.functions
-                            .get(function_index)
-                            .unwrap()
-                            .locals
-                            .get(&(*index as usize))
-                            .unwrap(),
+                        locals.get(&(*index as usize)).unwrap(),
                         self.symbol_table.peek()?
                     )
                     .unwrap();
                 }
                 OP_LOCAL_TEE(index) => {
-                    println!("{:?}", self.symbol_table);
                     let peek = self.symbol_table.peek()?;
                     // Push only once because the old still lives
                     writeln!(self.buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
@@ -568,6 +571,14 @@ impl<'a> IR<'a> {
                         peek
                     )
                     .unwrap();
+                }
+                OP_I32_STORE(arg) | OP_I64_STORE(arg) | OP_F32_STORE(arg) | OP_F64_STORE(arg)
+                | OP_I32_STORE_8(arg) | OP_I32_STORE_16(arg) | OP_I64_STORE_8(arg)
+                | OP_I64_STORE_16(arg) | OP_I64_STORE_32(arg) => {
+                    debug!("Ignoring memory store {:?}", arg);
+                }
+                OP_MEMORY_SIZE | OP_MEMORY_GROW => {
+                    debug!("Ignoring memory");
                 }
                 OP_CALL(func) => {
                     let addr = self.engine.module.lookup_function_addr(*func)?;
