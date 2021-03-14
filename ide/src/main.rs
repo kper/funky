@@ -13,6 +13,9 @@ use wasm_parser::{parse, read_wasm};
 use crate::icfg::convert::Convert;
 use crate::icfg::graphviz::render_to;
 
+use std::fs::File;
+use std::io::Read;
+
 use crate::grammar::*;
 
 #[macro_use]
@@ -38,6 +41,8 @@ enum Opt {
     Graph {
         #[structopt(parse(from_os_str))]
         file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
     },
 }
 
@@ -61,8 +66,8 @@ fn main() {
                 }
             };
         }
-        Opt::Graph { file } => {
-            if let Err(err) = graph(file) {
+        Opt::Graph { file, ir } => {
+            if let Err(err) = graph(file, ir) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -96,14 +101,26 @@ fn ir(file: PathBuf) -> Result<IR> {
     Ok(ir)
 }
 
-fn graph(file: PathBuf) -> Result<()> {
+fn graph(file: PathBuf, is_ir: bool) -> Result<()> {
     let mut convert = Convert::new();
 
-    //let mut fs = File::open(file).context("Cannot open file")?;
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
 
-    let ir = ir(file).context("Cannot read intermediate representation of file")?;
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
 
-    let buffer = ir.buffer().clone();
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
 
     let prog = ProgramParser::new().parse(&buffer).unwrap();
 
