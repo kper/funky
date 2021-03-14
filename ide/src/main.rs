@@ -28,22 +28,10 @@ mod symbol_table;
 #[cfg(test)]
 mod tests;
 
-/*
-#[derive(Debug, StructOpt)]
-struct Opt {
-    /// Input file
-    #[structopt(parse(from_os_str))]
-    input: PathBuf,
-
-    /// Output file, stdout if not present
-    #[structopt(parse(from_os_str))]
-    output: Option<PathBuf>,
-}*/
-
 #[derive(Debug, StructOpt)]
 #[structopt(name = "taint", about = "Taint analysis for wasm")]
 enum Opt {
-    Ssa {
+    Ir {
         #[structopt(parse(from_os_str))]
         file: PathBuf,
     },
@@ -59,8 +47,8 @@ fn main() {
     debug!("{:?}", opt);
 
     match opt {
-        Opt::Ssa { file } => {
-            match ssa(file) {
+        Opt::Ir { file } => {
+            match ir(file) {
                 Ok(ir) => {
                     println!("{}", ir.buffer());
                 }
@@ -85,7 +73,7 @@ fn main() {
     }
 }
 
-fn ssa(file: PathBuf) -> Result<IR> {
+fn ir(file: PathBuf) -> Result<IR> {
     let file = read_wasm!(file);
     let module = parse(file).expect("Parsing failed");
     assert!(validate(&module).is_ok());
@@ -113,7 +101,7 @@ fn graph(file: PathBuf) -> Result<()> {
 
     //let mut fs = File::open(file).context("Cannot open file")?;
 
-    let ir = ssa(file).context("Cannot read intermediate representation of file")?;
+    let ir = ir(file).context("Cannot read intermediate representation of file")?;
 
     let buffer = ir.buffer().clone();
 
