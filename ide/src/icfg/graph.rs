@@ -1,6 +1,6 @@
 use log::debug;
 
-use crate::counter::Counter;
+use crate::counter::{StackedCounter, Counter};
 use crate::ssa::ast::Function as AstFunction;
 use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
@@ -10,17 +10,17 @@ type FunctionName = String;
 
 #[derive(Debug, Default)]
 pub struct Graph {
-    vars: HashMap<FunctionName, Vec<Variable>>,
+    pub vars: HashMap<FunctionName, Vec<Variable>>,
     pub functions: HashMap<FunctionName, Function>,
-    facts: Vec<Fact>,
+    pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     counter: Counter,
-    epoch: Counter,
+    pub epoch: StackedCounter,
 }
 
 #[derive(Debug, Default)]
 pub struct Variable {
-    id: VarId,
+    pub id: VarId,
     /// the predessors
     pub last_fact: Vec<Fact>,
     /// the first fact which defines the var
@@ -41,6 +41,7 @@ pub struct Fact {
     pub id: usize,
     pub note: String,
     pub belongs_to_var: String,
+    pub epoch: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +87,11 @@ impl Graph {
                 results_len: function.results_len,
             },
         );
+    }
+
+    /// get the max epoch
+    pub fn get_max_epoch(&self) -> Option<usize> {
+        self.facts.iter().map(|x| x.epoch).max()
     }
 
     fn get_taut_id(&self, function_name: &String) -> Result<Vec<Fact>> {
@@ -366,7 +372,7 @@ impl Graph {
 
     pub fn add_row(&mut self, function_name: &String, note: String) -> Result<()> {
         let mut facts = Vec::new();
-        let epoch = self.epoch.get();
+        let epoch = self.epoch.get().context("add_row failed")?;
         for var in self
             .vars
             .get_mut(function_name)
@@ -379,6 +385,7 @@ impl Graph {
                     id: self.counter.get(),
                     note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
                     belongs_to_var: format!("{}", var.id),
+                    epoch: epoch,
                 };
 
                 self.facts.push(fact.clone());
@@ -422,7 +429,7 @@ impl Graph {
         note: String,
     ) -> Result<Vec<Fact>> {
         let mut facts = Vec::new();
-        let epoch = self.epoch.get();
+        let epoch = self.epoch.get().context("add_call_to_return failed")?;
         for var in self
             .vars
             .get_mut(function_name)
@@ -435,6 +442,7 @@ impl Graph {
                     id: self.counter.get(),
                     note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
                     belongs_to_var: format!("{}", var.id),
+                    epoch,
                 };
 
                 self.facts.push(fact.clone());

@@ -44,6 +44,12 @@ enum Opt {
         #[structopt(long)]
         ir: bool,
     },
+    Tikz {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+    }
 }
 
 fn main() {
@@ -68,6 +74,15 @@ fn main() {
         }
         Opt::Graph { file, ir } => {
             if let Err(err) = graph(file, ir) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Tikz { file, ir} => {
+            if let Err(err) = tikz(file, ir) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -133,3 +148,37 @@ fn graph(file: PathBuf, is_ir: bool) -> Result<()> {
 
     Ok(())
 }
+
+fn tikz(file: PathBuf, is_ir: bool) -> Result<()> {
+    let mut convert = Convert::new();
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let res = convert.visit(prog).context("Cannot create the graph")?;
+
+    //let mut dot = Cursor::new(Vec::new());
+    crate::icfg::tikz::render_to(&res);
+
+    //println!("{}", std::str::from_utf8(dot.get_ref()).unwrap());
+
+    Ok(())
+}
+

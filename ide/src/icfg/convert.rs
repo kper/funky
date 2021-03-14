@@ -45,6 +45,9 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
+            // New function
+            graph.epoch.push();
+
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
 
@@ -135,6 +138,9 @@ impl Convert {
                     _ => {}
                 }
             }
+            
+            // function ended
+            graph.epoch.pop();
         }
 
         for function in prog.functions.iter() {

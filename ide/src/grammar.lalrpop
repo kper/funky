@@ -67,6 +67,8 @@ pub Instruction : Vec<Instruction> = {
     "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
     "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
     <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
+    "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
+    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
     "BR" "TABLE" "GOTO" <n:Id*> "ELSE" "GOTO" <e:Id> => {
         let mut result = Vec::new();
         for i in n {
