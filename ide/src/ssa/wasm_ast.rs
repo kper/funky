@@ -13,7 +13,7 @@ use wasm_parser::core::*;
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct IR<'a> {
+pub struct IR {
     //functions: Vec<Function>,
     buffer: String,
     //counter: Counter,
@@ -21,7 +21,6 @@ pub struct IR<'a> {
     block_counter: Counter,
     function_counter: Counter,
     functions: Vec<Function>,
-    engine: &'a Engine,
 }
 
 #[derive(Debug)]
@@ -63,10 +62,9 @@ impl Counter {
     }
 }
 
-impl<'a> IR<'a> {
-    pub fn new(engine: &'a Engine) -> Self {
+impl IR {
+    pub fn new() -> Self {
         Self {
-            engine,
             buffer: String::new(),
             //counter: Counter::default(),
             symbol_table: SymbolTable::default(),
@@ -80,17 +78,17 @@ impl<'a> IR<'a> {
         self.buffer.clone()
     }
 
-    pub fn visit(&mut self) -> Result<()> {
-        for function in self.engine.store.funcs.iter() {
+    pub fn visit(&mut self, engine: &Engine) -> Result<()> {
+        for function in engine.store.funcs.iter() {
             debug!("Visiting function");
 
-            self.visit_function(function)?;
+            self.visit_function(function, engine)?;
         }
 
         Ok(())
     }
 
-    fn visit_function(&mut self, inst: &FuncInstance) -> Result<()> {
+    fn visit_function(&mut self, inst: &FuncInstance, engine: &Engine) -> Result<()> {
         let name = format!("{}", self.function_counter.get());
         write!(self.buffer, "define {} ", name).unwrap();
 
@@ -144,7 +142,7 @@ impl<'a> IR<'a> {
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
 
-        self.visit_body(&inst.code, func_index, inst.ty.return_types.len())?;
+        self.visit_body(&inst.code, func_index, inst.ty.return_types.len(), engine)?;
 
         writeln!(self.buffer, "}};").unwrap();
 
@@ -156,6 +154,7 @@ impl<'a> IR<'a> {
         body: &FunctionBody,
         function_index: usize,
         return_count: usize,
+        engine: &Engine,
     ) -> Result<()> {
         let code = &body.code;
 
@@ -178,6 +177,7 @@ impl<'a> IR<'a> {
             &mut blocks,
             return_count,
             current_reg,
+            engine,
         )?;
 
         writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
@@ -210,6 +210,7 @@ impl<'a> IR<'a> {
         return_arity: usize,
         // reg number of the start current_reg: usize,
         current_reg: Option<usize>,
+        engine: &Engine,
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
@@ -243,13 +244,14 @@ impl<'a> IR<'a> {
                     // If the block exits, then kill all variable to `current_reg`
                     let current_reg = self.symbol_table.peek().ok();
 
-                    let arity = self.engine.get_return_count_block(ty)?;
+                    let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
                         blocks,
                         arity as usize,
                         current_reg,
+                        engine,
                     )?;
 
                     self.exit_block(arity as usize, current_reg)?;
@@ -288,13 +290,14 @@ impl<'a> IR<'a> {
 
                     writeln!(self.buffer, "BLOCK {} // LOOP", name.clone()).unwrap();
 
-                    let arity = self.engine.get_return_count_block(ty)?;
+                    let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
                         blocks,
                         arity as usize,
                         current_reg,
+                        &engine
                     )?;
 
                     blocks.pop();
@@ -339,13 +342,14 @@ impl<'a> IR<'a> {
                     .unwrap();
                     writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
 
-                    let arity = self.engine.get_return_count_block(ty)?;
+                    let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
                         blocks,
                         arity as usize,
                         current_reg,
+                        engine,
                     )?;
 
                     blocks.pop();
@@ -396,13 +400,14 @@ impl<'a> IR<'a> {
                     .unwrap();
                     writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
 
-                    let arity = self.engine.get_return_count_block(ty)?;
+                    let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code1.get_instructions(),
                         function_index,
                         blocks,
                         arity as usize,
                         current_reg,
+                        engine,
                     )?;
 
                     writeln!(
@@ -429,6 +434,7 @@ impl<'a> IR<'a> {
                         blocks,
                         arity as usize,
                         current_reg,
+                        engine,
                     )?;
 
                     blocks.pop();
@@ -581,8 +587,8 @@ impl<'a> IR<'a> {
                     debug!("Ignoring memory");
                 }
                 OP_CALL(func) => {
-                    let addr = self.engine.module.lookup_function_addr(*func)?;
-                    let instance = self.engine.store.get_func_instance(&addr)?;
+                    let addr = engine.module.lookup_function_addr(*func)?;
+                    let instance = engine.store.get_func_instance(&addr)?;
 
                     let num_params = instance.ty.param_types.len();
                     let num_results = instance.ty.return_types.len();

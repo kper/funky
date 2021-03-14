@@ -1,10 +1,11 @@
 use crate::io::Cursor;
 use crate::ssa::wasm_ast::IR;
+use anyhow::{Context, Result};
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
-use std::fs::File;
+use log::debug;
 use std::io::{self};
-use std::{io::Read, path::PathBuf};
+use std::path::PathBuf;
 use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
@@ -55,46 +56,75 @@ enum Opt {
 fn main() {
     env_logger::init();
     let opt = Opt::from_args();
-    println!("{:?}", opt);
+    debug!("{:?}", opt);
 
     match opt {
         Opt::Ssa { file } => {
-            let file = read_wasm!(file);
-            let module = parse(file).expect("Parsing failed");
-            assert!(validate(&module).is_ok());
-
-            let imports = Vec::new();
-
-            let instance = ModuleInstance::new(&module);
-            let engine = Engine::new(
-                instance,
-                &module,
-                Box::new(funky::debugger::RelativeProgramCounter::default()),
-                &imports,
-            )
-            .unwrap();
-
-            let mut ir = IR::new(&engine);
-
-            ir.visit().unwrap();
-
-            println!("{}", ir.buffer());
+            match ssa(file) {
+                Ok(ir) => {
+                    println!("{}", ir.buffer());
+                }
+                Err(err) => {
+                    eprintln!("ERROR: {}", err);
+                    err.chain()
+                        .skip(1)
+                        .for_each(|cause| eprintln!("because: {}", cause));
+                    std::process::exit(1);
+                }
+            };
         }
         Opt::Graph { file } => {
-            let mut convert = Convert::new();
-
-            let mut fs = File::open(file).unwrap();
-            let mut buffer = String::new();
-            fs.read_to_string(&mut buffer).unwrap();
-
-            let prog = ProgramParser::new().parse(&buffer).unwrap();
-
-            let res = convert.visit(prog).unwrap();
-
-            let mut dot = Cursor::new(Vec::new());
-            render_to(&res, &mut dot);
-
-            println!("{}", std::str::from_utf8(dot.get_ref()).unwrap());
+            if let Err(err) = graph(file) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
         }
     }
+}
+
+fn ssa(file: PathBuf) -> Result<IR> {
+    let file = read_wasm!(file);
+    let module = parse(file).expect("Parsing failed");
+    assert!(validate(&module).is_ok());
+
+    let imports = Vec::new();
+
+    let instance = ModuleInstance::new(&module);
+    let engine = Engine::new(
+        instance,
+        &module,
+        Box::new(funky::debugger::RelativeProgramCounter::default()),
+        &imports,
+    )
+    .unwrap();
+
+    let mut ir = IR::new();
+
+    ir.visit(&engine).unwrap();
+
+    Ok(ir)
+}
+
+fn graph(file: PathBuf) -> Result<()> {
+    let mut convert = Convert::new();
+
+    //let mut fs = File::open(file).context("Cannot open file")?;
+
+    let ir = ssa(file).context("Cannot read intermediate representation of file")?;
+
+    let buffer = ir.buffer().clone();
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let res = convert.visit(prog).context("Cannot create the graph")?;
+
+    let mut dot = Cursor::new(Vec::new());
+    render_to(&res, &mut dot);
+
+    println!("{}", std::str::from_utf8(dot.get_ref()).unwrap());
+
+    Ok(())
 }
