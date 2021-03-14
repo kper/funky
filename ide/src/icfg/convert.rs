@@ -42,6 +42,8 @@ impl Convert {
 
         //debug!("graph {:#?}", graph);
 
+        graph.scope.push(0);
+
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
@@ -73,58 +75,58 @@ impl Convert {
 
                         graph.add_row(
                             &function.name,
-                            format!("before {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
 
                         graph.add_assignment(&function.name, &dest, &src)?;
 
                         graph.add_row(
                             &function.name,
-                            format!("after {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                     }
                     Instruction::Unop(dest, src) => {
                         debug!("Unop");
                         graph.add_row(
                             &function.name,
-                            format!("before {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                         graph.add_unop(&function.name, &dest, &src)?;
                         graph.add_row(
                             &function.name,
-                            format!("after {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                     }
                     Instruction::BinOp(dest, src1, src2) => {
                         debug!("Binop");
                         graph.add_row(
                             &function.name,
-                            format!("before {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
 
                         graph.add_binop(&function.name, &dest, &src1, &src2)?;
                         graph.add_row(
                             &function.name,
-                            format!("after {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                     }
                     Instruction::Kill(dest) => {
                         debug!("Kill");
                         graph.add_row(
                             &function.name,
-                            format!("before {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                         graph.kill_var(&function.name, &dest)?;
                         graph.add_row(
                             &function.name,
-                            format!("after {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                     }
                     Instruction::Call(name, _params, dest_regs) => {
                         graph.add_empty_vars(&function.name, &dest_regs)?;
                         graph.add_row(
                             &function.name,
-                            format!("before {:?}", instruction),
+                            format!("{:?}", instruction),
                         )?;
                         let meeting_facts = graph.add_call_to_return(
                             &function.name,
@@ -141,7 +143,12 @@ impl Convert {
             
             // function ended
             graph.epoch.pop();
+            // add all defined variables as offset
+            //graph.scope += graph.vars.get(&function.name).context("No function found")?.len();
+            graph.scope.push(graph.vars.values().len());
         }
+
+        graph.scope.reverse();
 
         for function in prog.functions.iter() {
             let mut iterator =
@@ -163,6 +170,8 @@ impl Convert {
                     _ => {}
                 }
             }
+
+            graph.scope.pop();
         }
 
         for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {

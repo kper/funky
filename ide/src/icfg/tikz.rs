@@ -26,14 +26,14 @@ pub fn render_to(graph: &Graph) {
 
     for edge in graph.edges.iter() {
         match edge {
-            Edge::Normal { from, to} => {
+            Edge::Normal { from, to } => {
                 str_vars.push_str(&format!("\t\t\\path[->] ({}) edge ({});\n", from.id, to.id));
             }
             /*Edge::Call { from, to } => {
-                str_vars.push_str(&format!("\t\t\\path[->] ({}) edge node[above] {{ call }} ({});\n", from.id, to.id));
+                str_vars.push_str(&format!("\t\t\\path[->] ({}) edge node {{ call }} ({});\n", from.id, to.id));
             }*/
             _ => {}
-        } 
+        }
     }
 
     println!("{}", template(str_vars));
@@ -44,18 +44,29 @@ fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {
     let mut str_epoch = String::new();
     let mut index = 0;
 
+    let mut last_note = String::new();
     for fact in graph.facts.iter().filter(|x| x.epoch == epoch) {
         debug!("Drawing fact {:?}", fact);
-        if epoch != 0 {
+
+        str_epoch.push_str(&format!(
+            "\\node[circle,fill,inner sep=1pt,label=left:{}] ({}) at ({}, {}) {{}};\n",
+            fact.belongs_to_var.replace("%", "\\%"),
+            //fact.note.replace("\"", "\\\"").replace("%", "\\%"),
+            fact.id,
+            fact.scope + index,
+            max - epoch,
+        ));
+
+        if last_note != fact.note {
             str_epoch.push_str(&format!(
-                "\t\t\t\\node[circle,fill,inner sep=1pt] ({}) at ({}, {}) {{}};\n",
-                fact.id, index, max - epoch
+                "\\node[circle, font=\\tiny] at ({}, {}) {{{}}};\n",
+                //fact.belongs_to_var.replace("%", "\\%"),
+                //fact.id,
+                (fact.scope + index) as f64 - 1.0,
+                (max - epoch) as f64 - 0.5,
+                fact.note.replace("\"", "\\\"").replace("%", "\\%"),
             ));
-        } else {
-            str_epoch.push_str(&format!(
-                "\\node[circle,fill,inner sep=1pt,label={}] ({}) at ({}, {}) {{}};\n",
-                fact.belongs_to_var.replace("%", "\\%"), fact.id, index, max - epoch
-            ));
+            last_note = fact.note.clone();
         }
 
         index += 1;
@@ -66,17 +77,19 @@ fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {
 
 fn template(inject: String) -> String {
     format!(
-        "   \\documentclass{{standalone}}
+        "   \\documentclass{{article}}
             \\usepackage{{pgf, tikz}}
             \\usetikzlibrary{{arrows, automata}}
             \\begin{{document}}
                 \\begin{{tikzpicture}}
+                    [node distance=2cm]
                     \\tikzstyle{{every state}}=[
                         draw = black,
                         thick,
                         fill = white,
                         minimum size = 4mm
                     ]
+
                     {}
 
                 \\end{{tikzpicture}}

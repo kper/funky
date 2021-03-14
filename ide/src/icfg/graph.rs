@@ -15,7 +15,10 @@ pub struct Graph {
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     counter: Counter,
+    /// y offset in graph
     pub epoch: StackedCounter,
+    /// x offset in graph
+    pub scope: Vec<usize>,
 }
 
 #[derive(Debug, Default)]
@@ -42,6 +45,7 @@ pub struct Fact {
     pub note: String,
     pub belongs_to_var: String,
     pub epoch: usize,
+    pub scope: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -383,9 +387,10 @@ impl Graph {
             let fact = {
                 let fact = Fact {
                     id: self.counter.get(),
-                    note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
+                    note: format!("{}", note),
                     belongs_to_var: format!("{}", var.id),
                     epoch: epoch,
+                    scope: *self.scope.last().unwrap(),
                 };
 
                 self.facts.push(fact.clone());
@@ -440,9 +445,10 @@ impl Graph {
             let fact = {
                 let fact = Fact {
                     id: self.counter.get(),
-                    note: format!("<b>{}</b> at {}<br/>{}", var.id, epoch, note),
+                    note: format!("{}", note),
                     belongs_to_var: format!("{}", var.id),
                     epoch,
+                    scope: *self.scope.last().unwrap(),
                 };
 
                 self.facts.push(fact.clone());
