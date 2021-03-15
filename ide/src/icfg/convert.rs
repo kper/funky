@@ -39,6 +39,8 @@ impl Convert {
             graph.init_function(function)?;
         }
 
+        graph.pc_counter.set(1); // Set to the first instruction
+
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
@@ -48,7 +50,7 @@ impl Convert {
             //Generating all facts
             for instruction in &mut iterator {
                 debug!("Instruction {:?}", instruction);
-                graph.add_statement(function)?;
+                graph.add_statement(function, instruction)?;
             }
             
             graph.pc_counter.set(1); // Set to the first instruction

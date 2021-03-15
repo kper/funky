@@ -19,9 +19,8 @@ pub fn render_to(graph: &Graph) {
         let function_name = &function.name;
         debug!("Drawing function {}", function_name);
 
-        debug!("facts {:#?}", graph.facts);
-
         let facts = graph.facts.iter().filter(|x| &x.function == function_name);
+        let notes = graph.notes.iter().filter(|x| &x.function == function_name);
 
         let max_pc = facts.clone().map(|x| x.pc).max().unwrap();
 
@@ -34,6 +33,18 @@ pub fn render_to(graph: &Graph) {
                 fact.id,
                 index + fact.track,
                 fact.pc,
+            ));
+        }
+
+        for note in notes {
+            debug!("Drawing note");
+
+            str_vars.push_str(&format!(
+                "\\node[font=\\tiny] ({}) at ({}, {}) {{{}}};\n",
+                note.id,
+                index as f64 - 1.5, //x
+                note.pc as f64 - 0.5, //y
+                note.note.replace("%", "").replace("\"", "").escape_debug(),
             ));
         }
 
@@ -110,7 +121,7 @@ fn template(inject: String) -> String {
             \\usetikzlibrary{{arrows, automata}}
             \\begin{{document}}
                 \\begin{{tikzpicture}}
-                    [node distance=2cm]
+                    [node distance=3cm]
                     \\tikzstyle{{every state}}=[
                         draw = black,
                         thick,

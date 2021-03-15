@@ -3,6 +3,7 @@ use crate::ssa::ast::Function as AstFunction;
 use anyhow::{bail, Context, Result};
 use log::debug;
 use std::collections::HashMap;
+use crate::ssa::ast::Instruction;
 
 type VarId = String;
 type FunctionName = String;
@@ -14,8 +15,20 @@ pub struct Graph {
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     pub pc_counter: Counter,
+    pub notes: Vec<Note>,
     fact_counter: Counter,
+    note_counter: Counter,
 }
+
+
+#[derive(Debug, Clone)]
+pub struct Note {
+    pub id: usize,
+    pub function: String,
+    pub pc: usize,
+    pub note: String,
+}
+
 
 #[derive(Debug, Clone)]
 pub struct Fact {
@@ -69,24 +82,6 @@ impl Graph {
         self.get_vars_mut(function_name)?
             .iter_mut()
             .find(|x| &x.name == var)
-    }
-
-    fn new_var(&mut self, function_name: &String, var: Variable) -> Result<()> {
-        /*
-        debug!("Adding new var {} to function {}", var.name, function_name);
-
-        let vars = self
-            .get_vars_mut(function_name)
-            .context("Cannot get variables")?;
-
-        if vars.iter().find(|x| x.name == var.name).is_none() {
-            // No other variable defined
-            vars.push(var);
-        } else {
-            bail!("Variable {} is already defined", var.name);
-        }*/
-
-        Ok(())
     }
 
     pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
@@ -146,7 +141,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn add_statement(&mut self, function: &AstFunction) -> Result<()> {
+    pub fn add_statement(&mut self, function: &AstFunction, instruction: &Instruction) -> Result<()> {
         debug!("Adding statement");
 
         let vars = self
@@ -156,6 +151,7 @@ impl Graph {
         let vars = vars.iter().enumerate();
 
         let pc = self.pc_counter.get();
+        debug!("New pc {} for {}", pc, function.name);
 
         for (track, var) in vars {
             debug!("Adding new fact for {}", var.name);
@@ -168,6 +164,15 @@ impl Graph {
                 pc,
             });
         }
+
+        // Adding stmt note
+
+        self.notes.push(Note {
+            id: self.note_counter.get(),
+            function: function.name.clone(),
+            pc,
+            note: format!("{:?}", instruction),
+        });
 
 
         Ok(())

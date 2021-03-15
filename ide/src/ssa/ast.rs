@@ -34,5 +34,3 @@ pub enum Instruction {
     /// kill the variable
     Kill(Dest),
 }
-
-
