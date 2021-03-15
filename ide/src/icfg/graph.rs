@@ -321,7 +321,7 @@ impl Graph {
         function_name: &String, //current function
         function: &AstFunction,
         name: &String,      //name of calling function
-        regs: &Vec<String>, //passing arguments
+        from_regs: &Vec<String>, //passing arguments of caller
     ) -> Result<()> {
         debug!("Add call {}", name);
         debug!("=> function {:#?}", function);
@@ -349,7 +349,7 @@ impl Graph {
 
         for (from_var, to_fact) in vec!["taut".to_string()]
             .iter()
-            .chain(regs.iter())
+            .chain(from_regs.iter())
             .zip(params_facts.iter())
         {
             if let Some(last_fact_of_from) = self

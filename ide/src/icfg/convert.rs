@@ -2,7 +2,7 @@
 /// the webassembly AST to a graph
 
 use crate::counter::Counter;
-use crate::icfg::graph::Graph;
+use crate::icfg::graph2::Graph;
 use crate::ssa::ast::Instruction;
 use anyhow::{bail, Context, Result};
 
@@ -37,18 +37,10 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Init function {}", function.name);
             graph.init_function(function);
-            //graph.add_row(&function.name, format!("init {}", function.name), &mut Vec::new())?;
         }
-
-        //debug!("graph {:#?}", graph);
-
-        graph.scope.push(0);
 
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
-
-            // New function
-            graph.epoch.push();
 
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
@@ -139,16 +131,10 @@ impl Convert {
                     }
                     _ => {}
                 }
-            }
-            
-            // function ended
-            graph.epoch.pop();
-            // add all defined variables as offset
-            //graph.scope += graph.vars.get(&function.name).context("No function found")?.len();
-            graph.scope.push(graph.vars.values().len());
-        }
 
-        graph.scope.reverse();
+                graph.pc_counter.get();
+            }
+        }
 
         for function in prog.functions.iter() {
             let mut iterator =
@@ -170,8 +156,6 @@ impl Convert {
                     _ => {}
                 }
             }
-
-            graph.scope.pop();
         }
 
         for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
