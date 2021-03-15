@@ -13,7 +13,7 @@ pub struct Graph {
     pub functions: HashMap<FunctionName, Function>,
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
-    pc_counter: Counter,
+    pub pc_counter: Counter,
     fact_counter: Counter,
 }
 
@@ -28,11 +28,11 @@ pub struct Fact {
 
 #[derive(Debug)]
 pub struct Function {
-    name: FunctionName,
+    pub name: FunctionName,
     pub definitions: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     name: FunctionName,
     function: FunctionName,
@@ -140,6 +140,35 @@ impl Graph {
 
             index += 1;
         }
+        
+        self.pc_counter.get();
+
+        Ok(())
+    }
+
+    pub fn add_statement(&mut self, function: &AstFunction) -> Result<()> {
+        debug!("Adding statement");
+
+        let vars = self
+            .get_vars(&function.name)
+            .context("Cannot get functions's vars")?
+            .clone();
+        let vars = vars.iter().enumerate();
+
+        let pc = self.pc_counter.get();
+
+        for (track, var) in vars {
+            debug!("Adding new fact for {}", var.name);
+
+            self.facts.push(Fact {
+                id: self.fact_counter.get(),
+                belongs_to_var: var.name.clone(),
+                track,
+                function: function.name.clone(),
+                pc,
+            });
+        }
+
 
         Ok(())
     }

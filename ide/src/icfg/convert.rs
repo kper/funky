@@ -39,13 +39,21 @@ impl Convert {
             graph.init_function(function)?;
         }
 
-        /* 
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+            //Generating all facts
+            for instruction in &mut iterator {
+                debug!("Instruction {:?}", instruction);
+                graph.add_statement(function)?;
+            }
             
+            graph.pc_counter.set(1); // Set to the first instruction
+            
+                /* 
             for instruction in &mut iterator {
                 match instruction {
                     Instruction::Const(reg, _val) => {
@@ -135,8 +143,10 @@ impl Convert {
 
                 graph.pc_counter.get();
             }
+                */
         }
 
+        /* 
         for function in prog.functions.iter() {
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());

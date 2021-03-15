@@ -22,6 +22,14 @@ impl Counter {
     pub fn peek_next(&self) -> usize {
         self.counter + 1
     }
+
+    pub fn clear(&mut self) {
+        self.counter = 0;
+    }
+
+    pub fn set(&mut self, n: usize) {
+        self.counter = n;
+    }
 }
 
 #[derive(Debug, Default)]

@@ -15,11 +15,15 @@ pub fn render_to(graph: &Graph) {
     }*/
 
     let mut index = 0;
-    for (function_name, function) in graph.functions.iter() {
+    for function in graph.functions.values() {
+        let function_name = &function.name;
         debug!("Drawing function {}", function_name);
 
+        debug!("facts {:#?}", graph.facts);
+
         let facts = graph.facts.iter().filter(|x| &x.function == function_name);
-        let max_pc = facts.clone().map(|x| x.pc).max().unwrap_or(0);
+
+        let max_pc = facts.clone().map(|x| x.pc).max().unwrap();
 
         for fact in facts {
             debug!("Drawing fact");
@@ -29,11 +33,11 @@ pub fn render_to(graph: &Graph) {
                 fact.belongs_to_var.replace("%", "\\%"),
                 fact.id,
                 index + fact.track,
-                max_pc - fact.pc,
+                fact.pc,
             ));
         }
 
-        index += function.definitions + TAU;        
+        index += function.definitions + TAU + 1;
     }
 
     /*
