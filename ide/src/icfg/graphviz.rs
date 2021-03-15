@@ -3,7 +3,8 @@ use std::io::Write;
 
 use dot::LabelText;
 
-use crate::icfg::graph::{Edge, Fact, Graph};
+//use crate::icfg::graph::{Edge, Fact, Graph};
+use crate::icfg::graph2::{Edge, Fact, Graph};
 
 pub fn render_to<W: Write>(graph: &Graph, output: &mut W) {
     dot::render(graph, output).unwrap()

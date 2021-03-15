@@ -6,7 +6,7 @@ pub struct Program {
     pub(crate) functions: Vec<Function>
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Function {
     pub(crate) name: String,
     pub(crate) params: Vec<String>,

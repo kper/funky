@@ -1,5 +1,5 @@
 use crate::icfg::convert::Convert;
-use crate::icfg::graphviz::render_to;
+//use crate::icfg::graphviz::render_to;
 use insta::assert_snapshot;
 use std::io::Cursor;
 
@@ -13,13 +13,14 @@ macro_rules! ir {
 
         let res = convert.visit(prog).unwrap();
 
-        let mut dot = Cursor::new(Vec::new());
-        render_to(&res, &mut dot);
+        //let mut dot = Cursor::new(Vec::new());
+        //render_to(&res, &mut dot);
 
+        /* 
         assert_snapshot!(
             format!("{}_dot", $name),
             std::str::from_utf8(dot.get_ref()).unwrap()
-        );
+        );*/
     };
 }
 

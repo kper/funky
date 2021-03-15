@@ -11,7 +11,6 @@ use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
 use crate::icfg::convert::Convert;
-use crate::icfg::graphviz::render_to;
 
 use std::fs::File;
 use std::io::Read;
@@ -117,6 +116,7 @@ fn ir(file: PathBuf) -> Result<IR> {
 }
 
 fn graph(file: PathBuf, is_ir: bool) -> Result<()> {
+    /*
     let mut convert = Convert::new();
 
     let buffer = match is_ir {
@@ -145,6 +145,7 @@ fn graph(file: PathBuf, is_ir: bool) -> Result<()> {
     render_to(&res, &mut dot);
 
     println!("{}", std::str::from_utf8(dot.get_ref()).unwrap());
+    */
 
     Ok(())
 }

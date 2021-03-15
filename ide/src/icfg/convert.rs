@@ -36,15 +36,16 @@ impl Convert {
 
         for function in prog.functions.iter() {
             debug!("Init function {}", function.name);
-            graph.init_function(function);
+            graph.init_function(function)?;
         }
 
+        /* 
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
-
+            
             for instruction in &mut iterator {
                 match instruction {
                     Instruction::Const(reg, _val) => {
@@ -176,6 +177,7 @@ impl Convert {
                 )?;
             }
         }
+        */
 
         return Ok(graph);
     }

@@ -1,8 +1,10 @@
-use crate::icfg::graph::{Edge, Fact, Graph};
+use crate::icfg::graph2::{Edge, Fact, Graph};
 use log::debug;
 
 pub fn render_to(graph: &Graph) {
     let mut str_vars = String::new();
+
+    /* 
 
     let max_epoch = graph.get_max_epoch().expect("No max epoch");
 
@@ -29,14 +31,17 @@ pub fn render_to(graph: &Graph) {
             _ => {}
         }
     }
+    */
 
     println!("{}", template(str_vars));
 }
 
 fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {
     debug!("Drawing epoch {}", epoch);
+
     let mut str_epoch = String::new();
     let mut index = 0;
+    /* 
 
     let mut last_note = String::new();
     for fact in graph.facts.iter().filter(|x| x.epoch == epoch) {
@@ -65,6 +70,7 @@ fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {
 
         index += 1;
     }
+    */
 
     str_epoch
 }
