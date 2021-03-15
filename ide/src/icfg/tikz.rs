@@ -4,19 +4,6 @@ use log::debug;
 pub fn render_to(graph: &Graph) {
     let mut str_vars = String::new();
 
-    let mut index = 0;
-
-    /*
-    for (function_name, vars) in graph.vars.iter() {
-        for var in vars.iter() {
-            str_vars.push_str(&format!(
-                "\\node[circle,fill,inner sep=1pt] ({}_{}) at ({}, 0) {{}};\n",
-                function_name, var.id.replace("%", ""), index
-            ));
-            index += 1;
-        }
-    }*/
-
     let max_epoch = graph.get_max_epoch().expect("No max epoch");
 
     for epoch in 0..=max_epoch {
@@ -29,9 +16,16 @@ pub fn render_to(graph: &Graph) {
             Edge::Normal { from, to } => {
                 str_vars.push_str(&format!("\t\t\\path[->] ({}) edge ({});\n", from.id, to.id));
             }
-            /*Edge::Call { from, to } => {
-                str_vars.push_str(&format!("\t\t\\path[->] ({}) edge node {{ call }} ({});\n", from.id, to.id));
-            }*/
+            Edge::Call { from, to } => {
+                str_vars.push_str(&format!("\t\t\\path[->, green] ({}) [bend left] edge node {{ }} ({});\n", from.id, to.id));
+            }
+            Edge::CallToReturn { from, to } => {
+                str_vars.push_str(&format!("\t\t\\path[->] ({}) edge node {{ }} ({});\n", from.id, to.id));
+            }
+            Edge::Return { from, to } => {
+                str_vars.push_str(&format!("\t\t\\path[->, red] ({}) [bend right] edge  node {{ }} ({});\n", from.id, to.id));
+            }
+
             _ => {}
         }
     }
@@ -62,7 +56,7 @@ fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {
                 "\\node[circle, font=\\tiny] at ({}, {}) {{{}}};\n",
                 //fact.belongs_to_var.replace("%", "\\%"),
                 //fact.id,
-                (fact.scope + index) as f64 - 1.0,
+                (fact.scope + index) as f64 - 1.5,
                 (max - epoch) as f64 - 0.5,
                 fact.note.replace("\"", "\\\"").replace("%", "\\%"),
             ));
