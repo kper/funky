@@ -83,6 +83,7 @@ impl IR {
             debug!("Visiting function");
 
             self.visit_function(function, engine)?;
+            self.symbol_table.clear();
         }
 
         Ok(())
@@ -90,7 +91,10 @@ impl IR {
 
     fn visit_function(&mut self, inst: &FuncInstance, engine: &Engine) -> Result<()> {
         let name = format!("{}", self.function_counter.get());
-        write!(self.buffer, "define {} ", name).unwrap();
+
+        let mut function_buffer = String::new();
+
+        write!(function_buffer, "define {} ", name).unwrap();
 
         let mut function = Function {
             name,
@@ -132,19 +136,30 @@ impl IR {
                 .collect::<Vec<String>>()
                 .join(" ");
             let param_str = format!("(param {})", params);
-            write!(self.buffer, "{} ", param_str).unwrap();
+            write!(function_buffer, "{} ", param_str).unwrap();
         }
 
         let result_str = format!("(result {})", inst.ty.return_types.len());
-        write!(self.buffer, "{} ", result_str).unwrap();
-        writeln!(self.buffer, "{{").unwrap();
+        write!(function_buffer, "{} ", result_str).unwrap();
+
 
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
 
-        self.visit_body(&inst.code, func_index, inst.ty.return_types.len(), engine)?;
+        let mut body = String::new();
+        self.visit_body(&inst.code, func_index, inst.ty.return_types.len(), engine, &mut body)?;
 
-        writeln!(self.buffer, "}};").unwrap();
+        let nums = (0..self.symbol_table.len()).map(|x| format!("%{}", x)).collect::<Vec<_>>().join(" ");
+        let defs = format!("(define {}) ", nums);
+        function_buffer.push_str(&defs);
+
+        // Instructions 
+
+        writeln!(function_buffer, "{{").unwrap();
+        function_buffer.push_str(&body);
+        writeln!(function_buffer, "}};").unwrap();
+
+        self.buffer.push_str(&function_buffer);
 
         Ok(())
     }
@@ -155,6 +170,7 @@ impl IR {
         function_index: usize,
         return_count: usize,
         engine: &Engine,
+        function_buffer: &mut String,
     ) -> Result<()> {
         let code = &body.code;
 
@@ -168,7 +184,7 @@ impl IR {
 
         let mut blocks = vec![block];
 
-        writeln!(self.buffer, "BLOCK {}", name).unwrap();
+        writeln!(function_buffer, "BLOCK {}", name).unwrap();
 
         let current_reg = self.symbol_table.peek().ok();
         self.visit_instruction_wrapper(
@@ -178,16 +194,17 @@ impl IR {
             return_count,
             current_reg,
             engine,
+            function_buffer
         )?;
 
-        writeln!(self.buffer, "BLOCK {}", then_name).unwrap();
+        writeln!(function_buffer, "BLOCK {}", then_name).unwrap();
 
         Ok(())
     }
 
     /// If the execution exits a block (with no jump),
     /// then kill all variables which are not returned.
-    fn exit_block(&mut self, arity: usize, old_state: Option<usize>) -> Result<()> {
+    fn exit_block(&mut self, arity: usize, old_state: Option<usize>, function_buffer: &mut String) -> Result<()> {
         for reg in self.symbol_table.vars.iter_mut().rev().skip(arity) {
             if reg.val() <= old_state.unwrap_or(0) {
                 break;
@@ -195,7 +212,7 @@ impl IR {
 
             if !reg.is_killed {
                 reg.is_killed = true;
-                writeln!(self.buffer, "KILL %{}", reg.val()).unwrap();
+                writeln!(function_buffer, "KILL %{}", reg.val()).unwrap();
             }
         }
 
@@ -211,6 +228,7 @@ impl IR {
         // reg number of the start current_reg: usize,
         current_reg: Option<usize>,
         engine: &Engine,
+        function_buffer: &mut String,
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
@@ -239,7 +257,7 @@ impl IR {
 
                     blocks.push(block);
 
-                    writeln!(self.buffer, "BLOCK {}", name.clone()).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", name.clone()).unwrap();
 
                     // If the block exits, then kill all variable to `current_reg`
                     let current_reg = self.symbol_table.peek().ok();
@@ -252,21 +270,22 @@ impl IR {
                         arity as usize,
                         current_reg,
                         engine,
+                        function_buffer,
                     )?;
 
-                    self.exit_block(arity as usize, current_reg)?;
+                    self.exit_block(arity as usize, current_reg, function_buffer)?;
 
                     blocks.pop();
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "GOTO {} // BLOCK ended for {}",
                         then_name,
                         name.clone()
                     )
                     .unwrap();
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BLOCK {} // THEN block for {}",
                         then_name, name
                     )
@@ -288,7 +307,7 @@ impl IR {
 
                     blocks.push(block);
 
-                    writeln!(self.buffer, "BLOCK {} // LOOP", name.clone()).unwrap();
+                    writeln!(function_buffer, "BLOCK {} // LOOP", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
@@ -297,20 +316,21 @@ impl IR {
                         blocks,
                         arity as usize,
                         current_reg,
-                        &engine
+                        &engine,
+                        function_buffer,
                     )?;
 
                     blocks.pop();
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "GOTO {} // BLOCK ended for {}",
                         then_name,
                         name.clone()
                     )
                     .unwrap();
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BLOCK {} // THEN block for {}",
                         then_name, name
                     )
@@ -333,14 +353,14 @@ impl IR {
                     blocks.push(block);
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "IF %{} THEN GOTO {} ELSE GOTO {}",
                         self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
                     )
                     .unwrap();
-                    writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
+                    writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
@@ -350,19 +370,20 @@ impl IR {
                         arity as usize,
                         current_reg,
                         engine,
+                        function_buffer,
                     )?;
 
                     blocks.pop();
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "GOTO {} // BLOCK ended for {}",
                         then_name,
                         name.clone()
                     )
                     .unwrap();
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BLOCK {} // THEN block for {}",
                         then_name, name
                     )
@@ -391,14 +412,14 @@ impl IR {
                     blocks.push(block);
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "IF %{} THEN GOTO {} ELSE GOTO {}",
                         self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
                     )
                     .unwrap();
-                    writeln!(self.buffer, "BLOCK {} ", name.clone()).unwrap();
+                    writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
@@ -408,17 +429,18 @@ impl IR {
                         arity as usize,
                         current_reg,
                         engine,
+                        function_buffer,
                     )?;
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "GOTO {} // BLOCK ended for {}",
                         done_name,
                         name.clone()
                     )
                     .unwrap();
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BLOCK {} // THEN block for {}",
                         then_name, name
                     )
@@ -435,12 +457,13 @@ impl IR {
                         arity as usize,
                         current_reg,
                         engine,
+                        function_buffer,
                     )?;
 
                     blocks.pop();
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "GOTO {} // BLOCK ended for {}",
                         done_name,
                         name.clone()
@@ -448,7 +471,7 @@ impl IR {
                     .unwrap();
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BLOCK {} // THEN block for {}",
                         done_name, then_name
                     )
@@ -459,12 +482,12 @@ impl IR {
 
                     let block = blocks.get(jmp_index).unwrap();
 
-                    self.exit_block(return_arity, current_reg)?;
+                    self.exit_block(return_arity, current_reg, function_buffer)?;
 
                     if block.is_loop {
-                        writeln!(self.buffer, "GOTO {}", block.name).unwrap();
+                        writeln!(function_buffer, "GOTO {}", block.name).unwrap();
                     } else {
-                        writeln!(self.buffer, "GOTO {}", block.name + 1).unwrap();
+                        writeln!(function_buffer, "GOTO {}", block.name + 1).unwrap();
                     }
                 }
                 OP_BR_IF(label) => {
@@ -474,7 +497,7 @@ impl IR {
 
                     if block.is_loop {
                         writeln!(
-                            self.buffer,
+                            function_buffer,
                             "IF %{} THEN GOTO {}",
                             self.symbol_table.peek()?,
                             block.name
@@ -482,7 +505,7 @@ impl IR {
                         .unwrap();
                     } else {
                         writeln!(
-                            self.buffer,
+                            function_buffer,
                             "IF %{} THEN GOTO {}",
                             self.symbol_table.peek()?,
                             block.name + 1
@@ -515,7 +538,7 @@ impl IR {
                     };
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "BR TABLE GOTO {} ELSE GOTO {}",
                         indices.join(" "),
                         jmp_index
@@ -530,7 +553,7 @@ impl IR {
                         .locals;
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "%{} = %{}",
                         self.symbol_table.new_var()?,
                         locals.get(&(*index as usize)).unwrap()
@@ -547,7 +570,7 @@ impl IR {
                     debug!("locals {:?}", locals);
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "%{} = %{}",
                         locals.get(&(*index as usize)).unwrap(),
                         self.symbol_table.peek()?
@@ -557,7 +580,7 @@ impl IR {
                 OP_LOCAL_TEE(index) => {
                     let peek = self.symbol_table.peek()?;
                     // Push only once because the old still lives
-                    writeln!(self.buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
+                    writeln!(function_buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
                     let locals = &self
                         .functions
                         .get(function_index)
@@ -567,7 +590,7 @@ impl IR {
                     debug!("locals {:?}", locals);
 
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "%{} = %{}",
                         locals.get(&(*index as usize)).with_context(|| format!(
                             "Cannot local at {} when locals length is {}",
@@ -601,7 +624,7 @@ impl IR {
 
                     // Function returns no variables
                     if num_results == 0 {
-                        writeln!(self.buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
+                        writeln!(function_buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
                     } else {
                         let return_regs: Vec<_> = (0..num_results)
                             .map(|_| {
@@ -613,7 +636,7 @@ impl IR {
                             .collect();
 
                         writeln!(
-                            self.buffer,
+                            function_buffer,
                             "{} <- CALL {}({})",
                             return_regs.join(" "),
                             func,
@@ -623,27 +646,27 @@ impl IR {
                     }
                 }
                 OP_I32_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_I64_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F32_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F64_CONST(a) => {
-                    writeln!(self.buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_RETURN => {
                     let mut regs = Vec::new();
 
-                    self.exit_block(return_arity, current_reg)?;
+                    self.exit_block(return_arity, current_reg, function_buffer)?;
 
                     for i in 0..return_arity {
                         regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
                     }
 
-                    writeln!(self.buffer, "return {}", regs.join(" ")).unwrap();
+                    writeln!(function_buffer, "return {}", regs.join(" ")).unwrap();
                 }
                 OP_I32_CLZ
                 | OP_I32_CTZ
@@ -704,7 +727,7 @@ impl IR {
                 | OP_I64_TRUNC_SAT_F64_S
                 | OP_I64_TRUNC_SAT_F64_U => {
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "%{} = {} %{}",
                         self.symbol_table.new_var()?,
                         "op",
@@ -728,7 +751,7 @@ impl IR {
                 | OP_F64_MUL | OP_F64_DIV | OP_F32_MIN | OP_F32_MAX | OP_F32_COPYSIGN
                 | OP_F64_MIN | OP_F64_MAX | OP_F64_COPYSIGN => {
                     writeln!(
-                        self.buffer,
+                        function_buffer,
                         "%{} = %{} {} %{}",
                         self.symbol_table.new_var()?,
                         self.symbol_table.peek_offset(1)?,
@@ -738,20 +761,11 @@ impl IR {
                     .unwrap();
                 }
                 _ => {
-                    writeln!(self.buffer, "{}", instr.get_instruction()).unwrap();
+                    writeln!(function_buffer, "{}", instr.get_instruction()).unwrap();
                 }
             }
         }
 
         Ok(())
-
-        /*
-        if !jumped {
-            writeln!(str_block, "GOTO {}", self.block_counter.peek()).unwrap();
-        }*/
-
-        //writeln!(str_block, "BLOCK {}", self.block_counter.get()).unwrap();
-
-        //writeln!(self.buffer, "{}", str_block).unwrap();
     }
 }

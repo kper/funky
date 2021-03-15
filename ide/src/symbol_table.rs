@@ -23,6 +23,15 @@ pub struct SymbolTable {
 }
 
 impl SymbolTable {
+    pub fn len(&self) -> usize {
+        self.counter.peek()
+    }
+
+    pub fn clear(&mut self) {
+        self.vars.clear();
+        self.counter = Counter::default();
+    }
+
     pub fn peek(&self) -> Result<usize> {
         debug!("Peeking symbol");
         for var in self.vars.iter().rev() {
