@@ -14,19 +14,22 @@ pub struct Graph {
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     pc_counter: Counter,
+    fact_counter: Counter,
 }
 
 #[derive(Debug, Clone)]
 pub struct Fact {
-    id: usize,
-    belongs_to_var: VarId,
-    pc: usize,
-    function: FunctionName,
+    pub id: usize,
+    pub belongs_to_var: VarId,
+    pub pc: usize,
+    pub track: usize,
+    pub function: FunctionName,
 }
 
 #[derive(Debug)]
 pub struct Function {
     name: FunctionName,
+    pub definitions: usize,
 }
 
 #[derive(Debug)]
@@ -69,17 +72,19 @@ impl Graph {
     }
 
     fn new_var(&mut self, function_name: &String, var: Variable) -> Result<()> {
+        /*
         debug!("Adding new var {} to function {}", var.name, function_name);
 
-        let vars = self.get_vars_mut(function_name).context("Cannot get variables")?;
+        let vars = self
+            .get_vars_mut(function_name)
+            .context("Cannot get variables")?;
 
         if vars.iter().find(|x| x.name == var.name).is_none() {
             // No other variable defined
             vars.push(var);
-        }
-        else {
+        } else {
             bail!("Variable {} is already defined", var.name);
-        }
+        }*/
 
         Ok(())
     }
@@ -91,6 +96,7 @@ impl Graph {
             function.name.clone(),
             Function {
                 name: function.name.clone(),
+                definitions: function.definitions.len(),
             },
         );
 
@@ -109,7 +115,31 @@ impl Graph {
             });
         }
 
+        self.init_facts(function, &mut variables)
+            .context("Cannot initialize facts")?;
+
         self.vars.insert(function.name.clone(), variables);
+
+        Ok(())
+    }
+
+    fn init_facts(&mut self, function: &AstFunction, variables: &mut Vec<Variable>) -> Result<()> {
+        debug!("Initializing facts for function {}", function.name);
+
+        let mut index = 0;
+        for var in variables {
+            debug!("Creating fact for var {}", var.name);
+
+            self.facts.push(Fact {
+                id: self.fact_counter.get(),
+                belongs_to_var: var.name.clone(),
+                pc: 0,
+                track: index,
+                function: function.name.clone(),
+            });
+
+            index += 1;
+        }
 
         Ok(())
     }
@@ -123,35 +153,16 @@ mod test {
     #[test]
     fn adding_var_ok() {
         let mut graph = Graph::default();
-        graph.init_function(&AstFunction {
-            name: "main".to_string(),
-            ..Default::default()
-        }).unwrap();
-        
-        let var = Variable {
-            name: "%0".to_string(),
-            function: "main".to_string()
-        };
+        graph
+            .init_function(&AstFunction {
+                name: "main".to_string(),
+                definitions: vec!["%0".to_string()],
+                ..Default::default()
+            })
+            .unwrap();
 
-        assert!(graph.new_var(&"main".to_string(), var).is_ok());
+        assert_eq!(2, graph.facts.len());
         assert_eq!(1, graph.vars.len());
         assert_eq!(2, graph.vars.get(&"main".to_string()).unwrap().len());
-
-    }
-
-    #[test]
-    fn adding_duplicated_var() {
-        let mut graph = Graph::default();
-        graph.init_function(&AstFunction {
-            name: "main".to_string(),
-            ..Default::default()
-        }).unwrap();
-        
-        let var = Variable {
-            name: "taut".to_string(),
-            function: "main".to_string()
-        };
-
-        assert!(graph.new_var(&"main".to_string(), var).is_err());
     }
 }
