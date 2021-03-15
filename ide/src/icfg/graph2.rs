@@ -94,10 +94,22 @@ impl Graph {
             },
         );
 
-        self.vars.insert(function.name.clone(), vec![Variable {
+        let mut variables = Vec::with_capacity(function.definitions.len() + 1);
+
+        variables.push(Variable {
             name: "taut".to_string(),
             function: function.name.clone(),
-        }]);
+        });
+
+        // add definitions
+        for reg in function.definitions.iter() {
+            variables.push(Variable {
+                name: reg.clone(),
+                function: function.name.clone(),
+            });
+        }
+
+        self.vars.insert(function.name.clone(), variables);
 
         Ok(())
     }
