@@ -1,6 +1,5 @@
 /// This module is responsible to parse
 /// the webassembly AST to a graph
-
 use crate::counter::Counter;
 use crate::icfg::graph2::Graph;
 use crate::ssa::ast::Instruction;
@@ -52,10 +51,60 @@ impl Convert {
                 debug!("Instruction {:?}", instruction);
                 graph.add_statement(function, instruction)?;
             }
-            
+
             graph.pc_counter.set(1); // Set to the first instruction
-            
-                /* 
+
+            let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+            debug!("Setting flow functions");
+            for instruction in &mut iterator {
+                let pc = graph.pc_counter.get();
+
+                let in_ = graph
+                    .facts
+                    .iter()
+                    .filter(|x| x.pc == pc - 1 && x.function == function.name)
+                    .collect::<Vec<_>>();
+                let out_ = graph
+                    .facts
+                    .iter()
+                    .filter(|x| x.pc == pc && x.function == function.name)
+                    .collect::<Vec<_>>();
+
+                if in_.len() == 0 {
+                    bail!("Cannot find `in` set");
+                }
+
+                if out_.len() == 0 {
+                    bail!("Cannot find `out` set");
+                }
+
+                debug!("Instruction {:?}", instruction);
+                match instruction {
+                    Instruction::Const(reg, _val) => {
+                        let before = in_
+                            .iter()
+                            .find(|x| x.belongs_to_var == "taut".to_string())
+                            .map(|x| *x)
+                            .context("Cannot get `before` fact")?
+                            .clone();
+                        let after = out_
+                            .iter()
+                            .find(|x| &x.belongs_to_var == reg)
+                            .map(|x| *x)
+                            .context("Cannot get `before` fact")?
+                            .clone();
+
+                        graph.add_normal(before, after)?;
+                    }
+                    _ => {}
+                }
+            }
+
+            graph.pc_counter.set(1); // Set to the first instruction
+
+            /*
             for instruction in &mut iterator {
                 match instruction {
                     Instruction::Const(reg, _val) => {
@@ -148,7 +197,7 @@ impl Convert {
                 */
         }
 
-        /* 
+        /*
         for function in prog.functions.iter() {
             let mut iterator =
                 InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
@@ -172,13 +221,13 @@ impl Convert {
         }
 
         for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
-            if let Some((goal_function_name, goal_function_results_len, goal_function_last_facts)) = 
+            if let Some((goal_function_name, goal_function_results_len, goal_function_last_facts)) =
                 graph.functions.get(&goal_function).map(|x| (&x.name, x.results_len, x.last_facts.clone())) {
 
                 if goal_function_results_len != dest_regs.len() {
-                    bail!("Mismatch results with call of {}.\nExpected results: {}\nActual results: {}", 
-                        goal_function_name, 
-                        goal_function_results_len, 
+                    bail!("Mismatch results with call of {}.\nExpected results: {}\nActual results: {}",
+                        goal_function_name,
+                        goal_function_results_len,
                         dest_regs.len());
                 }
 

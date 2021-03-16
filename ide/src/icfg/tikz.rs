@@ -40,7 +40,7 @@ pub fn render_to(graph: &Graph) {
             debug!("Drawing note");
 
             str_vars.push_str(&format!(
-                "\\node[font=\\tiny] ({}) at ({}, {}) {{{}}};\n",
+                "\\node[font=\\tiny] (note_{}) at ({}, {}) {{{}}};\n",
                 note.id,
                 index as f64 - 1.5, //x
                 note.pc as f64 - 0.5, //y
@@ -51,7 +51,6 @@ pub fn render_to(graph: &Graph) {
         index += function.definitions + TAU + 1;
     }
 
-    /*
     for edge in graph.edges.iter() {
         match edge {
             Edge::Normal { from, to } => {
@@ -70,7 +69,6 @@ pub fn render_to(graph: &Graph) {
             _ => {}
         }
     }
-    */
 
     println!("{}", template(str_vars));
 }

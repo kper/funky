@@ -177,6 +177,16 @@ impl Graph {
 
         Ok(())
     }
+
+    /// Add a normal edge from the fact `from` to the fact `to`.
+    pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Normal {
+            from,
+            to
+        });
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
