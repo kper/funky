@@ -3,7 +3,6 @@ use anyhow::{Context, Result};
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
 use log::debug;
-use std::io::{self};
 use std::path::PathBuf;
 use structopt::StructOpt;
 use validation::validate;
