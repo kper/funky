@@ -15,7 +15,11 @@ pub fn render_to(graph: &Graph) -> String {
     }*/
 
     let mut index = 0;
-    for function in graph.functions.values() {
+    let mut functions: Vec<_> = graph.functions.iter().map(|(_, f)| f).collect();
+
+    functions.sort_by(|a, b| b.name.cmp(&a.name));
+
+    for function in functions {
         let function_name = &function.name;
         debug!("Drawing function {}", function_name);
 
@@ -42,7 +46,7 @@ pub fn render_to(graph: &Graph) -> String {
             str_vars.push_str(&format!(
                 "\\node[font=\\tiny] (note_{}) at ({}, {}) {{{}}};\n",
                 note.id,
-                index as f64 - 1.5, //x
+                index as f64 - 1.5,   //x
                 note.pc as f64 - 0.5, //y
                 note.note.replace("%", "").replace("\"", "").escape_debug(),
             ));
@@ -57,13 +61,22 @@ pub fn render_to(graph: &Graph) -> String {
                 str_vars.push_str(&format!("\t\t\\path[->] ({}) edge ({});\n", from.id, to.id));
             }
             Edge::Call { from, to } => {
-                str_vars.push_str(&format!("\t\t\\path[->, green] ({}) [bend left] edge node {{ }} ({});\n", from.id, to.id));
+                str_vars.push_str(&format!(
+                    "\t\t\\path[->, green] ({}) [bend left] edge node {{ }} ({});\n",
+                    from.id, to.id
+                ));
             }
             Edge::CallToReturn { from, to } => {
-                str_vars.push_str(&format!("\t\t\\path[->] ({}) edge node {{ }} ({});\n", from.id, to.id));
+                str_vars.push_str(&format!(
+                    "\t\t\\path[->] ({}) edge node {{ }} ({});\n",
+                    from.id, to.id
+                ));
             }
             Edge::Return { from, to } => {
-                str_vars.push_str(&format!("\t\t\\path[->, red] ({}) [bend right] edge  node {{ }} ({});\n", from.id, to.id));
+                str_vars.push_str(&format!(
+                    "\t\t\\path[->, red] ({}) [bend right] edge  node {{ }} ({});\n",
+                    from.id, to.id
+                ));
             }
 
             _ => {}
