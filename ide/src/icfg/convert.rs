@@ -136,6 +136,26 @@ impl Convert {
 
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
                     }
+                    Instruction::BinOp(dest, src1, src2) => {
+                        let before = in_
+                            .iter()
+                            .filter(|x| &x.belongs_to_var == src1 || &x.belongs_to_var == src2)
+                            .map(|x| *x)
+                            .collect::<Vec<_>>();
+
+                        let after = out_
+                            .iter()
+                            .find(|x| &x.belongs_to_var == dest)
+                            .map(|x| *x)
+                            .context("Cannot get `before` fact")?
+                            .clone();
+
+                        for from in before.into_iter() {
+                            graph.add_normal(from.clone(), after.clone())?;
+                        }
+
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                    }
                     _ => {}
                 }
             }
