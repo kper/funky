@@ -159,6 +159,53 @@ impl Convert {
                     Instruction::Kill(dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
                     }
+                    _ => {}
+                }
+            }
+
+            graph.pc_counter.set(1); // Set to the first instruction
+        }
+
+        self.handle_calls(prog, &mut graph)?;
+
+        return Ok(graph);
+    }
+
+    pub fn handle_calls(&mut self, prog: Program, graph: &mut Graph) -> Result<()> {
+        for function in prog.functions.iter() {
+            let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+            graph.pc_counter.set(1); // Set to the first instruction
+
+            let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+            debug!("Setting flow functions");
+            for instruction in &mut iterator {
+                let pc = graph.pc_counter.get();
+
+                let facts = graph.facts.clone();
+                let in_ = facts
+                    .iter()
+                    .filter(|x| x.pc == pc - 1 && x.function == function.name)
+                    .collect::<Vec<_>>();
+
+                let out_ = facts
+                    .iter()
+                    .filter(|x| x.pc == pc && x.function == function.name)
+                    .collect::<Vec<_>>();
+
+                if in_.len() == 0 {
+                    bail!("Cannot find `in` set");
+                }
+
+                if out_.len() == 0 {
+                    bail!("Cannot find `out` set");
+                }
+
+                debug!("Instruction {:?}", instruction);
+                match instruction {
                     Instruction::Call(callee_name, params, dest) => {
                         let before = in_
                             .iter()
@@ -198,170 +245,13 @@ impl Convert {
                             })
                             .map(|x| *x)
                             .collect::<Vec<_>>();
-
-                        /*
-                        for param in params {
-                            let callee_var = graph
-                                .get_var(callee_name, param)
-                                .with_context(|| format!("Cannot find variable {}", param))?;
-
-                            let fact =
-                                graph.get_first_fact_of_var(callee_var).with_context(|| {
-                                    format!("No fact found for {}", callee_var.name)
-                                })?;
-
-                            out_.push(fact);
-                        }*/
-                    }
-                    _ => {}
-                }
-            }
-
-            graph.pc_counter.set(1); // Set to the first instruction
-             let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
-
-
-
-            graph.pc_counter.set(1); // Set to the first instruction
-
-            /*
-            for instruction in &mut iterator {
-                match instruction {
-                    Instruction::Const(reg, _val) => {
-                        debug!("Adding const");
-
-                        graph.add_row(
-                            &function.name,
-                            format!("before {:?}", instruction),
-                        )?;
-
-                        graph.add_var(&function.name, &reg)?;
-
-                        graph.add_row(
-                            &function.name,
-                            format!("after {:?}", instruction),
-                        )?;
-                    }
-                    Instruction::Assign(dest, src) => {
-                        debug!("Assignment");
-
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-
-                        graph.add_assignment(&function.name, &dest, &src)?;
-
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                    }
-                    Instruction::Unop(dest, src) => {
-                        debug!("Unop");
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                        graph.add_unop(&function.name, &dest, &src)?;
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                    }
-                    Instruction::BinOp(dest, src1, src2) => {
-                        debug!("Binop");
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-
-                        graph.add_binop(&function.name, &dest, &src1, &src2)?;
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                    }
-                    Instruction::Kill(dest) => {
-                        debug!("Kill");
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                        graph.kill_var(&function.name, &dest)?;
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                    }
-                    Instruction::Call(name, _params, dest_regs) => {
-                        graph.add_empty_vars(&function.name, &dest_regs)?;
-                        graph.add_row(
-                            &function.name,
-                            format!("{:?}", instruction),
-                        )?;
-                        let meeting_facts = graph.add_call_to_return(
-                            &function.name,
-                            format!("Return from {}", name),
-                        )?;
-
-                        // Expect a return edge from `name` with function.name to the meeting facts
-                        self.registration_returns
-                            .insert(name.clone(), (meeting_facts, dest_regs.clone()));
-                    }
-                    _ => {}
-                }
-
-                graph.pc_counter.get();
-            }
-                */
-        }
-
-        /*
-        for function in prog.functions.iter() {
-            let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
-
-            for instruction in &mut iterator {
-                match instruction {
-                    Instruction::Call(name, params, _dest_regs) => {
-                        debug!("Call {}", name);
-
-                        let lookup_function = prog
-                            .functions
-                            .iter()
-                            .find(|x| &x.name == name)
-                            .context("Function not found")?;
-
-                        graph.add_call(&function.name, &lookup_function, name, params)?;
                     }
                     _ => {}
                 }
             }
         }
 
-        for (goal_function, (meeting_facts, dest_regs)) in self.registration_returns.drain() {
-            if let Some((goal_function_name, goal_function_results_len, goal_function_last_facts)) =
-                graph.functions.get(&goal_function).map(|x| (&x.name, x.results_len, x.last_facts.clone())) {
-
-                if goal_function_results_len != dest_regs.len() {
-                    bail!("Mismatch results with call of {}.\nExpected results: {}\nActual results: {}",
-                        goal_function_name,
-                        goal_function_results_len,
-                        dest_regs.len());
-                }
-
-                graph.add_return(
-                    &goal_function_last_facts,
-                    meeting_facts,
-                    &dest_regs,
-                )?;
-            }
-        }
-        */
-
-        return Ok(graph);
+        Ok(())
     }
 }
 
