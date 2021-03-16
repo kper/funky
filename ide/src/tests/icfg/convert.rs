@@ -246,3 +246,21 @@ fn test_ir_early_return() {
     );
 }
 */
+
+#[test]
+fn test_ir_if() {
+    ir!(
+        "test_ir_if",
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            %1 = 1
+            IF %1 { 
+                %2 = 1
+            }
+            BLOCK 2
+            %2 = 2
+        };
+        "
+    );
+}

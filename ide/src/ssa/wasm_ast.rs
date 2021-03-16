@@ -354,13 +354,13 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "IF %{} THEN GOTO {} ELSE GOTO {}",
+                        "IF %{} {{",
                         self.symbol_table.peek()?,
-                        name.clone(),
-                        then_name.clone()
+                        //name.clone(),
+                        //then_name.clone()
                     )
                     .unwrap();
-                    writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
+                    //writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
@@ -375,6 +375,7 @@ impl IR {
 
                     blocks.pop();
 
+                    /* 
                     writeln!(
                         function_buffer,
                         "GOTO {} // BLOCK ended for {}",
@@ -387,7 +388,8 @@ impl IR {
                         "BLOCK {} // THEN block for {}",
                         then_name, name
                     )
-                    .unwrap();
+                    .unwrap();*/
+                    writeln!(function_buffer, "}}").unwrap();
                 }
                 OP_IF_AND_ELSE(ty, code1, code2) => {
                     let name = self.block_counter.get();

@@ -1,17 +1,15 @@
 ---
-source: ide/src/tests/ssa/wat.rs
+source: src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
 define 0 (result 0) (define %0) {
 BLOCK 0
 %0 = 1
-IF %0 THEN GOTO 2 ELSE GOTO 3
-BLOCK 2 
+IF %0 {
 OP_NOP
 
-GOTO 3 // BLOCK ended for 2
-BLOCK 3 // THEN block for 2
+}
 BLOCK 1
 };
 

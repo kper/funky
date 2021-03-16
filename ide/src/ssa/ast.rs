@@ -31,6 +31,6 @@ pub enum Instruction {
     Assign(Dest, Src),
     Jump(String),
     Call(String, Vec<Src>, Regs),
-    /// kill the variable
     Kill(Dest),
+    Conditional(Src, Vec<Instruction>),
 }
