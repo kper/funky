@@ -10,8 +10,7 @@ members = [
 	"validation",
 	"testrunner2",
 	"hustensaft",
-	"custom_display",
-	"ide"
+	"custom_display"
 ]
 
 [lib]
@@ -28,10 +27,6 @@ name = "testrunner2"
 [[bin]]
 path = "hustensaft/src/main.rs"
 name = "hustensaft"
-
-[[bin]]
-path = "ide/src/main.rs"
-name = "ide"
 
 [dependencies]
 validation = { path = "./validation" }
@@ -52,6 +47,3 @@ dot = "0.1.4"
 [dev-dependencies]
 insta = "*"
 tempfile = "*"
-
-[build-dependencies]
-lalrpop = "0.19.4"
