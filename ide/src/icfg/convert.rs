@@ -1,13 +1,12 @@
 /// This module is responsible to parse
 /// the webassembly AST to a graph
 use crate::counter::Counter;
-use crate::icfg::graph2::Graph;
+use crate::icfg::graph2::*;
 use crate::ssa::ast::Instruction;
 use anyhow::{bail, Context, Result};
 
 use log::debug;
 
-use crate::icfg::graph::Fact;
 use std::collections::HashMap;
 
 use crate::ssa::ast::Program;
@@ -26,6 +25,19 @@ impl Convert {
             functions: HashMap::new(),
             registration_returns: HashMap::new(),
         }
+    }
+
+    fn add_ctrl_flow(&self, graph: &mut Graph, in_: &Vec<&Fact>, out_: &Vec<&Fact>, except: &String) -> Result<()> {
+        for (from, after) in in_
+            .iter()
+            .zip(out_)
+            .filter(|(from, to)| &from.belongs_to_var != except && &to.belongs_to_var != except)
+            .map(|(from, after)| (from.clone(), after.clone()))
+        {
+            graph.add_normal(from.clone(), after.clone())?;
+        }
+
+        Ok(())
     }
 
     pub fn visit(&mut self, prog: Program) -> Result<Graph> {
@@ -61,13 +73,13 @@ impl Convert {
             for instruction in &mut iterator {
                 let pc = graph.pc_counter.get();
 
-                let in_ = graph
-                    .facts
+                let facts = graph.facts.clone();
+                let in_ = facts
                     .iter()
                     .filter(|x| x.pc == pc - 1 && x.function == function.name)
                     .collect::<Vec<_>>();
-                let out_ = graph
-                    .facts
+
+                let out_ = facts
                     .iter()
                     .filter(|x| x.pc == pc && x.function == function.name)
                     .collect::<Vec<_>>();
@@ -97,6 +109,8 @@ impl Convert {
                             .clone();
 
                         graph.add_normal(before, after)?;
+
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, reg)?;
                     }
                     _ => {}
                 }

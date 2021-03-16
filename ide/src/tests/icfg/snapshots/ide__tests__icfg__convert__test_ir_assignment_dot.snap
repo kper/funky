@@ -28,6 +28,8 @@ expression: output
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(1, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(0, 1)};
 		\path[->] (0) edge (5);
+		\path[->] (0) edge (3);
+		\path[->] (1) edge (4);
 
 
                 \end{tikzpicture}

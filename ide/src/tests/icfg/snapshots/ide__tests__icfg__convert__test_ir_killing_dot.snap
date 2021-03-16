@@ -25,7 +25,9 @@ expression: output
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 2.0)};
 		\path[->] (0) edge (3);
+		\path[->] (0) edge (2);
 		\path[->] (2) edge (5);
+		\path[->] (2) edge (4);
 
 
                 \end{tikzpicture}

@@ -41,7 +41,13 @@ expression: output
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {BinOp(2, 0, 1)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {BinOp(2, 1, 0)};
 		\path[->] (0) edge (5);
+		\path[->] (0) edge (4);
+		\path[->] (2) edge (6);
+		\path[->] (3) edge (7);
 		\path[->] (4) edge (10);
+		\path[->] (4) edge (8);
+		\path[->] (5) edge (9);
+		\path[->] (7) edge (11);
 
 
                 \end{tikzpicture}
