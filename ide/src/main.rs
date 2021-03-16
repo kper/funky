@@ -175,10 +175,9 @@ fn tikz(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let res = convert.visit(prog).context("Cannot create the graph")?;
 
-    //let mut dot = Cursor::new(Vec::new());
-    crate::icfg::tikz::render_to(&res);
+    let output = crate::icfg::tikz::render_to(&res);
 
-    //println!("{}", std::str::from_utf8(dot.get_ref()).unwrap());
+    println!("{}", output);
 
     Ok(())
 }

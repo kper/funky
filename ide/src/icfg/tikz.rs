@@ -3,7 +3,7 @@ use log::debug;
 
 pub const TAU: usize = 1;
 
-pub fn render_to(graph: &Graph) {
+pub fn render_to(graph: &Graph) -> String {
     let mut str_vars = String::new();
 
     //let max_pc = graph.facts().expect("No max epoch");
@@ -70,7 +70,7 @@ pub fn render_to(graph: &Graph) {
         }
     }
 
-    println!("{}", template(str_vars));
+    template(str_vars)
 }
 
 fn draw_epoch(graph: &Graph, epoch: usize, max: usize) -> String {

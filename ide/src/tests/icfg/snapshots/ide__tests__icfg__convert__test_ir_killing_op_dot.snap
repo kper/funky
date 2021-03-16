@@ -1,45 +1,54 @@
 ---
 source: ide/src/tests/icfg/convert.rs
-expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
+expression: output
 
 ---
-digraph example1 {
-    Fact0[label=<<b>taut</b> at 0<br/>before Const("%0", 1.0)>];
-    Fact1[label=<<b>taut</b> at 1<br/>after Const("%0", 1.0)>];
-    Fact2[label=<<b>%0</b> at 1<br/>after Const("%0", 1.0)>];
-    Fact3[label=<<b>taut</b> at 2<br/>before Const("%1", 1.0)>];
-    Fact4[label=<<b>%0</b> at 2<br/>before Const("%1", 1.0)>];
-    Fact5[label=<<b>taut</b> at 3<br/>after Const("%1", 1.0)>];
-    Fact6[label=<<b>%0</b> at 3<br/>after Const("%1", 1.0)>];
-    Fact7[label=<<b>%1</b> at 3<br/>after Const("%1", 1.0)>];
-    Fact8[label=<<b>taut</b> at 4<br/>before Kill("%0")>];
-    Fact9[label=<<b>%0</b> at 4<br/>before Kill("%0")>];
-    Fact10[label=<<b>%1</b> at 4<br/>before Kill("%0")>];
-    Fact11[label=<<b>taut</b> at 5<br/>after Kill("%0")>];
-    Fact13[label=<<b>%1</b> at 5<br/>after Kill("%0")>];
-    Fact14[label=<<b>taut</b> at 6<br/>before Kill("%1")>];
-    Fact16[label=<<b>%1</b> at 6<br/>before Kill("%1")>];
-    Fact17[label=<<b>taut</b> at 7<br/>after Kill("%1")>];
-    Fact20[label=<<b>taut</b> at 8<br/>before Const("%2", 1.0)>];
-    Fact23[label=<<b>taut</b> at 9<br/>after Const("%2", 1.0)>];
-    Fact26[label=<<b>%2</b> at 9<br/>after Const("%2", 1.0)>];
-    Fact0 -> Fact1[label=""];
-    Fact0 -> Fact2[label=""];
-    Fact1 -> Fact3[label=""];
-    Fact2 -> Fact4[label=""];
-    Fact3 -> Fact5[label=""];
-    Fact4 -> Fact6[label=""];
-    Fact3 -> Fact7[label=""];
-    Fact5 -> Fact8[label=""];
-    Fact6 -> Fact9[label=""];
-    Fact7 -> Fact10[label=""];
-    Fact8 -> Fact11[label=""];
-    Fact10 -> Fact13[label=""];
-    Fact11 -> Fact14[label=""];
-    Fact13 -> Fact16[label=""];
-    Fact14 -> Fact17[label=""];
-    Fact17 -> Fact20[label=""];
-    Fact20 -> Fact23[label=""];
-    Fact20 -> Fact26[label=""];
-}
+   \documentclass{article}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
 
+                    \node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (1) at (1, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (2) at (2, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (3) at (3, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (4) at (0, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (5) at (1, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (6) at (2, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (7) at (3, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (9) at (1, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (10) at (2, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (11) at (3, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (12) at (0, 3) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (13) at (1, 3) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (14) at (2, 3) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (15) at (3, 3) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (16) at (0, 4) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (17) at (1, 4) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (18) at (2, 4) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (19) at (3, 4) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (21) at (1, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (22) at (2, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (23) at (3, 5) {};
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Kill(0)};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {Kill(1)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 1.0)};
+		\path[->] (0) edge (5);
+		\path[->] (4) edge (10);
+		\path[->] (16) edge (23);
+
+
+                \end{tikzpicture}
+            \end{document}

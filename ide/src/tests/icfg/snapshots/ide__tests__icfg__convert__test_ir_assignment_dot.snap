@@ -1,23 +1,34 @@
 ---
 source: ide/src/tests/icfg/convert.rs
-expression: "std::str::from_utf8(dot.get_ref()).unwrap()"
+expression: output
 
 ---
-digraph example1 {
-    Fact0[label=<<b>taut</b> at 0<br/>before Const("%1", 1.0)>];
-    Fact1[label=<<b>taut</b> at 1<br/>after Const("%1", 1.0)>];
-    Fact2[label=<<b>%1</b> at 1<br/>after Const("%1", 1.0)>];
-    Fact3[label=<<b>taut</b> at 2<br/>before Assign("%0", "%1")>];
-    Fact4[label=<<b>%1</b> at 2<br/>before Assign("%0", "%1")>];
-    Fact5[label=<<b>taut</b> at 3<br/>after Assign("%0", "%1")>];
-    Fact6[label=<<b>%1</b> at 3<br/>after Assign("%0", "%1")>];
-    Fact7[label=<<b>%0</b> at 3<br/>after Assign("%0", "%1")>];
-    Fact0 -> Fact1[label=""];
-    Fact0 -> Fact2[label=""];
-    Fact1 -> Fact3[label=""];
-    Fact2 -> Fact4[label=""];
-    Fact3 -> Fact5[label=""];
-    Fact4 -> Fact6[label=""];
-    Fact4 -> Fact7[label=""];
-}
+   \documentclass{article}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
 
+                    \node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (1) at (1, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (2) at (2, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (3) at (0, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (4) at (1, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (5) at (2, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (7) at (1, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (8) at (2, 2) {};
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(1, 1.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(0, 1)};
+		\path[->] (0) edge (5);
+
+
+                \end{tikzpicture}
+            \end{document}

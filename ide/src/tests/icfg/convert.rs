@@ -1,5 +1,6 @@
 use crate::icfg::convert::Convert;
 //use crate::icfg::graphviz::render_to;
+use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
 use std::io::Cursor;
 
@@ -11,16 +12,17 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let res = convert.visit(prog).unwrap();
+        let graph = convert.visit(prog).unwrap();
 
         //let mut dot = Cursor::new(Vec::new());
         //render_to(&res, &mut dot);
 
-        /* 
+        let output = render_to(&graph);
+
         assert_snapshot!(
             format!("{}_dot", $name),
-            std::str::from_utf8(dot.get_ref()).unwrap()
-        );*/
+            output
+        );
     };
 }
 
@@ -29,7 +31,7 @@ fn test_ir_const() {
     ir!(
         "test_ir_const",
         "
-         define test (result 0) {
+         define test (result 0) (define %0) {
             %0 = 1
          };
     "
@@ -41,7 +43,7 @@ fn test_ir_double_const() {
     ir!(
         "test_ir_double_const",
         "
-         define test (result 0) {
+         define test (result 0) (define %0 %1){
             %0 = 1
             %1 = 1
          };
@@ -54,7 +56,7 @@ fn test_ir_assignment() {
     ir!(
         "test_ir_assignment",
         "
-         define test (result 0) {
+         define test (result 0) (define %0 %1){
             %1 = 1
             %0 = %1
          };
@@ -67,7 +69,7 @@ fn test_ir_double_assignment() {
     ir!(
         "test_ir_double_assignment",
         "
-         define test (result 0) {
+         define test (result 0) (define %0 %1) {
             %1 = 1
             %0 = %1
             %0 = %1
@@ -80,7 +82,7 @@ fn test_ir_double_assignment() {
 fn test_ir_block() {
     ir!(
         "test_ir_block",
-        "define test (result 0) {
+        "define test (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
             GOTO 1
@@ -94,7 +96,7 @@ fn test_ir_block() {
 fn test_ir_killing() {
     ir!(
         "test_ir_killing",
-        "define test (result 0) {
+        "define test (result 0) (define %0) {
             %0 = 1
             %0 = 2
         };"
@@ -105,7 +107,7 @@ fn test_ir_killing() {
 fn test_ir_unop() {
     ir!(
         "test_ir_unop",
-        "define test (result 0)  {
+        "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 = op %0
             %1 = op %0   
@@ -117,7 +119,7 @@ fn test_ir_unop() {
 fn test_ir_binop() {
     ir!(
         "test_ir_binop",
-        "define test (result 0)  {
+        "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = 1
             %2 = %0 op %1
@@ -130,7 +132,7 @@ fn test_ir_binop() {
 fn test_ir_killing_op() {
     ir!(
         "test_ir_killing_op",
-        "define test (result 0)  {
+        "define test (result 0) (define %0 %1 %2)  {
             %0 = 1
             %1 = 1
             KILL %0
@@ -144,11 +146,11 @@ fn test_ir_killing_op() {
 fn test_ir_functions() {
     ir!(
         "test_ir_functions",
-        "define test (result 0) {
+        "define test (result 0) (define %0) {
             %0 = 1
             CALL mytest(%0)
         };
-        define mytest (param %0) (result 0)  {
+        define mytest (param %0) (result 0) (define %0 %1)  {
             %0 = 2   
             %1 = 3
         };"
@@ -159,11 +161,11 @@ fn test_ir_functions() {
 fn test_ir_return_values() {
     ir!(
         "test_ir_return_values",
-        "define test (result 0) {
+        "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 <- CALL mytest(%0)
         };
-        define mytest (param %0) (result 1) {
+        define mytest (param %0) (result 1) (define %0 %1) {
             %0 = 2   
             %1 = 3
         };"
@@ -176,11 +178,11 @@ fn test_ir_return_mismatched_values() {
     // Assigning %1 but `result 0`
     ir!(
         "test_ir_mismatched_functions",
-        "define test (result 0) {
+        "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 <- CALL mytest(%0)
         };
-        define mytest (param %0) (result 0) {
+        define mytest (param %0) (result 0) (define %0 %1){
             %0 = 2   
             %1 = 3
         };"
@@ -192,12 +194,12 @@ fn test_ir_return_mismatched_values() {
 fn test_ir_return_mismatched_values2() {
     // Assigning void but `result 1`
     ir!(
-        "test_ir_mismatched_functions",
-        "define test (result 0) {
+        "test_ir_mismatched_functions2",
+        "define test (result 0) (define %0){
             %0 = 1
             CALL mytest(%0)
         };
-        define mytest (param %0) (result 1) {
+        define mytest (param %0) (result 1) (define %0 %1){
             %0 = 2   
             %1 = 3
         };"
