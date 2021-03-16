@@ -1,7 +1,9 @@
-use crate::counter::{Counter, StackedCounter};
+#![allow(dead_code)]
+
+use crate::counter::Counter;
 use crate::ssa::ast::Function as AstFunction;
 use crate::ssa::ast::Instruction;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
 use log::debug;
 use std::collections::HashMap;
 
@@ -223,8 +225,6 @@ impl Graph {
         Ok(())
     }
 }
-
-
 
 #[cfg(test)]
 mod test {

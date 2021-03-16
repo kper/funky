@@ -178,7 +178,7 @@ impl Convert {
                     Instruction::Kill(dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
                     }
-                    Instruction::Call(callee_name, params, regs) => {
+                    Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
                     _ => {}
