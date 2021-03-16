@@ -27,7 +27,13 @@ impl Convert {
         }
     }
 
-    fn add_ctrl_flow(&self, graph: &mut Graph, in_: &Vec<&Fact>, out_: &Vec<&Fact>, except: &String) -> Result<()> {
+    fn add_ctrl_flow(
+        &self,
+        graph: &mut Graph,
+        in_: &Vec<&Fact>,
+        out_: &Vec<&Fact>,
+        except: &String,
+    ) -> Result<()> {
         for (from, after) in in_
             .iter()
             .zip(out_)
@@ -112,7 +118,7 @@ impl Convert {
 
                         self.add_ctrl_flow(&mut graph, &in_, &out_, reg)?;
                     }
-                    Instruction::Assign(dest, src) => {
+                    Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
                         let before = in_
                             .iter()
                             .find(|x| &x.belongs_to_var == src)
