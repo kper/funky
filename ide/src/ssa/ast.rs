@@ -21,6 +21,7 @@ type Name = usize;
 type Reg = String;
 type Regs = Vec<String>;
 type FunctionName = usize;
+type Count = usize;
 
 #[derive(Debug, Clone)]
 pub enum Instruction {
@@ -32,5 +33,5 @@ pub enum Instruction {
     Jump(String),
     Call(String, Vec<Src>, Regs),
     Kill(Dest),
-    Conditional(Src, Vec<Instruction>),
+    Conditional(Src, Count),
 }

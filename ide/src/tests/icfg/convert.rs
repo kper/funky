@@ -254,12 +254,12 @@ fn test_ir_if() {
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
-            %1 = 1
             IF %1 { 
-                %2 = 1
+                %1 = 2
+                %2 = 3
             }
             BLOCK 2
-            %2 = 2
+            %2 = 4
         };
         "
     );

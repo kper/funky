@@ -32,15 +32,25 @@ impl Convert {
         graph: &mut Graph,
         in_: &Vec<&Fact>,
         out_: &Vec<&Fact>,
-        except: &String,
+        except: Option<&String>,
     ) -> Result<()> {
-        for (from, after) in in_
-            .iter()
-            .zip(out_)
-            .filter(|(from, to)| &from.belongs_to_var != except && &to.belongs_to_var != except)
-            .map(|(from, after)| (from.clone(), after.clone()))
-        {
-            graph.add_normal(from.clone(), after.clone())?;
+        if let Some(except) = except {
+            for (from, after) in in_
+                .iter()
+                .zip(out_)
+                .filter(|(from, to)| &from.belongs_to_var != except && &to.belongs_to_var != except)
+                .map(|(from, after)| (from.clone(), after.clone()))
+            {
+                graph.add_normal(from.clone(), after.clone())?;
+            }
+        } else {
+            for (from, after) in in_
+                .iter()
+                .zip(out_)
+                .map(|(from, after)| (from.clone(), after.clone()))
+            {
+                graph.add_normal(from.clone(), after.clone())?;
+            }
         }
 
         Ok(())
@@ -56,10 +66,35 @@ impl Convert {
         for (from, after) in in_
             .iter()
             .zip(out_)
-            .filter(|(from, to)| !except.contains(&from.belongs_to_var) && !except.contains(&to.belongs_to_var))
+            .filter(|(from, to)| {
+                !except.contains(&from.belongs_to_var) && !except.contains(&to.belongs_to_var)
+            })
             .map(|(from, after)| (from.clone(), after.clone()))
         {
             graph.add_call_to_return_edge(from.clone(), after.clone())?;
+        }
+
+        Ok(())
+    }
+
+    fn generate_all_facts(
+        graph: &mut Graph,
+        function: &crate::ssa::ast::Function,
+        instructions: Vec<&Instruction>,
+    ) -> Result<()> {
+        let mut iterator = InstructionIterator::new(instructions);
+
+        //Generating all facts
+        for instruction in &mut iterator {
+            debug!("Instruction {:?}", instruction);
+
+            match instruction {
+                Instruction::Conditional(_, nested) => {
+                    graph.add_statement(function, instruction)?;
+                    //Self::generate_all_facts(graph, function, nested.iter().collect())?;
+                }
+                _ => graph.add_statement(function, instruction)?,
+            }
         }
 
         Ok(())
@@ -80,14 +115,11 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
-            let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
-
-            //Generating all facts
-            for instruction in &mut iterator {
-                debug!("Instruction {:?}", instruction);
-                graph.add_statement(function, instruction)?;
-            }
+            Self::generate_all_facts(
+                &mut graph,
+                function,
+                function.instructions.iter().collect::<Vec<_>>(),
+            )?;
 
             graph.pc_counter.set(1); // Set to the first instruction
 
@@ -135,7 +167,7 @@ impl Convert {
 
                         graph.add_normal(before, after)?;
 
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, reg)?;
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(reg))?;
                     }
                     Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
                         let before = in_
@@ -153,7 +185,7 @@ impl Convert {
 
                         graph.add_normal(before, after)?;
 
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
                     }
                     Instruction::BinOp(dest, src1, src2) => {
                         let before = in_
@@ -173,13 +205,33 @@ impl Convert {
                             graph.add_normal(from.clone(), after.clone())?;
                         }
 
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
                     }
                     Instruction::Kill(dest) => {
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
                     }
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
+                    }
+                    Instruction::Conditional(reg, instruction_count) => {
+                        let facts = graph.facts.clone();
+                        // Set else path
+                        let facts_before_block = facts
+                            .iter()
+                            .filter(|x| x.function == function.name && x.pc == pc);
+
+                        let facts_after_block = facts
+                            .iter()
+                            .filter(|x| {
+                                x.function == function.name && x.pc == pc + instruction_count
+                            });
+
+                        for (from, to) in facts_before_block.zip(facts_after_block) {
+                            graph.add_normal_curved(from.clone(), to.clone())?;
+                        }
+
+                        // Set normal entering
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     _ => {}
                 }
@@ -279,7 +331,6 @@ impl Convert {
                             })
                             .map(|x| *x)
                             .collect::<Vec<_>>();
-
 
                         // Shrink to result of callee
 

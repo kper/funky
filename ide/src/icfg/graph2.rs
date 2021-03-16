@@ -54,7 +54,7 @@ pub struct Variable {
 
 #[derive(Debug, Clone)]
 pub enum Edge {
-    Normal { from: Fact, to: Fact },
+    Normal { from: Fact, to: Fact, curved: bool },
     Call { from: Fact, to: Fact },
     CallToReturn { from: Fact, to: Fact },
     Return { from: Fact, to: Fact },
@@ -199,7 +199,14 @@ impl Graph {
 
     /// Add a normal edge from the fact `from` to the fact `to`.
     pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal { from, to });
+        self.edges.push(Edge::Normal { from, to, curved: false });
+
+        Ok(())
+    }
+
+    /// Add a normal edge from the fact `from` to the fact `to`, but also curved.
+    pub fn add_normal_curved(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Normal { from, to, curved: true, });
 
         Ok(())
     }

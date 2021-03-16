@@ -36,22 +36,39 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:\%0] (17) at (1, 4) {};
 \node[circle,fill,inner sep=1pt,label=left:\%1] (18) at (2, 4) {};
 \node[circle,fill,inner sep=1pt,label=left:\%2] (19) at (3, 4) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (21) at (1, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (22) at (2, 5) {};
+\node[circle,fill,inner sep=1pt,label=left:\%2] (23) at (3, 5) {};
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [Const(2, 1.0)])};
-\node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(2, 2.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Conditional(1, 2)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Const(1, 2.0)};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(2, 3.0)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 4.0)};
 		\path[->] (0) edge (5);
 		\path[->] (0) edge (4);
 		\path[->] (2) edge (6);
 		\path[->] (3) edge (7);
-		\path[->] (4) edge (10);
+		\path[->, bend right] (8) edge (16);
+		\path[->, bend right] (9) edge (17);
+		\path[->, bend right] (10) edge (18);
+		\path[->, bend right] (11) edge (19);
 		\path[->] (4) edge (8);
 		\path[->] (5) edge (9);
+		\path[->] (6) edge (10);
 		\path[->] (7) edge (11);
+		\path[->] (8) edge (14);
+		\path[->] (8) edge (12);
+		\path[->] (9) edge (13);
+		\path[->] (11) edge (15);
 		\path[->] (12) edge (19);
 		\path[->] (12) edge (16);
 		\path[->] (13) edge (17);
 		\path[->] (14) edge (18);
+		\path[->] (16) edge (23);
+		\path[->] (16) edge (20);
+		\path[->] (17) edge (21);
+		\path[->] (18) edge (22);
 
 
                 \end{tikzpicture}
