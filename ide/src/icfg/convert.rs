@@ -112,6 +112,24 @@ impl Convert {
 
                         self.add_ctrl_flow(&mut graph, &in_, &out_, reg)?;
                     }
+                    Instruction::Assign(dest, src) => {
+                        let before = in_
+                            .iter()
+                            .find(|x| &x.belongs_to_var == src)
+                            .map(|x| *x)
+                            .context("Cannot get `before` fact")?
+                            .clone();
+                        let after = out_
+                            .iter()
+                            .find(|x| &x.belongs_to_var == dest)
+                            .map(|x| *x)
+                            .context("Cannot get `before` fact")?
+                            .clone();
+
+                        graph.add_normal(before, after)?;
+
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                    }
                     _ => {}
                 }
             }

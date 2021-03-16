@@ -30,6 +30,9 @@ expression: output
 		\path[->] (0) edge (5);
 		\path[->] (0) edge (3);
 		\path[->] (1) edge (4);
+		\path[->] (5) edge (7);
+		\path[->] (3) edge (6);
+		\path[->] (5) edge (8);
 
 
                 \end{tikzpicture}
