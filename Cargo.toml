@@ -12,6 +12,9 @@ members = [
 	"hustensaft",
 	"custom_display"
 ]
+exclude = [
+	"ide"
+]
 
 [lib]
 path  = "src/lib.rs"
