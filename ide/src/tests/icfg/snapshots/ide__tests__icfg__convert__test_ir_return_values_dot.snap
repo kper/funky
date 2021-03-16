@@ -41,6 +41,8 @@ expression: output
 		\path[->] (0) edge (7);
 		\path[->] (0) edge (6);
 		\path[->] (2) edge (8);
+		\path[->] (6) edge node { } (9);
+		\path[->] (7) edge node { } (10);
 		\path[->] (3) edge (13);
 		\path[->] (3) edge (12);
 		\path[->] (5) edge (14);

@@ -46,6 +46,25 @@ impl Convert {
         Ok(())
     }
 
+    fn add_call_to_return(
+        &self,
+        graph: &mut Graph,
+        in_: &Vec<&Fact>,
+        out_: &Vec<&Fact>,
+        except: &Vec<String>,
+    ) -> Result<()> {
+        for (from, after) in in_
+            .iter()
+            .zip(out_)
+            .filter(|(from, to)| !except.contains(&from.belongs_to_var) && !except.contains(&to.belongs_to_var))
+            .map(|(from, after)| (from.clone(), after.clone()))
+        {
+            graph.add_call_to_return_edge(from.clone(), after.clone())?;
+        }
+
+        Ok(())
+    }
+
     pub fn visit(&mut self, prog: Program) -> Result<Graph> {
         debug!("Convert intermediate repr to graph");
 
@@ -158,6 +177,9 @@ impl Convert {
                     }
                     Instruction::Kill(dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                    }
+                    Instruction::Call(callee_name, params, regs) => {
+                        self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
                     _ => {}
                 }

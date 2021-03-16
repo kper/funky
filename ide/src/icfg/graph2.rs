@@ -215,7 +215,16 @@ impl Graph {
 
         Ok(())
     }
+
+    /// Add a call-to-return edge from the fact `from` to the fact `to`.
+    pub fn add_call_to_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::CallToReturn { from, to });
+
+        Ok(())
+    }
 }
+
+
 
 #[cfg(test)]
 mod test {
