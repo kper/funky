@@ -173,9 +173,6 @@ impl Convert {
 
     pub fn handle_calls(&mut self, prog: Program, graph: &mut Graph) -> Result<()> {
         for function in prog.functions.iter() {
-            let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
-
             graph.pc_counter.set(1); // Set to the first instruction
 
             let mut iterator =
@@ -216,28 +213,43 @@ impl Convert {
                             .map(|x| *x)
                             .collect::<Vec<_>>();
 
-                        let callee_vars: Vec<_> = graph
+                        let callee_params_vars: Vec<_> = graph
                             .get_vars(callee_name)
                             .context("Cannot get variables of called function")?
                             .iter()
                             .take(params.len() + 1)
                             .collect();
 
-                        let mut callee_facts = Vec::new();
+                        let callee_all_vars: Vec<_> = graph
+                            .get_vars(callee_name)
+                            .context("Cannot get variables of called function")?
+                            .iter()
+                            .collect();
 
-                        for var in callee_vars {
-                            let fact = graph
+                        let mut callee_first_facts = Vec::new();
+                        let mut callee_last_facts = Vec::new();
+
+                        for var in callee_params_vars {
+                            let first_fact = graph
                                 .get_first_fact_of_var(var)
                                 .context("Cannot get first fact of variable")?;
-                            callee_facts.push(fact.clone());
+                            callee_first_facts.push(first_fact.clone());
                         }
 
-                        for (from, to) in before.iter().zip(callee_facts) {
-                            graph.add_call_edge(from.clone().clone(), to);
+                        for var in callee_all_vars {
+                            let last_fact = graph
+                                .get_last_fact_of_var(var)
+                                .context("Cannot get last fact of variable")?;
+
+                            callee_last_facts.push(last_fact.clone());
+                        }
+
+                        for (from, to) in before.iter().zip(callee_first_facts) {
+                            graph.add_call_edge(from.clone().clone(), to)?;
                         }
 
                         // After the return
-                        let after = out_
+                        let after_caller = out_
                             .iter()
                             .filter(|x| {
                                 dest.contains(&x.belongs_to_var)
@@ -245,6 +257,33 @@ impl Convert {
                             })
                             .map(|x| *x)
                             .collect::<Vec<_>>();
+
+
+                        // Shrink to result of callee
+
+                        let expected_return = graph
+                            .functions
+                            .get(callee_name)
+                            .context("Cannot find function")?
+                            .return_count;
+
+                        let taut = callee_last_facts.get(0).unwrap().clone();
+
+                        callee_last_facts.reverse();
+
+                        let mut callee_last_facts: Vec<_> = callee_last_facts
+                            .into_iter()
+                            .take(expected_return)
+                            .collect();
+
+                        callee_last_facts.reverse();
+
+                        callee_last_facts.insert(0, taut);
+
+                        assert_eq!(callee_last_facts.len(), after_caller.len());
+                        for (from, to) in callee_last_facts.iter().zip(after_caller) {
+                            graph.add_return_edge(from.clone(), to.clone())?;
+                        }
                     }
                     _ => {}
                 }

@@ -41,6 +41,7 @@ pub struct Fact {
 pub struct Function {
     pub name: FunctionName,
     pub definitions: usize,
+    pub return_count: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -88,6 +89,13 @@ impl Graph {
             .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
     }
 
+    pub fn get_last_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
+        self.facts
+            .iter()
+            .rev()
+            .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
+    }
+
     pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
         debug!("Adding new function {} to the graph", function.name);
 
@@ -96,6 +104,7 @@ impl Graph {
             Function {
                 name: function.name.clone(),
                 definitions: function.definitions.len(),
+                return_count: function.results_len,
             },
         );
 
@@ -108,6 +117,7 @@ impl Graph {
 
         // add definitions
         for reg in function.definitions.iter() {
+            debug!("Adding definition {}", reg);
             variables.push(Variable {
                 name: reg.clone(),
                 function: function.name.clone(),
@@ -195,6 +205,13 @@ impl Graph {
     /// Add a call edge from the fact `from` to the fact `to`.
     pub fn add_call_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
         self.edges.push(Edge::Call { from, to });
+
+        Ok(())
+    }
+
+    /// Add a return edge from the fact `from` to the fact `to`.
+    pub fn add_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Return { from, to });
 
         Ok(())
     }
