@@ -1,9 +1,9 @@
 use crate::counter::{Counter, StackedCounter};
 use crate::ssa::ast::Function as AstFunction;
+use crate::ssa::ast::Instruction;
 use anyhow::{bail, Context, Result};
 use log::debug;
 use std::collections::HashMap;
-use crate::ssa::ast::Instruction;
 
 type VarId = String;
 type FunctionName = String;
@@ -20,7 +20,6 @@ pub struct Graph {
     note_counter: Counter,
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Note {
     pub id: usize,
@@ -28,7 +27,6 @@ pub struct Note {
     pub pc: usize,
     pub note: String,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct Fact {
@@ -47,8 +45,8 @@ pub struct Function {
 
 #[derive(Debug, Clone)]
 pub struct Variable {
-    name: FunctionName,
-    function: FunctionName,
+    pub name: FunctionName,
+    pub function: FunctionName,
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +62,7 @@ impl Graph {
         Graph::default()
     }
 
-    fn get_vars(&self, function_name: &String) -> Option<&Vec<Variable>> {
+    pub fn get_vars(&self, function_name: &String) -> Option<&Vec<Variable>> {
         self.vars.get(function_name)
     }
 
@@ -72,7 +70,7 @@ impl Graph {
         self.vars.get_mut(function_name)
     }
 
-    fn get_var(&self, function_name: &String, var: &String) -> Option<&Variable> {
+    pub fn get_var(&self, function_name: &String, var: &String) -> Option<&Variable> {
         self.get_vars(function_name)?
             .iter()
             .find(|x| &x.name == var)
@@ -82,6 +80,12 @@ impl Graph {
         self.get_vars_mut(function_name)?
             .iter_mut()
             .find(|x| &x.name == var)
+    }
+
+    pub fn get_first_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
+        self.facts
+            .iter()
+            .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
     }
 
     pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
@@ -135,13 +139,17 @@ impl Graph {
 
             index += 1;
         }
-        
+
         self.pc_counter.get();
 
         Ok(())
     }
 
-    pub fn add_statement(&mut self, function: &AstFunction, instruction: &Instruction) -> Result<()> {
+    pub fn add_statement(
+        &mut self,
+        function: &AstFunction,
+        instruction: &Instruction,
+    ) -> Result<()> {
         debug!("Adding statement");
 
         let vars = self
@@ -174,16 +182,19 @@ impl Graph {
             note: format!("{:?}", instruction),
         });
 
-
         Ok(())
     }
 
     /// Add a normal edge from the fact `from` to the fact `to`.
     pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal {
-            from,
-            to
-        });
+        self.edges.push(Edge::Normal { from, to });
+
+        Ok(())
+    }
+
+    /// Add a call edge from the fact `from` to the fact `to`.
+    pub fn add_call_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Call { from, to });
 
         Ok(())
     }

@@ -159,9 +159,69 @@ impl Convert {
                     Instruction::Kill(dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
                     }
+                    Instruction::Call(callee_name, params, dest) => {
+                        let before = in_
+                            .iter()
+                            .filter(|x| {
+                                params.contains(&x.belongs_to_var)
+                                    || x.belongs_to_var == "taut".to_string()
+                            })
+                            .map(|x| *x)
+                            .collect::<Vec<_>>();
+
+                        let callee_vars: Vec<_> = graph
+                            .get_vars(callee_name)
+                            .context("Cannot get variables of called function")?
+                            .iter()
+                            .take(params.len() + 1)
+                            .collect();
+
+                        let mut callee_facts = Vec::new();
+
+                        for var in callee_vars {
+                            let fact = graph
+                                .get_first_fact_of_var(var)
+                                .context("Cannot get first fact of variable")?;
+                            callee_facts.push(fact.clone());
+                        }
+
+                        for (from, to) in before.iter().zip(callee_facts) {
+                            graph.add_call_edge(from.clone().clone(), to);
+                        }
+
+                        // After the return
+                        let after = out_
+                            .iter()
+                            .filter(|x| {
+                                dest.contains(&x.belongs_to_var)
+                                    || x.belongs_to_var == "taut".to_string()
+                            })
+                            .map(|x| *x)
+                            .collect::<Vec<_>>();
+
+                        /*
+                        for param in params {
+                            let callee_var = graph
+                                .get_var(callee_name, param)
+                                .with_context(|| format!("Cannot find variable {}", param))?;
+
+                            let fact =
+                                graph.get_first_fact_of_var(callee_var).with_context(|| {
+                                    format!("No fact found for {}", callee_var.name)
+                                })?;
+
+                            out_.push(fact);
+                        }*/
+                    }
                     _ => {}
                 }
             }
+
+            graph.pc_counter.set(1); // Set to the first instruction
+             let mut iterator =
+                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+
+
 
             graph.pc_counter.set(1); // Set to the first instruction
 
