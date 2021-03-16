@@ -264,3 +264,16 @@ fn test_ir_if() {
         "
     );
 }
+
+#[test]
+fn test_ir_loop() {
+    ir!(
+        "test_ir_loop",
+        "define main (result 0) (define %0 %1) {
+            BLOCK 0
+            %0 = 1
+            GOTO 0 
+        };
+        "
+    );
+}

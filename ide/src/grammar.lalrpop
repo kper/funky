@@ -66,7 +66,6 @@ pub Instruction : Vec<Instruction> = {
     <dest:Reg> "=" "op" <src:Reg> => vec![Instruction::Unop(dest, src)],
     <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => vec![Instruction::BinOp(dest, src1, src2)],
     "GOTO" <n:Id> => vec![Instruction::Jump(n)],
-    //"IF" <reg:Reg> "THEN" "GOTO" <j1:Id> "ELSE" "GOTO" <j2:Id> => vec![Instruction::Jump(j1), Instruction::Jump(j2)],
     "IF" <reg:Reg> "{" <instructions:Instruction*> "}" => {
         let mut v = Vec::with_capacity(1 + instructions.len());
         v.push(Instruction::Conditional(reg, instructions.len()));

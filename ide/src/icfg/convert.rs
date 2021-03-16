@@ -15,7 +15,6 @@ use crate::ssa::ast::Program;
 pub struct Convert {
     block_counter: Counter,
     functions: HashMap<String, usize>, // function name to fact id
-    registration_returns: HashMap<String, (Vec<Fact>, Vec<String>)>, // function name to (all facts + dest regs)
 }
 
 impl Convert {
@@ -23,7 +22,6 @@ impl Convert {
         Self {
             block_counter: Counter::default(),
             functions: HashMap::new(),
-            registration_returns: HashMap::new(),
         }
     }
 
@@ -80,21 +78,31 @@ impl Convert {
     fn generate_all_facts(
         graph: &mut Graph,
         function: &crate::ssa::ast::Function,
-        instructions: Vec<&Instruction>,
+        block_saver: &mut HashMap<String, usize>,
     ) -> Result<()> {
-        let mut iterator = InstructionIterator::new(instructions);
+        let mut iterator = function.instructions.iter();
+
+        let mut pc = 0;
+
+        debug!("///////");
+        debug!("/////// ALL");
+        debug!("///////");
 
         //Generating all facts
         for instruction in &mut iterator {
-            debug!("Instruction {:?}", instruction);
-
             match instruction {
                 Instruction::Conditional(_, nested) => {
                     graph.add_statement(function, instruction)?;
                     //Self::generate_all_facts(graph, function, nested.iter().collect())?;
                 }
+                Instruction::Block(num) => {
+                    block_saver.insert(num.clone(), pc);
+                    graph.add_statement(function, instruction)?;
+                }
                 _ => graph.add_statement(function, instruction)?,
             }
+
+            pc += 1;
         }
 
         Ok(())
@@ -115,18 +123,17 @@ impl Convert {
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
 
-            Self::generate_all_facts(
-                &mut graph,
-                function,
-                function.instructions.iter().collect::<Vec<_>>(),
-            )?;
+            let mut block_saver = HashMap::new(); // key = Block, Value = pc
+            Self::generate_all_facts(&mut graph, function, &mut block_saver)?;
 
             graph.pc_counter.set(1); // Set to the first instruction
 
-            let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+            let mut iterator = function.instructions.iter();
+            //InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
 
-            debug!("Setting flow functions");
+            debug!("///////");
+            debug!("/////// FLOW");
+            debug!("///////");
             for instruction in &mut iterator {
                 let pc = graph.pc_counter.get();
 
@@ -151,6 +158,24 @@ impl Convert {
 
                 debug!("Instruction {:?}", instruction);
                 match instruction {
+                    Instruction::Block(num) => {
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                    }
+                    Instruction::Jump(num) => {
+                        if let Some(jump_pc) = block_saver.get(num) {
+                            let facts = graph.facts.clone();
+                            let to_facts = facts
+                                .iter()
+                                .filter(|x| x.function == function.name && x.pc == *jump_pc)
+                                .collect::<Vec<_>>();
+
+                            for (from, to) in in_.iter().zip(to_facts) {
+                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
+                            }
+                        } else {
+                            bail!("Block {} was not found", num);
+                        }
+                    }
                     Instruction::Const(reg, _val) => {
                         let before = in_
                             .iter()
@@ -220,11 +245,9 @@ impl Convert {
                             .iter()
                             .filter(|x| x.function == function.name && x.pc == pc);
 
-                        let facts_after_block = facts
-                            .iter()
-                            .filter(|x| {
-                                x.function == function.name && x.pc == pc + instruction_count
-                            });
+                        let facts_after_block = facts.iter().filter(|x| {
+                            x.function == function.name && x.pc == pc + instruction_count
+                        });
 
                         for (from, to) in facts_before_block.zip(facts_after_block) {
                             graph.add_normal_curved(from.clone(), to.clone())?;
@@ -249,10 +272,11 @@ impl Convert {
         for function in prog.functions.iter() {
             graph.pc_counter.set(1); // Set to the first instruction
 
-            let mut iterator =
-                InstructionIterator::new(function.instructions.iter().collect::<Vec<_>>());
+            let mut iterator = function.instructions.iter();
 
-            debug!("Setting flow functions");
+            debug!("///////");
+            debug!("/////// HANDLING CALLS");
+            debug!("///////");
             for instruction in &mut iterator {
                 let pc = graph.pc_counter.get();
 
@@ -288,14 +312,14 @@ impl Convert {
                             .collect::<Vec<_>>();
 
                         let callee_params_vars: Vec<_> = graph
-                            .get_vars(callee_name)
+                            .get_vars(&callee_name)
                             .context("Cannot get variables of called function")?
                             .iter()
                             .take(params.len() + 1)
                             .collect();
 
                         let callee_all_vars: Vec<_> = graph
-                            .get_vars(callee_name)
+                            .get_vars(&callee_name)
                             .context("Cannot get variables of called function")?
                             .iter()
                             .collect();
@@ -364,88 +388,5 @@ impl Convert {
         }
 
         Ok(())
-    }
-}
-
-/// Highlevel iterator, that has the
-/// ability to jump to blocks
-struct InstructionIterator<'a> {
-    instructions: Vec<&'a Instruction>,
-    current: usize,
-    blocks: HashMap<&'a String, usize>, // BlockId to index in instructions
-}
-
-impl<'a> InstructionIterator<'a> {
-    pub fn new(instructions: Vec<&'a Instruction>) -> Self {
-        let mut v = Self {
-            instructions,
-            current: 0,
-            blocks: HashMap::default(),
-        };
-
-        v.create_block_jump_list();
-
-        v
-    }
-
-    fn create_block_jump_list(&mut self) {
-        for (index, block) in self
-            .instructions
-            .iter()
-            .enumerate()
-            .filter(|(_id, x)| matches!(x, Instruction::Block(_)))
-        {
-            match block {
-                Instruction::Block(id) => {
-                    self.blocks.insert(id, index);
-                }
-                _ => {
-                    panic!("Only expecting blocks");
-                }
-            }
-        }
-    }
-
-    pub fn jump_to(&mut self, block_id: &String) -> Result<()> {
-        debug!("Jump to block {}", block_id);
-        if let Some(index) = self.blocks.get(block_id) {
-            self.current = *index;
-            return Ok(());
-        } else {
-            bail!("Block {} does not exist", block_id);
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn peek(&self) -> Option<&'a Instruction> {
-        self.instructions.get(self.current).map(|x| *x)
-    }
-}
-
-impl<'a> std::iter::Iterator for &mut InstructionIterator<'a> {
-    type Item = &'a Instruction;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let item = self.instructions.get(self.current);
-        self.current += 1;
-        let item = item.map(|x| *x);
-
-        match item {
-            Some(Instruction::Block(_)) => {
-                return self.next();
-            }
-            _ => {}
-        }
-
-        if let Some(&Instruction::Jump(ref id)) = item {
-            if self.jump_to(id).is_ok() {
-                self.next()
-            } else {
-                debug!("Block not found, therefore ending");
-                None
-            }
-        } else {
-            item
-        }
     }
 }
