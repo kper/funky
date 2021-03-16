@@ -156,6 +156,9 @@ impl Convert {
 
                         self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
                     }
+                    Instruction::Kill(dest) => {
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, dest)?;
+                    }
                     _ => {}
                 }
             }
