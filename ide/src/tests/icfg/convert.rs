@@ -205,3 +205,44 @@ fn test_ir_return_mismatched_values2() {
         };"
     );
 }
+
+#[test]
+fn test_ir_multiple_return_values() {
+    ir!(
+        "test_ir_multiple_return_values",
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+        };"
+    );
+}
+
+/* 
+#[test]
+fn test_ir_early_return() {
+    ir!(
+        "test_ir_early_return",
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %0 <- CALL mytest2(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            RETURN %0
+            %1 = 3
+            RETURN %1
+        };
+        define mytest2 (param %0) (result 1) (define %0 %1) {
+            %0 = 2
+            %1 = 3
+            RETURN %0
+        };
+        "
+    );
+}
+*/
