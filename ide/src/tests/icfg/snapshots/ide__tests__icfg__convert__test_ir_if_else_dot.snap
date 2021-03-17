@@ -74,7 +74,7 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:\%2] (55) at (3, 13) {};
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, false)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Jump(1)};
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Jump(2)};
 \node[font=\tiny] (note_5) at (-1.5, 5.5) {Block(1)};

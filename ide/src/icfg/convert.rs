@@ -234,8 +234,24 @@ impl Convert {
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
-                    Instruction::Conditional(_reg ) => {
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                    Instruction::Conditional(_reg , cont) => {
+                        if !cont {
+                            self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                        }
+                        else {
+                            // This is a simple if.
+                            // Therefore, we need an edge for not jumping
+
+                            let after_if = facts
+                                .iter()
+                                .filter(|x| x.pc == pc + 1 && x.function == function.name)
+                                .collect::<Vec<_>>();
+
+                            self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                            for (from, to) in out_.iter().zip(after_if) {
+                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
+                            }
+                        }
                     }
                 }
             }
