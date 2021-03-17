@@ -10,9 +10,4 @@ before_script:
   - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
 script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
-  - cargo clippy --all-features -- -D warnings
-  - cd ide && cargo build
-  - cargo test --verbose
-  - cargo clippy --all-features -- -D warnings
+  - sh ci.sh
