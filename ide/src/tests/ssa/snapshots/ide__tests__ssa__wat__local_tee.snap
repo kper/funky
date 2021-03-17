@@ -1,5 +1,5 @@
 ---
-source: ide/src/tests/ssa/wat.rs
+source: src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
@@ -8,6 +8,7 @@ BLOCK 0
 %1 = 1
 %2 = %1
 %0 = %1
-BLOCK 1
+KILL %1
+RETURN %2;
 };
 

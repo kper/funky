@@ -11,17 +11,62 @@ use std::collections::HashMap;
 
 use crate::ssa::ast::Program;
 
+const TAU: usize = 1;
+
+#[derive(Debug)]
+struct CallMeta {
+    caller: String,
+    caller_dest: Vec<String>,
+    pc: usize,
+}
+
+#[derive(Debug, Default)]
+struct CallHandler {
+    call_handler: HashMap<String, Vec<CallMeta>>, // function name to PC
+}
+
+impl CallHandler {
+    pub fn add_call(
+        &mut self,
+        callee_name: &String,
+        pc: usize,
+        caller_name: &String,
+        dest: &Vec<String>,
+    ) {
+        if let Some(callers) = self.call_handler.get_mut(callee_name) {
+            callers.push(CallMeta {
+                caller: caller_name.clone(),
+                caller_dest: dest.clone(),
+                pc,
+            });
+        } else {
+            self.call_handler.insert(
+                callee_name.clone(),
+                vec![CallMeta {
+                    caller: caller_name.clone(),
+                    caller_dest: dest.clone(),
+                    pc,
+                }],
+            );
+        }
+    }
+
+    pub fn get_function(&self, callee_name: &String) -> Option<&Vec<CallMeta>> {
+        self.call_handler.get(callee_name)
+    }
+}
+
 #[derive(Debug)]
 pub struct Convert {
     block_counter: Counter,
-    functions: HashMap<String, usize>, // function name to fact id
+    call_handler: CallHandler,
 }
 
 impl Convert {
     pub fn new() -> Self {
         Self {
             block_counter: Counter::default(),
-            functions: HashMap::new(),
+            call_handler: CallHandler::default(),
         }
     }
 
@@ -76,6 +121,7 @@ impl Convert {
     }
 
     fn generate_all_facts(
+        &mut self,
         graph: &mut Graph,
         function: &crate::ssa::ast::Function,
         block_saver: &mut HashMap<String, usize>,
@@ -93,6 +139,12 @@ impl Convert {
             match instruction {
                 Instruction::Block(num) => {
                     block_saver.insert(num.clone(), pc);
+                    graph.add_statement(function, instruction)?;
+                }
+                Instruction::Call(callee_name, _params, _dest) => {
+                    // This is necessary, because we can have multiple returns
+                    self.call_handler
+                        .add_call(callee_name, pc, &function.name, _dest);
                     graph.add_statement(function, instruction)?;
                 }
                 _ => graph.add_statement(function, instruction)?,
@@ -120,7 +172,7 @@ impl Convert {
             debug!("Creating graph from function {}", function.name);
 
             let mut block_saver = HashMap::new(); // key = Block, Value = pc
-            Self::generate_all_facts(&mut graph, function, &mut block_saver)?;
+            self.generate_all_facts(&mut graph, function, &mut block_saver)?;
 
             graph.pc_counter.set(1); // Set to the first instruction
 
@@ -234,11 +286,10 @@ impl Convert {
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
-                    Instruction::Conditional(_reg , cont) => {
+                    Instruction::Conditional(_reg, cont) => {
                         if !cont {
                             self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
-                        }
-                        else {
+                        } else {
                             // This is a simple if.
                             // Therefore, we need an edge for not jumping
 
@@ -251,6 +302,62 @@ impl Convert {
                             for (from, to) in out_.iter().zip(after_if) {
                                 graph.add_normal_curved(from.clone().clone(), to.clone())?;
                             }
+                        }
+                    }
+                    Instruction::Return(regs) => {
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                        let expected_return = graph
+                            .functions
+                            .get(&function.name)
+                            .context("Cannot find function")?
+                            .return_count;
+
+                        if expected_return != regs.len() {
+                            bail!(
+                                "Function return mismatched. Expected {}; Actual {}",
+                                expected_return,
+                                regs.len() 
+                            );
+                        }
+
+                        let caller_metas = self.call_handler.get_function(&function.name);
+
+                        if let Some(caller_metas) = caller_metas {
+                            let facts = graph.facts.clone();
+
+                            let in_ = facts
+                                .iter()
+                                .filter(|x| {
+                                    x.pc == pc - 1
+                                        && x.function == function.name
+                                        && (regs.contains(&x.belongs_to_var)
+                                            || x.belongs_to_var == "taut".to_string())
+                                })
+                                .collect::<Vec<_>>();
+
+                            for meta in caller_metas {
+                                let target_name = &meta.caller;
+                                let target_pc = meta.pc;
+                                let target_regs = &meta.caller_dest;
+
+                                let target_facts = facts
+                                    .iter()
+                                    .filter(|x| {
+                                        x.pc == target_pc + 1
+                                            && &x.function == target_name
+                                            && (target_regs.contains(&x.belongs_to_var)
+                                                || x.belongs_to_var == "taut".to_string())
+                                    })
+                                    .collect::<Vec<_>>();
+
+                                assert_eq!(in_.len(), target_facts.len());
+
+                                for (from, to) in in_.iter().zip(target_facts) {
+                                    graph.add_return_edge(from.clone().clone(), to.clone())?;
+                                }
+                            }
+                        } else {
+                            debug!("No callers found, therefore skipping return");
                         }
                     }
                 }
@@ -342,6 +449,7 @@ impl Convert {
                             graph.add_call_edge(from.clone().clone(), to)?;
                         }
 
+                        /*
                         // After the return
                         let after_caller = out_
                             .iter()
@@ -377,6 +485,7 @@ impl Convert {
                         for (from, to) in callee_last_facts.iter().zip(after_caller) {
                             graph.add_return_edge(from.clone(), to.clone())?;
                         }
+                        */
                     }
                     _ => {}
                 }

@@ -34,6 +34,11 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("%a = op %b").is_ok());
     assert!(InstructionParser::new().parse("%a = %b op %c").is_ok());
     assert!(InstructionParser::new().parse("KILL %0").is_ok());
+    assert!(InstructionParser::new().parse("RETURN ;").is_ok());
+    assert!(InstructionParser::new().parse("RETURN;").is_ok());
+    assert!(InstructionParser::new().parse("RETURN %0;").is_ok());
+    assert!(InstructionParser::new().parse("RETURN %0 ;").is_ok());
+    assert!(InstructionParser::new().parse("RETURN %0 %1;").is_ok());
 }
 
 #[test]

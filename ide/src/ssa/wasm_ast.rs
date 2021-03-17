@@ -165,6 +165,7 @@ impl IR {
 
         writeln!(function_buffer, "{{").unwrap();
         function_buffer.push_str(&body);
+
         writeln!(function_buffer, "}};").unwrap();
 
         self.buffer.push_str(&function_buffer);
@@ -183,7 +184,7 @@ impl IR {
         let code = &body.code;
 
         let name = self.block_counter.get();
-        let then_name = self.block_counter.get();
+        //let then_name = self.block_counter.get();
 
         let block = Block {
             name: name.clone(),
@@ -205,7 +206,20 @@ impl IR {
             function_buffer,
         )?;
 
-        writeln!(function_buffer, "BLOCK {}", then_name).unwrap();
+        {
+            // Add last return
+            let mut regs = Vec::new();
+
+            self.exit_block(return_count, current_reg, function_buffer)?;
+
+            for i in 0..return_count {
+                regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
+            }
+
+            writeln!(function_buffer, "RETURN {};", regs.join(" ")).unwrap();
+        }
+
+        //writeln!(function_buffer, "BLOCK {}", then_name).unwrap();
 
         Ok(())
     }
@@ -699,7 +713,7 @@ impl IR {
                         regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
                     }
 
-                    writeln!(function_buffer, "return {}", regs.join(" ")).unwrap();
+                    writeln!(function_buffer, "RETURN {};", regs.join(" ")).unwrap();
                 }
                 OP_I32_CLZ
                 | OP_I32_CTZ

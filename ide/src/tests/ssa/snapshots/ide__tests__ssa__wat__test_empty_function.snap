@@ -1,10 +1,10 @@
 ---
-source: ide/src/tests/ssa/wat.rs
+source: src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
 define 0 (result 0) (define ) {
 BLOCK 0
-BLOCK 1
+RETURN ;
 };
 

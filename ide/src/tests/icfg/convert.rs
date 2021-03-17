@@ -151,6 +151,7 @@ fn test_ir_functions() {
         define mytest (param %0) (result 0) (define %0 %1)  {
             %0 = 2   
             %1 = 3
+            RETURN;
         };"
     );
 }
@@ -166,6 +167,7 @@ fn test_ir_return_values() {
         define mytest (param %0) (result 1) (define %0 %1) {
             %0 = 2   
             %1 = 3
+            RETURN %1;
         };"
     );
 }
@@ -183,6 +185,7 @@ fn test_ir_return_mismatched_values() {
         define mytest (param %0) (result 0) (define %0 %1){
             %0 = 2   
             %1 = 3
+            RETURN %0;
         };"
     );
 }
@@ -200,6 +203,7 @@ fn test_ir_return_mismatched_values2() {
         define mytest (param %0) (result 1) (define %0 %1){
             %0 = 2   
             %1 = 3
+            RETURN %1;
         };"
     );
 }
@@ -215,11 +219,11 @@ fn test_ir_multiple_return_values() {
         define mytest (param %0) (result 2) (define %0 %1) {
             %0 = 2   
             %1 = 3
+            RETURN %0 %1;
         };"
     );
 }
 
-/* 
 #[test]
 fn test_ir_early_return() {
     ir!(
@@ -227,23 +231,40 @@ fn test_ir_early_return() {
         "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 <- CALL mytest(%0)
-            %0 <- CALL mytest2(%0)
+            %0 <- CALL mytestfoo(%0)
         };
         define mytest (param %0) (result 1) (define %0 %1) {
             %0 = 2   
-            RETURN %0
+            RETURN %0;
             %1 = 3
-            RETURN %1
+            RETURN %1;
         };
-        define mytest2 (param %0) (result 1) (define %0 %1) {
+        define mytestfoo (param %0) (result 1) (define %0 %1) {
             %0 = 2
             %1 = 3
-            RETURN %0
+            RETURN %0;
         };
         "
     );
 }
-*/
+
+#[test]
+fn test_ir_return() {
+    ir!(
+        "test_ir_return",
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %0 %1 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %0 %1;
+        };
+        "
+    );
+}
 
 #[test]
 fn test_ir_if_else() {

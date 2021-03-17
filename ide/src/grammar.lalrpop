@@ -84,7 +84,10 @@ pub Instruction : Vec<Instruction> = {
     "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
     <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
     "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
-    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)]
+    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
+    "RETURN" <n:Reg*> ";" => {
+        vec![Instruction::Return(n)]
+    }
 };
 
 Id : String = {

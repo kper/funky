@@ -32,7 +32,8 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(String, Vec<Src>, Regs),
+    Call(String, Vec<Reg>, Regs),
     Kill(Dest),
     Conditional(Src, Cont),
+    Return(Vec<Reg>),
 }
