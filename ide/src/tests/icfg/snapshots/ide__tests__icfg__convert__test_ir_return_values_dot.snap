@@ -3,7 +3,7 @@ source: src/tests/icfg/convert.rs
 expression: output
 
 ---
-   \documentclass{article}
+   \documentclass{standalone}
             \usepackage{pgf, tikz}
             \usetikzlibrary{arrows, automata}
             \begin{document}

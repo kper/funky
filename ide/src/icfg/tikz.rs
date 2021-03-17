@@ -81,7 +81,7 @@ pub fn render_to(graph: &Graph) -> String {
 
 fn template(inject: String) -> String {
     format!(
-        "   \\documentclass{{article}}
+        "   \\documentclass{{standalone}}
             \\usepackage{{pgf, tikz}}
             \\usetikzlibrary{{arrows, automata}}
             \\begin{{document}}
