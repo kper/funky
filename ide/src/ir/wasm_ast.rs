@@ -316,19 +316,8 @@ impl IR {
 
                     blocks.pop();
 
-                    writeln!(
-                        function_buffer,
-                        "GOTO {} // BLOCK ended for {}",
-                        then_name,
-                        name.clone()
-                    )
-                    .unwrap();
-                    writeln!(
-                        function_buffer,
-                        "BLOCK {} // THEN block for {}",
-                        then_name, name
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "GOTO {}", then_name,).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_LOOP(ty, code) => {
                     let name = self.block_counter.get();
@@ -346,7 +335,7 @@ impl IR {
 
                     blocks.push(block);
 
-                    writeln!(function_buffer, "BLOCK {} // LOOP", name.clone()).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
@@ -361,19 +350,8 @@ impl IR {
 
                     blocks.pop();
 
-                    writeln!(
-                        function_buffer,
-                        "GOTO {} // BLOCK ended for {}",
-                        then_name,
-                        name.clone()
-                    )
-                    .unwrap();
-                    writeln!(
-                        function_buffer,
-                        "BLOCK {} // THEN block for {}",
-                        then_name, name
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "GOTO {} ", then_name,).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_IF(ty, code) => {
                     let name = self.block_counter.get();
@@ -414,19 +392,8 @@ impl IR {
 
                     blocks.pop();
 
-                    writeln!(
-                        function_buffer,
-                        "GOTO {} // BLOCK ended for {}",
-                        then_name,
-                        name.clone()
-                    )
-                    .unwrap();
-                    writeln!(
-                        function_buffer,
-                        "BLOCK {} // THEN block for {}",
-                        then_name, name
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "GOTO {}", then_name,).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                     //writeln!(function_buffer, "}}").unwrap();
                 }
                 OP_IF_AND_ELSE(ty, code1, code2) => {
@@ -472,19 +439,8 @@ impl IR {
                         function_buffer,
                     )?;
 
-                    writeln!(
-                        function_buffer,
-                        "GOTO {} // BLOCK ended for {}",
-                        done_name,
-                        name.clone()
-                    )
-                    .unwrap();
-                    writeln!(
-                        function_buffer,
-                        "BLOCK {} // THEN block for {}",
-                        then_name, name
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
+                    writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
 
                     blocks.pop();
 
@@ -502,20 +458,9 @@ impl IR {
 
                     blocks.pop();
 
-                    writeln!(
-                        function_buffer,
-                        "GOTO {} // BLOCK ended for {}",
-                        done_name,
-                        name.clone()
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
 
-                    writeln!(
-                        function_buffer,
-                        "BLOCK {} // THEN block for {}",
-                        done_name, then_name
-                    )
-                    .unwrap();
+                    writeln!(function_buffer, "BLOCK {}", done_name,).unwrap();
                 }
                 OP_BR(label) => {
                     let jmp_index = blocks_len - 1 - *label as usize;
@@ -670,8 +615,17 @@ impl IR {
 
                     // Function returns no variables
                     if num_results == 0 {
-                        writeln!(function_buffer, "CALL {}({})", func, param_regs.join(","))
-                            .unwrap();
+                        writeln!(
+                            function_buffer,
+                            "CALL {}({})",
+                            func,
+                            param_regs
+                                .into_iter()
+                                .map(|x| format!("%{}", x))
+                                .collect::<Vec<_>>()
+                                .join(",")
+                        )
+                        .unwrap();
                     } else {
                         let return_regs: Vec<_> = (0..num_results)
                             .map(|_| {
@@ -687,7 +641,11 @@ impl IR {
                             "{} <- CALL {}({})",
                             return_regs.join(" "),
                             func,
-                            param_regs.join(",")
+                            param_regs
+                                .into_iter()
+                                .map(|x| format!("%{}", x))
+                                .collect::<Vec<_>>()
+                                .join(",")
                         )
                         .unwrap();
                     }

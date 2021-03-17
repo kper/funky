@@ -13,13 +13,13 @@ TABLE GOTO 2 ELSE GOTO 4
 KILL %2
 KILL %1
 RETURN ;
-GOTO 4 // BLOCK ended for 3
-BLOCK 4 // THEN block for 3
+GOTO 4
+BLOCK 4
 %3 = 20
 KILL %3
 RETURN ;
-GOTO 2 // BLOCK ended for 1
-BLOCK 2 // THEN block for 1
+GOTO 2
+BLOCK 2
 %4 = 22
 RETURN %4;
 };

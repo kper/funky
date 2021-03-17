@@ -26,6 +26,7 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("%123 = %a").is_ok());
     assert!(InstructionParser::new().parse("%a = %123").is_ok());
     assert!(InstructionParser::new().parse("%a = 10").is_ok());
+    assert!(InstructionParser::new().parse("%a = -10").is_ok());
     assert!(InstructionParser::new().parse("BLOCK 0").is_ok());
     assert!(InstructionParser::new().parse("GOTO 0").is_ok());
     assert!(InstructionParser::new().parse("IF %4 THEN GOTO 2 ELSE GOTO 3").is_ok());
@@ -39,6 +40,8 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("RETURN %0;").is_ok());
     assert!(InstructionParser::new().parse("RETURN %0 ;").is_ok());
     assert!(InstructionParser::new().parse("RETURN %0 %1;").is_ok());
+    assert!(InstructionParser::new().parse("CALL 0(%0)").is_ok());
+    assert!(InstructionParser::new().parse("CALL 0(%0 %1)").is_ok());
 }
 
 #[test]

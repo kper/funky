@@ -324,7 +324,8 @@ impl Convert {
 
                         if expected_return != regs.len() {
                             bail!(
-                                "Function return mismatched. Expected {}; Actual {}",
+                                "Function {} mismatched. Expected {}; Actual {}",
+                                function.name,
                                 expected_return,
                                 regs.len()
                             );

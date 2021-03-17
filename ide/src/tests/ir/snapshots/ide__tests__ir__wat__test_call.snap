@@ -11,19 +11,19 @@ BLOCK 0
 IF %3 THEN GOTO 1 ELSE GOTO 2
 BLOCK 1 
 %4 = 1
-GOTO 3 // BLOCK ended for 1
-BLOCK 2 // THEN block for 1
+GOTO 3
+BLOCK 2
 %5 = %0
 %6 = 2
 %7 = %6 op %5
-%8 <- CALL 0(7)
+%8 <- CALL 0(%7)
 %9 = %0
 %10 = 1
 %11 = %10 op %9
-%12 <- CALL 0(11)
+%12 <- CALL 0(%11)
 %13 = %12 op %11
-GOTO 3 // BLOCK ended for 1
-BLOCK 3 // THEN block for 2
+GOTO 3
+BLOCK 3
 KILL %12
 KILL %11
 KILL %10
@@ -45,14 +45,14 @@ BLOCK 4
 IF %2 THEN GOTO 5 ELSE GOTO 6
 BLOCK 5 
 %3 = 44
-GOTO 7 // BLOCK ended for 5
-BLOCK 6 // THEN block for 5
+GOTO 7
+BLOCK 6
 %4 = %0
 %5 = 1
 %6 = %5 op %4
-%7 <- CALL 2(6)
-GOTO 7 // BLOCK ended for 5
-BLOCK 7 // THEN block for 6
+%7 <- CALL 2(%6)
+GOTO 7
+BLOCK 7
 KILL %6
 KILL %5
 KILL %4
@@ -68,14 +68,14 @@ BLOCK 8
 IF %2 THEN GOTO 9 ELSE GOTO 10
 BLOCK 9 
 %3 = 99
-GOTO 11 // BLOCK ended for 9
-BLOCK 10 // THEN block for 9
+GOTO 11
+BLOCK 10
 %4 = %0
 %5 = 1
 %6 = %5 op %4
-%7 <- CALL 1(6)
-GOTO 11 // BLOCK ended for 9
-BLOCK 11 // THEN block for 10
+%7 <- CALL 1(%6)
+GOTO 11
+BLOCK 11
 KILL %6
 KILL %5
 KILL %4

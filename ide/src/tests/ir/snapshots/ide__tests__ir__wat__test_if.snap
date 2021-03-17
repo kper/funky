@@ -8,8 +8,8 @@ BLOCK 0
 %0 = 1
 IF %0 THEN GOTO 1 ELSE GOTO 2
 BLOCK 1 
-GOTO 2 // BLOCK ended for 1
-BLOCK 2 // THEN block for 1
+GOTO 2
+BLOCK 2
 RETURN ;
 };
 

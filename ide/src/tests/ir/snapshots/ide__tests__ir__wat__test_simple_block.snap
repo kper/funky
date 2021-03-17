@@ -7,8 +7,8 @@ define 0 (result 1) (define %0) {
 BLOCK 0
 BLOCK 1
 %0 = 1
-GOTO 2 // BLOCK ended for 1
-BLOCK 2 // THEN block for 1
+GOTO 2
+BLOCK 2
 RETURN %0;
 };
 
