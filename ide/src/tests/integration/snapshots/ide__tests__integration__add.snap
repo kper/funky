@@ -52,25 +52,11 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:\%2] (33) at (3, 5) {};
 \node[circle,fill,inner sep=1pt,label=left:\%3] (34) at (4, 5) {};
 \node[circle,fill,inner sep=1pt,label=left:\%4] (35) at (5, 5) {};
-\node[circle,fill,inner sep=1pt,label=left:taut] (36) at (0, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%0] (37) at (1, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%1] (38) at (2, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%2] (39) at (3, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%3] (40) at (4, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%4] (41) at (5, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:taut] (42) at (0, 7) {};
-\node[circle,fill,inner sep=1pt,label=left:\%0] (43) at (1, 7) {};
-\node[circle,fill,inner sep=1pt,label=left:\%1] (44) at (2, 7) {};
-\node[circle,fill,inner sep=1pt,label=left:\%2] (45) at (3, 7) {};
-\node[circle,fill,inner sep=1pt,label=left:\%3] (46) at (4, 7) {};
-\node[circle,fill,inner sep=1pt,label=left:\%4] (47) at (5, 7) {};
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(2, 0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(3, 1)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {BinOp(4, 3, 2)};
-\node[font=\tiny] (note_4) at (-1.5, 4.5) {Kill(3)};
-\node[font=\tiny] (note_5) at (-1.5, 5.5) {Kill(2)};
-\node[font=\tiny] (note_6) at (-1.5, 6.5) {Return([4])};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Return([4])};
 		\path[->] (0) edge (6);
 		\path[->] (1) edge (7);
 		\path[->] (2) edge (8);
@@ -100,18 +86,8 @@ expression: output
 		\path[->] (25) edge (31);
 		\path[->] (26) edge (32);
 		\path[->] (27) edge (33);
+		\path[->] (28) edge (34);
 		\path[->] (29) edge (35);
-		\path[->] (30) edge (36);
-		\path[->] (31) edge (37);
-		\path[->] (32) edge (38);
-		\path[->] (34) edge (40);
-		\path[->] (35) edge (41);
-		\path[->] (36) edge (42);
-		\path[->] (37) edge (43);
-		\path[->] (38) edge (44);
-		\path[->] (39) edge (45);
-		\path[->] (40) edge (46);
-		\path[->] (41) edge (47);
 
 
                 \end{tikzpicture}

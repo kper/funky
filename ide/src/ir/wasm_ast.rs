@@ -26,6 +26,7 @@ pub struct IR {
 #[derive(Debug)]
 struct Function {
     name: String,
+    return_count: usize,
     locals: HashMap<usize, usize>,  //key to register
     globals: HashMap<usize, usize>, //key to register
 }
@@ -100,6 +101,7 @@ impl IR {
             name,
             locals: HashMap::new(),
             globals: HashMap::new(),
+            return_count: inst.ty.return_types.len(),
         };
 
         let mut params = Vec::new();
@@ -152,6 +154,7 @@ impl IR {
             inst.ty.return_types.len(),
             engine,
             &mut body,
+            inst.ty.param_types.len(),
         )?;
 
         let nums = (0..self.symbol_table.len())
@@ -180,6 +183,7 @@ impl IR {
         return_count: usize,
         engine: &Engine,
         function_buffer: &mut String,
+        params_count: usize,
     ) -> Result<()> {
         let code = &body.code;
 
@@ -204,13 +208,14 @@ impl IR {
             current_reg,
             engine,
             function_buffer,
+            params_count,
         )?;
 
         {
             // Add last return
             let mut regs = Vec::new();
 
-            self.exit_block(return_count, current_reg, function_buffer)?;
+            //self.exit_block(return_count, current_reg, function_buffer)?;
 
             for i in 0..return_count {
                 regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
@@ -231,8 +236,16 @@ impl IR {
         arity: usize,
         old_state: Option<usize>,
         function_buffer: &mut String,
+        parameters: usize,
     ) -> Result<()> {
-        for reg in self.symbol_table.vars.iter_mut().rev().skip(arity) {
+        for reg in self
+            .symbol_table
+            .vars
+            .iter_mut()
+            .rev()
+            .skip(arity + parameters)
+        {
+            // we must offset parameters
             if reg.val() <= old_state.unwrap_or(0) {
                 break;
             }
@@ -256,6 +269,7 @@ impl IR {
         current_reg: Option<usize>,
         engine: &Engine,
         function_buffer: &mut String,
+        params_count: usize,
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
@@ -281,6 +295,8 @@ impl IR {
                     // Skip it
                 }
                 OP_BLOCK(ty, code) => {
+                    debug!("Block ty is {:?}", ty);
+
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -310,9 +326,10 @@ impl IR {
                         current_reg,
                         engine,
                         function_buffer,
+                        params_count,
                     )?;
 
-                    self.exit_block(arity as usize, current_reg, function_buffer)?;
+                    self.exit_block(arity as usize, current_reg, function_buffer, params_count)?;
 
                     blocks.pop();
 
@@ -320,6 +337,8 @@ impl IR {
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_LOOP(ty, code) => {
+                    debug!("Block ty is {:?}", ty);
+
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -338,6 +357,10 @@ impl IR {
                     writeln!(function_buffer, "BLOCK {}", name.clone()).unwrap();
 
                     let arity = engine.get_return_count_block(ty)?;
+
+                    // If the block exits, then kill all variable to `current_reg`
+                    let current_reg = self.symbol_table.peek().ok();
+
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
                         function_index,
@@ -346,6 +369,7 @@ impl IR {
                         current_reg,
                         &engine,
                         function_buffer,
+                        params_count,
                     )?;
 
                     blocks.pop();
@@ -354,6 +378,8 @@ impl IR {
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_IF(ty, code) => {
+                    debug!("Block ty is {:?}", ty);
+
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -379,6 +405,9 @@ impl IR {
                     .unwrap();
                     writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
 
+                    // If the block exits, then kill all variable to `current_reg`
+                    let current_reg = self.symbol_table.peek().ok();
+
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code.get_instructions(),
@@ -388,6 +417,7 @@ impl IR {
                         current_reg,
                         engine,
                         function_buffer,
+                        params_count,
                     )?;
 
                     blocks.pop();
@@ -397,6 +427,7 @@ impl IR {
                     //writeln!(function_buffer, "}}").unwrap();
                 }
                 OP_IF_AND_ELSE(ty, code1, code2) => {
+                    debug!("Block ty is {:?}", ty);
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
                     let done_name = self.block_counter.get();
@@ -428,6 +459,9 @@ impl IR {
                     .unwrap();
                     writeln!(function_buffer, "BLOCK {} ", name.clone()).unwrap();
 
+                    // If the block exits, then kill all variable to `current_reg`
+                    let current_reg = self.symbol_table.peek().ok();
+
                     let arity = engine.get_return_count_block(ty)?;
                     self.visit_instruction_wrapper(
                         code1.get_instructions(),
@@ -437,6 +471,7 @@ impl IR {
                         current_reg,
                         engine,
                         function_buffer,
+                        params_count,
                     )?;
 
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
@@ -454,6 +489,7 @@ impl IR {
                         current_reg,
                         engine,
                         function_buffer,
+                        params_count,
                     )?;
 
                     blocks.pop();
@@ -467,7 +503,7 @@ impl IR {
 
                     let block = blocks.get(jmp_index).unwrap();
 
-                    self.exit_block(return_arity, current_reg, function_buffer)?;
+                    self.exit_block(return_arity, current_reg, function_buffer, params_count)?;
 
                     if block.is_loop {
                         writeln!(function_buffer, "GOTO {}", block.name).unwrap();
@@ -663,11 +699,18 @@ impl IR {
                     writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_RETURN => {
+                    let function_return_arity = self
+                        .functions
+                        .get(function_index)
+                        .context("Cannot find function")?
+                        .return_count;
+
+                    debug!("RETURN {}", function_return_arity);
                     let mut regs = Vec::new();
 
-                    self.exit_block(return_arity, current_reg, function_buffer)?;
+                    self.exit_block(return_arity, current_reg, function_buffer, params_count)?;
 
-                    for i in 0..return_arity {
+                    for i in 0..function_return_arity {
                         regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
                     }
 

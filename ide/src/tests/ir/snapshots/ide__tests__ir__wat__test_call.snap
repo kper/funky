@@ -24,18 +24,6 @@ BLOCK 2
 %13 = %12 op %11
 GOTO 3
 BLOCK 3
-KILL %12
-KILL %11
-KILL %10
-KILL %9
-KILL %8
-KILL %7
-KILL %6
-KILL %5
-KILL %4
-KILL %3
-KILL %2
-KILL %1
 RETURN %13;
 };
 define 1 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7) {
@@ -53,12 +41,6 @@ BLOCK 6
 %7 <- CALL 2(%6)
 GOTO 7
 BLOCK 7
-KILL %6
-KILL %5
-KILL %4
-KILL %3
-KILL %2
-KILL %1
 RETURN %7;
 };
 define 2 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7) {
@@ -76,12 +58,6 @@ BLOCK 10
 %7 <- CALL 1(%6)
 GOTO 11
 BLOCK 11
-KILL %6
-KILL %5
-KILL %4
-KILL %3
-KILL %2
-KILL %1
 RETURN %7;
 };
 
