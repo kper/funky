@@ -248,9 +248,9 @@ fn test_ir_early_return() {
 */
 
 #[test]
-fn test_ir_if() {
+fn test_ir_if_else() {
     ir!(
-        "test_ir_if",
+        "test_ir_if_else",
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -263,6 +263,21 @@ fn test_ir_if() {
             %2 = 4
             GOTO 3
             BLOCK 3
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_if() {
+    ir!(
+        "test_ir_if",
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 0
+            %1 = 2
+            %2 = 3
         };
         "
     );
