@@ -30,8 +30,7 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("GOTO 0").is_ok());
     assert!(InstructionParser::new().parse("IF %4 THEN GOTO 2 ELSE GOTO 3").is_ok());
     assert!(InstructionParser::new().parse("IF %4 THEN GOTO 2").is_ok());
-
-    //assert!(InstructionParser::new().parse("BR TABLE GOTO 7 5 ELSE GOTO 3").is_ok());
+    assert!(InstructionParser::new().parse("TABLE GOTO 7 5 ELSE GOTO 3").is_ok());
     assert!(InstructionParser::new().parse("%a = op %b").is_ok());
     assert!(InstructionParser::new().parse("%a = %b op %c").is_ok());
     assert!(InstructionParser::new().parse("KILL %0").is_ok());

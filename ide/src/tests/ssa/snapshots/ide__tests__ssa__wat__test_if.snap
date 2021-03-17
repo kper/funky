@@ -8,8 +8,6 @@ BLOCK 0
 %0 = 1
 IF %0 THEN GOTO 2 ELSE GOTO 3
 BLOCK 2 
-OP_NOP
-
 GOTO 3 // BLOCK ended for 2
 BLOCK 3 // THEN block for 2
 BLOCK 1

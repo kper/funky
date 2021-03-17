@@ -72,6 +72,14 @@ pub Instruction : Vec<Instruction> = {
     "IF" <reg:Reg> "THEN" "GOTO" <n:Id> => {
         vec![Instruction::Conditional(reg), Instruction::Jump(n)]
     },
+    "TABLE GOTO" <n:Id*> "ELSE" "GOTO" <n2:Id> => {
+        let mut v = Vec::with_capacity(1 + n.len());
+        for i in n {
+            v.push(Instruction::Jump(i));
+        }
+        v.push(Instruction::Jump(n2));
+        v
+    },
     "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
     "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
     <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],

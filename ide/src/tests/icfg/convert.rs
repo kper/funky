@@ -1,8 +1,6 @@
 use crate::icfg::convert::Convert;
-//use crate::icfg::graphviz::render_to;
 use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
-use std::io::Cursor;
 
 use crate::grammar::*;
 
@@ -291,6 +289,26 @@ fn test_ir_loop() {
             BLOCK 0
             %0 = 1
             GOTO 0 
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_table() {
+    ir!(
+        "test_ir_table",
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            %1 = 2
+            %2 = 3
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            BLOCK 2
+            %2 = 4
+            TABLE GOTO 0 1 2 ELSE GOTO 2
         };
         "
     );

@@ -1,5 +1,5 @@
 ---
-source: ide/src/tests/ssa/wat.rs
+source: src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
@@ -7,24 +7,21 @@ define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10) {
 BLOCK 0
 BLOCK 2
 %1 = -1
-OP_DROP
-
+KILL %1
 %2 = 1
 BLOCK 4
 %3 = 2
 BLOCK 6
 %4 = 4
-OP_DROP
-
+KILL %4
 %5 = 8
 %6 = 16
 %7 = %0
-BR TABLE GOTO 7 5 ELSE GOTO 3
+TABLE GOTO 7 5 ELSE GOTO 3
 %8 = %7 op %6
 KILL %7
 KILL %6
 KILL %5
-KILL %4
 GOTO 7 // BLOCK ended for 6
 BLOCK 7 // THEN block for 6
 %9 = %8 op %3
@@ -35,7 +32,6 @@ BLOCK 5 // THEN block for 4
 %10 = %9 op %2
 KILL %9
 KILL %2
-KILL %1
 GOTO 3 // BLOCK ended for 2
 BLOCK 3 // THEN block for 2
 BLOCK 1

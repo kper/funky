@@ -1,5 +1,5 @@
 ---
-source: ide/src/tests/ssa/wat.rs
+source: src/tests/ssa/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
@@ -8,12 +8,8 @@ BLOCK 0
 %0 = 1
 IF %0 THEN GOTO 2 ELSE GOTO 3
 BLOCK 2 
-OP_NOP
-
 GOTO 4 // BLOCK ended for 2
 BLOCK 3 // THEN block for 2
-OP_NOP
-
 GOTO 4 // BLOCK ended for 2
 BLOCK 4 // THEN block for 3
 BLOCK 1

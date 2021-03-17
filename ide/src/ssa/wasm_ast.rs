@@ -565,7 +565,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "BR TABLE GOTO {} ELSE GOTO {}",
+                        "TABLE GOTO {} ELSE GOTO {}",
                         indices.join(" "),
                         jmp_index
                     )
