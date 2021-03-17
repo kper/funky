@@ -33,5 +33,5 @@ pub enum Instruction {
     Jump(String),
     Call(String, Vec<Src>, Regs),
     Kill(Dest),
-    Conditional(Src, Count),
+    Conditional(Src),
 }

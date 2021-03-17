@@ -91,10 +91,6 @@ impl Convert {
         //Generating all facts
         for instruction in &mut iterator {
             match instruction {
-                Instruction::Conditional(_, nested) => {
-                    graph.add_statement(function, instruction)?;
-                    //Self::generate_all_facts(graph, function, nested.iter().collect())?;
-                }
                 Instruction::Block(num) => {
                     block_saver.insert(num.clone(), pc);
                     graph.add_statement(function, instruction)?;
@@ -238,22 +234,7 @@ impl Convert {
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
-                    Instruction::Conditional(reg, instruction_count) => {
-                        let facts = graph.facts.clone();
-                        // Set else path
-                        let facts_before_block = facts
-                            .iter()
-                            .filter(|x| x.function == function.name && x.pc == pc);
-
-                        let facts_after_block = facts.iter().filter(|x| {
-                            x.function == function.name && x.pc == pc + instruction_count
-                        });
-
-                        for (from, to) in facts_before_block.zip(facts_after_block) {
-                            graph.add_normal_curved(from.clone(), to.clone())?;
-                        }
-
-                        // Set normal entering
+                    Instruction::Conditional(_reg ) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     _ => {}
