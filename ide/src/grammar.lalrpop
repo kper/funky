@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use crate::ssa::ast::*;
+use crate::ir::ast::*;
 
 grammar;
 

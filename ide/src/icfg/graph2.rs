@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use crate::counter::Counter;
-use crate::ssa::ast::Function as AstFunction;
-use crate::ssa::ast::Instruction;
+use crate::ir::ast::Function as AstFunction;
+use crate::ir::ast::Instruction;
 use anyhow::{Context, Result};
 use log::debug;
 use std::collections::HashMap;
@@ -236,7 +236,7 @@ impl Graph {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ssa::ast::Function as AstFunction;
+    use crate::ir::ast::Function as AstFunction;
 
     #[test]
     fn adding_var_ok() {

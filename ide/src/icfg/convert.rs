@@ -2,14 +2,14 @@
 /// the webassembly AST to a graph
 use crate::counter::Counter;
 use crate::icfg::graph2::*;
-use crate::ssa::ast::Instruction;
+use crate::ir::ast::Instruction;
 use anyhow::{bail, Context, Result};
 
 use log::debug;
 
 use std::collections::HashMap;
 
-use crate::ssa::ast::Program;
+use crate::ir::ast::Program;
 
 #[derive(Debug)]
 struct CallMeta {
@@ -121,7 +121,7 @@ impl Convert {
     fn generate_all_facts(
         &mut self,
         graph: &mut Graph,
-        function: &crate::ssa::ast::Function,
+        function: &crate::ir::ast::Function,
         block_saver: &mut HashMap<String, usize>,
     ) -> Result<()> {
         let mut iterator = function.instructions.iter();

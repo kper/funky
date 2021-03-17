@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{self, Write};
 use wasm_parser::{parse, read_wasm};
 use validation::validate;
-use crate::ssa::wasm_ast::IR;
+use crate::ir::wasm_ast::IR;
 
 macro_rules! wat {
     ($name:expr, $input:expr) => {{

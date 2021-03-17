@@ -1,4 +1,4 @@
-use crate::ssa::wasm_ast::IR;
+use crate::ir::wasm_ast::IR;
 use anyhow::{Context, Result};
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
@@ -22,7 +22,7 @@ lalrpop_mod!(pub grammar);
 
 mod counter;
 mod icfg;
-mod ssa;
+mod ir;
 mod symbol_table;
 
 #[cfg(test)]
