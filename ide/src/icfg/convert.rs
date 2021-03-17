@@ -11,8 +11,6 @@ use std::collections::HashMap;
 
 use crate::ssa::ast::Program;
 
-const TAU: usize = 1;
-
 #[derive(Debug)]
 struct CallMeta {
     caller: String,
@@ -404,7 +402,7 @@ impl Convert {
 
                 debug!("Instruction {:?}", instruction);
                 match instruction {
-                    Instruction::Call(callee_name, params, dest) => {
+                    Instruction::Call(callee_name, params, _dest) => {
                         let before = in_
                             .iter()
                             .filter(|x| {
@@ -421,14 +419,15 @@ impl Convert {
                             .take(params.len() + 1)
                             .collect();
 
+                            /*
                         let callee_all_vars: Vec<_> = graph
                             .get_vars(&callee_name)
                             .context("Cannot get variables of called function")?
                             .iter()
-                            .collect();
+                            .collect();*/
 
                         let mut callee_first_facts = Vec::new();
-                        let mut callee_last_facts = Vec::new();
+                        //let mut callee_last_facts = Vec::new();
 
                         for var in callee_params_vars {
                             let first_fact = graph
@@ -437,13 +436,14 @@ impl Convert {
                             callee_first_facts.push(first_fact.clone());
                         }
 
+                        /*
                         for var in callee_all_vars {
                             let last_fact = graph
                                 .get_last_fact_of_var(var)
                                 .context("Cannot get last fact of variable")?;
 
                             callee_last_facts.push(last_fact.clone());
-                        }
+                        }*/
 
                         for (from, to) in before.iter().zip(callee_first_facts) {
                             graph.add_call_edge(from.clone().clone(), to)?;

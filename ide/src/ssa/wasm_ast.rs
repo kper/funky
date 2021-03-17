@@ -277,7 +277,7 @@ impl IR {
                         }
                     }
                 }
-                OP_SELECT | OP_NOP => {
+                OP_NOP => {
                     // Skip it
                 }
                 OP_BLOCK(ty, code) => {
@@ -782,7 +782,7 @@ impl IR {
                     )
                     .unwrap();
                 }
-                OP_I32_ADD | OP_I32_SUB | OP_I32_MUL | OP_I32_DIV_S | OP_I32_DIV_U
+                OP_SELECT | OP_I32_ADD | OP_I32_SUB | OP_I32_MUL | OP_I32_DIV_S | OP_I32_DIV_U
                 | OP_I32_REM_S | OP_I32_REM_U | OP_I32_AND | OP_I32_OR | OP_I32_XOR
                 | OP_I32_SHL | OP_I32_SHR_S | OP_I32_SHR_U | OP_I32_ROTL | OP_I32_ROTR
                 | OP_I64_ADD | OP_I64_SUB | OP_I64_MUL | OP_I64_DIV_S | OP_I64_DIV_U
