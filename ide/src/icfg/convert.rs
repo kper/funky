@@ -154,7 +154,7 @@ impl Convert {
 
                 debug!("Instruction {:?}", instruction);
                 match instruction {
-                    Instruction::Block(num) => {
+                    Instruction::Block(_num) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     Instruction::Jump(num) => {
@@ -237,7 +237,6 @@ impl Convert {
                     Instruction::Conditional(_reg ) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
-                    _ => {}
                 }
             }
 

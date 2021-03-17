@@ -142,18 +142,26 @@ impl IR {
         let result_str = format!("(result {})", inst.ty.return_types.len());
         write!(function_buffer, "{} ", result_str).unwrap();
 
-
         self.functions.push(function);
         let func_index = self.functions.len() - 1;
 
         let mut body = String::new();
-        self.visit_body(&inst.code, func_index, inst.ty.return_types.len(), engine, &mut body)?;
+        self.visit_body(
+            &inst.code,
+            func_index,
+            inst.ty.return_types.len(),
+            engine,
+            &mut body,
+        )?;
 
-        let nums = (0..self.symbol_table.len()).map(|x| format!("%{}", x)).collect::<Vec<_>>().join(" ");
+        let nums = (0..self.symbol_table.len())
+            .map(|x| format!("%{}", x))
+            .collect::<Vec<_>>()
+            .join(" ");
         let defs = format!("(define {}) ", nums);
         function_buffer.push_str(&defs);
 
-        // Instructions 
+        // Instructions
 
         writeln!(function_buffer, "{{").unwrap();
         function_buffer.push_str(&body);
@@ -194,7 +202,7 @@ impl IR {
             return_count,
             current_reg,
             engine,
-            function_buffer
+            function_buffer,
         )?;
 
         writeln!(function_buffer, "BLOCK {}", then_name).unwrap();
@@ -204,7 +212,12 @@ impl IR {
 
     /// If the execution exits a block (with no jump),
     /// then kill all variables which are not returned.
-    fn exit_block(&mut self, arity: usize, old_state: Option<usize>, function_buffer: &mut String) -> Result<()> {
+    fn exit_block(
+        &mut self,
+        arity: usize,
+        old_state: Option<usize>,
+        function_buffer: &mut String,
+    ) -> Result<()> {
         for reg in self.symbol_table.vars.iter_mut().rev().skip(arity) {
             if reg.val() <= old_state.unwrap_or(0) {
                 break;
@@ -241,6 +254,18 @@ impl IR {
             debug!("Instruction {}", instr.get_instruction());
 
             match instr.get_instruction() {
+                OP_DROP => {
+                    for reg in self.symbol_table.vars.iter_mut().rev() {
+                        if !reg.is_killed {
+                            reg.is_killed = true;
+                            writeln!(function_buffer, "KILL %{}", reg.val()).unwrap();
+                            break;
+                        }
+                    }
+                }
+                OP_SELECT | OP_NOP => {
+                    // Skip it
+                }
                 OP_BLOCK(ty, code) => {
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
@@ -581,7 +606,13 @@ impl IR {
                 OP_LOCAL_TEE(index) => {
                     let peek = self.symbol_table.peek()?;
                     // Push only once because the old still lives
-                    writeln!(function_buffer, "%{} = %{}", self.symbol_table.new_var()?, peek).unwrap();
+                    writeln!(
+                        function_buffer,
+                        "%{} = %{}",
+                        self.symbol_table.new_var()?,
+                        peek
+                    )
+                    .unwrap();
                     let locals = &self
                         .functions
                         .get(function_index)
@@ -625,7 +656,8 @@ impl IR {
 
                     // Function returns no variables
                     if num_results == 0 {
-                        writeln!(function_buffer, "CALL {}({})", func, param_regs.join(",")).unwrap();
+                        writeln!(function_buffer, "CALL {}({})", func, param_regs.join(","))
+                            .unwrap();
                     } else {
                         let return_regs: Vec<_> = (0..num_results)
                             .map(|_| {
