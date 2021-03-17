@@ -73,7 +73,10 @@ pub Instruction : Vec<Instruction> = {
         vec![Instruction::Conditional(reg, true), Instruction::Jump(n)]
     },
     "TABLE GOTO" <n:Id*> "ELSE" "GOTO" <n2:Id> => {
-        let mut v = Vec::with_capacity(1 + n.len());
+        let mut v = Vec::with_capacity(2 + n.len());
+
+        v.push(Instruction::Table(n.len() + 1)); // declares how many jumps
+
         for i in n {
             v.push(Instruction::Jump(i));
         }

@@ -302,6 +302,18 @@ impl Convert {
                             }
                         }
                     }
+                    Instruction::Table(jumps) => {
+                        for i in 0..(*jumps) {
+                            let out_ = facts
+                                .iter()
+                                .filter(|x| x.pc == pc + i && x.function == function.name)
+                                .collect::<Vec<_>>();
+            
+                            for (from, to) in in_.iter().zip(out_) {
+                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
+                            }
+                        }
+                    }
                     Instruction::Return(regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                         let expected_return = graph
@@ -314,7 +326,7 @@ impl Convert {
                             bail!(
                                 "Function return mismatched. Expected {}; Actual {}",
                                 expected_return,
-                                regs.len() 
+                                regs.len()
                             );
                         }
 
@@ -419,7 +431,7 @@ impl Convert {
                             .take(params.len() + 1)
                             .collect();
 
-                            /*
+                        /*
                         let callee_all_vars: Vec<_> = graph
                             .get_vars(&callee_name)
                             .context("Cannot get variables of called function")?

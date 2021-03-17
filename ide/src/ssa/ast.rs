@@ -36,4 +36,5 @@ pub enum Instruction {
     Kill(Dest),
     Conditional(Src, Cont),
     Return(Vec<Reg>),
+    Table(usize),
 }
