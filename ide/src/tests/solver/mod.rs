@@ -25,6 +25,7 @@ macro_rules! ir {
 
 fn vars(sink: &Vec<Taint>) -> Vec<String> {
     let mut touched_vars: Vec<_> = sink.iter().map(|x| x.to.clone()).collect();
+    touched_vars.sort_unstable();
     touched_vars.dedup();
 
     touched_vars
@@ -32,6 +33,7 @@ fn vars(sink: &Vec<Taint>) -> Vec<String> {
 
 fn functions(sink: &Vec<Taint>) -> Vec<String> {
     let mut touched_vars: Vec<_> = sink.iter().map(|x| x.to_function.clone()).collect();
+    touched_vars.sort_unstable();
     touched_vars.dedup();
 
     touched_vars
@@ -39,8 +41,6 @@ fn functions(sink: &Vec<Taint>) -> Vec<String> {
 
 #[test]
 fn test_bfs_reachability_simple() {
-    env_logger::init();
-
     let mut solver = IfdsSolver::new(BFS);
 
     let mut graph = ir!(
@@ -62,11 +62,48 @@ fn test_bfs_reachability_simple() {
         },
     );
 
-    assert_eq!(2, sinks.len());
+    assert_eq!(3, sinks.len());
 
     let touched_vars = vars(&sinks);
     assert_eq!(2, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
+}
+
+#[test]
+fn test_bfs_reachability_call() {
+    let mut solver = IfdsSolver::new(BFS);
+
+    let mut graph = ir!(
+        "bfs_call",
+        "
+        define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 = %0
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %2) (result 1) (define %2 %3) {
+            %3 = %2
+            RETURN %3;
+        };
+    "
+    );
+
+    let sinks = solver.all_sinks(
+        &mut graph,
+        Request {
+            variable: "%0".to_string(),
+            function: "test".to_string(),
+            pc: 1,
+        },
+    );
+
+    assert_eq!(10, sinks.len());
+
+    let touched_vars = vars(&sinks);
+    assert_eq!(4, touched_vars.len());
+
+    let touched_funcs = functions(&sinks);
+    assert_eq!(2, touched_funcs.len());
 }

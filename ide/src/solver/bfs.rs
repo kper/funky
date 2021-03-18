@@ -12,7 +12,7 @@ impl GraphReachability for BFS {
         let mut seen = Vec::new();
 
         if let Some(start) = graph.query(&req) {
-            debug!("Adding start");
+            debug!("Adding start {:#?}", start);
             queue.push_back(start.id);
         } else {
             return Vec::new();
@@ -20,8 +20,9 @@ impl GraphReachability for BFS {
 
         while let Some(node) = queue.pop_front() {
             debug!("Popping node {}", node);
+            seen.push(node);
             for child in graph.get_neighbours(node) {
-                seen.push(child);
+                debug!("Adding child {:#?}", graph.query_by_fact_id(child));
 
                 if !seen.contains(&child) {
                     debug!("queue child {}", child);
