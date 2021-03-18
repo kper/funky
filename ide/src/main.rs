@@ -24,6 +24,7 @@ mod counter;
 mod icfg;
 mod ir;
 mod symbol_table;
+mod solver;
 
 #[cfg(test)]
 mod tests;

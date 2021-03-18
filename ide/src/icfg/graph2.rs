@@ -3,6 +3,7 @@
 use crate::counter::Counter;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
+use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
 use std::collections::HashMap;
@@ -60,9 +61,55 @@ pub enum Edge {
     Return { from: Fact, to: Fact },
 }
 
+impl Edge {
+    pub fn from(&self) -> &Fact {
+        match self {
+            Edge::Normal {
+                from,
+                to: _,
+                curved: _,
+            } => from,
+            Edge::Call { from, to: _ } => from,
+            Edge::CallToReturn { from, to: _ } => from,
+            Edge::Return { from, to: _ } => from,
+        }
+    }
+
+    pub fn to(&self) -> &Fact {
+        match self {
+            Edge::Normal { from: _, to, curved:_ } => to,
+            Edge::Call { from: _, to } => to,
+            Edge::CallToReturn { from: _, to } => to,
+            Edge::Return { from:_ , to } => to,
+        }
+    }
+}
+
 impl Graph {
     pub fn new() -> Self {
         Graph::default()
+    }
+
+    /// Query graph by given Request.
+    pub fn query(&self, req: &Request) -> Option<&Fact> {
+        self.facts.iter().find(|x| {
+            x.belongs_to_var == req.variable && x.pc == req.pc && x.function == x.function
+        })
+    }
+
+    /// Query graph by given fact_id.
+    pub fn query_by_fact_id(&self, id: usize) -> Option<&Fact> {
+        self.facts.iter().find(|x| {
+            x.id == id
+        })
+    }
+
+    /// Get all neighbours by given fact_id
+    pub fn get_neighbours(&self, fact_id: usize) -> impl Iterator<Item = usize> + '_ {
+        self.edges
+            .iter()
+            .filter(move |x| x.from().id == fact_id)
+            .map(|x| x.to().id)
     }
 
     pub fn get_vars(&self, function_name: &String) -> Option<&Vec<Variable>> {
@@ -199,14 +246,22 @@ impl Graph {
 
     /// Add a normal edge from the fact `from` to the fact `to`.
     pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal { from, to, curved: false });
+        self.edges.push(Edge::Normal {
+            from,
+            to,
+            curved: false,
+        });
 
         Ok(())
     }
 
     /// Add a normal edge from the fact `from` to the fact `to`, but also curved.
     pub fn add_normal_curved(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal { from, to, curved: true, });
+        self.edges.push(Edge::Normal {
+            from,
+            to,
+            curved: true,
+        });
 
         Ok(())
     }

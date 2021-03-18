@@ -12,9 +12,6 @@ macro_rules! ir {
 
         let graph = convert.visit(prog).unwrap();
 
-        //let mut dot = Cursor::new(Vec::new());
-        //render_to(&res, &mut dot);
-
         let output = render_to(&graph);
 
         assert_snapshot!(
