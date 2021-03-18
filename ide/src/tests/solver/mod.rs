@@ -4,9 +4,6 @@ use crate::solver::*;
 use crate::icfg::convert::Convert;
 use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
-use structopt::clap::value_t;
-
-use log::debug;
 
 use crate::grammar::*;
 

@@ -659,7 +659,7 @@ impl IR {
                                 .into_iter()
                                 .map(|x| format!("%{}", x))
                                 .collect::<Vec<_>>()
-                                .join(",")
+                                .join(" ")
                         )
                         .unwrap();
                     } else {
@@ -681,7 +681,7 @@ impl IR {
                                 .into_iter()
                                 .map(|x| format!("%{}", x))
                                 .collect::<Vec<_>>()
-                                .join(",")
+                                .join(" ")
                         )
                         .unwrap();
                     }
