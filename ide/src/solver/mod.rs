@@ -21,6 +21,7 @@ pub struct Taint {
     pub to_function: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct Request {
     pub variable: String,
     pub function: String,
@@ -28,7 +29,7 @@ pub struct Request {
 }
 
 pub trait Solver {
-    fn all_sinks(&mut self, graph: &mut Graph, req: Request) -> Vec<Taint>;
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint>;
 }
 
 impl<T> IfdsSolver<T>
@@ -46,11 +47,11 @@ impl<T> Solver for IfdsSolver<T>
 where
     T: GraphReachability,
 {
-    fn all_sinks(&mut self, graph: &mut Graph, req: Request) -> Vec<Taint> {
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint> {
         self.graph_reachability.all_sinks(graph, req)
     }
 }
 
 pub trait GraphReachability {
-    fn all_sinks(&mut self, graph: &mut Graph, req: Request) -> Vec<Taint>;
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint>;
 }

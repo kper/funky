@@ -16,6 +16,8 @@ funky = { path = "../" }
 lalrpop-util = "0.19.4"
 regex = "1"
 dot = "0.1.4"
+tui = "0.14"
+termion = "1.5"
 
 [dev-dependencies]
 insta = "*"

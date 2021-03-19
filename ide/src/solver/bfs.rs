@@ -7,7 +7,7 @@ use log::debug;
 pub struct BFS;
 
 impl GraphReachability for BFS {
-    fn all_sinks(&mut self, graph: &mut Graph, req: Request) -> Vec<Taint> {
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint> {
         let mut queue: VecDeque<usize> = VecDeque::new();
         let mut seen = Vec::new();
 

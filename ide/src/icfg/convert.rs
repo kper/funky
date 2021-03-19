@@ -154,7 +154,7 @@ impl Convert {
         Ok(())
     }
 
-    pub fn visit(&mut self, prog: Program) -> Result<Graph> {
+    pub fn visit(&mut self, prog: &Program) -> Result<Graph> {
         debug!("Convert intermediate repr to graph");
 
         let mut graph = Graph::new();
@@ -377,12 +377,12 @@ impl Convert {
             graph.pc_counter.set(1); // Set to the first instruction
         }
 
-        self.handle_calls(prog, &mut graph)?;
+        self.handle_calls(&prog, &mut graph)?;
 
         return Ok(graph);
     }
 
-    pub fn handle_calls(&mut self, prog: Program, graph: &mut Graph) -> Result<()> {
+    pub fn handle_calls(&mut self, prog: &Program, graph: &mut Graph) -> Result<()> {
         for function in prog.functions.iter() {
             graph.pc_counter.set(1); // Set to the first instruction
 
