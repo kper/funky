@@ -34,7 +34,7 @@ pub enum Instruction {
     Jump(String),
     Call(String, Vec<Reg>, Regs),
     Kill(Dest),
-    Conditional(Src, Cont),
+    Conditional(Src, Vec<String>),
     Return(Vec<Reg>),
     Table(usize),
 }

@@ -154,6 +154,32 @@ impl Convert {
         Ok(())
     }
 
+    /// Added control flow edges to block `num`
+    fn jump_to_block(
+        &self,
+        in_: &Vec<&Fact>,
+        function: &crate::ir::ast::Function,
+        block_saver: &HashMap<String, usize>,
+        graph: &mut Graph,
+        num: &String,
+    ) -> Result<()> {
+        if let Some(jump_pc) = block_saver.get(num) {
+            let facts = graph.facts.clone();
+            let to_facts = facts
+                .iter()
+                .filter(|x| x.function == function.name && x.pc == *jump_pc)
+                .collect::<Vec<_>>();
+
+            for (from, to) in in_.iter().zip(to_facts) {
+                graph.add_normal_curved(from.clone().clone(), to.clone())?;
+            }
+        } else {
+            bail!("Block {} was not found", num);
+        }
+
+        Ok(())
+    }
+
     pub fn visit(&mut self, prog: &Program) -> Result<Graph> {
         debug!("Convert intermediate repr to graph");
 
@@ -208,19 +234,7 @@ impl Convert {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     Instruction::Jump(num) => {
-                        if let Some(jump_pc) = block_saver.get(num) {
-                            let facts = graph.facts.clone();
-                            let to_facts = facts
-                                .iter()
-                                .filter(|x| x.function == function.name && x.pc == *jump_pc)
-                                .collect::<Vec<_>>();
-
-                            for (from, to) in in_.iter().zip(to_facts) {
-                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
-                            }
-                        } else {
-                            bail!("Block {} was not found", num);
-                        }
+                        self.jump_to_block(&in_, function, &block_saver, &mut graph, num)?;
                     }
                     Instruction::Const(reg, _val) => {
                         let before = in_
@@ -284,7 +298,18 @@ impl Convert {
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
-                    Instruction::Conditional(_reg, cont) => {
+                    Instruction::Conditional(_reg, jumps) => {
+                        assert!(jumps.len() >= 1, "Conditional must have at least one jump");
+
+                        for jump in jumps.iter() {
+                            self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
+                        }
+
+                        if jumps.len() == 1 { // Normal if
+                            self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                        }
+
+                        /*
                         if !cont {
                             self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                         } else {
@@ -300,7 +325,7 @@ impl Convert {
                             for (from, to) in out_.iter().zip(after_if) {
                                 graph.add_normal_curved(from.clone().clone(), to.clone())?;
                             }
-                        }
+                        }*/
                     }
                     Instruction::Table(jumps) => {
                         for i in 0..(*jumps) {
@@ -308,7 +333,7 @@ impl Convert {
                                 .iter()
                                 .filter(|x| x.pc == pc + i && x.function == function.name)
                                 .collect::<Vec<_>>();
-            
+
                             for (from, to) in in_.iter().zip(out_) {
                                 graph.add_normal_curved(from.clone().clone(), to.clone())?;
                             }

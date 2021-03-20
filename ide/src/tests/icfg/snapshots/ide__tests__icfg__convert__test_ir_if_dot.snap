@@ -40,16 +40,11 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:\%0] (21) at (1, 5) {};
 \node[circle,fill,inner sep=1pt,label=left:\%1] (22) at (2, 5) {};
 \node[circle,fill,inner sep=1pt,label=left:\%2] (23) at (3, 5) {};
-\node[circle,fill,inner sep=1pt,label=left:taut] (24) at (0, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%0] (25) at (1, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%1] (26) at (2, 6) {};
-\node[circle,fill,inner sep=1pt,label=left:\%2] (27) at (3, 6) {};
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, true)};
-\node[font=\tiny] (note_3) at (-1.5, 3.5) {Jump(0)};
-\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(1, 2.0)};
-\node[font=\tiny] (note_5) at (-1.5, 5.5) {Const(2, 3.0)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [0])};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(1, 2.0)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 3.0)};
 		\path[->] (0) edge (4);
 		\path[->] (1) edge (5);
 		\path[->] (2) edge (6);
@@ -58,26 +53,22 @@ expression: output
 		\path[->] (4) edge (8);
 		\path[->] (6) edge (10);
 		\path[->] (7) edge (11);
+		\path[->, bend right] (8) edge (0);
+		\path[->, bend right] (9) edge (1);
+		\path[->, bend right] (10) edge (2);
+		\path[->, bend right] (11) edge (3);
 		\path[->] (8) edge (12);
 		\path[->] (9) edge (13);
 		\path[->] (10) edge (14);
 		\path[->] (11) edge (15);
-		\path[->, bend right] (12) edge (16);
-		\path[->, bend right] (13) edge (17);
-		\path[->, bend right] (14) edge (18);
-		\path[->, bend right] (15) edge (19);
-		\path[->, bend right] (12) edge (0);
-		\path[->, bend right] (13) edge (1);
-		\path[->, bend right] (14) edge (2);
-		\path[->, bend right] (15) edge (3);
-		\path[->] (16) edge (22);
+		\path[->] (12) edge (18);
+		\path[->] (12) edge (16);
+		\path[->] (13) edge (17);
+		\path[->] (15) edge (19);
+		\path[->] (16) edge (23);
 		\path[->] (16) edge (20);
 		\path[->] (17) edge (21);
-		\path[->] (19) edge (23);
-		\path[->] (20) edge (27);
-		\path[->] (20) edge (24);
-		\path[->] (21) edge (25);
-		\path[->] (22) edge (26);
+		\path[->] (18) edge (22);
 
 
                 \end{tikzpicture}
