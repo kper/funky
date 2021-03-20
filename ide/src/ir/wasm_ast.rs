@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::symbol_table::SymbolTable;
+use crate::symbol_table::{Reg, SymbolTable};
 use anyhow::{Context, Result};
 /// This module is responsible to parse
 /// the webassembly AST to an IR
@@ -27,8 +27,8 @@ pub struct IR {
 struct Function {
     name: String,
     return_count: usize,
-    locals: HashMap<usize, usize>,  //key to register
-    globals: HashMap<usize, usize>, //key to register
+    locals: HashMap<usize, Reg>,  //key to register
+    globals: HashMap<usize, Reg>, //key to register
 }
 
 #[derive(Debug)]
@@ -111,9 +111,9 @@ impl IR {
 
         for (i, _) in inst.ty.param_types.iter().enumerate() {
             let var = self.symbol_table.new_var()?;
-            debug!("Adding parameter %{}", var);
-            function.locals.insert(i, var);
-            params.push(var);
+            debug!("Adding parameter {}", var);
+            function.locals.insert(i, var.clone());
+            params.push(var.clone());
         }
 
         debug!("Adding additional locals");
@@ -122,7 +122,7 @@ impl IR {
                 match local.ty {
                     _ => {
                         let var = self.symbol_table.new_var()?;
-                        debug!("Adding local %{}", var);
+                        debug!("Adding local {}", var);
                         function.locals.insert(function.locals.len(), var);
                     }
                 }
@@ -134,7 +134,7 @@ impl IR {
         if inst.ty.param_types.len() > 0 {
             let params = params
                 .into_iter()
-                .map(|x| format!("%{}", x))
+                .map(|x| format!("{}", x))
                 .collect::<Vec<String>>()
                 .join(" ");
             let param_str = format!("(param {})", params);
@@ -205,7 +205,7 @@ impl IR {
             function_index,
             &mut blocks,
             return_count,
-            current_reg,
+            &current_reg,
             engine,
             function_buffer,
             params_count,
@@ -218,7 +218,7 @@ impl IR {
             //self.exit_block(return_count, current_reg, function_buffer)?;
 
             for i in 0..return_count {
-                regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
+                regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
             }
 
             writeln!(function_buffer, "RETURN {};", regs.join(" ")).unwrap();
@@ -234,11 +234,11 @@ impl IR {
     fn exit_block(
         &mut self,
         arity: usize,
-        old_state: Option<usize>,
+        old_state: &Option<Reg>,
         function_buffer: &mut String,
         parameters: usize,
     ) -> Result<()> {
-        for reg in self
+        for var in self
             .symbol_table
             .vars
             .iter_mut()
@@ -246,13 +246,15 @@ impl IR {
             .skip(arity + parameters)
         {
             // we must offset parameters
-            if reg.val() <= old_state.unwrap_or(0) {
+            if var.val().context("Trying to kill a non normal reg")?
+                <= old_state.as_ref().map(|x| x.val().unwrap()).unwrap_or(0)
+            {
                 break;
             }
 
-            if !reg.is_killed {
-                reg.is_killed = true;
-                writeln!(function_buffer, "KILL %{}", reg.val()).unwrap();
+            if !var.is_killed {
+                var.is_killed = true;
+                writeln!(function_buffer, "KILL {}", var.reg).unwrap();
             }
         }
 
@@ -266,7 +268,7 @@ impl IR {
         blocks: &mut Vec<Block>,
         return_arity: usize,
         // reg number of the start current_reg: usize,
-        current_reg: Option<usize>,
+        current_reg: &Option<Reg>,
         engine: &Engine,
         function_buffer: &mut String,
         params_count: usize,
@@ -283,10 +285,10 @@ impl IR {
 
             match instr.get_instruction() {
                 OP_DROP => {
-                    for reg in self.symbol_table.vars.iter_mut().rev() {
-                        if !reg.is_killed {
-                            reg.is_killed = true;
-                            writeln!(function_buffer, "KILL %{}", reg.val()).unwrap();
+                    for var in self.symbol_table.vars.iter_mut().rev() {
+                        if !var.is_killed {
+                            var.is_killed = true;
+                            writeln!(function_buffer, "KILL {}", var.reg).unwrap();
                             break;
                         }
                     }
@@ -323,13 +325,13 @@ impl IR {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg,
+                        &current_reg,
                         engine,
                         function_buffer,
                         params_count,
                     )?;
 
-                    self.exit_block(arity as usize, current_reg, function_buffer, params_count)?;
+                    self.exit_block(arity as usize, &current_reg, function_buffer, params_count)?;
 
                     blocks.pop();
 
@@ -366,7 +368,7 @@ impl IR {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg,
+                        &current_reg,
                         &engine,
                         function_buffer,
                         params_count,
@@ -397,7 +399,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "IF %{} THEN GOTO {} ELSE GOTO {}",
+                        "IF {} THEN GOTO {} ELSE GOTO {}",
                         self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
@@ -414,11 +416,12 @@ impl IR {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg,
+                        &current_reg,
                         engine,
                         function_buffer,
                         params_count,
                     )?;
+                    self.symbol_table.mark_phi(arity)?;
 
                     blocks.pop();
 
@@ -451,7 +454,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "IF %{} THEN GOTO {} ELSE GOTO {}",
+                        "IF {} THEN GOTO {} ELSE GOTO {}",
                         self.symbol_table.peek()?,
                         name.clone(),
                         then_name.clone()
@@ -468,11 +471,12 @@ impl IR {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg,
+                        &current_reg,
                         engine,
                         function_buffer,
                         params_count,
                     )?;
+                    self.symbol_table.mark_phi(arity)?;
 
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
@@ -486,11 +490,12 @@ impl IR {
                         function_index,
                         blocks,
                         arity as usize,
-                        current_reg,
+                        &current_reg,
                         engine,
                         function_buffer,
                         params_count,
                     )?;
+                    self.symbol_table.mark_phi(arity)?;
 
                     blocks.pop();
 
@@ -503,7 +508,7 @@ impl IR {
 
                     let block = blocks.get(jmp_index).unwrap();
 
-                    self.exit_block(return_arity, current_reg, function_buffer, params_count)?;
+                    self.exit_block(return_arity, &current_reg, function_buffer, params_count)?;
 
                     if block.is_loop {
                         writeln!(function_buffer, "GOTO {}", block.name).unwrap();
@@ -519,7 +524,7 @@ impl IR {
                     if block.is_loop {
                         writeln!(
                             function_buffer,
-                            "IF %{} THEN GOTO {}",
+                            "IF {} THEN GOTO {}",
                             self.symbol_table.peek()?,
                             block.name
                         )
@@ -527,7 +532,7 @@ impl IR {
                     } else {
                         writeln!(
                             function_buffer,
-                            "IF %{} THEN GOTO {}",
+                            "IF {} THEN GOTO {}",
                             self.symbol_table.peek()?,
                             block.name + 1
                         )
@@ -575,7 +580,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "%{} = %{}",
+                        "{} = {}",
                         self.symbol_table.new_var()?,
                         locals.get(&(*index as usize)).unwrap()
                     )
@@ -592,7 +597,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "%{} = %{}",
+                        "{} = {}",
                         locals.get(&(*index as usize)).unwrap(),
                         self.symbol_table.peek()?
                     )
@@ -603,7 +608,7 @@ impl IR {
                     // Push only once because the old still lives
                     writeln!(
                         function_buffer,
-                        "%{} = %{}",
+                        "{} = {}",
                         self.symbol_table.new_var()?,
                         peek
                     )
@@ -618,7 +623,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "%{} = %{}",
+                        "{} = {}",
                         locals.get(&(*index as usize)).with_context(|| format!(
                             "Cannot local at {} when locals length is {}",
                             index,
@@ -657,7 +662,7 @@ impl IR {
                             func,
                             param_regs
                                 .into_iter()
-                                .map(|x| format!("%{}", x))
+                                .map(|x| format!("{}", x))
                                 .collect::<Vec<_>>()
                                 .join(" ")
                         )
@@ -666,7 +671,7 @@ impl IR {
                         let return_regs: Vec<_> = (0..num_results)
                             .map(|_| {
                                 format!(
-                                    "%{}",
+                                    "{}",
                                     self.symbol_table.new_var().expect("Cannot get new var")
                                 )
                             })
@@ -679,7 +684,7 @@ impl IR {
                             func,
                             param_regs
                                 .into_iter()
-                                .map(|x| format!("%{}", x))
+                                .map(|x| format!("{}", x))
                                 .collect::<Vec<_>>()
                                 .join(" ")
                         )
@@ -687,16 +692,16 @@ impl IR {
                     }
                 }
                 OP_I32_CONST(a) => {
-                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_I64_CONST(a) => {
-                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F32_CONST(a) => {
-                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_F64_CONST(a) => {
-                    writeln!(function_buffer, "%{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
                 }
                 OP_RETURN => {
                     let function_return_arity = self
@@ -708,10 +713,10 @@ impl IR {
                     debug!("RETURN {}", function_return_arity);
                     let mut regs = Vec::new();
 
-                    self.exit_block(return_arity, current_reg, function_buffer, params_count)?;
+                    self.exit_block(return_arity, &current_reg, function_buffer, params_count)?;
 
                     for i in 0..function_return_arity {
-                        regs.push(format!("%{}", self.symbol_table.peek_offset(i)?));
+                        regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
                     }
 
                     writeln!(function_buffer, "RETURN {};", regs.join(" ")).unwrap();
@@ -776,7 +781,7 @@ impl IR {
                 | OP_I64_TRUNC_SAT_F64_U => {
                     writeln!(
                         function_buffer,
-                        "%{} = {} %{}",
+                        "{} = {} {}",
                         self.symbol_table.new_var()?,
                         "op",
                         self.symbol_table.peek_offset(2)?, // TODO Check why `2`
@@ -800,7 +805,7 @@ impl IR {
                 | OP_F64_MIN | OP_F64_MAX | OP_F64_COPYSIGN => {
                     writeln!(
                         function_buffer,
-                        "%{} = %{} {} %{}",
+                        "{} = {} {} {}",
                         self.symbol_table.new_var()?,
                         self.symbol_table.peek_offset(1)?,
                         "op",
