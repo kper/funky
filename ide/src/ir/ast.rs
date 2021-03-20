@@ -36,5 +36,5 @@ pub enum Instruction {
     Kill(Dest),
     Conditional(Src, Vec<String>),
     Return(Vec<Reg>),
-    Table(usize),
+    Table(Vec<String>),
 }

@@ -308,26 +308,14 @@ impl Convert {
                         if jumps.len() == 1 { // Normal if
                             self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                         }
-
-                        /*
-                        if !cont {
-                            self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
-                        } else {
-                            // This is a simple if.
-                            // Therefore, we need an edge for not jumping
-
-                            let after_if = facts
-                                .iter()
-                                .filter(|x| x.pc == pc + 1 && x.function == function.name)
-                                .collect::<Vec<_>>();
-
-                            self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
-                            for (from, to) in out_.iter().zip(after_if) {
-                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
-                            }
-                        }*/
                     }
                     Instruction::Table(jumps) => {
+                        assert!(jumps.len() >= 1, "Table must have at least one jump");
+
+                        for jump in jumps.iter() {
+                            self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
+                        }
+                        /*
                         for i in 0..(*jumps) {
                             let out_ = facts
                                 .iter()
@@ -337,7 +325,7 @@ impl Convert {
                             for (from, to) in in_.iter().zip(out_) {
                                 graph.add_normal_curved(from.clone().clone(), to.clone())?;
                             }
-                        }
+                        }*/
                     }
                     Instruction::Return(regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;

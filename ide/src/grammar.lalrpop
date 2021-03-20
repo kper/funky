@@ -73,15 +73,9 @@ pub Instruction : Vec<Instruction> = {
         vec![Instruction::Conditional(reg, vec![n])]
     },
     "TABLE GOTO" <n:Id*> "ELSE" "GOTO" <n2:Id> => {
-        let mut v = Vec::with_capacity(2 + n.len());
-
-        v.push(Instruction::Table(n.len() + 1)); // declares how many jumps
-
-        for i in n {
-            v.push(Instruction::Jump(i));
-        }
-        v.push(Instruction::Jump(n2));
-        v
+        let mut n = n.clone();
+        n.push(n2);
+        vec![Instruction::Table(n)]
     },
     "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
     "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
