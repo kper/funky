@@ -3798,8 +3798,8 @@ expression: output
 		\path[->] (328) edge (340);
 		\path[->] (329) edge (341);
 		\path[->] (330) edge (342);
-		\path[->, red] (319) [bend right] edge  node { } (283);
-		\path[->, red] (330) [bend right] edge  node { } (293);
+		\path[->, red] (331) [bend right] edge  node { } (283);
+		\path[->, red] (342) [bend right] edge  node { } (293);
 		\path[->] (12) edge (343);
 		\path[->] (13) edge (344);
 		\path[->] (14) edge (345);
@@ -4042,8 +4042,8 @@ expression: output
 		\path[->] (568) edge (580);
 		\path[->] (569) edge (581);
 		\path[->] (570) edge (582);
-		\path[->, red] (559) [bend right] edge  node { } (523);
-		\path[->, red] (570) [bend right] edge  node { } (533);
+		\path[->, red] (571) [bend right] edge  node { } (523);
+		\path[->, red] (582) [bend right] edge  node { } (533);
 		\path[->] (24) edge (583);
 		\path[->] (25) edge (584);
 		\path[->] (26) edge (585);
