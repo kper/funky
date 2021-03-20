@@ -13,7 +13,7 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(prog).unwrap();
+        let graph = convert.visit(&prog).unwrap();
 
         let output = render_to(&graph);
 
@@ -55,7 +55,7 @@ fn test_bfs_reachability_simple() {
 
     let sinks = solver.all_sinks(
         &mut graph,
-        Request {
+        &Request {
             variable: "%0".to_string(),
             function: "test".to_string(),
             pc: 1,
@@ -92,7 +92,7 @@ fn test_bfs_reachability_call() {
 
     let sinks = solver.all_sinks(
         &mut graph,
-        Request {
+        &Request {
             variable: "%0".to_string(),
             function: "test".to_string(),
             pc: 1,
@@ -106,4 +106,34 @@ fn test_bfs_reachability_call() {
 
     let touched_funcs = functions(&sinks);
     assert_eq!(2, touched_funcs.len());
+}
+
+#[test]
+fn test_bfs_functions() {
+    let mut solver = IfdsSolver::new(BFS);
+
+    let mut graph = ir!("bfs_functions", 
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 = %1
+        };
+        define mytest (param %0) (result 1) (define %0) {
+            RETURN %0;
+        };"
+    );
+
+    let sinks = solver.all_sinks(
+        &mut graph,
+        &Request {
+            variable: "%0".to_string(),
+            function: "test".to_string(),
+            pc: 1,
+        },
+    );
+
+    assert!(sinks.iter().find(|x| x.to_pc == 1 && x.to_function == "test".to_string()).is_some());
+    assert!(sinks.iter().find(|x| x.to_pc == 2 && x.to_function == "test".to_string()).is_some());
+    assert!(sinks.iter().find(|x| x.to_pc == 3 && x.to_function == "test".to_string()).is_some());
+    assert!(sinks.iter().find(|x| x.to_pc == 1 && x.to_function == "mytest".to_string()).is_some());
 }

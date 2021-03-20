@@ -10,7 +10,7 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(prog).unwrap();
+        let graph = convert.visit(&prog).unwrap();
 
         let output = render_to(&graph);
 

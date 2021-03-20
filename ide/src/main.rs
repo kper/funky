@@ -308,7 +308,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                                 .find(|x| {
                                     let mut is_ok = false;
 
-                                    if &x.from_function == function && &x.to_function == function {
+                                    if &x.from_function == function || &x.to_function == function {
                                         is_ok = true;
                                     }
 

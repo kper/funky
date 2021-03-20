@@ -46,7 +46,7 @@ macro_rules! run {
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 
-        let graph = convert.visit(prog).unwrap();
+        let graph = convert.visit(&prog).unwrap();
 
         let output = render_to(&graph);
 
