@@ -1,10 +1,8 @@
-use crate::ir::ast::{Function, Program};
 use crate::ir::wasm_ast::IR;
 use anyhow::{Context, Result};
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
 use log::debug;
-use regex::Regex;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use validation::validate;
@@ -28,10 +26,10 @@ use tui::Terminal;
 use termion::event::Key;
 
 use tui::{
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
 use crate::ir::ast::Instruction;
@@ -175,7 +173,6 @@ use tui::widgets::ListState;
 struct InstructionList<'a> {
     state: ListState,
     items: Vec<(usize, Option<&'a Instruction>, &'a str)>,
-    //items: Vec<(usize, &'a str)>,
     current: usize,
 }
 
@@ -254,30 +251,11 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let mut input = String::new();
 
-    let re = Regex::new(r"%[0-9]+ at [0-9a-zA-Z] [0-9]+").unwrap();
-
     let mut taints: Vec<Taint> = Vec::new();
-    /*
-    let instructions = prog
-        .functions
-        .iter()
-        .map(|x| &x.instructions)
-        .flatten()
-        .collect::<Vec<_>>();*/
 
     let mut req = None;
 
     loop {
-        /*
-        if re.is_match(&input) {
-            let splitted = input.split(" ").collect::<Vec<_>>();
-            taints = get_taints(Request {
-                variable: splitted.get(0).unwrap().to_string(),
-                function: splitted.get(1).unwrap().to_string(),
-                pc: splitted.get(2).unwrap().parse().unwrap(),
-            });
-        }*/
-
         if let Some(ref req) = req {
             taints = get_taints(req);
         }
@@ -300,8 +278,6 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                     .items
                     .iter()
                     .enumerate()
-                    //.skip(stateful.current)
-                    //.take(50)
                     .map(|(_index, (line_no, instruction, function))| {
                         if let Some(instruction) = instruction {
                             if taints
@@ -398,31 +374,9 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                 });
             }
         }
-
-        /*else {
-            match key {
-                Key::Char(c) => {
-                    input.push(c);
-                }
-                _ => {}
-            }
-        }*/
     }
 
     Ok(())
-}
-
-fn get_function_by_index(functions: &Vec<Function>, index: usize) -> Option<String> {
-    let mut count = index as isize;
-    for function in functions.iter() {
-        count -= function.instructions.len() as isize - 1;
-
-        if count <= 0 {
-            return Some(function.name.clone());
-        }
-    }
-
-    None
 }
 
 fn get_variable_by_index(
