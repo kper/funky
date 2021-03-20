@@ -27,7 +27,7 @@ pub Function : Function = {
             params: Vec::new(),
             definitions: def,
             results_len: result as usize,
-            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+            instructions: instr
         }
     },
     "define" <name:Id> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
@@ -36,7 +36,7 @@ pub Function : Function = {
             params: reg,
             definitions: def,
             results_len: result as usize,
-            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+            instructions: instr
         }
     },
     "define" <name:Name> "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
@@ -45,7 +45,7 @@ pub Function : Function = {
             params: Vec::new(),
             definitions: def,
             results_len: result as usize,
-            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+            instructions: instr
         }
     },
     "define" <name:Name> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
@@ -54,36 +54,36 @@ pub Function : Function = {
             params: reg,
             definitions: def,
             results_len: result as usize,
-            instructions: instr.into_iter().flatten().collect::<Vec<_>>()
+            instructions: instr
         }
     }
 };
 
-pub Instruction : Vec<Instruction> = {
-    "BLOCK" <n:Id> => vec![Instruction::Block(n)],
-    <dest:Reg> "=" <src:Reg> => vec![Instruction::Assign(dest, src)],
-    <dest:Reg> "=" <n:Num> => vec![Instruction::Const(dest, n)],
-    <dest:Reg> "=" "op" <src:Reg> => vec![Instruction::Unop(dest, src)],
-    <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => vec![Instruction::BinOp(dest, src1, src2)],
-    "GOTO" <n:Id> => vec![Instruction::Jump(n)],
+pub Instruction : Instruction = {
+    "BLOCK" <n:Id> => Instruction::Block(n),
+    <dest:Reg> "=" <src:Reg> => Instruction::Assign(dest, src),
+    <dest:Reg> "=" <n:Num> => Instruction::Const(dest, n),
+    <dest:Reg> "=" "op" <src:Reg> => Instruction::Unop(dest, src),
+    <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => Instruction::BinOp(dest, src1, src2),
+    "GOTO" <n:Id> => Instruction::Jump(n),
     "IF" <reg:Reg> "THEN" "GOTO" <n:Id> "ELSE" "GOTO" <n2:Id> => {
-        vec![Instruction::Conditional(reg, vec![n, n2])]
+        Instruction::Conditional(reg, vec![n, n2])
     },
     "IF" <reg:Reg> "THEN" "GOTO" <n:Id> => {
-        vec![Instruction::Conditional(reg, vec![n])]
+        Instruction::Conditional(reg, vec![n])
     },
     "TABLE GOTO" <n:Id*> "ELSE" "GOTO" <n2:Id> => {
         let mut n = n.clone();
         n.push(n2);
-        vec![Instruction::Table(n)]
+        Instruction::Table(n)
     },
-    "KILL" <reg:Reg> => vec![Instruction::Kill(reg)],
-    "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
-    <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
-    "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, vec![])],
-    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => vec![Instruction::Call(n, r, dest)],
+    "KILL" <reg:Reg> => Instruction::Kill(reg),
+    "CALL" <n:Name> "(" <r:Reg*> ")" => Instruction::Call(n, r, vec![]),
+    <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => Instruction::Call(n, r, dest),
+    "CALL" <n:Id> "(" <r:Reg*> ")" => Instruction::Call(n, r, vec![]),
+    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => Instruction::Call(n, r, dest),
     "RETURN" <n:Reg*> ";" => {
-        vec![Instruction::Return(n)]
+        Instruction::Return(n)
     }
 };
 
