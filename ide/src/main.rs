@@ -234,7 +234,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let mut stateful = InstructionList {
         state: ListState::default(),
-        items: line_annoted_code,
+        items: line_annoted_code.clone(),
         current: 0,
     };
 
@@ -257,12 +257,13 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     let re = Regex::new(r"%[0-9]+ at [0-9a-zA-Z] [0-9]+").unwrap();
 
     let mut taints: Vec<Taint> = Vec::new();
+    /*
     let instructions = prog
         .functions
         .iter()
         .map(|x| &x.instructions)
         .flatten()
-        .collect::<Vec<_>>();
+        .collect::<Vec<_>>();*/
 
     let mut req = None;
 
@@ -290,9 +291,9 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                 f.render_widget(block, size);
 
                 let chunks = Layout::default()
-                    .direction(Direction::Vertical)
+                    .direction(Direction::Horizontal)
                     .margin(1)
-                    .constraints([Constraint::Percentage(90), Constraint::Percentage(10)].as_ref())
+                    .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
                     .split(f.size());
 
                 let items: Vec<ListItem> = stateful
@@ -350,9 +351,16 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
                 f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
-                let input = Paragraph::new(input.clone())
-                    .style(Style::default().fg(Color::Yellow))
-                    .block(Block::default().title("Taint source"));
+                let input = Paragraph::new(format!(
+                    "{:#?}",
+                    taints
+                        .iter()
+                        .map(|x| format!("To {} ({})", x.to, x.to_function))
+                        .take(30)
+                        .collect::<Vec<_>>()
+                ))
+                .style(Style::default())
+                .block(Block::default().title("Taints"));
 
                 f.render_widget(input, chunks[1]);
             })
@@ -379,14 +387,14 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
             input.pop();
             taints.clear();
         } else if key == Key::Right {
-            let function = get_function_by_index(&prog.functions, stateful.current);
-            let var = get_variable_by_index(&instructions, stateful.current);
+            //let function = get_function_by_index(&prog.functions, stateful.current);
+            let entry = get_variable_by_index(&line_annoted_code, stateful.current);
 
-            if function.is_some() && var.is_some() {
+            if let Some(entry) = entry {
                 req = Some(Request {
                     pc: stateful.current,
-                    function: function.unwrap(),
-                    variable: var.unwrap(),
+                    function: entry.1.clone(),
+                    variable: entry.0.clone(),
                 });
             }
         }
@@ -417,13 +425,19 @@ fn get_function_by_index(functions: &Vec<Function>, index: usize) -> Option<Stri
     None
 }
 
-fn get_variable_by_index(instructions: &Vec<&Instruction>, index: usize) -> Option<String> {
-    match instructions.get(index).unwrap() {
-        Instruction::Unop(dest, _src) => Some(dest.clone()),
-        Instruction::BinOp(dest, _src, _) => Some(dest.clone()),
-        Instruction::Const(dest, _src) => Some(dest.clone()),
-        Instruction::Assign(dest, _src) => Some(dest.clone()),
-        Instruction::Conditional(src, _) => Some(src.clone()),
+fn get_variable_by_index(
+    instructions: &Vec<(usize, Option<&Instruction>, &str)>,
+    index: usize,
+) -> Option<(String, String)> {
+    let (_index, instruction, function) = instructions.get(index).unwrap();
+    match instruction {
+        Some(Instruction::Unop(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
+        Some(Instruction::BinOp(dest, _src, _)) => {
+            Some((dest.clone(), function.clone().to_string()))
+        }
+        Some(Instruction::Const(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
+        Some(Instruction::Assign(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
+        Some(Instruction::Conditional(src, _)) => Some((src.clone(), function.clone().to_string())),
         _ => None,
     }
 }
