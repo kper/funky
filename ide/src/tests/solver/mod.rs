@@ -123,13 +123,15 @@ fn test_bfs_functions() {
         };"
     );
 
-    let sinks = solver.all_sinks(
-        &mut graph,
-        &Request {
+    let req = Request {
             variable: "%0".to_string(),
             function: "test".to_string(),
             pc: 1,
-        },
+        };
+
+    let sinks = solver.all_sinks(
+        &mut graph,
+        &req,
     );
 
     assert!(sinks.iter().find(|x| x.to_pc == 1 && x.to_function == "test".to_string()).is_some());
