@@ -1,11 +1,11 @@
+use crate::ir::wasm_ast::IR;
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
 use insta::assert_snapshot;
 use std::fs::File;
 use std::io::{self, Write};
-use wasm_parser::{parse, read_wasm};
 use validation::validate;
-use crate::ir::wasm_ast::IR;
+use wasm_parser::{parse, read_wasm};
 
 macro_rules! wat {
     ($name:expr, $input:expr) => {{
@@ -70,12 +70,18 @@ fn test_empty_function() {
 
 #[test]
 fn test_simple_block() {
-    wat!("test_simple_block", "(module (func (result i32) (block (result i32) i32.const 1)))");
+    wat!(
+        "test_simple_block",
+        "(module (func (result i32) (block (result i32) i32.const 1)))"
+    );
 }
 
 #[test]
 fn test_nested_block() {
-    wat!("test_nested_block", "(module (func (result i32) (block (result i32) (block (result i32) i32.const 1))))");
+    wat!(
+        "test_nested_block",
+        "(module (func (result i32) (block (result i32) (block (result i32) i32.const 1))))"
+    );
 }
 
 #[test]
@@ -90,7 +96,10 @@ fn test_simple_if() {
 
 #[test]
 fn test_simple_if_and_else() {
-    wat!("test_if_else", "(module (func (if (i32.const 1) (then nop) (else nop))))");
+    wat!(
+        "test_if_else",
+        "(module (func (if (i32.const 1) (then nop) (else nop))))"
+    );
 }
 
 #[test]
@@ -100,7 +109,9 @@ fn test_simple_br_if() {
 
 #[test]
 fn test_simple_br_table() {
-    wat!("test_br_table", "(module (func (param i32) (result i32)
+    wat!(
+        "test_br_table",
+        "(module (func (param i32) (result i32)
     (block
       (block
         (br_table 1 0 (local.get 0))
@@ -109,12 +120,15 @@ fn test_simple_br_table() {
       (return (i32.const 20))
     )
     (i32.const 22)
-  ))");
+  ))"
+    );
 }
 
 #[test]
 fn test_nested_block_value() {
-    wat!("test_nested_block_value", "(module
+    wat!(
+        "test_nested_block_value",
+        "(module
      (func (export \"nested-block-value\") (param i32) (result i32)
     (block (result i32)
       (drop (i32.const -1))
@@ -131,20 +145,25 @@ fn test_nested_block_value() {
               )
             )
           )
-        )))))");
+        )))))"
+    );
 }
 
 #[test]
 fn test_local_tee() {
-  wat!("local_tee", "(module
+    wat!(
+        "local_tee",
+        "(module
     (func (param i32) (result i32) (i32.const 1) (local.tee 0)) 
-  )");
+  )"
+    );
 }
-
 
 #[test]
 fn test_call() {
-    wat!("test_call", "(module
+    wat!(
+        "test_call",
+        "(module
     (func $fib (export \"fib\") (param i64) (result i64)
     (if (result i64) (i64.le_u (local.get 0) (i64.const 1))
       (then (i64.const 1))
@@ -169,5 +188,20 @@ fn test_call() {
       (else (call $even (i64.sub (local.get 0) (i64.const 1))))
     )
   )
-    )");
+    )"
+    );
+}
+
+#[test]
+fn test_phi() {
+    env_logger::init();
+    wat!(
+        "test_phi",
+        "(module
+	        (func (export \"singular\") (param i32) (result i32)
+	          (i32.const 3)	
+            (if (result i32) (local.get 0) (then (i32.const 1)) (else (i32.const 2)))
+	          (i32.add)
+          ))"
+    );
 }

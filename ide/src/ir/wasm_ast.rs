@@ -502,6 +502,24 @@ impl IR {
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
 
                     writeln!(function_buffer, "BLOCK {}", done_name,).unwrap();
+
+                    let vars = self.symbol_table.summarise_phi(arity)?;
+
+                    for (var1, var2) in vars.iter() {
+                        let var = 
+                            self.symbol_table.new_var()?;
+                        writeln!(
+                            function_buffer,
+                            "{} = {} {} {}",
+                            var,
+                            "phi",
+                            var1.reg,
+                            var2.reg,
+                        )
+                        .unwrap();
+                        self.symbol_table.kill(&var1.reg)?;
+                        self.symbol_table.kill(&var2.reg)?;
+                    }
                 }
                 OP_BR(label) => {
                     let jmp_index = blocks_len - 1 - *label as usize;

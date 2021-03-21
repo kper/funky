@@ -6,7 +6,7 @@ use crate::counter::Counter;
 use anyhow::{bail, Context, Result};
 use log::debug;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     pub reg: Reg,
     pub is_killed: bool,
@@ -86,11 +86,28 @@ impl SymbolTable {
     /// Mark the last `return_count`-times variables in the symbol table.
     /// This means all marked variables can be also meant.
     pub fn mark_phi(&mut self, return_count: u32) -> Result<()> {
+        debug!("Marking {} variables as phi", return_count);
         for var in self.vars.iter_mut().rev().take(return_count as usize) {
+            debug!("Marking var {}", var.reg);
             var.is_phi = true;
         }
 
         Ok(())
+    }
+
+    /// Summarise the last 2 * `return_count` register together with the last `return_count`
+    pub fn summarise_phi(&mut self, return_count: u32) -> Result<Vec<(Variable, Variable)>> {
+        let first_block = self
+            .vars
+            .iter()
+            .rev()
+            .skip(return_count as usize)
+            .take((return_count * 2) as usize)
+            .cloned();
+
+        let second_block = self.vars.iter().rev().take(return_count as usize).cloned();
+
+        Ok(first_block.zip(second_block).collect())
     }
 
     /// Peek the last variable, but skip `offset` variables.
@@ -122,9 +139,9 @@ impl SymbolTable {
     /// Kill the variable with `reg`.
     /// The search starts at the end, because
     /// it is more likely that the killed variable is there.
-    pub fn kill(&mut self, reg: Reg) -> Result<()> {
+    pub fn kill(&mut self, reg: &Reg) -> Result<()> {
         for var in self.vars.iter_mut().rev() {
-            if var.reg == reg {
+            if &var.reg == reg {
                 if !var.is_killed {
                     var.is_killed = true;
                     return Ok(());
