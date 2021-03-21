@@ -34,12 +34,9 @@ impl GraphReachability for BFS {
         seen.into_iter()
             .map(|x| graph.query_by_fact_id(x).unwrap())
             .map(|x| Taint {
-                from: req.variable.clone(),
-                from_function: req.function.clone(),
-                from_pc: req.pc,
-                to: x.belongs_to_var.clone(),
-                to_pc: x.pc,
-                to_function: x.function.clone(),
+                variable: x.belongs_to_var.clone(),
+                pc: x.pc,
+                function: x.function.clone(),
             })
             .collect()
     }

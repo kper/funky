@@ -172,7 +172,7 @@ use tui::widgets::ListState;
 
 struct InstructionList<'a> {
     state: ListState,
-    items: Vec<(usize, Option<&'a Instruction>, &'a str)>,
+    items: Vec<(usize, usize, Option<&'a Instruction>, &'a str)>,
     current: usize,
 }
 
@@ -204,6 +204,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     let events = Events::new();
 
     let mut line_annoted_code = Vec::new();
+    let mut pc = 0;
     let mut line_no = 0;
 
     //let lines: Vec<_> = buffer.split("\n").collect();
@@ -218,15 +219,17 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     }*/
 
     for function in prog.functions.iter() {
-        line_annoted_code.push((line_no, None, function.name.as_str()));
+        line_annoted_code.push((pc, line_no, None, function.name.as_str()));
+        pc += 1;
         line_no += 1;
 
         for instruction in function.instructions.iter() {
-            line_annoted_code.push((line_no, Some(instruction), function.name.as_str()));
+            line_annoted_code.push((pc, line_no, Some(instruction), function.name.as_str()));
+            pc += 1;
             line_no += 1;
         }
 
-        line_no = 0;
+        pc = 0;
     }
 
     let mut stateful = InstructionList {
@@ -234,6 +237,14 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
         items: line_annoted_code.clone(),
         current: 0,
     };
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = IfdsSolver::new(BFS);
+        solver.all_sinks(&mut graph, &req)
+    };
+
+    let mut input = String::new();
+    let mut input2 = format!("{:#?}", line_annoted_code);
 
     let stdout = io::stdout()
         .into_raw_mode()
@@ -243,13 +254,6 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
     // clean the screen
     print!("{}[2J", 27 as char);
-
-    let mut get_taints = |req: &Request| {
-        let mut solver = IfdsSolver::new(BFS);
-        solver.all_sinks(&mut graph, &req)
-    };
-
-    let mut input = String::new();
 
     let mut taints: Vec<Taint> = Vec::new();
 
@@ -278,14 +282,14 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                     .items
                     .iter()
                     .enumerate()
-                    .map(|(_index, (line_no, instruction, function))| {
+                    .map(|(_index, (pc, line_no, instruction, function))| {
                         if let Some(instruction) = instruction {
                             if taints
                                 .iter()
                                 .find(|x| {
                                     let mut is_ok = false;
 
-                                    if &x.from_function == function || &x.to_function == function {
+                                    if &x.function == function && x.pc == *pc {
                                         is_ok = true;
                                     }
 
@@ -294,21 +298,21 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                                 .is_some()
                             {
                                 ListItem::new(Spans::from(Span::styled(
-                                    format!("{:02}| {:?}", line_no, instruction),
+                                    format!("{:02}| {:?}", pc, instruction),
                                     Style::default()
                                         .bg(Color::LightRed)
                                         .add_modifier(Modifier::BOLD),
                                 )))
                             } else {
                                 ListItem::new(Spans::from(Span::styled(
-                                    format!("{:02}| {:?}", line_no, instruction),
+                                    format!("{:02}| {:?}", pc, instruction),
                                     Style::default().add_modifier(Modifier::ITALIC),
                                 )))
                             }
                         } else {
                             // Display function
                             ListItem::new(Spans::from(Span::styled(
-                                format!("{:02}| Function {}", line_no, function),
+                                format!("{:02}| Function {}", pc, function),
                                 Style::default()
                                     .bg(Color::LightGreen)
                                     .add_modifier(Modifier::BOLD),
@@ -328,12 +332,13 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                 f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
                 let input = Paragraph::new(format!(
-                    "{:#?}",
-                    taints
-                        .iter()
-                        .map(|x| format!("To {} ({})", x.to, x.to_function))
-                        .take(30)
-                        .collect::<Vec<_>>()
+                    "{}\n{}",
+                    input,
+                    input2 /*taints
+                           .iter()
+                           .map(|x| format!("To {} ({})", x.to, x.to_function))
+                           .take(30)
+                           .collect::<Vec<_>>()*/
                 ))
                 .style(Style::default())
                 .block(Block::default().title("Taints"));
@@ -368,10 +373,11 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
             if let Some(entry) = entry {
                 req = Some(Request {
-                    pc: stateful.current,
+                    pc: entry.2,
                     function: entry.1.clone(),
                     variable: entry.0.clone(),
                 });
+                input = format!("{:#?}", req);
             }
         }
     }
@@ -380,18 +386,26 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 }
 
 fn get_variable_by_index(
-    instructions: &Vec<(usize, Option<&Instruction>, &str)>,
+    instructions: &Vec<(usize, usize, Option<&Instruction>, &str)>,
     index: usize,
-) -> Option<(String, String)> {
-    let (_index, instruction, function) = instructions.get(index).unwrap();
+) -> Option<(String, String, usize)> {
+    let (pc, _line_no, instruction, function) = instructions.get(index).unwrap();
     match instruction {
-        Some(Instruction::Unop(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
-        Some(Instruction::BinOp(dest, _src, _)) => {
-            Some((dest.clone(), function.clone().to_string()))
+        Some(Instruction::Unop(dest, _src)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
         }
-        Some(Instruction::Const(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
-        Some(Instruction::Assign(dest, _src)) => Some((dest.clone(), function.clone().to_string())),
-        Some(Instruction::Conditional(src, _)) => Some((src.clone(), function.clone().to_string())),
+        Some(Instruction::BinOp(dest, _src, _)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
+        }
+        Some(Instruction::Const(dest, _src)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
+        }
+        Some(Instruction::Assign(dest, _src)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
+        }
+        Some(Instruction::Conditional(src, _)) => {
+            Some((src.clone(), function.clone().to_string(), *pc))
+        }
         _ => None,
     }
 }
@@ -399,29 +413,19 @@ fn get_variable_by_index(
 // check if the taint touches the instruction, then returns `true`.
 fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
     match instruction {
-        Instruction::Unop(dest, src) => {
-            &taint.to == dest || &taint.to == src || &taint.from == dest || &taint.from == src
-        }
+        Instruction::Unop(dest, src) => &taint.variable == dest || &taint.variable == src,
         Instruction::BinOp(dest, src1, src2) => {
-            &taint.to == dest
-                || &taint.to == src1
-                || &taint.to == src2
-                || &taint.from == dest
-                || &taint.from == src1
-                || &taint.from == src2
+            &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
         }
-        Instruction::Const(dest, _) => &taint.from == dest || &taint.to == dest,
-        Instruction::Assign(dest, _) => &taint.from == dest || &taint.to == dest,
+        Instruction::Const(dest, _) => &taint.variable == dest,
+        Instruction::Assign(dest, _) => &taint.variable == dest,
         Instruction::Call(callee, params, dest) => {
-            &taint.to_function == callee
-                && (params.contains(&taint.from)
-                    || params.contains(&taint.to)
-                    || dest.contains(&taint.from)
-                    || dest.contains(&taint.to))
+            &taint.function == callee
+                && (params.contains(&taint.variable) || dest.contains(&taint.variable))
         }
-        Instruction::Kill(dest) => &taint.from == dest || &taint.to == dest,
-        Instruction::Conditional(dest, _) => &taint.from == dest || &taint.to == dest,
-        Instruction::Return(dest) => dest.contains(&taint.from) || dest.contains(&taint.to),
+        Instruction::Kill(dest) => &taint.variable == dest,
+        Instruction::Conditional(dest, _) => &taint.variable == dest,
+        Instruction::Return(dest) => dest.contains(&taint.variable),
         _ => false,
     }
 }

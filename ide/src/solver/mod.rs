@@ -13,12 +13,9 @@ where
 
 #[derive(Debug)]
 pub struct Taint {
-    pub from: String,
-    pub from_function: String,
-    pub from_pc: PC,
-    pub to: String,
-    pub to_pc: PC,
-    pub to_function: String,
+    pub variable: String,
+    pub function: String,
+    pub pc: PC,
 }
 
 #[derive(Debug, Clone)]
@@ -71,9 +68,9 @@ where
         sinks
             .iter()
             .find(|x| {
-                x.to == response.variable
-                    && x.to_pc == response.pc
-                    && x.to_function == response.function
+                x.variable == response.variable
+                    && x.pc == response.pc
+                    && x.function == response.function
             })
             .is_some()
     }
@@ -91,7 +88,7 @@ where
 
         sinks
             .iter()
-            .find(|x| &x.to == response_var && &x.to_function == response_function)
+            .find(|x| &x.variable == response_var && &x.function == response_function)
             .is_some()
     }
 }

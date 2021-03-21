@@ -1,3 +1,5 @@
+use std::env::var;
+
 use crate::solver::bfs::*;
 use crate::solver::*;
 
@@ -24,7 +26,7 @@ macro_rules! ir {
 }
 
 fn vars(sink: &Vec<Taint>) -> Vec<String> {
-    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.to.clone()).collect();
+    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.variable.clone()).collect();
     touched_vars.sort_unstable();
     touched_vars.dedup();
 
@@ -32,7 +34,7 @@ fn vars(sink: &Vec<Taint>) -> Vec<String> {
 }
 
 fn functions(sink: &Vec<Taint>) -> Vec<String> {
-    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.to_function.clone()).collect();
+    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.function.clone()).collect();
     touched_vars.sort_unstable();
     touched_vars.dedup();
 
@@ -112,7 +114,8 @@ fn test_bfs_reachability_call() {
 fn test_bfs_functions() {
     let mut solver = IfdsSolver::new(BFS);
 
-    let mut graph = ir!("bfs_functions", 
+    let mut graph = ir!(
+        "bfs_functions",
         "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 <- CALL mytest(%0)
@@ -124,18 +127,76 @@ fn test_bfs_functions() {
     );
 
     let req = Request {
-            variable: "%0".to_string(),
-            function: "test".to_string(),
-            pc: 1,
-        };
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
 
-    let sinks = solver.all_sinks(
-        &mut graph,
-        &req,
+    let sinks = solver.all_sinks(&mut graph, &req);
+
+    assert!(sinks
+        .iter()
+        .find(|x| x.pc == 1 && x.function == "test".to_string())
+        .is_some());
+    assert!(sinks
+        .iter()
+        .find(|x| x.pc == 2 && x.function == "test".to_string())
+        .is_some());
+    assert!(sinks
+        .iter()
+        .find(|x| x.pc == 3 && x.function == "test".to_string())
+        .is_some());
+    assert!(sinks
+        .iter()
+        .find(|x| x.pc == 1 && x.function == "mytest".to_string())
+        .is_some());
+}
+
+#[test]
+fn test_bfs_functions_calling_diff_function() {
+    let mut solver = IfdsSolver::new(BFS);
+
+    let mut graph = ir!(
+        "bfs_functions_diff",
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %2 = %1
+        };
+        define mytest (param %0) (result 1) (define %0) {
+            %0 = 1
+            RETURN %0;
+        };"
     );
 
-    assert!(sinks.iter().find(|x| x.to_pc == 1 && x.to_function == "test".to_string()).is_some());
-    assert!(sinks.iter().find(|x| x.to_pc == 2 && x.to_function == "test".to_string()).is_some());
-    assert!(sinks.iter().find(|x| x.to_pc == 3 && x.to_function == "test".to_string()).is_some());
-    assert!(sinks.iter().find(|x| x.to_pc == 1 && x.to_function == "mytest".to_string()).is_some());
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "mytest".to_string(),
+        pc: 1,
+    };
+
+    assert!(
+        solver.ask(
+            &mut graph,
+            &req,
+            &Request {
+                variable: "%0".to_string(),
+                function: "mytest".to_string(),
+                pc: 1 
+            }
+        ),
+        "Variable cannot reach itself"
+    );
+
+    assert!(
+        solver.ask(
+            &mut graph,
+            &req,
+            &Request {
+                variable: "%0".to_string(),
+                function: "mytest".to_string(),
+                pc: 2
+            }
+        ),
+        "Variable should be reachable"
+    );
 }

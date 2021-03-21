@@ -93,7 +93,7 @@ impl Graph {
     /// Query graph by given Request.
     pub fn query(&self, req: &Request) -> Option<&Fact> {
         self.facts.iter().find(|x| {
-            x.belongs_to_var == req.variable && x.pc == req.pc && x.function == x.function
+            x.belongs_to_var == req.variable && x.pc == req.pc && x.function == req.function
         })
     }
 
