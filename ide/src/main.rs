@@ -244,7 +244,6 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     };
 
     let mut input = String::new();
-    let mut input2 = format!("{:#?}", line_annoted_code);
 
     let stdout = io::stdout()
         .into_raw_mode()
@@ -282,7 +281,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                     .items
                     .iter()
                     .enumerate()
-                    .map(|(_index, (pc, line_no, instruction, function))| {
+                    .map(|(_index, (pc, _line_no, instruction, function))| {
                         if let Some(instruction) = instruction {
                             if taints
                                 .iter()
@@ -331,17 +330,9 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
                 f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
-                let input = Paragraph::new(format!(
-                    "{}\n{}",
-                    input,
-                    input2 /*taints
-                           .iter()
-                           .map(|x| format!("To {} ({})", x.to, x.to_function))
-                           .take(30)
-                           .collect::<Vec<_>>()*/
-                ))
-                .style(Style::default())
-                .block(Block::default().title("Taints"));
+                let input = Paragraph::new(format!("{}", input,))
+                    .style(Style::default())
+                    .block(Block::default().title("Taints"));
 
                 f.render_widget(input, chunks[1]);
             })
@@ -419,13 +410,15 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         }
         Instruction::Const(dest, _) => &taint.variable == dest,
         Instruction::Assign(dest, _) => &taint.variable == dest,
-        Instruction::Call(callee, params, dest) => {
-            &taint.function == callee
-                && (params.contains(&taint.variable) || dest.contains(&taint.variable))
+        Instruction::Call(_callee, params, dest) => {
+            params.contains(&taint.variable) || dest.contains(&taint.variable)
         }
         Instruction::Kill(dest) => &taint.variable == dest,
         Instruction::Conditional(dest, _) => &taint.variable == dest,
         Instruction::Return(dest) => dest.contains(&taint.variable),
+        Instruction::Phi(dest, src1, src2) => {
+            &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
+        }
         _ => false,
     }
 }
