@@ -421,8 +421,6 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
-                    self.symbol_table.mark_phi(arity)?;
-
                     blocks.pop();
 
                     writeln!(function_buffer, "GOTO {}", then_name,).unwrap();
@@ -476,7 +474,6 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
-                    self.symbol_table.mark_phi(arity)?;
 
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
@@ -495,7 +492,6 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
-                    self.symbol_table.mark_phi(arity)?;
 
                     blocks.pop();
 
@@ -506,15 +502,11 @@ impl IR {
                     let vars = self.symbol_table.summarise_phi(arity)?;
 
                     for (var1, var2) in vars.iter() {
-                        let var = 
-                            self.symbol_table.new_var()?;
+                        let var = self.symbol_table.new_var()?;
                         writeln!(
                             function_buffer,
                             "{} = {} {} {}",
-                            var,
-                            "phi",
-                            var1.reg,
-                            var2.reg,
+                            var, "phi", var1.reg, var2.reg,
                         )
                         .unwrap();
                         self.symbol_table.kill(&var1.reg)?;

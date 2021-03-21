@@ -3,14 +3,13 @@
 use std::fmt;
 
 use crate::counter::Counter;
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct Variable {
     pub reg: Reg,
     pub is_killed: bool,
-    pub is_phi: bool,
 }
 
 impl Variable {
@@ -20,26 +19,17 @@ impl Variable {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Reg {
-    Normal(usize),
-    Phi(Box<Reg>, Box<Reg>),
-}
+pub struct Reg(usize);
 
 impl Reg {
     pub fn val(&self) -> Result<usize> {
-        Ok(match self {
-            &Reg::Normal(x) => x,
-            _ => bail!("Register is unexpectedly a phi node"),
-        })
+        Ok(self.0)
     }
 }
 
 impl fmt::Display for Reg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            &Reg::Normal(ref x) => write!(f, "%{}", x),
-            &Reg::Phi(ref x, ref y) => write!(f, "phi({}, {})", x, y),
-        }
+        write!(f, "%{}", self.0)
     }
 }
 
@@ -61,38 +51,13 @@ impl SymbolTable {
 
     pub fn peek(&self) -> Result<Reg> {
         debug!("Peeking symbol");
-        for (index, var) in self.vars.iter().enumerate().rev() {
+        for var in self.vars.iter().rev() {
             if !var.is_killed {
-                if !var.is_phi {
-                    return Ok(var.reg.clone());
-                } else {
-                    return Ok(Reg::Phi(
-                        Box::new(var.reg.clone()),
-                        Box::new(
-                            self.vars
-                                .get(index - 1)
-                                .context("Cannot get other phi register")?
-                                .reg
-                                .clone(),
-                        ),
-                    ));
-                }
+                return Ok(var.reg.clone());
             }
         }
 
         bail!("No active variable in symbol table");
-    }
-
-    /// Mark the last `return_count`-times variables in the symbol table.
-    /// This means all marked variables can be also meant.
-    pub fn mark_phi(&mut self, return_count: u32) -> Result<()> {
-        debug!("Marking {} variables as phi", return_count);
-        for var in self.vars.iter_mut().rev().take(return_count as usize) {
-            debug!("Marking var {}", var.reg);
-            var.is_phi = true;
-        }
-
-        Ok(())
     }
 
     /// Summarise the last 2 * `return_count` register together with the last `return_count`
@@ -123,14 +88,13 @@ impl SymbolTable {
 
     pub fn new_var(&mut self) -> Result<Reg> {
         let val = self.counter.get();
-        let val = Reg::Normal(val);
+        let val = Reg(val);
 
         debug!("Getting new var {:?}", val);
 
         self.vars.push(Variable {
             reg: val.clone(),
             is_killed: false,
-            is_phi: false,
         });
 
         Ok(val)
