@@ -501,7 +501,7 @@ impl IR {
 
                     let vars = self.symbol_table.summarise_phi(arity)?;
 
-                    for (var1, var2) in vars.iter() {
+                    for (var1, var2) in vars.iter().rev() {
                         let var = self.symbol_table.new_var()?;
                         writeln!(
                             function_buffer,

@@ -3,7 +3,7 @@ source: src/tests/ir/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13) {
+define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14) {
 BLOCK 0
 %1 = %0
 %2 = 1
@@ -24,9 +24,10 @@ BLOCK 2
 %13 = %12 op %11
 GOTO 3
 BLOCK 3
-RETURN %13;
+%14 = phi %12 %13
+RETURN %14;
 };
-define 1 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+define 1 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8) {
 BLOCK 4
 %1 = %0
 %2 = %1 op %0
@@ -41,9 +42,10 @@ BLOCK 6
 %7 <- CALL 2(%6)
 GOTO 7
 BLOCK 7
-RETURN %7;
+%8 = phi %6 %7
+RETURN %8;
 };
-define 2 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+define 2 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8) {
 BLOCK 8
 %1 = %0
 %2 = %1 op %0
@@ -58,6 +60,7 @@ BLOCK 10
 %7 <- CALL 1(%6)
 GOTO 11
 BLOCK 11
-RETURN %7;
+%8 = phi %6 %7
+RETURN %8;
 };
 

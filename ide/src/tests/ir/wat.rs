@@ -194,13 +194,25 @@ fn test_call() {
 
 #[test]
 fn test_phi() {
-    env_logger::init();
     wat!(
         "test_phi",
         "(module
 	        (func (export \"singular\") (param i32) (result i32)
 	          (i32.const 3)	
             (if (result i32) (local.get 0) (then (i32.const 1)) (else (i32.const 2)))
+	          (i32.add)
+          ))"
+    );
+}
+#[test]
+fn test_phi2() {
+    wat!(
+        "test_phi2",
+        "(module
+	        (func (export \"singular\") (param i32) (result i32)
+	          (i32.const 4)	
+            (if (result i32 i32) (local.get 0) (then (i32.const 1) (i32.const 1)) (else (i32.const 2) (i32.const 2)))
+	          (i32.add)
 	          (i32.add)
           ))"
     );
