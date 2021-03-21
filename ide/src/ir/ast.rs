@@ -37,4 +37,5 @@ pub enum Instruction {
     Conditional(Src, Vec<String>),
     Return(Vec<Reg>),
     Table(Vec<String>),
+    Phi(Dest, Src, Src),
 }

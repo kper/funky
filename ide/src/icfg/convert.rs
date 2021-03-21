@@ -272,7 +272,7 @@ impl Convert {
 
                         self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
                     }
-                    Instruction::BinOp(dest, src1, src2) => {
+                    Instruction::BinOp(dest, src1, src2) | Instruction::Phi(dest, src1, src2) => {
                         let before = in_
                             .iter()
                             .filter(|x| &x.belongs_to_var == src1 || &x.belongs_to_var == src2)
@@ -305,7 +305,8 @@ impl Convert {
                             self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
                         }
 
-                        if jumps.len() == 1 { // Normal if
+                        if jumps.len() == 1 {
+                            // Normal if
                             self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                         }
                     }
@@ -315,17 +316,6 @@ impl Convert {
                         for jump in jumps.iter() {
                             self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
                         }
-                        /*
-                        for i in 0..(*jumps) {
-                            let out_ = facts
-                                .iter()
-                                .filter(|x| x.pc == pc + i && x.function == function.name)
-                                .collect::<Vec<_>>();
-
-                            for (from, to) in in_.iter().zip(out_) {
-                                graph.add_normal_curved(from.clone().clone(), to.clone())?;
-                            }
-                        }*/
                     }
                     Instruction::Return(regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
