@@ -215,8 +215,6 @@ impl IR {
             // Add last return
             let mut regs = Vec::new();
 
-            //self.exit_block(return_count, current_reg, function_buffer)?;
-
             for i in 0..return_count {
                 regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
             }
@@ -224,14 +222,43 @@ impl IR {
             writeln!(function_buffer, "RETURN {};", regs.join(" ")).unwrap();
         }
 
-        //writeln!(function_buffer, "BLOCK {}", then_name).unwrap();
-
         Ok(())
     }
 
     /// If the execution exits a block (with no jump),
     /// then kill all variables which are not returned.
     fn exit_block(
+        &mut self,
+        arity: usize,
+        old_state: &Option<Reg>,
+        function_buffer: &mut String,
+    ) -> Result<()> {
+        for var in self
+            .symbol_table
+            .vars
+            .iter_mut()
+            .rev()
+            .skip(arity) //TODO add_parameters for loops
+        {
+            // we must offset parameters
+            if var.val().context("Trying to kill a non normal reg")?
+                <= old_state.as_ref().map(|x| x.val().unwrap()).unwrap_or(0)
+            {
+                break;
+            }
+
+            if !var.is_killed {
+                var.is_killed = true;
+                writeln!(function_buffer, "KILL {}", var.reg).unwrap();
+            }
+        }
+
+        Ok(())
+    }
+
+    /// If the execution exits a block (with no jump), but takes parameters into account,
+    /// then kill all variables which are not returned.
+    fn exit_block_with_parameters(
         &mut self,
         arity: usize,
         old_state: &Option<Reg>,
@@ -331,7 +358,7 @@ impl IR {
                         params_count,
                     )?;
 
-                    self.exit_block(arity as usize, &current_reg, function_buffer, params_count)?;
+                    self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
                     blocks.pop();
 
@@ -421,6 +448,7 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
+                    self.exit_block(arity as usize, &current_reg, function_buffer)?;
                     blocks.pop();
 
                     writeln!(function_buffer, "GOTO {}", then_name,).unwrap();
@@ -474,6 +502,7 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
+                    self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
@@ -481,6 +510,9 @@ impl IR {
                     blocks.pop();
 
                     blocks.push(tblock);
+
+                    // If the block exits, then kill all variable to `current_reg`
+                    let current_reg = self.symbol_table.peek().ok();
 
                     self.visit_instruction_wrapper(
                         code2.get_instructions(),
@@ -492,6 +524,7 @@ impl IR {
                         function_buffer,
                         params_count,
                     )?;
+                    self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
                     blocks.pop();
 
@@ -499,9 +532,10 @@ impl IR {
 
                     writeln!(function_buffer, "BLOCK {}", done_name,).unwrap();
 
-                    let vars = self.symbol_table.summarise_phi(arity)?;
+                    let phi = self.symbol_table.summarise_phi(arity)?;
 
-                    for (var1, var2) in vars.iter().rev() {
+                    debug!("Phi pairs {:?}", phi);
+                    for (var1, var2) in phi.iter().rev() {
                         let var = self.symbol_table.new_var()?;
                         writeln!(
                             function_buffer,
@@ -518,7 +552,7 @@ impl IR {
 
                     let block = blocks.get(jmp_index).unwrap();
 
-                    self.exit_block(return_arity, &current_reg, function_buffer, params_count)?;
+                    self.exit_block(return_arity, &current_reg, function_buffer)?;
 
                     if block.is_loop {
                         writeln!(function_buffer, "GOTO {}", block.name).unwrap();
@@ -723,7 +757,7 @@ impl IR {
                     debug!("RETURN {}", function_return_arity);
                     let mut regs = Vec::new();
 
-                    self.exit_block(return_arity, &current_reg, function_buffer, params_count)?;
+                    self.exit_block(return_arity, &current_reg, function_buffer)?;
 
                     for i in 0..function_return_arity {
                         regs.push(format!("{}", self.symbol_table.peek_offset(i)?));

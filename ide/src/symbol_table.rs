@@ -67,10 +67,17 @@ impl SymbolTable {
             .iter()
             .rev()
             .skip(return_count as usize)
+            .skip_while(|x| x.is_killed)
             .take((return_count * 2) as usize)
             .cloned();
 
-        let second_block = self.vars.iter().rev().take(return_count as usize).cloned();
+        let second_block = self
+            .vars
+            .iter()
+            .rev()
+            .skip_while(|x| x.is_killed)
+            .take(return_count as usize)
+            .cloned();
 
         Ok(first_block.zip(second_block).collect())
     }
