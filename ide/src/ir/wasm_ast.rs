@@ -316,7 +316,7 @@ impl IR {
                 OP_NOP => {
                     // Skip it
                 }
-                OP_CALL_INDIRECT(_index) => {
+                OP_CALL_INDIRECT(ty_index) => {
                     let ta = engine
                         .module
                         .tableaddrs
@@ -331,46 +331,65 @@ impl IR {
                         .get(*ta as usize)
                         .with_context(|| format!("Cannot access {:?}", ta))?;
 
+                    let ty = engine
+                        .module
+                        .fn_types
+                        .get(*ty_index as usize)
+                        .context("Cannot find function's type in module.")?;
+
                     let function_addr = tab
                         .elem
                         .iter()
                         .filter_map(|x| x.as_ref())
+                        .filter(|x| {
+                            let instance = engine
+                                .store
+                                .get_func_instance(x)
+                                .expect("Cannot get function's instance");
+                            ty == &instance.ty
+                        })
                         .collect::<Vec<_>>();
-
-                    let mut param_count = 0;
-                    let mut result_count = 0;
-
-                    for addr in function_addr.iter() {
-                        let instance = engine.store.get_func_instance(addr)?;
-
-                        let num_params = instance.ty.param_types.len();
-                        let num_results = instance.ty.return_types.len();
-
-                        if num_params > param_count {
-                            param_count = num_params;
-                        }
-                        if num_results > result_count {
-                            result_count = num_results;
-                        }
-                    }
 
                     let mut param_regs = Vec::new();
 
-                    for i in 0..param_count {
+                    for i in 0..ty.param_types.len() {
                         param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
                     }
 
-                    writeln!(
-                        function_buffer,
-                        "CALL INDIRECT {} ({})",
-                        function_addr
-                            .iter()
-                            .map(|x| format!("{}", x.get()))
-                            .collect::<Vec<_>>()
-                            .join(" "),
-                        param_regs.join(" ")
-                    )
-                    .unwrap();
+                    if ty.return_types.len() == 0 {
+                        writeln!(
+                            function_buffer,
+                            "CALL INDIRECT {} ({})",
+                            function_addr
+                                .iter()
+                                .map(|x| format!("{}", x.get()))
+                                .collect::<Vec<_>>()
+                                .join(" "),
+                            param_regs.join(" ")
+                        )
+                        .unwrap();
+                    } else {
+                        let return_regs: Vec<_> = (0..ty.return_types.len())
+                            .map(|_| {
+                                format!(
+                                    "{}",
+                                    self.symbol_table.new_var().expect("Cannot get new var")
+                                )
+                            })
+                            .collect();
+                        writeln!(
+                            function_buffer,
+                            "{} <- CALL INDIRECT {} ({})",
+                            return_regs.join(" "),
+                            function_addr
+                                .iter()
+                                .map(|x| format!("{}", x.get()))
+                                .collect::<Vec<_>>()
+                                .join(" "),
+                            param_regs.join(" ")
+                        )
+                        .unwrap();
+                    }
                 }
                 OP_BLOCK(ty, code) => {
                     debug!("Block ty is {:?}", ty);

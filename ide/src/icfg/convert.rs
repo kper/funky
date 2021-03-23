@@ -233,7 +233,7 @@ impl Convert {
                     Instruction::Block(_num) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
-                    Instruction::CallIndirect => {
+                    Instruction::CallIndirect(_names, _params, _dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     Instruction::Jump(num) => {
