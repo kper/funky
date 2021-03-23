@@ -12,4 +12,4 @@ install:
 script:
   - echo $PWD
   - ls
-  - sh ./ci.sh
+  - cd ../.. && sh ./ci.sh
