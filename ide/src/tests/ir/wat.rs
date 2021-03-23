@@ -278,7 +278,43 @@ fn test_call_indirect() {
           )
           (func (export \"type-f64\") (result f64)
             (call_indirect (type $out-f64) (i32.const 3))
+          ))"
+    );
+}
+
+#[test]
+fn test_call_indirect_with_param() {
+    wat!(
+        "test_call_indirect_with_param",
+        "(module
+          
+        (type $over-i32 (func (param i32) (result i32)))
+        (type $over-i64 (func (param i64) (result i64)))
+        (type $over-f32 (func (param f32) (result f32)))
+        (type $over-f64 (func (param f64) (result f64)))
+
+        (func $id-i32 (type $over-i32) (local.get 0))
+        (func $id-i64 (type $over-i64) (local.get 0))
+        (func $id-f32 (type $over-f32) (local.get 0))
+        (func $id-f64 (type $over-f64) (local.get 0))
+
+        (table funcref
+          (elem
+            $id-i32 $id-i64 $id-f32 $id-f64
           )
-          )"
+        )
+
+        (func (export \"type-first-i32\") (result i32)
+          (call_indirect (type $over-i32) (i32.const 32) (i32.const 0))
+        )
+        (func (export \"type-first-i64\") (result i64)
+          (call_indirect (type $over-i64) (i64.const 64) (i32.const 1))
+        )
+        (func (export \"type-first-f32\") (result f32)
+          (call_indirect (type $over-f32) (f32.const 1.32) (i32.const 2))
+        )
+        (func (export \"type-first-f64\") (result f64)
+          (call_indirect (type $over-f64) (f64.const 1.64) (i32.const 3))
+        ))"
     );
 }

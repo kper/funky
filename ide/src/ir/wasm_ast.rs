@@ -233,12 +233,8 @@ impl IR {
         old_state: &Option<Reg>,
         function_buffer: &mut String,
     ) -> Result<()> {
-        for var in self
-            .symbol_table
-            .vars
-            .iter_mut()
-            .rev()
-            .skip(arity) //TODO add_parameters for loops
+        for var in self.symbol_table.vars.iter_mut().rev().skip(arity)
+        //TODO add_parameters for loops
         {
             // we must offset parameters
             if var.val().context("Trying to kill a non normal reg")?
@@ -321,7 +317,60 @@ impl IR {
                     // Skip it
                 }
                 OP_CALL_INDIRECT(_index) => {
-                    writeln!(function_buffer, "CALL INDIRECT").unwrap();
+                    let ta = engine
+                        .module
+                        .tableaddrs
+                        .get(0)
+                        .context("Cannot find first table addr")?;
+
+                    debug!("before tab");
+
+                    let tab = &engine
+                        .store
+                        .tables
+                        .get(*ta as usize)
+                        .with_context(|| format!("Cannot access {:?}", ta))?;
+
+                    let function_addr = tab
+                        .elem
+                        .iter()
+                        .filter_map(|x| x.as_ref())
+                        .collect::<Vec<_>>();
+
+                    let mut param_count = 0;
+                    let mut result_count = 0;
+
+                    for addr in function_addr.iter() {
+                        let instance = engine.store.get_func_instance(addr)?;
+
+                        let num_params = instance.ty.param_types.len();
+                        let num_results = instance.ty.return_types.len();
+
+                        if num_params > param_count {
+                            param_count = num_params;
+                        }
+                        if num_results > result_count {
+                            result_count = num_results;
+                        }
+                    }
+
+                    let mut param_regs = Vec::new();
+
+                    for i in 0..param_count {
+                        param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
+                    }
+
+                    writeln!(
+                        function_buffer,
+                        "CALL INDIRECT {} ({})",
+                        function_addr
+                            .iter()
+                            .map(|x| format!("{}", x.get()))
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                        param_regs.join(" ")
+                    )
+                    .unwrap();
                 }
                 OP_BLOCK(ty, code) => {
                     debug!("Block ty is {:?}", ty);
