@@ -48,8 +48,6 @@ expression: output
 		\path[->] (8) edge (12);
 		\path[->] (4) edge (15);
 		\path[->] (4) edge (14);
-		\path[->] (14) edge (16);
-		\path[->] (15) edge (17);
 
 
                 \end{tikzpicture}

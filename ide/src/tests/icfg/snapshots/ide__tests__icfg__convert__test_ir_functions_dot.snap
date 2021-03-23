@@ -49,10 +49,7 @@ expression: output
 		\path[->] (9) edge (14);
 		\path[->] (9) edge (12);
 		\path[->] (10) edge (13);
-		\path[->] (12) edge (15);
-		\path[->] (13) edge (16);
-		\path[->] (14) edge (17);
-		\path[->, red] (15) [bend right] edge  node { } (7);
+		\path[->, red] (12) [bend right] edge  node { } (7);
 		\path[->, green] (5) [bend left] edge node { } (2);
 		\path[->, green] (6) [bend left] edge node { } (3);
 
