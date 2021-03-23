@@ -796,6 +796,7 @@ fn test_get_exported_global() {
     assert_eq!(I32(42), value.unwrap());
 }
 
+#[ignore]
 #[test]
 fn test_run_fib() {
     //env_logger::init();

@@ -12,6 +12,9 @@ members = [
 	"hustensaft",
 	"custom_display"
 ]
+exclude = [
+	"ide"
+]
 
 [lib]
 path  = "src/lib.rs"
@@ -41,6 +44,7 @@ anyhow = "1.0.32"
 tui = "0.13"
 termion = "1.5"
 structopt = { version = "0.3", default-features = false }
+dot = "0.1.4"
 
 [dev-dependencies]
 insta = "*"

@@ -6,10 +6,10 @@ before_install:
   - sudo apt-get -y install cmake make build-essential
 env:
   - RUST_MIN_STACK=8388608
-before_script:
+install:
   - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
 script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
-  - cargo clippy --all-features -- -D warnings
+  - echo $PWD
+  - ls
+  - cd ../.. && sh ./ci.sh

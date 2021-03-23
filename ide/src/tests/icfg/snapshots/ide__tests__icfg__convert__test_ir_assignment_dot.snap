@@ -1,0 +1,39 @@
+---
+source: src/tests/icfg/convert.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (1) at (1, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (2) at (2, 0) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (3) at (0, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (4) at (1, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (5) at (2, 1) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (7) at (1, 2) {};
+\node[circle,fill,inner sep=1pt,label=left:\%1] (8) at (2, 2) {};
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(1, 1.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(0, 1)};
+		\path[->] (0) edge (5);
+		\path[->] (0) edge (3);
+		\path[->] (1) edge (4);
+		\path[->] (5) edge (7);
+		\path[->] (3) edge (6);
+		\path[->] (5) edge (8);
+
+
+                \end{tikzpicture}
+            \end{document}
