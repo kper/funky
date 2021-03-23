@@ -318,7 +318,7 @@ impl Convert {
                         }
                     }
                     Instruction::Return(regs) => {
-                        //self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                         let expected_return = graph
                             .functions
                             .get(&function.name)
@@ -342,7 +342,7 @@ impl Convert {
                             let in_ = facts
                                 .iter()
                                 .filter(|x| {
-                                    x.pc == pc - 1
+                                    x.pc == pc
                                         && x.function == function.name
                                         && (regs.contains(&x.belongs_to_var)
                                             || x.belongs_to_var == "taut".to_string())

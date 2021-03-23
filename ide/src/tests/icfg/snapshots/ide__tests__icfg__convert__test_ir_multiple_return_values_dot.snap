@@ -57,9 +57,12 @@ expression: output
 		\path[->] (15) edge (20);
 		\path[->] (15) edge (18);
 		\path[->] (16) edge (19);
-		\path[->, red] (18) [bend right] edge  node { } (11);
-		\path[->, red] (19) [bend right] edge  node { } (13);
-		\path[->, red] (20) [bend right] edge  node { } (14);
+		\path[->] (18) edge (21);
+		\path[->] (19) edge (22);
+		\path[->] (20) edge (23);
+		\path[->, red] (21) [bend right] edge  node { } (11);
+		\path[->, red] (22) [bend right] edge  node { } (13);
+		\path[->, red] (23) [bend right] edge  node { } (14);
 		\path[->, green] (7) [bend left] edge node { } (4);
 		\path[->, green] (8) [bend left] edge node { } (5);
 
