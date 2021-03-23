@@ -85,7 +85,8 @@ pub Instruction : Instruction = {
     <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => Instruction::Call(n, r, dest),
     "RETURN" <n:Reg*> ";" => {
         Instruction::Return(n)
-    }
+    },
+    "CALL INDIRECT" => Instruction::CallIndirect,
 };
 
 Id : String = {

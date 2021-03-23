@@ -38,4 +38,5 @@ pub enum Instruction {
     Return(Vec<Reg>),
     Table(Vec<String>),
     Phi(Dest, Src, Src),
+    CallIndirect,
 }

@@ -302,9 +302,6 @@ impl IR {
     ) -> Result<()> {
         debug!("Visiting instruction wrapper");
 
-        //let mut str_block = String::new();
-        //writeln!(str_block, "BLOCK {}", self.block_counter.get()).unwrap();
-
         let blocks_len = blocks.len();
 
         for instr in code.iter() {
@@ -322,6 +319,9 @@ impl IR {
                 }
                 OP_NOP => {
                     // Skip it
+                }
+                OP_CALL_INDIRECT(_index) => {
+                    writeln!(function_buffer, "CALL INDIRECT").unwrap();
                 }
                 OP_BLOCK(ty, code) => {
                     debug!("Block ty is {:?}", ty);

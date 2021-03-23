@@ -250,3 +250,35 @@ fn test_fac_reversed() {
     );
 }
 
+#[test]
+fn test_call_indirect() {
+    wat!(
+        "test_call_indirect",
+        "(module
+          (type $out-i32 (func (result i32)))
+          (type $out-i64 (func (result i64)))
+          (type $out-f32 (func (result f32)))
+          (type $out-f64 (func (result f64)))
+          (func $const-i32 (type $out-i32) (i32.const 0x132))
+          (func $const-i64 (type $out-i64) (i64.const 0x164))
+          (func $const-f32 (type $out-f32) (f32.const 0xf32))
+          (func $const-f64 (type $out-f64) (f64.const 0xf64))
+          (table funcref
+          (elem
+            $const-i32 $const-i64 $const-f32 $const-f64  ;; 0..3
+          ))
+          (func (export \"type-i32\") (result i32)
+            (call_indirect (type $out-i32) (i32.const 0))
+          )
+          (func (export \"type-i64\") (result i64)
+            (call_indirect (type $out-i64) (i32.const 1))
+          )
+          (func (export \"type-f32\") (result f32)
+            (call_indirect (type $out-f32) (i32.const 2))
+          )
+          (func (export \"type-f64\") (result f64)
+            (call_indirect (type $out-f64) (i32.const 3))
+          )
+          )"
+    );
+}
