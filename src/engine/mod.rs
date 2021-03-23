@@ -19,10 +19,10 @@ use crate::convert;
 pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
+use crate::engine::import_resolver::Import;
 use crate::engine::module::ModuleInstance;
 pub use crate::engine::store::GlobalInstance;
 pub use crate::engine::table::TableInstance;
-use crate::engine::import_resolver::Import;
 use crate::operations::*;
 pub use crate::page::Page;
 use crate::value::{Value, Value::*};
@@ -353,14 +353,26 @@ impl Engine {
 
     /// Adding new function to the engine
     /// It will allocate the function in store and add it to the module's code.
-    pub(crate) fn add_function(
-        &mut self,
-        signature: FunctionSignature,
-        body: FunctionBody,
-    ) {
+    pub(crate) fn add_function(&mut self, signature: FunctionSignature, body: FunctionBody) {
         self.module.code.push(body.clone());
-        self.store
-            .allocate_func_instance(signature, body);
+        self.store.allocate_func_instance(signature, body);
+    }
+
+    /// Get function's address by index.
+    pub fn get_function_addr_by_index(&self, ty: u32) -> Result<FuncAddr> {
+        Ok(self
+            .module
+            .funcaddrs
+            .get(ty as usize)
+            .ok_or_else(|| anyhow!("Function not found"))?
+            .clone())
+    }
+
+    /// Get function's instance by addr
+    pub fn get_function_instance(&self, addr: &FuncAddr) -> Result<&FuncInstance> {
+            self
+            .store
+            .get_func_instance(addr)
     }
 
     /// Take only exported functions into consideration
@@ -384,12 +396,7 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = self
-                    .module
-                    .funcaddrs
-                    .get(ty as usize)
-                    .ok_or_else(|| anyhow!("Function not found"))?
-                    .clone();
+                let func_addr = self.get_function_addr_by_index(ty)?; 
 
                 self.invoke_function(&func_addr, args)
                     .context("Invoking the function failed")?;
@@ -428,8 +435,7 @@ impl Engine {
             .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
         let count_return_types = self
-            .store
-            .get_func_instance(func_addr)?
+            .get_function_instance(func_addr)?
             .ty
             .return_types
             .len() as u32;
