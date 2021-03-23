@@ -14,10 +14,7 @@ macro_rules! ir {
 
         let output = render_to(&graph);
 
-        assert_snapshot!(
-            format!("{}_dot", $name),
-            output
-        );
+        assert_snapshot!(format!("{}_dot", $name), output);
     };
 }
 
@@ -329,5 +326,37 @@ fn test_ir_table() {
             TABLE GOTO 0 1 2 ELSE GOTO 2
         };
         "
+    );
+}
+
+#[test]
+fn test_call_indirect() {
+    ir!(
+        "test_ir_indirect_call",
+        "
+  define 0 (param %0) (result 1) (define %0 %1) {
+        BLOCK 0
+        %1 = %0
+        RETURN %1;
+        };
+        define 1 (param %0) (result 1) (define %0 %1) {
+        BLOCK 1
+        %1 = %0
+        RETURN %1;
+        };
+        define 4 (result 1) (define %0 %1 %2) {
+        BLOCK 4
+        %0 = 32
+        %1 = 0
+        %2 <- CALL INDIRECT 0 (%1)
+        RETURN %2;
+        };
+        define 5 (result 1) (define %0 %1 %2) {
+        BLOCK 5
+        %0 = 64
+        %1 = 1
+        %2 <- CALL INDIRECT 1 (%1)
+        RETURN %2;
+        };  "
     );
 }

@@ -1830,10 +1830,6 @@ expression: output
 		\path[->] (762) edge (781);
 		\path[->] (763) edge (782);
 		\path[->] (764) edge (783);
-		\path[->, red] (765) [bend right] edge  node { } (423);
-		\path[->, red] (766) [bend right] edge  node { } (434);
-		\path[->, red] (765) [bend right] edge  node { } (499);
-		\path[->, red] (766) [bend right] edge  node { } (514);
 		\path[->, bend right] (765) edge (784);
 		\path[->, bend right] (766) edge (785);
 		\path[->, bend right] (767) edge (786);
@@ -2004,10 +2000,6 @@ expression: output
 		\path[->] (933) edge (952);
 		\path[->] (934) edge (953);
 		\path[->] (935) edge (954);
-		\path[->, red] (936) [bend right] edge  node { } (423);
-		\path[->, red] (954) [bend right] edge  node { } (434);
-		\path[->, red] (936) [bend right] edge  node { } (499);
-		\path[->, red] (954) [bend right] edge  node { } (514);
 		\path[->] (19) edge (955);
 		\path[->] (20) edge (956);
 		\path[->] (21) edge (957);
@@ -2029,6 +2021,18 @@ expression: output
 		\path[->, green] (414) [bend left] edge node { } (1);
 		\path[->, green] (480) [bend left] edge node { } (0);
 		\path[->, green] (494) [bend left] edge node { } (1);
+		\path[->, red] (765) [bend right] edge  node { } (423);
+		\path[->, red] (766) [bend right] edge  node { } (434);
+		\path[->, red] (765) [bend right] edge  node { } (499);
+		\path[->, red] (766) [bend right] edge  node { } (514);
+		\path[->, red] (765) [bend right] edge  node { } (963);
+		\path[->, red] (766) [bend right] edge  node { } (966);
+		\path[->, red] (936) [bend right] edge  node { } (423);
+		\path[->, red] (954) [bend right] edge  node { } (434);
+		\path[->, red] (936) [bend right] edge  node { } (499);
+		\path[->, red] (954) [bend right] edge  node { } (514);
+		\path[->, red] (936) [bend right] edge  node { } (963);
+		\path[->, red] (954) [bend right] edge  node { } (966);
 		\path[->, green] (959) [bend left] edge node { } (0);
 		\path[->, green] (961) [bend left] edge node { } (1);
 

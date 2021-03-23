@@ -145,11 +145,25 @@ impl Convert {
                         .add_call(callee_name, pc, &function.name, _dest);
                     graph.add_statement(function, instruction)?;
                 }
+                Instruction::CallIndirect(callee_names, _params, _dest) => {
+                    // This is necessary, because we can have multiple returns
+                    for callee_name in callee_names.iter() {
+                        debug!(
+                            "Register call indirect for function {} in {} for pc {}",
+                            function.name, callee_name, pc
+                        );
+                        self.call_handler
+                            .add_call(callee_name, pc, &function.name, _dest);
+                    }
+                    graph.add_statement(function, instruction)?;
+                }
                 _ => graph.add_statement(function, instruction)?,
             }
 
             pc += 1;
         }
+
+        debug!("Call handlers {:#?}", self.call_handler);
 
         Ok(())
     }
@@ -190,14 +204,16 @@ impl Convert {
             graph.init_function(function)?;
         }
 
-        graph.pc_counter.set(1); // Set to the first instruction
+        let mut block_saver = HashMap::new(); // key = Block, Value = pc
+
+        debug!("=> Generating all facts");
+        for function in prog.functions.iter() {
+            graph.pc_counter.set(1);
+            self.generate_all_facts(&mut graph, function, &mut block_saver)?;
+        }
 
         for function in prog.functions.iter() {
             debug!("Creating graph from function {}", function.name);
-
-            let mut block_saver = HashMap::new(); // key = Block, Value = pc
-            self.generate_all_facts(&mut graph, function, &mut block_saver)?;
-
             graph.pc_counter.set(1); // Set to the first instruction
 
             let mut iterator = function.instructions.iter();
@@ -208,6 +224,8 @@ impl Convert {
             debug!("///////");
             for instruction in &mut iterator {
                 let pc = graph.pc_counter.get();
+
+                debug!("Pc is {}", pc);
 
                 let facts = graph.facts.clone();
                 let in_ = facts
@@ -221,19 +239,16 @@ impl Convert {
                     .collect::<Vec<_>>();
 
                 if in_.len() == 0 {
-                    bail!("Cannot find `in` set");
+                    bail!("Cannot find `in` set for the flow functions");
                 }
 
                 if out_.len() == 0 {
-                    bail!("Cannot find `out` set");
+                    bail!("Cannot find `out` set for the flow functions");
                 }
 
                 debug!("Instruction {:?}", instruction);
                 match instruction {
                     Instruction::Block(_num) => {
-                        self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
-                    }
-                    Instruction::CallIndirect(_names, _params, _dest) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
                     }
                     Instruction::Jump(num) => {
@@ -301,6 +316,9 @@ impl Convert {
                     Instruction::Call(_callee_name, _params, regs) => {
                         self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
                     }
+                    Instruction::CallIndirect(_names, _params, regs) => {
+                        self.add_call_to_return(&mut graph, &in_, &out_, regs)?;
+                    }
                     Instruction::Conditional(_reg, jumps) => {
                         assert!(jumps.len() >= 1, "Conditional must have at least one jump");
 
@@ -320,8 +338,63 @@ impl Convert {
                             self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
                         }
                     }
-                    Instruction::Return(regs) => {
+                    Instruction::Return(_regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                    }
+                }
+            }
+
+            graph.pc_counter.set(1); // Set to the first instruction
+        }
+
+        self.handle_calls(&prog, &mut graph)?;
+
+        return Ok(graph);
+    }
+
+    pub fn handle_calls(&mut self, prog: &Program, graph: &mut Graph) -> Result<()> {
+        for function in prog.functions.iter() {
+            graph.pc_counter.set(1); // Set to the first instruction
+
+            let mut iterator = function.instructions.iter();
+
+            debug!("///////");
+            debug!("/////// HANDLING CALLS {}", function.name);
+            debug!("///////");
+            for instruction in &mut iterator {
+                let pc = graph.pc_counter.get();
+
+                let facts = graph.facts.clone();
+                let in_ = facts
+                    .iter()
+                    .filter(|x| x.pc == pc - 1 && x.function == function.name)
+                    .collect::<Vec<_>>();
+
+                let out_ = facts
+                    .iter()
+                    .filter(|x| x.pc == pc && x.function == function.name)
+                    .collect::<Vec<_>>();
+
+                if in_.len() == 0 {
+                    bail!("Cannot find `in` set for handling calls");
+                }
+
+                if out_.len() == 0 {
+                    bail!("Cannot find `out` set for handling calls");
+                }
+
+                debug!("Instruction {:?}", instruction);
+
+                match instruction {
+                    Instruction::Call(callee_name, params, _dest) => {
+                        self.handle_call(graph, callee_name, params, &in_)?;
+                    }
+                    Instruction::CallIndirect(callee_names, params, _dest) => {
+                        for name in callee_names.iter() {
+                            self.handle_call(graph, name, params, &in_)?;
+                        }
+                    }
+                    Instruction::Return(regs) => {
                         let expected_return = graph
                             .functions
                             .get(&function.name)
@@ -338,6 +411,11 @@ impl Convert {
                         }
 
                         let caller_metas = self.call_handler.get_function(&function.name);
+
+                        debug!(
+                            "Return callers metas ctx ({}) {:?}",
+                            function.name, caller_metas
+                        );
 
                         if let Some(caller_metas) = caller_metas {
                             let facts = graph.facts.clone();
@@ -377,138 +455,47 @@ impl Convert {
                             debug!("No callers found, therefore skipping return");
                         }
                     }
-                }
-            }
-
-            graph.pc_counter.set(1); // Set to the first instruction
-        }
-
-        self.handle_calls(&prog, &mut graph)?;
-
-        return Ok(graph);
-    }
-
-    pub fn handle_calls(&mut self, prog: &Program, graph: &mut Graph) -> Result<()> {
-        for function in prog.functions.iter() {
-            graph.pc_counter.set(1); // Set to the first instruction
-
-            let mut iterator = function.instructions.iter();
-
-            debug!("///////");
-            debug!("/////// HANDLING CALLS");
-            debug!("///////");
-            for instruction in &mut iterator {
-                let pc = graph.pc_counter.get();
-
-                let facts = graph.facts.clone();
-                let in_ = facts
-                    .iter()
-                    .filter(|x| x.pc == pc - 1 && x.function == function.name)
-                    .collect::<Vec<_>>();
-
-                let out_ = facts
-                    .iter()
-                    .filter(|x| x.pc == pc && x.function == function.name)
-                    .collect::<Vec<_>>();
-
-                if in_.len() == 0 {
-                    bail!("Cannot find `in` set");
-                }
-
-                if out_.len() == 0 {
-                    bail!("Cannot find `out` set");
-                }
-
-                debug!("Instruction {:?}", instruction);
-                match instruction {
-                    Instruction::Call(callee_name, params, _dest) => {
-                        let before = in_
-                            .iter()
-                            .filter(|x| {
-                                params.contains(&x.belongs_to_var)
-                                    || x.belongs_to_var == "taut".to_string()
-                            })
-                            .map(|x| *x)
-                            .collect::<Vec<_>>();
-
-                        let callee_params_vars: Vec<_> = graph
-                            .get_vars(&callee_name)
-                            .context("Cannot get variables of called function")?
-                            .iter()
-                            .take(params.len() + 1)
-                            .collect();
-
-                        /*
-                        let callee_all_vars: Vec<_> = graph
-                            .get_vars(&callee_name)
-                            .context("Cannot get variables of called function")?
-                            .iter()
-                            .collect();*/
-
-                        let mut callee_first_facts = Vec::new();
-                        //let mut callee_last_facts = Vec::new();
-
-                        for var in callee_params_vars {
-                            let first_fact = graph
-                                .get_first_fact_of_var(var)
-                                .context("Cannot get first fact of variable")?;
-                            callee_first_facts.push(first_fact.clone());
-                        }
-
-                        /*
-                        for var in callee_all_vars {
-                            let last_fact = graph
-                                .get_last_fact_of_var(var)
-                                .context("Cannot get last fact of variable")?;
-
-                            callee_last_facts.push(last_fact.clone());
-                        }*/
-
-                        for (from, to) in before.iter().zip(callee_first_facts) {
-                            graph.add_call_edge(from.clone().clone(), to)?;
-                        }
-
-                        /*
-                        // After the return
-                        let after_caller = out_
-                            .iter()
-                            .filter(|x| {
-                                dest.contains(&x.belongs_to_var)
-                                    || x.belongs_to_var == "taut".to_string()
-                            })
-                            .map(|x| *x)
-                            .collect::<Vec<_>>();
-
-                        // Shrink to result of callee
-
-                        let expected_return = graph
-                            .functions
-                            .get(callee_name)
-                            .context("Cannot find function")?
-                            .return_count;
-
-                        let taut = callee_last_facts.get(0).unwrap().clone();
-
-                        callee_last_facts.reverse();
-
-                        let mut callee_last_facts: Vec<_> = callee_last_facts
-                            .into_iter()
-                            .take(expected_return)
-                            .collect();
-
-                        callee_last_facts.reverse();
-
-                        callee_last_facts.insert(0, taut);
-
-                        assert_eq!(callee_last_facts.len(), after_caller.len());
-                        for (from, to) in callee_last_facts.iter().zip(after_caller) {
-                            graph.add_return_edge(from.clone(), to.clone())?;
-                        }
-                        */
-                    }
                     _ => {}
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn handle_call(
+        &self,
+        graph: &mut Graph,
+        callee_name: &String,
+        params: &Vec<String>,
+        in_: &Vec<&Fact>,
+    ) -> Result<()> {
+        let before = in_
+            .iter()
+            .filter(|x| {
+                params.contains(&x.belongs_to_var) || x.belongs_to_var == "taut".to_string()
+            })
+            .map(|x| *x)
+            .collect::<Vec<_>>();
+
+        let callee_params_vars: Vec<_> = graph
+            .get_vars(&callee_name)
+            .context("Cannot get variables of called function")?
+            .iter()
+            .take(params.len() + 1)
+            .collect();
+
+        let mut callee_first_facts = Vec::new();
+
+        for var in callee_params_vars {
+            let first_fact = graph
+                .get_first_fact_of_var(var)
+                .context("Cannot get first fact of variable")?;
+            callee_first_facts.push(first_fact.clone());
+        }
+
+        for (from, to) in before.iter().zip(callee_first_facts) {
+            graph.add_call_edge(from.clone().clone(), to)?;
         }
 
         Ok(())
