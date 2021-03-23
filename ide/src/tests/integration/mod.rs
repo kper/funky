@@ -71,3 +71,8 @@ fn test_fib() {
 fn test_fac() {
     run!("fac", "../tests/fac.wasm");
 }
+
+#[test]
+fn test_br_table() {
+    run!("br_table", "../tests/br_table.wasm");
+}
