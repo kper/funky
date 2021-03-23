@@ -9,5 +9,6 @@ env:
 before_script:
   - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
+  - cd ../funky
 script:
   - sh ci.sh
