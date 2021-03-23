@@ -10,4 +10,6 @@ install:
   - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
 script:
+  - echo $PWD
+  - ls
   - sh ./ci.sh
