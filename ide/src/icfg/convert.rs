@@ -222,10 +222,19 @@ impl Convert {
             debug!("///////");
             debug!("/////// FLOW");
             debug!("///////");
+
+            let mut skipping = false;
+
             for instruction in &mut iterator {
                 let pc = graph.pc_counter.get();
 
                 debug!("Pc is {}", pc);
+
+                if skipping {
+                    debug!("Last instruction declared to skip. Therefore skipping");
+                    skipping = false;
+                    continue;
+                }
 
                 let facts = graph.facts.clone();
                 let in_ = facts
@@ -340,6 +349,9 @@ impl Convert {
                     }
                     Instruction::Return(_regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
+                
+                        debug!("Instruction is a return. Therefore skipping next");
+                        skipping = true;
                     }
                 }
             }
