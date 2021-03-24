@@ -14,21 +14,20 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct IR {
-    //functions: Vec<Function>,
     buffer: String,
-    //counter: Counter,
     symbol_table: SymbolTable,
     block_counter: Counter,
     function_counter: Counter,
     functions: Vec<Function>,
+    globals: HashMap<usize, Reg>, //key to register
+    global_counter: ReverseCounter,
 }
 
 #[derive(Debug)]
 struct Function {
     name: String,
     return_count: usize,
-    locals: HashMap<usize, Reg>,  //key to register
-    globals: HashMap<usize, Reg>, //key to register
+    locals: HashMap<usize, Reg>, //key to register
 }
 
 #[derive(Debug)]
@@ -63,6 +62,27 @@ impl Counter {
     }
 }
 
+#[derive(Debug)]
+struct ReverseCounter {
+    counter: isize,
+}
+
+impl ReverseCounter {
+    pub fn peek(&self) -> isize {
+        self.counter
+    }
+
+    pub fn get(&mut self) -> isize {
+        let counter = self.counter.clone();
+        self.counter -= 1;
+        counter
+    }
+
+    pub fn peek_next(&self) -> isize {
+        self.counter - 1
+    }
+}
+
 impl IR {
     pub fn new() -> Self {
         Self {
@@ -72,6 +92,8 @@ impl IR {
             block_counter: Counter::default(),
             function_counter: Counter::default(),
             functions: Vec::new(),
+            globals: HashMap::default(),
+            global_counter: ReverseCounter { counter: -1 },
         }
     }
 
@@ -79,7 +101,19 @@ impl IR {
         self.buffer.clone()
     }
 
+    fn init_globals(&mut self, engine: &Engine) -> Result<()> {
+        for (index, _global) in engine.store.globals.iter().enumerate() {
+            let reg = self.global_counter.get();
+            self.globals.insert(index, Reg::Global(reg));
+        }
+
+        Ok(())
+    }
+
     pub fn visit(&mut self, engine: &Engine) -> Result<()> {
+        self.init_globals(engine)
+            .context("Error occured during global initialization")?;
+
         for function in engine.store.funcs.iter() {
             debug!("Visiting function");
 
@@ -100,7 +134,6 @@ impl IR {
         let mut function = Function {
             name,
             locals: HashMap::new(),
-            globals: HashMap::new(),
             return_count: inst.ty.return_types.len(),
         };
 
@@ -110,7 +143,7 @@ impl IR {
         debug!("Body code {:?}", inst.code.locals);
 
         for (i, _) in inst.ty.param_types.iter().enumerate() {
-            let var = self.symbol_table.new_var()?;
+            let var = self.symbol_table.new_reg()?;
             debug!("Adding parameter {}", var);
             function.locals.insert(i, var.clone());
             params.push(var.clone());
@@ -121,7 +154,7 @@ impl IR {
             for _ in 0..local.count {
                 match local.ty {
                     _ => {
-                        let var = self.symbol_table.new_var()?;
+                        let var = self.symbol_table.new_reg()?;
                         debug!("Adding local {}", var);
                         function.locals.insert(function.locals.len(), var);
                     }
@@ -157,7 +190,7 @@ impl IR {
             inst.ty.param_types.len(),
         )?;
 
-        let nums = (0..self.symbol_table.len())
+        let nums = ((self.globals.len() as isize * -1)..(self.symbol_table.len() as isize))
             .map(|x| format!("%{}", x))
             .collect::<Vec<_>>()
             .join(" ");
@@ -323,8 +356,6 @@ impl IR {
                         .get(0)
                         .context("Cannot find first table addr")?;
 
-                    debug!("before tab");
-
                     let tab = &engine
                         .store
                         .tables
@@ -373,7 +404,7 @@ impl IR {
                             .map(|_| {
                                 format!(
                                     "{}",
-                                    self.symbol_table.new_var().expect("Cannot get new var")
+                                    self.symbol_table.new_reg().expect("Cannot get new var")
                                 )
                             })
                             .collect();
@@ -392,8 +423,6 @@ impl IR {
                     }
                 }
                 OP_BLOCK(ty, code) => {
-                    debug!("Block ty is {:?}", ty);
-
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -434,8 +463,6 @@ impl IR {
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_LOOP(ty, code) => {
-                    debug!("Block ty is {:?}", ty);
-
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -475,8 +502,6 @@ impl IR {
                     writeln!(function_buffer, "BLOCK {}", then_name,).unwrap();
                 }
                 OP_IF(ty, code) => {
-                    debug!("Block ty is {:?}", ty);
-
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
@@ -524,7 +549,6 @@ impl IR {
                     //writeln!(function_buffer, "}}").unwrap();
                 }
                 OP_IF_AND_ELSE(ty, code1, code2) => {
-                    debug!("Block ty is {:?}", ty);
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
                     let done_name = self.block_counter.get();
@@ -604,7 +628,7 @@ impl IR {
 
                     debug!("Phi pairs {:?}", phi);
                     for (var1, var2) in phi.iter().rev() {
-                        let var = self.symbol_table.new_var()?;
+                        let var = self.symbol_table.new_reg()?;
                         writeln!(
                             function_buffer,
                             "{} = {} {} {}",
@@ -693,7 +717,7 @@ impl IR {
                     writeln!(
                         function_buffer,
                         "{} = {}",
-                        self.symbol_table.new_var()?,
+                        self.symbol_table.new_reg()?,
                         locals.get(&(*index as usize)).unwrap()
                     )
                     .unwrap();
@@ -721,7 +745,7 @@ impl IR {
                     writeln!(
                         function_buffer,
                         "{} = {}",
-                        self.symbol_table.new_var()?,
+                        self.symbol_table.new_reg()?,
                         peek
                     )
                     .unwrap();
@@ -742,6 +766,32 @@ impl IR {
                             locals.values().count()
                         ))?,
                         peek
+                    )
+                    .unwrap();
+                }
+                OP_GLOBAL_GET(index) => {
+                    let globals = &self.globals;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {}",
+                        self.symbol_table.new_reg()?,
+                        globals
+                            .get(&(*index as usize))
+                            .context("Cannot find global")?
+                    )
+                    .unwrap();
+                }
+                OP_GLOBAL_SET(index) => {
+                    let globals = &self.globals;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {}",
+                        globals
+                            .get(&(*index as usize))
+                            .context("Cannot find global")?,
+                        self.symbol_table.peek()?
                     )
                     .unwrap();
                 }
@@ -784,7 +834,7 @@ impl IR {
                             .map(|_| {
                                 format!(
                                     "{}",
-                                    self.symbol_table.new_var().expect("Cannot get new var")
+                                    self.symbol_table.new_reg().expect("Cannot get new var")
                                 )
                             })
                             .collect();
@@ -804,16 +854,16 @@ impl IR {
                     }
                 }
                 OP_I32_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
                 }
                 OP_I64_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
                 }
                 OP_F32_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
                 }
                 OP_F64_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_var()?, a).unwrap();
+                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
                 }
                 OP_RETURN => {
                     let function_return_arity = self
@@ -894,7 +944,7 @@ impl IR {
                     writeln!(
                         function_buffer,
                         "{} = {} {}",
-                        self.symbol_table.new_var()?,
+                        self.symbol_table.new_reg()?,
                         "op",
                         self.symbol_table.peek_offset(2)?, // TODO Check why `2`
                     )
@@ -918,7 +968,7 @@ impl IR {
                     writeln!(
                         function_buffer,
                         "{} = {} {} {}",
-                        self.symbol_table.new_var()?,
+                        self.symbol_table.new_reg()?,
                         self.symbol_table.peek_offset(1)?,
                         "op",
                         self.symbol_table.peek_offset(2)?

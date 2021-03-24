@@ -19,6 +19,8 @@ fn parse_reg() {
     // Cannot mix alpha and numeric
     assert!(RegParser::new().parse("%123").is_ok());
     assert!(RegParser::new().parse("%a").is_ok());
+    assert!(RegParser::new().parse("%-123").is_ok());
+    assert!(RegParser::new().parse("%-a").is_err());
 }
 
 #[test]
@@ -42,6 +44,9 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("RETURN %0 %1;").is_ok());
     assert!(InstructionParser::new().parse("CALL 0(%0)").is_ok());
     assert!(InstructionParser::new().parse("CALL 0(%0 %1)").is_ok());
+    assert!(InstructionParser::new().parse("CALL INDIRECT 0 (%0 %1)").is_ok());
+    assert!(InstructionParser::new().parse("CALL INDIRECT 0 1 (%0 %1)").is_ok());
+    assert!(InstructionParser::new().parse("%1 <- CALL INDIRECT 0 1 (%0 %1)").is_ok());
 }
 
 #[test]
