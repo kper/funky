@@ -319,7 +319,6 @@ fn test_call_indirect_with_param() {
     );
 }
 
-
 #[test]
 fn test_global_get() {
     wat!(
@@ -364,4 +363,18 @@ fn test_global_set() {
             (func (export \"set-y\") (param i64) (global.set $y (local.get 0)))
         )"
     );
+}
+
+#[test]
+fn test_global_call() {
+    wat!("test_global_call", 
+  "
+      (module
+        (global $a (mut i32) (i32.const -2))
+        (global $y (mut i64) (i64.const -15))
+
+        (func (export \"set-x\") (param i32) (global.set $a (local.get 0)))
+        (func (export \"set-y\") (param i64)  (call 0 (i32.const 1)) (global.set $y (local.get 0)))
+      ) 
+  ");
 }

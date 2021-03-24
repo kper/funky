@@ -360,3 +360,24 @@ fn test_call_indirect() {
         };  "
     );
 }
+
+#[test]
+fn test_global_call() {
+    ir!("test_ir_global_call", 
+    "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        BLOCK 0
+        %1 = %0
+        %-1 = %1
+        RETURN ;
+        };
+        define 1 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        BLOCK 1
+        %1 = 1
+        CALL 0(%1)
+        %2 = %0
+        %-2 = %2
+        RETURN ;
+        };
+    ");
+}

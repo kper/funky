@@ -48,8 +48,3 @@ fn parse_instruction() {
     assert!(InstructionParser::new().parse("CALL INDIRECT 0 1 (%0 %1)").is_ok());
     assert!(InstructionParser::new().parse("%1 <- CALL INDIRECT 0 1 (%0 %1)").is_ok());
 }
-
-#[test]
-fn parse_function() {
-
-}

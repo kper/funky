@@ -35,6 +35,8 @@ pub struct Note {
 pub struct Fact {
     pub id: usize,
     pub belongs_to_var: VarId,
+    pub var_is_global: bool,
+    pub var_is_taut: bool,
     pub pc: usize,
     pub track: usize,
     pub function: FunctionName,
@@ -47,10 +49,12 @@ pub struct Function {
     pub return_count: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub name: FunctionName,
     pub function: FunctionName,
+    pub is_global: bool,
+    pub is_taut: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -77,10 +81,14 @@ impl Edge {
 
     pub fn to(&self) -> &Fact {
         match self {
-            Edge::Normal { from: _, to, curved:_ } => to,
+            Edge::Normal {
+                from: _,
+                to,
+                curved: _,
+            } => to,
             Edge::Call { from: _, to } => to,
             Edge::CallToReturn { from: _, to } => to,
-            Edge::Return { from:_ , to } => to,
+            Edge::Return { from: _, to } => to,
         }
     }
 }
@@ -99,9 +107,7 @@ impl Graph {
 
     /// Query graph by given fact_id.
     pub fn query_by_fact_id(&self, id: usize) -> Option<&Fact> {
-        self.facts.iter().find(|x| {
-            x.id == id
-        })
+        self.facts.iter().find(|x| x.id == id)
     }
 
     /// Get all neighbours by given fact_id
@@ -162,14 +168,30 @@ impl Graph {
         variables.push(Variable {
             name: "taut".to_string(),
             function: function.name.clone(),
+            is_global: false,
+            is_taut: true,
         });
 
         // add definitions
         for reg in function.definitions.iter() {
             debug!("Adding definition {}", reg);
+
+            let reg_num: isize = reg
+                .clone()
+                .split_off(1)
+                .parse()
+                .context("Cannot parse reg to number")?;
+            let is_global = match reg_num {
+                x if x < 0 => true,
+                x if x >= 0 => false,
+                _ => unreachable!(""),
+            };
+
             variables.push(Variable {
                 name: reg.clone(),
                 function: function.name.clone(),
+                is_global,
+                is_taut: false,
             });
         }
 
@@ -191,6 +213,8 @@ impl Graph {
             self.facts.push(Fact {
                 id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
+                var_is_global: var.is_global,
+                var_is_taut: var.is_taut,
                 pc: 0,
                 track: index,
                 function: function.name.clone(),
@@ -226,6 +250,8 @@ impl Graph {
             self.facts.push(Fact {
                 id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
+                var_is_global: var.is_global,
+                var_is_taut: var.is_taut,
                 track,
                 function: function.name.clone(),
                 pc,
@@ -307,5 +333,28 @@ mod test {
         assert_eq!(2, graph.facts.len());
         assert_eq!(1, graph.vars.len());
         assert_eq!(2, graph.vars.get(&"main".to_string()).unwrap().len());
+    }
+
+    #[test]
+    fn adding_global() {
+        let mut graph = Graph::default();
+        graph
+            .init_function(&AstFunction {
+                name: "main".to_string(),
+                definitions: vec!["%-1".to_string(), "%0".to_string()],
+                ..Default::default()
+            })
+            .unwrap();
+
+        assert_eq!(3, graph.vars.get(&"main".to_string()).unwrap().len());
+        assert_eq!(
+            &Variable {
+                function: "main".to_string(),
+                is_global: true,
+                is_taut: false,
+                name: "%-1".to_string()
+            },
+            graph.vars.get(&"main".to_string()).unwrap().get(1).unwrap()
+        );
     }
 }
