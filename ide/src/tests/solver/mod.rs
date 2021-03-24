@@ -1,11 +1,18 @@
 use crate::solver::bfs::*;
 use crate::solver::*;
 
+
 use crate::icfg::convert::Convert;
 use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
 
 use crate::grammar::*;
+
+use crate::ir::wasm_ast::IR;
+use funky::engine::module::ModuleInstance;
+use funky::engine::*;
+use validation::validate;
+use wasm_parser::{parse, read_wasm};
 
 macro_rules! ir {
     ($name:expr, $ir:expr) => {{
@@ -179,7 +186,7 @@ fn test_bfs_functions_calling_diff_function() {
             &Request {
                 variable: "%0".to_string(),
                 function: "mytest".to_string(),
-                pc: 1 
+                pc: 1
             }
         ),
         "Variable cannot reach itself"
