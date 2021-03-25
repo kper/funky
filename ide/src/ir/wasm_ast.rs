@@ -871,6 +871,20 @@ impl IR {
                 }
                 OP_I32_STORE_8(arg) | OP_I32_STORE_16(arg) | OP_I64_STORE_8(arg)
                 | OP_I64_STORE_16(arg) | OP_I64_STORE_32(arg) => {}
+                OP_I32_LOAD(arg) | OP_F32_LOAD(arg) | OP_I64_LOAD(arg) | OP_F64_LOAD(arg) => {}
+                OP_I64_LOAD_32_u(arg)
+                | OP_I32_LOAD_16_s(arg)
+                | OP_I32_LOAD_16_u(arg)
+                | OP_I32_LOAD_8_s(arg)
+                | OP_I32_LOAD_8_u(arg)
+                | OP_I64_LOAD_32_s(arg)
+                | OP_I64_LOAD_16_s(arg)
+                | OP_I64_LOAD_16_u(arg)
+                | OP_I64_LOAD_8_s(arg)
+                | OP_I64_LOAD_8_u(arg) => {}
+                OP_UNREACHABLE => {
+
+                }
                 OP_MEMORY_SIZE | OP_MEMORY_GROW => {
                     writeln!(
                         function_buffer,
