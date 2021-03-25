@@ -26,7 +26,7 @@ fn test_ir_const() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1
+        pc: 1,
     };
 
     ir!(
@@ -42,10 +42,10 @@ fn test_ir_const() {
 
 #[test]
 fn test_ir_double_assign() {
-     let req = Request {
+    let req = Request {
         variable: "%2".to_string(),
         function: "test".to_string(),
-        pc: 3
+        pc: 3,
     };
     ir!(
         "test_ir_double_const",
@@ -60,3 +60,55 @@ fn test_ir_double_assign() {
     "
     );
 }
+
+#[test]
+fn test_ir_unop() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_unop",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 = op %0
+            %1 = op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_binop() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_binop",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = %0 op %1
+            %2 = %1 op %0   
+        };"
+    );
+}
+
+/*
+#[test]
+fn test_ir_block() {
+    ir!(
+        "test_ir_block",
+        "define test (result 0) (define %0 %1) {
+            BLOCK 0
+            %0 = 1
+            GOTO 1
+            BLOCK 1
+            %1 = 2
+        };"
+    );
+}*/
