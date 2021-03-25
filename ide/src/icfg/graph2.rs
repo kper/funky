@@ -6,7 +6,7 @@ use crate::ir::ast::Instruction;
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 type VarId = String;
 type FunctionName = String;
@@ -31,7 +31,7 @@ pub struct Note {
     pub note: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Fact {
     pub id: usize,
     pub belongs_to_var: VarId,
@@ -63,6 +63,7 @@ pub enum Edge {
     Call { from: Fact, to: Fact },
     CallToReturn { from: Fact, to: Fact },
     Return { from: Fact, to: Fact },
+    Path { from: Fact, to: Fact },
 }
 
 impl Edge {
@@ -76,6 +77,7 @@ impl Edge {
             Edge::Call { from, to: _ } => from,
             Edge::CallToReturn { from, to: _ } => from,
             Edge::Return { from, to: _ } => from,
+            Edge::Path { from, to: _ } => from,
         }
     }
 
@@ -89,6 +91,7 @@ impl Edge {
             Edge::Call { from: _, to } => to,
             Edge::CallToReturn { from: _, to } => to,
             Edge::Return { from: _, to } => to,
+            Edge::Path { from: _, to } => to,
         }
     }
 }
@@ -138,6 +141,20 @@ impl Graph {
             .find(|x| &x.name == var)
     }
 
+    pub fn remove_var(&mut self, function_name: &String, var: &String) -> Result<()> {
+        let pos = self
+            .get_vars_mut(function_name)
+            .context("Cannot find vars")?
+            .iter()
+            .position(|x| &x.name == var)
+            .context("Variable not found")?;
+        self.get_vars_mut(function_name)
+            .context("Cannot find vars")?
+            .remove(pos);
+
+        Ok(())
+    }
+
     pub fn get_first_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
         self.facts
             .iter()
@@ -151,9 +168,71 @@ impl Graph {
             .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
     }
 
-    pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
-        debug!("Adding new function {} to the graph", function.name);
+    pub fn add_var(&mut self, variable: Variable) {
+        if let Some(vars) = self.get_vars_mut(&variable.function) {
+            vars.push(variable);
+        } else {
+            self.vars.insert(variable.function.clone(), vec![variable]);
+        }
+    }
 
+    pub fn init_function_fact(&mut self, function: String, pc: usize) -> &Fact {
+        let fact = Fact {
+            id: self.fact_counter.get(),
+            belongs_to_var: "taut".to_string(),
+            var_is_taut: true,
+            var_is_global: false,
+            function,
+            pc,
+            track: 0,
+        };
+
+        self.facts.push(fact);
+        self.facts.get(self.facts.len() - 1).unwrap()
+    }
+
+    pub fn new_facts(&mut self, function: &String, note: String) -> Result<Vec<Fact>> {
+        let mut index = 0;
+
+        let pc = self.pc_counter.get();
+        let len = self
+            .get_vars(function)
+            .context("Cannot find function")?
+            .len();
+        let mut ids = (0..len)
+            .map(|_| self.fact_counter.get())
+            .rev()
+            .collect::<Vec<_>>();
+        let vars = self.get_vars(function).context("Cannot find function")?;
+        let mut facts = Vec::with_capacity(vars.len());
+
+        for var in vars {
+            debug!("Creating fact for var {}", var.name);
+
+            facts.push(Fact {
+                id: ids.pop().unwrap(),
+                belongs_to_var: var.name.clone(),
+                var_is_global: var.is_global,
+                var_is_taut: var.is_taut,
+                pc,
+                track: index,
+                function: function.clone(),
+            });
+
+            index += 1;
+        }
+
+        self.notes.push(Note {
+            id: self.note_counter.get(),
+            function: function.clone(),
+            pc,
+            note,
+        });
+
+        Ok(facts)
+    }
+
+    pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
             function.name.clone(),
             Function {
@@ -162,6 +241,14 @@ impl Graph {
                 return_count: function.results_len,
             },
         );
+
+        Ok(())
+    }
+
+    pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
+        debug!("Adding new function {} to the graph", function.name);
+
+        self.init_function_def(function)?;
 
         let mut variables = Vec::with_capacity(function.definitions.len() + 1);
 
@@ -309,6 +396,13 @@ impl Graph {
     /// Add a call-to-return edge from the fact `from` to the fact `to`.
     pub fn add_call_to_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
         self.edges.push(Edge::CallToReturn { from, to });
+
+        Ok(())
+    }
+
+    /// Add a path edge from the fact `from` to the fact `to`.
+    pub fn add_path_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Path { from, to });
 
         Ok(())
     }

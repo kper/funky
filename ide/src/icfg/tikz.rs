@@ -73,6 +73,20 @@ pub fn render_to(graph: &Graph) -> String {
                     from.id, to.id
                 ));
             }
+            Edge::Path { from, to }=> {
+                if from != to {
+                    str_vars.push_str(&format!(
+                        "\t\t\\path[->, blue] ({}) [bend right] edge  node {{ }} ({});\n",
+                        from.id, to.id
+                    ));
+                }
+                else {
+                    str_vars.push_str(&format!(
+                        "\t\t\\path[->, blue] ({}) [loop right] edge  node {{ }} ({});\n",
+                        from.id, to.id
+                    ));
+                }
+            }
         }
     }
 
