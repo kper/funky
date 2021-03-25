@@ -801,7 +801,7 @@ impl IR {
                     debug!("Ignoring memory store {:?}", arg);
                 }
                 OP_MEMORY_SIZE | OP_MEMORY_GROW => {
-                    debug!("Ignoring memory");
+                    writeln!(function_buffer, "{} = UNKNOWN", self.symbol_table.new_reg()?).unwrap();
                 }
                 OP_CALL(func) => {
                     let addr = engine.module.lookup_function_addr(*func)?;

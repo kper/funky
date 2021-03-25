@@ -63,6 +63,7 @@ pub Instruction : Instruction = {
     "BLOCK" <n:Id> => Instruction::Block(n),
     <dest:Reg> "=" <src:Reg> => Instruction::Assign(dest, src),
     <dest:Reg> "=" <n:Num> => Instruction::Const(dest, n),
+    <dest:Reg> "=" "UNKNOWN" => Instruction::Unknown(dest),
     <dest:Reg> "=" "op" <src:Reg> => Instruction::Unop(dest, src),
     <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => Instruction::BinOp(dest, src1, src2),
     <dest:Reg> "=" "phi" <src1:Reg> <src2:Reg> => Instruction::Phi(dest, src1, src2),

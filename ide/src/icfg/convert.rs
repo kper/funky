@@ -354,6 +354,9 @@ impl Convert {
                             self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
                         }
                     }
+                    Instruction::Unknown(dest) => {
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
+                    }
                     Instruction::Return(_regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
 
@@ -462,8 +465,7 @@ impl Convert {
                                             && &x.function == target_name
                                             && (target_regs.contains(&x.belongs_to_var)
                                                 || x.var_is_global
-                                                || x.var_is_taut
-                                                )
+                                                || x.var_is_taut)
                                     })
                                     .collect::<Vec<_>>();
 
@@ -494,11 +496,7 @@ impl Convert {
     ) -> Result<()> {
         let before = in_
             .iter()
-            .filter(|x| {
-                params.contains(&x.belongs_to_var)
-                    || x.var_is_taut
-                    || x.var_is_global
-            })
+            .filter(|x| params.contains(&x.belongs_to_var) || x.var_is_taut || x.var_is_global)
             .map(|x| *x)
             .collect::<Vec<_>>();
 
