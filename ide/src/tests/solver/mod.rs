@@ -8,12 +8,6 @@ use insta::assert_snapshot;
 
 use crate::grammar::*;
 
-use crate::ir::wasm_ast::IR;
-use funky::engine::module::ModuleInstance;
-use funky::engine::*;
-use validation::validate;
-use wasm_parser::{parse, read_wasm};
-
 macro_rules! ir {
     ($name:expr, $ir:expr) => {{
         let mut convert = Convert::new();

@@ -3,8 +3,6 @@ use ide::solver::*;
 
 use ide::icfg::convert::Convert;
 use ide::icfg::graph2::Graph;
-use ide::icfg::tikz::render_to;
-use insta::assert_snapshot;
 
 use ide::grammar::*;
 
@@ -14,7 +12,7 @@ use ide::ir::wasm_ast::IR;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 macro_rules! wasm {
     ($input:expr) => {{
         let file = read_wasm!($input);
@@ -55,7 +53,9 @@ fn criterion_benchmark(c: &mut Criterion) {
         function: "0".to_string(),
         pc: 1,
     };
-    c.bench_function("fib", |b| b.iter(|| bench_fib(&mut solver, &mut graph, &req)));
+    c.bench_function("fib", |b| {
+        b.iter(|| bench_fib(&mut solver, &mut graph, &req))
+    });
 }
 
 criterion_group!(benches, criterion_benchmark);
