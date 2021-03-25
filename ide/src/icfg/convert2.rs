@@ -141,16 +141,12 @@ impl ConvertSummary {
                         graph.add_path_edge(init_fact.clone(), fact)?;
                     }
                 }
-                Instruction::Assign(dest, src) => {
+                Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
                     debug!("Assign {} = {}", dest, src);
                     if graph.get_var(&function.name, dest).is_some() {
                         // Relevant
 
-                        debug!("Destination is relevant");
-
                         if graph.get_var(&function.name, src).is_none() {
-                            debug!("Reassignment");
-
                             // remove the old var if it exists
                             let old_var = graph
                                 .get_vars(&function.name)
