@@ -227,6 +227,21 @@ impl ConvertSummary {
                         graph.add_path_edge(init_fact.clone(), fact)?;
                     }
                 }
+                Instruction::Kill(dest) => {
+                    if graph.get_var(&function.name, dest).is_some() {
+                        graph.remove_var(&function.name, &dest)?;
+                    }
+
+                    let out_ = graph
+                        .new_facts(&function.name, format!("{:?}", instruction))
+                        .context("Cannot create a new fact")?;
+
+                    graph.facts.extend_from_slice(&out_); //required for tikz
+
+                    for fact in out_.into_iter() {
+                        graph.add_path_edge(init_fact.clone(), fact)?;
+                    }
+                }
                 _ => {}
             }
         }

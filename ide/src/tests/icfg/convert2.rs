@@ -98,6 +98,27 @@ fn test_ir_binop() {
     );
 }
 
+
+#[test]
+fn test_ir_killing_op() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_killing_op",
+        req,
+        "define test (result 0) (define %0 %1 %2)  {
+            %0 = 1
+            %1 = 1
+            KILL %0
+            KILL %1
+            %2 = 1
+        };"
+    );
+}
+
 /*
 #[test]
 fn test_ir_block() {
