@@ -31,5 +31,5 @@ lalrpop = "0.19.4"
 lto = true
 
 [[bench]]
-name = "fib"
+name = "bench"
 harness = false
