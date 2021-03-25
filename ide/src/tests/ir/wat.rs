@@ -378,3 +378,20 @@ fn test_global_call() {
       ) 
   ");
 }
+
+#[test]
+fn test_memory_store() {
+  wat!("test_memory_store",
+"
+(module 
+(memory 1)
+  (data (i32.const 0) \"ABC\\a7D\") (data (i32.const 20) \"WASM\")
+  (func  
+    (i32.store (i32.const 8) (i32.const -12345))
+    (i64.store (i32.const 8) (i64.const -12345))
+    (f32.store (i32.const 8) (f32.const -12345))
+    (f64.store (i32.const 8) (f64.const -12345))
+  )
+)
+");
+}

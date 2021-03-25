@@ -795,13 +795,89 @@ impl IR {
                     )
                     .unwrap();
                 }
-                OP_I32_STORE(arg) | OP_I64_STORE(arg) | OP_F32_STORE(arg) | OP_F64_STORE(arg)
-                | OP_I32_STORE_8(arg) | OP_I32_STORE_16(arg) | OP_I64_STORE_8(arg)
-                | OP_I64_STORE_16(arg) | OP_I64_STORE_32(arg) => {
-                    debug!("Ignoring memory store {:?}", arg);
+                OP_I32_STORE(arg) | OP_F32_STORE(arg) => {
+                    let c = self.symbol_table.peek()?;
+                    let i = self.symbol_table.peek_offset(1)?.clone();
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {}",
+                        self.symbol_table.new_reg()?,
+                        arg.offset
+                    )
+                    .unwrap();
+
+                    let offset = self.symbol_table.peek()?;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {} {} {}",
+                        self.symbol_table.new_reg()?,
+                        i,
+                        "op",
+                        offset,
+                    )
+                    .unwrap();
+
+                    let i = self.symbol_table.peek()?;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = STORE {} TO {} ALIGN {} {}",
+                        self.symbol_table.new_reg()?,
+                        c,
+                        i,
+                        arg.align,
+                        32
+                    )
+                    .unwrap();
                 }
+                OP_I64_STORE(arg) | OP_F64_STORE(arg) => {
+                    let c = self.symbol_table.peek()?;
+                    let i = self.symbol_table.peek_offset(1)?.clone();
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {}",
+                        self.symbol_table.new_reg()?,
+                        arg.offset
+                    )
+                    .unwrap();
+
+                    let offset = self.symbol_table.peek()?;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = {} {} {}",
+                        self.symbol_table.new_reg()?,
+                        i,
+                        "op",
+                        offset,
+                    )
+                    .unwrap();
+
+                    let i = self.symbol_table.peek()?;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = STORE {} TO {} ALIGN {} {}",
+                        self.symbol_table.new_reg()?,
+                        c,
+                        i,
+                        arg.align,
+                        64
+                    )
+                    .unwrap();
+                }
+                OP_I32_STORE_8(arg) | OP_I32_STORE_16(arg) | OP_I64_STORE_8(arg)
+                | OP_I64_STORE_16(arg) | OP_I64_STORE_32(arg) => {}
                 OP_MEMORY_SIZE | OP_MEMORY_GROW => {
-                    writeln!(function_buffer, "{} = UNKNOWN", self.symbol_table.new_reg()?).unwrap();
+                    writeln!(
+                        function_buffer,
+                        "{} = UNKNOWN",
+                        self.symbol_table.new_reg()?
+                    )
+                    .unwrap();
                 }
                 OP_CALL(func) => {
                     let addr = engine.module.lookup_function_addr(*func)?;

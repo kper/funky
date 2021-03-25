@@ -363,6 +363,9 @@ impl Convert {
                         debug!("Instruction is a return. Therefore skipping next");
                         skipping = true;
                     }
+                    Instruction::Store => {
+
+                    }
                 }
             }
 
