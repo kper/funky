@@ -47,11 +47,13 @@ pub fn render_to(graph: &Graph) -> String {
 
     for edge in graph.edges.iter() {
         match edge {
-            Edge::Normal { from, to , curved } => {
+            Edge::Normal { from, to, curved } => {
                 if *curved {
-                    str_vars.push_str(&format!("\t\t\\path[->, bend right] ({}) edge ({});\n", from.id, to.id));
-                }
-                else {
+                    str_vars.push_str(&format!(
+                        "\t\t\\path[->, bend right] ({}) edge ({});\n",
+                        from.id, to.id
+                    ));
+                } else {
                     str_vars.push_str(&format!("\t\t\\path[->] ({}) edge ({});\n", from.id, to.id));
                 }
             }
@@ -73,19 +75,24 @@ pub fn render_to(graph: &Graph) -> String {
                     from.id, to.id
                 ));
             }
-            Edge::Path { from, to }=> {
+            Edge::Path { from, to } => {
                 if from != to {
                     str_vars.push_str(&format!(
                         "\t\t\\path[->, blue] ({}) [bend right] edge  node {{ }} ({});\n",
                         from.id, to.id
                     ));
-                }
-                else {
+                } else {
                     str_vars.push_str(&format!(
                         "\t\t\\path[->, blue] ({}) [loop right] edge  node {{ }} ({});\n",
                         from.id, to.id
                     ));
                 }
+            }
+            Edge::Summary { from, to } => {
+                str_vars.push_str(&format!(
+                    "\t\t\\path[->, red] ({}) [bend left] edge  node {{ }} ({});\n",
+                    from.id, to.id
+                ));
             }
         }
     }

@@ -30,6 +30,8 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (1);
 		\path[->, blue] (0) [bend right] edge  node { } (5);
 		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->, red] (0) [bend left] edge  node { } (5);
+		\path[->, red] (0) [bend left] edge  node { } (4);
 
 
                 \end{tikzpicture}

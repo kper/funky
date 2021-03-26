@@ -61,7 +61,6 @@ impl ConvertSummary {
             name: "taut".to_string(),
         });
 
-        //TODO start from req
         let init_fact = graph
             .init_function_fact(req.function.clone(), req.pc)
             .clone();
@@ -141,35 +140,6 @@ impl ConvertSummary {
                         // Relevant
 
                         graph.remove_var(&function.name, &dest)?;
-                        /*
-                        if graph.get_var(&function.name, src).is_none() {
-                            debug!("Assigned src did not exist");
-                            // remove the old var if it exists
-
-                            if let Some(old_var) = graph
-                                .get_vars(&function.name)
-                                .context("Canot find variables")?
-                                .iter()
-                                .find(|x| !x.is_taut && &x.name != dest)
-                            {
-                                let name = old_var.name.clone();
-                                graph.remove_var(&function.name, &name)?;
-                            }
-
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: src.clone(),
-                            });
-                        } else {
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: src.clone(),
-                            });
-                        }*/
                     }
                     if graph.get_var(&function.name, src).is_some() {
                         graph.add_var(Variable {
@@ -226,8 +196,23 @@ impl ConvertSummary {
                 }
                 Instruction::Unknown(dest) => {}
                 Instruction::Store => {}
-                Instruction::Return(_regs) => {
-                    skipping = true;
+                Instruction::Return(regs) => {
+                    //skipping = true;
+
+                    let vars : Vec<Variable> = graph
+                        .get_vars(&function.name)
+                        .context("Cannot get vars")?
+                        .iter()
+                        .filter(|x| !x.is_taut)
+                        .cloned()
+                        .collect();
+
+                    for var in vars
+                    {
+                        if !regs.contains(&var.name) {
+                            graph.remove_var(&function.name, &var.name)?;
+                        }
+                    }
                 }
                 Instruction::Conditional(_reg, jumps) => {
                     assert!(jumps.len() >= 1, "Conditional must have at least one jump");
@@ -239,7 +224,7 @@ impl ConvertSummary {
                     let req = Request {
                         function: callee.clone(),
                         pc: 1,
-                        variable: "temp".to_string(),
+                        variable: "temp".to_string(), //TODO remove variable, because doesnt matter
                     };
                     self.tabulate(graph, prog, &req)?;
                 }
@@ -254,6 +239,12 @@ impl ConvertSummary {
             for fact in out_.into_iter() {
                 graph.add_path_edge(init_fact.clone(), fact)?;
             }
+        }
+
+        let out_ = graph.get_last_facts(&function.name);
+        debug!("Summary {:?}", out_);
+        for fact in out_.into_iter() {
+            graph.add_summary_edge(init_fact.clone(), fact)?;
         }
 
         Ok(())

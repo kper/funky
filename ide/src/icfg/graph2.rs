@@ -64,6 +64,7 @@ pub enum Edge {
     CallToReturn { from: Fact, to: Fact },
     Return { from: Fact, to: Fact },
     Path { from: Fact, to: Fact },
+    Summary { from: Fact, to: Fact },
 }
 
 impl Edge {
@@ -78,6 +79,7 @@ impl Edge {
             Edge::CallToReturn { from, to: _ } => from,
             Edge::Return { from, to: _ } => from,
             Edge::Path { from, to: _ } => from,
+            Edge::Summary { from, to: _ } => from,
         }
     }
 
@@ -92,6 +94,7 @@ impl Edge {
             Edge::CallToReturn { from: _, to } => to,
             Edge::Return { from: _, to } => to,
             Edge::Path { from: _, to } => to,
+            Edge::Summary { from: _, to } => to,
         }
     }
 }
@@ -319,6 +322,14 @@ impl Graph {
         Ok(())
     }
 
+    pub fn get_last_facts(&self, function: &String) -> Vec<Fact> {
+        self.facts
+            .iter()
+            .filter(move |x| &x.function == function && x.pc == self.pc_counter.peek() - 1)
+            .cloned()
+            .collect()
+    }
+
     pub fn add_statement(
         &mut self,
         function: &AstFunction,
@@ -407,6 +418,13 @@ impl Graph {
     /// Add a path edge from the fact `from` to the fact `to`.
     pub fn add_path_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
         self.edges.push(Edge::Path { from, to });
+
+        Ok(())
+    }
+
+    /// Add a summary edge from the fact `from` to the fact `to`.
+    pub fn add_summary_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Summary { from, to });
 
         Ok(())
     }

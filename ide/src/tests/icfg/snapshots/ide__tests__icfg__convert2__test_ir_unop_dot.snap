@@ -37,6 +37,9 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (8);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (6);
+		\path[->, red] (0) [bend left] edge  node { } (8);
+		\path[->, red] (0) [bend left] edge  node { } (7);
+		\path[->, red] (0) [bend left] edge  node { } (6);
 
 
                 \end{tikzpicture}

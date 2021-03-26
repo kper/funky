@@ -28,6 +28,8 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (1);
 		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (3);
+		\path[->, red] (0) [bend left] edge  node { } (4);
+		\path[->, red] (0) [bend left] edge  node { } (3);
 
 
                 \end{tikzpicture}

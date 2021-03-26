@@ -233,3 +233,25 @@ fn test_ir_table() {
         "
     );
 }
+
+#[test]
+fn test_ir_functions() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_functions",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            CALL mytest(%0)
+        };
+        define mytest (param %0) (result 0) (define %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN;
+        };"
+    );
+}

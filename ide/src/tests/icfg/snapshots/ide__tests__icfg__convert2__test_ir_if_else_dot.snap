@@ -71,6 +71,7 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (20);
 		\path[->, blue] (0) [bend right] edge  node { } (19);
 		\path[->, blue] (0) [bend right] edge  node { } (21);
+		\path[->, red] (0) [bend left] edge  node { } (21);
 
 
                 \end{tikzpicture}
