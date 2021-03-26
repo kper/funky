@@ -99,8 +99,15 @@ impl ConvertSummary {
             }
         }
 
+        let mut skipping = false;
         for instruction in function.instructions.iter().skip(req.pc) {
             debug!("Instrution {:?}", instruction);
+
+            if skipping {
+                debug!("Last instruction declared to skip. Therefore skipping");
+                skipping = false;
+                continue;
+            }
 
             match instruction {
                 Instruction::Block(_num) | Instruction::Jump(_num) => {}
@@ -188,7 +195,15 @@ impl ConvertSummary {
                         graph.remove_var(&function.name, &dest)?;
                     }
                 }
+                Instruction::Unknown(dest) => {}
+                Instruction::Store => {}
+                Instruction::Return(_regs) => {
+                    skipping = true;
+                }
                 Instruction::Conditional(_reg, jumps) => {
+                    assert!(jumps.len() >= 1, "Conditional must have at least one jump");
+                }
+                Instruction::Table(jumps) => {
                     assert!(jumps.len() >= 1, "Conditional must have at least one jump");
                 }
                 _ => {}

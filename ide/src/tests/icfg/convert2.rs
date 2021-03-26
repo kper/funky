@@ -141,7 +141,6 @@ fn test_ir_block() {
 
 #[test]
 fn test_ir_if_else() {
-    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
@@ -189,3 +188,48 @@ fn test_ir_if() {
     );
 }
 
+
+#[test]
+fn test_ir_loop() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "main".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_loop",
+        req,
+        "define main (result 0) (define %0 %1) {
+            BLOCK 0
+            %0 = 1
+            GOTO 0 
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_table() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "main".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_table",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            %1 = 2
+            %2 = 3
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            BLOCK 2
+            %2 = 4
+            TABLE GOTO 0 1 2 ELSE GOTO 2
+        };
+        "
+    );
+}
