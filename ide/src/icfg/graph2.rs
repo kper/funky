@@ -162,6 +162,14 @@ impl Graph {
         Ok(())
     }
 
+    pub fn remove_vars(&mut self, function_name: &String) -> Result<()> {
+        self.get_vars_mut(&function_name)
+            .context("Cannot find vars")?
+            .clear();
+
+        Ok(())
+    }
+
     pub fn get_first_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
         self.facts
             .iter()

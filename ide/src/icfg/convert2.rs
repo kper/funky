@@ -37,7 +37,7 @@ impl ConvertSummary {
         Ok((graph))
     }
 
-    fn tabulate(&mut self, graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
+    fn tabulate(&mut self, graph: &mut Graph, prog: &Program, req: &Request) -> Result<Vec<Fact>> {
         debug!("Convert intermediate repr to graph");
         //let mut path_edges = Vec::new();
         //let mut worklist = Vec::new();
@@ -50,7 +50,7 @@ impl ConvertSummary {
 
         if graph.is_function_defined(&function.name) {
             debug!("==> Function was already summarised.");
-            return Ok(());
+            return Ok(vec![]);
         }
 
         graph.init_function_def(&function)?;
@@ -199,7 +199,7 @@ impl ConvertSummary {
                 Instruction::Return(regs) => {
                     //skipping = true;
 
-                    let vars : Vec<Variable> = graph
+                    let vars: Vec<Variable> = graph
                         .get_vars(&function.name)
                         .context("Cannot get vars")?
                         .iter()
@@ -207,8 +207,7 @@ impl ConvertSummary {
                         .cloned()
                         .collect();
 
-                    for var in vars
-                    {
+                    for var in vars {
                         if !regs.contains(&var.name) {
                             graph.remove_var(&function.name, &var.name)?;
                         }
@@ -220,13 +219,42 @@ impl ConvertSummary {
                 Instruction::Table(jumps) => {
                     assert!(jumps.len() >= 1, "Conditional must have at least one jump");
                 }
-                Instruction::Call(callee, _params, _dests) => {
+                Instruction::Call(callee, _params, dests) => {
                     let req = Request {
                         function: callee.clone(),
                         pc: 1,
                         variable: "temp".to_string(), //TODO remove variable, because doesnt matter
                     };
-                    self.tabulate(graph, prog, &req)?;
+
+                    let summary = self
+                        .tabulate(graph, prog, &req)
+                        .context("Fail occured in nested call")?;
+
+                    //graph.remove_vars(&function.name)?;
+                    /* 
+                    graph.add_var(Variable {
+                        function: function.name.clone(),
+                        is_global: false,
+                        is_taut: true,
+                        name: "taut".to_string(),
+                    });*/
+
+                    for (_i, s) in dests.iter().enumerate() {
+                        /*
+                        if !dests.contains(&s.belongs_to_var) {
+                            graph.remove_var(&function.name, &var.name)?;
+                        }*/
+
+                        /* 
+                        let s = summary
+                            .get(i)
+                            .context("Destination has more entries than the summary")?;*/
+                        
+                        // Overwrite
+                        if graph.get_var(&function.name, s).is_some() {
+                            graph.remove_var(&function.name, s)?;
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -243,10 +271,10 @@ impl ConvertSummary {
 
         let out_ = graph.get_last_facts(&function.name);
         debug!("Summary {:?}", out_);
-        for fact in out_.into_iter() {
-            graph.add_summary_edge(init_fact.clone(), fact)?;
+        for fact in out_.iter() {
+            graph.add_summary_edge(init_fact.clone(), fact.clone())?;
         }
 
-        Ok(())
+        Ok(out_)
     }
 }

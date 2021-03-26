@@ -98,7 +98,6 @@ fn test_ir_binop() {
     );
 }
 
-
 #[test]
 fn test_ir_killing_op() {
     let req = Request {
@@ -188,7 +187,6 @@ fn test_ir_if() {
     );
 }
 
-
 #[test]
 fn test_ir_loop() {
     let req = Request {
@@ -252,6 +250,50 @@ fn test_ir_functions() {
             %0 = 2   
             %1 = 3
             RETURN;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_return_values",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_overwrite_return_values() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_overwrite_return_values",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %0 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
         };"
     );
 }
