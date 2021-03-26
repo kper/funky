@@ -281,7 +281,7 @@ impl ConvertSummary {
                         }
                     }
 
-                    for (i, summ) in _summary.into_iter().enumerate().skip(1) {
+                    for (i, _summ) in _summary.into_iter().enumerate().skip(1) {
                         let name = dests.get(i - 1).unwrap().clone();
                         graph.add_var(Variable {
                             function: function.name.clone(),
@@ -290,15 +290,43 @@ impl ConvertSummary {
                             name,
                         });
                     }
-
-                    /*
-                    for (_i, s) in dests.iter().enumerate() {
-                        // Overwrite
-                        if graph.get_var(&function.name, s).is_some() {
-                            graph.remove_var(&function.name, s)?;
-                        }
-                    }*/
                 }
+                Instruction::CallIndirect(callees, _params, dests) => {
+                    for callee in callees.iter() {
+                        let req = Request {
+                            function: callee.clone(),
+                            pc: 1,
+                            variable: "temp".to_string(), //TODO remove variable, because doesnt matter
+                        };
+
+                        let old_pc = graph.pc_counter.peek();
+                        graph.pc_counter.set(1);
+
+                        let _summary: Vec<Fact> = self
+                            .tabulate(graph, prog, &req)
+                            .context("Fail occured in nested call")?;
+
+                        graph.pc_counter.set(old_pc);
+
+                        for dest in dests.iter() {
+                            // Overwrite
+                            if graph.get_var(&function.name, dest).is_some() {
+                                graph.remove_var(&function.name, dest)?;
+                            }
+                        }
+
+                        for (i, _summ) in _summary.into_iter().enumerate().skip(1) {
+                            let name = dests.get(i - 1).unwrap().clone();
+                            graph.add_var(Variable {
+                                function: function.name.clone(),
+                                is_global: false,
+                                is_taut: false,
+                                name,
+                            });
+                        }
+                    }
+                }
+
                 _ => {}
             }
             let out_ = graph
