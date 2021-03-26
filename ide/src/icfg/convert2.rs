@@ -100,65 +100,39 @@ impl ConvertSummary {
         }
 
         for instruction in function.instructions.iter().skip(req.pc) {
-            /*
-            let in_ = graph
-                .facts
-                .iter()
-                .filter(|x| x.pc == pc - 1 && x.function == function.name)
-                .collect::<Vec<_>>();
-            */
-
-            /*
-            let out_ = graph
-                .facts
-                .iter()
-                .filter(|x| x.pc == pc && x.function == function.name)
-                .collect::<Vec<_>>();*/
-
-            //debug_assert!(in_.len() > 0);
+            debug!("Instrution {:?}", instruction);
 
             match instruction {
-                Instruction::Block(_num) | Instruction::Jump(_num) => {
-                    let out_ = graph
-                        .new_facts(&function.name, format!("{:?}", instruction))
-                        .context("Cannot create a new fact")?;
-
-                    graph.facts.extend_from_slice(&out_); //required for tikz
-
-                    for fact in out_.into_iter() {
-                        graph.add_path_edge(init_fact.clone(), fact)?;
-                    }
-                }
-                Instruction::Const(_reg, _) => {
-                    let out_ = graph
-                        .new_facts(&function.name, format!("{:?}", instruction))
-                        .context("Cannot create a new fact")?;
-
-                    graph.facts.extend_from_slice(&out_); //required for tikz
-
-                    // Ignoring, because not reachable from init
-                    for fact in out_.into_iter() {
-                        graph.add_path_edge(init_fact.clone(), fact)?;
-                    }
-                }
+                Instruction::Block(_num) | Instruction::Jump(_num) => {}
+                Instruction::Const(_reg, _) => {}
                 Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
+                    debug!("Assign");
+
                     if graph.get_var(&function.name, dest).is_some() {
+                        debug!("Assigned dest is relevant");
                         // Relevant
 
                         if graph.get_var(&function.name, src).is_none() {
+                            debug!("Assigned src did not exist");
                             // remove the old var if it exists
-                            let old_var = graph
+
+                            if let Some(old_var) = graph
                                 .get_vars(&function.name)
                                 .context("Canot find variables")?
                                 .iter()
                                 .find(|x| !x.is_taut && &x.name != dest)
-                                .context("Cannot find variable")?
-                                .name
-                                .clone();
+                            {
+                                let name = old_var.name.clone();
+                                graph.remove_var(&function.name, &name)?;
+                            }
 
-                            graph.remove_var(&function.name, &old_var)?;
-
-                            //graph.remove_var(&function.name, src)?;
+                            graph.add_var(Variable {
+                                function: function.name.clone(),
+                                is_global: false,
+                                is_taut: false,
+                                name: src.clone(),
+                            });
+                        } else {
                             graph.add_var(Variable {
                                 function: function.name.clone(),
                                 is_global: false,
@@ -166,16 +140,8 @@ impl ConvertSummary {
                                 name: src.clone(),
                             });
                         }
-                    }
-
-                    let out_ = graph
-                        .new_facts(&function.name, format!("{:?}", instruction))
-                        .context("Cannot create a new fact")?;
-
-                    graph.facts.extend_from_slice(&out_); //required for tikz
-
-                    for fact in out_.into_iter() {
-                        graph.add_path_edge(init_fact.clone(), fact)?;
+                    } else {
+                        debug!("Assigned dest is not relevant");
                     }
                 }
                 Instruction::BinOp(dest, src1, src2) => {
@@ -216,33 +182,25 @@ impl ConvertSummary {
                             graph.remove_var(&function.name, &old_var)?;
                         }
                     }
-
-                    let out_ = graph
-                        .new_facts(&function.name, format!("{:?}", instruction))
-                        .context("Cannot create a new fact")?;
-
-                    graph.facts.extend_from_slice(&out_); //required for tikz
-
-                    for fact in out_.into_iter() {
-                        graph.add_path_edge(init_fact.clone(), fact)?;
-                    }
                 }
                 Instruction::Kill(dest) => {
                     if graph.get_var(&function.name, dest).is_some() {
                         graph.remove_var(&function.name, &dest)?;
                     }
-
-                    let out_ = graph
-                        .new_facts(&function.name, format!("{:?}", instruction))
-                        .context("Cannot create a new fact")?;
-
-                    graph.facts.extend_from_slice(&out_); //required for tikz
-
-                    for fact in out_.into_iter() {
-                        graph.add_path_edge(init_fact.clone(), fact)?;
-                    }
+                }
+                Instruction::Conditional(_reg, jumps) => {
+                    assert!(jumps.len() >= 1, "Conditional must have at least one jump");
                 }
                 _ => {}
+            }
+            let out_ = graph
+                .new_facts(&function.name, format!("{:?}", instruction))
+                .context("Cannot create a new fact")?;
+
+            graph.facts.extend_from_slice(&out_); //required for tikz
+
+            for fact in out_.into_iter() {
+                graph.add_path_edge(init_fact.clone(), fact)?;
             }
         }
 

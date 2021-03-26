@@ -119,11 +119,16 @@ fn test_ir_killing_op() {
     );
 }
 
-/*
 #[test]
 fn test_ir_block() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 2,
+    };
     ir!(
         "test_ir_block",
+        req,
         "define test (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
@@ -132,4 +137,55 @@ fn test_ir_block() {
             %1 = 2
         };"
     );
-}*/
+}
+
+#[test]
+fn test_ir_if_else() {
+    env_logger::init();
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "main".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_if_else",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            %0 = %2
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_if() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "main".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_if",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 0
+            %1 = 2
+            %2 = 3
+        };
+        "
+    );
+}
+
