@@ -30,10 +30,15 @@ impl ConvertSummary {
     }
 
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<Graph> {
-        debug!("Convert intermediate repr to graph");
-
         let mut graph = Graph::new();
 
+        self.tabulate(&mut graph, prog, req)?;
+
+        Ok((graph))
+    }
+
+    fn tabulate(&mut self, graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
+        debug!("Convert intermediate repr to graph");
         //let mut path_edges = Vec::new();
         //let mut worklist = Vec::new();
 
@@ -42,6 +47,12 @@ impl ConvertSummary {
             .iter()
             .find(|x| x.name == req.function)
             .context("Cannot find function")?;
+
+        if graph.is_function_defined(&function.name) {
+            debug!("==> Function was already summarised.");
+            return Ok(());
+        }
+
         graph.init_function_def(&function)?;
         graph.add_var(Variable {
             function: req.function.clone(),
@@ -57,12 +68,13 @@ impl ConvertSummary {
         graph.add_path_edge(init_fact.clone(), init_fact.clone())?;
 
         let _ = graph.pc_counter.set(req.pc + 1);
+        let mut offset_pc = 0;
 
         // init
 
-        for instruction in function.instructions.iter().skip(req.pc - 1).take(1) {
+        for instruction in function.instructions.iter().skip(req.pc - 1) {
+            let mut do_break = false;
             match instruction {
-                Instruction::Block(_num) => {}
                 Instruction::Const(reg, _) => {
                     graph.add_var(Variable {
                         function: function.name.clone(),
@@ -70,6 +82,7 @@ impl ConvertSummary {
                         is_taut: false,
                         name: reg.clone(),
                     });
+                    do_break = true;
                 }
                 Instruction::Assign(dest, src) => {
                     graph.add_var(Variable {
@@ -85,8 +98,12 @@ impl ConvertSummary {
                         is_taut: false,
                         name: src.clone(),
                     });
+                    do_break = true;
                 }
-                _ => {}
+                _ => {
+                    offset_pc += 1;
+                    //graph.pc_counter.get();
+                }
             }
 
             let out_ = graph
@@ -97,10 +114,14 @@ impl ConvertSummary {
             for fact in out_.into_iter() {
                 graph.add_path_edge(init_fact.clone(), fact)?;
             }
+
+            if do_break {
+                break;
+            }
         }
 
         let mut skipping = false;
-        for instruction in function.instructions.iter().skip(req.pc) {
+        for instruction in function.instructions.iter().skip(req.pc + offset_pc) {
             debug!("Instrution {:?}", instruction);
 
             if skipping {
@@ -119,6 +140,8 @@ impl ConvertSummary {
                         debug!("Assigned dest is relevant");
                         // Relevant
 
+                        graph.remove_var(&function.name, &dest)?;
+                        /*
                         if graph.get_var(&function.name, src).is_none() {
                             debug!("Assigned src did not exist");
                             // remove the old var if it exists
@@ -146,9 +169,15 @@ impl ConvertSummary {
                                 is_taut: false,
                                 name: src.clone(),
                             });
-                        }
-                    } else {
-                        debug!("Assigned dest is not relevant");
+                        }*/
+                    }
+                    if graph.get_var(&function.name, src).is_some() {
+                        graph.add_var(Variable {
+                            function: function.name.clone(),
+                            is_global: false,
+                            is_taut: false,
+                            name: dest.clone(),
+                        });
                     }
                 }
                 Instruction::BinOp(dest, src1, src2) => {
@@ -206,6 +235,14 @@ impl ConvertSummary {
                 Instruction::Table(jumps) => {
                     assert!(jumps.len() >= 1, "Conditional must have at least one jump");
                 }
+                Instruction::Call(callee, _params, _dests) => {
+                    let req = Request {
+                        function: callee.clone(),
+                        pc: 1,
+                        variable: "temp".to_string(),
+                    };
+                    self.tabulate(graph, prog, &req)?;
+                }
                 _ => {}
             }
             let out_ = graph
@@ -219,6 +256,6 @@ impl ConvertSummary {
             }
         }
 
-        Ok(graph)
+        Ok(())
     }
 }

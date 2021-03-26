@@ -37,9 +37,7 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:\%0] (17) at (1, 11) {};
 \node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 12) {};
 \node[circle,fill,inner sep=1pt,label=left:\%0] (19) at (1, 12) {};
-\node[circle,fill,inner sep=1pt,label=left:taut] (23) at (0, 13) {};
-\node[circle,fill,inner sep=1pt,label=left:\%0] (22) at (1, 13) {};
-\node[circle,fill,inner sep=1pt,label=left:\%2] (21) at (2, 13) {};
+\node[circle,fill,inner sep=1pt,label=left:taut] (21) at (0, 13) {};
 \node[font=\tiny] (note_0) at (-1.5, 2.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 3.5) {Conditional(1, [1, 2])};
 \node[font=\tiny] (note_2) at (-1.5, 4.5) {Block(1)};
@@ -72,8 +70,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (17);
 		\path[->, blue] (0) [bend right] edge  node { } (20);
 		\path[->, blue] (0) [bend right] edge  node { } (19);
-		\path[->, blue] (0) [bend right] edge  node { } (23);
-		\path[->, blue] (0) [bend right] edge  node { } (22);
 		\path[->, blue] (0) [bend right] edge  node { } (21);
 
 

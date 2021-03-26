@@ -101,6 +101,10 @@ impl Graph {
         Graph::default()
     }
 
+    pub fn is_function_defined(&self, name: &String) -> bool {
+        self.functions.get(name).is_some()
+    }
+
     /// Query graph by given Request.
     pub fn query(&self, req: &Request) -> Option<&Fact> {
         self.facts.iter().find(|x| {
