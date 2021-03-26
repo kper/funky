@@ -61,16 +61,30 @@ impl ConvertSummary {
             name: "taut".to_string(),
         });
 
-        let init_fact = graph
-            .init_function_fact(req.function.clone(), req.pc)
-            .clone();
-        graph.add_path_edge(init_fact.clone(), init_fact.clone())?;
+        for def in function.params.iter() {
+            graph.add_var(Variable {
+                function: req.function.clone(),
+                is_taut: false,
+                is_global: false,
+                name: def.clone(),
+            });
+        }
+
+        let init = graph.new_facts(&req.function, String::new())?;
+        let init_fact = init.get(0).unwrap().clone();
+
+        graph.facts.extend_from_slice(&init);
+
+        for fact in init.into_iter() {
+            graph.add_path_edge(init_fact.clone(), fact)?;
+        }
 
         let _ = graph.pc_counter.set(req.pc + 1);
         let mut offset_pc = 0;
 
         // init
 
+        /*
         for instruction in function.instructions.iter().skip(req.pc - 1) {
             let mut do_break = false;
             match instruction {
@@ -117,10 +131,10 @@ impl ConvertSummary {
             if do_break {
                 break;
             }
-        }
+        }*/
 
         let mut skipping = false;
-        for instruction in function.instructions.iter().skip(req.pc + offset_pc) {
+        for instruction in function.instructions.iter().skip(req.pc - 1 + offset_pc) {
             debug!("Instrution {:?}", instruction);
 
             if skipping {
@@ -131,7 +145,21 @@ impl ConvertSummary {
 
             match instruction {
                 Instruction::Block(_num) | Instruction::Jump(_num) => {}
-                Instruction::Const(_reg, _) => {}
+                Instruction::Const(reg, _) => {
+                    if graph.get_var(&function.name, reg).is_some() {
+                        graph.remove_var(&function.name, reg)?;
+                    } else {
+                        if reg == &req.variable {
+                            // init
+                            graph.add_var(Variable {
+                                function: function.name.clone(),
+                                is_global: false,
+                                is_taut: false,
+                                name: reg.clone(),
+                            });
+                        }
+                    }
+                }
                 Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
                     debug!("Assign");
 
@@ -140,7 +168,18 @@ impl ConvertSummary {
                         // Relevant
 
                         graph.remove_var(&function.name, &dest)?;
+                    } else {
+                        if dest == &req.variable {
+                            // init
+                            graph.add_var(Variable {
+                                function: function.name.clone(),
+                                is_global: false,
+                                is_taut: false,
+                                name: dest.clone(),
+                            });
+                        }
                     }
+
                     if graph.get_var(&function.name, src).is_some() {
                         graph.add_var(Variable {
                             function: function.name.clone(),
@@ -226,35 +265,39 @@ impl ConvertSummary {
                         variable: "temp".to_string(), //TODO remove variable, because doesnt matter
                     };
 
-                    let summary = self
+                    let old_pc = graph.pc_counter.peek();
+                    graph.pc_counter.set(1);
+
+                    let _summary: Vec<Fact> = self
                         .tabulate(graph, prog, &req)
                         .context("Fail occured in nested call")?;
 
-                    //graph.remove_vars(&function.name)?;
-                    /* 
-                    graph.add_var(Variable {
-                        function: function.name.clone(),
-                        is_global: false,
-                        is_taut: true,
-                        name: "taut".to_string(),
-                    });*/
+                    graph.pc_counter.set(old_pc);
 
+                    for dest in dests.iter() {
+                        // Overwrite
+                        if graph.get_var(&function.name, dest).is_some() {
+                            graph.remove_var(&function.name, dest)?;
+                        }
+                    }
+
+                    for (i, summ) in _summary.into_iter().enumerate().skip(1) {
+                        let name = dests.get(i - 1).unwrap().clone();
+                        graph.add_var(Variable {
+                            function: function.name.clone(),
+                            is_global: false,
+                            is_taut: false,
+                            name,
+                        });
+                    }
+
+                    /*
                     for (_i, s) in dests.iter().enumerate() {
-                        /*
-                        if !dests.contains(&s.belongs_to_var) {
-                            graph.remove_var(&function.name, &var.name)?;
-                        }*/
-
-                        /* 
-                        let s = summary
-                            .get(i)
-                            .context("Destination has more entries than the summary")?;*/
-                        
                         // Overwrite
                         if graph.get_var(&function.name, s).is_some() {
                             graph.remove_var(&function.name, s)?;
                         }
-                    }
+                    }*/
                 }
                 _ => {}
             }

@@ -276,6 +276,51 @@ fn test_ir_return_values() {
     );
 }
 
+
+#[test]
+fn test_ir_return_values2() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_return_values2",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 2
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values3() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_return_values3",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 2
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
 #[test]
 fn test_ir_overwrite_return_values() {
     let req = Request {
