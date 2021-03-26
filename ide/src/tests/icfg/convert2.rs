@@ -276,7 +276,6 @@ fn test_ir_return_values() {
     );
 }
 
-
 #[test]
 fn test_ir_return_values2() {
     let req = Request {
@@ -340,5 +339,59 @@ fn test_ir_overwrite_return_values() {
             %1 = 3
             RETURN %1;
         };"
+    );
+}
+
+#[test]
+fn test_ir_early_return() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_early_return",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytestfoo(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            RETURN %0;
+            %1 = 3
+            RETURN %1;
+        };
+        define mytestfoo (param %0) (result 1) (define %0 %1) {
+            %0 = 2
+            %1 = 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_return() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_return",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %0 %1 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %0 %1;
+        };
+        "
     );
 }
