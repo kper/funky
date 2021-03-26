@@ -140,7 +140,7 @@ impl ConvertSummary {
             if skipping {
                 debug!("Last instruction declared to skip. Therefore skipping");
                 skipping = false;
-                continue;
+                break;
             }
 
             match instruction {
@@ -236,7 +236,7 @@ impl ConvertSummary {
                 Instruction::Unknown(dest) => {}
                 Instruction::Store => {}
                 Instruction::Return(regs) => {
-                    //skipping = true;
+                    skipping = true;
 
                     let vars: Vec<Variable> = graph
                         .get_vars(&function.name)
