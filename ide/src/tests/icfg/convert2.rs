@@ -395,3 +395,34 @@ fn test_ir_return() {
         "
     );
 }
+
+#[test]
+fn test_ir_return_branches() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_return_branches",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            RETURN %1;
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            RETURN %2;
+            GOTO 3
+            BLOCK 3
+        };
+        "
+    );
+}

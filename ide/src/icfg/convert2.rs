@@ -134,6 +134,7 @@ impl ConvertSummary {
         }*/
 
         let mut skipping = false;
+        let mut callee_sites = Vec::new();
         for instruction in function.instructions.iter().skip(req.pc - 1 + offset_pc) {
             debug!("Instrution {:?}", instruction);
 
@@ -236,7 +237,7 @@ impl ConvertSummary {
                 Instruction::Unknown(dest) => {}
                 Instruction::Store => {}
                 Instruction::Return(regs) => {
-                    skipping = true;
+                    //skipping = true;
 
                     let vars: Vec<Variable> = graph
                         .get_vars(&function.name)
@@ -246,11 +247,27 @@ impl ConvertSummary {
                         .cloned()
                         .collect();
 
+                        /*
                     for var in vars {
                         if !regs.contains(&var.name) {
                             graph.remove_var(&function.name, &var.name)?;
                         }
+                    }*/
+
+
+                    for reg in regs.iter() {
+                        if graph.get_var(&function.name, reg).is_none() {
+                            graph.add_var(Variable {
+                                function: function.name.clone(),
+                                is_global: false,
+                                name: reg.clone(),
+                                is_taut: false,
+                            }); 
+                        }
                     }
+
+
+                    callee_sites.push(graph.pc_counter.peek());
                 }
                 Instruction::Conditional(_reg, jumps) => {
                     assert!(jumps.len() >= 1, "Conditional must have at least one jump");
