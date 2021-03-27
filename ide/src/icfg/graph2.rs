@@ -192,6 +192,12 @@ impl Graph {
         }
     }
 
+    pub fn get_taut(&self, function: &String) -> Option<&Fact> {
+        self.facts
+            .iter()
+            .find(|x| x.var_is_taut && &x.function == function)
+    }
+
     pub fn init_function_fact(&mut self, function: String, pc: usize) -> &Fact {
         let fact = Fact {
             id: self.fact_counter.get(),
@@ -208,6 +214,7 @@ impl Graph {
         self.facts.get(self.facts.len() - 1).unwrap()
     }
 
+    /*
     pub fn new_facts(
         &mut self,
         function: &String,
@@ -253,7 +260,7 @@ impl Graph {
         });
 
         Ok(facts)
-    }
+    }*/
 
     pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
@@ -348,11 +355,11 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn get_facts_at(&self, function: &AstFunction, pc: usize) -> Result<Vec<&Fact>> {
+    pub fn get_facts_at(&self, function: &String, pc: usize) -> Result<Vec<&Fact>> {
         let facts = self
             .facts
             .iter()
-            .filter(|x| &x.function == &function.name && x.pc == pc)
+            .filter(|x| &x.function == function && x.pc == pc)
             .collect::<Vec<_>>();
 
         Ok(facts)
@@ -378,17 +385,22 @@ impl Graph {
         &mut self,
         function: &AstFunction,
         instruction: &Instruction,
+        pc: usize,
+        variable: &String,
     ) -> Result<()> {
-        debug!("Adding statement");
+        debug!("Adding statement {:?}", instruction);
 
         let vars = self
             .get_vars(&function.name)
             .context("Cannot get functions's vars")?
             .clone();
-        let vars = vars.iter().enumerate();
+        let vars = vars
+            .iter()
+            .enumerate()
+            .filter(|x| &x.1.name == variable);
 
-        let pc = self.pc_counter.get();
-        debug!("New pc {} for {}", pc, function.name);
+        //let pc = self.pc_counter.get();
+        //debug!("New pc {} for {}", pc, function.name);
 
         for (track, var) in vars {
             debug!("Adding new fact for {}", var.name);
@@ -407,12 +419,13 @@ impl Graph {
 
         // Adding stmt note
 
+        /*
         self.notes.push(Note {
             id: self.note_counter.get(),
             function: function.name.clone(),
             pc,
             note: format!("{:?}", instruction),
-        });
+        });*/
 
         Ok(())
     }

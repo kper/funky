@@ -235,6 +235,7 @@ fn test_ir_table() {
 
 #[test]
 fn test_ir_functions() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -257,6 +258,7 @@ fn test_ir_functions() {
 
 #[test]
 fn test_ir_return_values() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -277,6 +279,7 @@ fn test_ir_return_values() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_ir_return_values2() {
     let req = Request {
@@ -299,6 +302,7 @@ fn test_ir_return_values2() {
     );
 }
 
+#[ignore]
 #[test]
 fn test_ir_return_values3() {
     let req = Request {

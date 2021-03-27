@@ -42,26 +42,44 @@ impl ConvertSummary {
         instructions: &Vec<Instruction>,
         graph: &mut Graph,
         pc: usize,
+        variable: &String,
     ) -> Result<Vec<Edge>> {
-        let mut edges = Vec::new();
-        let mut offset_pc = 0;
-        for instruction in instructions.iter() {
-            let before: Vec<Fact> = graph
-                .get_facts_at(function, pc + offset_pc)?
-                .into_iter()
-                .cloned()
-                .collect();
-            offset_pc += 1;
-            graph.add_statement(function, instruction)?;
-            let after = graph.get_facts_at(function, pc + offset_pc)?;
+        debug!(
+            "Calling flow for {} with var {} with pc {}",
+            function.name, variable, pc
+        );
 
-            for (b, a) in before.into_iter().zip(after) {
-                edges.push(Edge::Normal {
-                    from: b,
-                    to: a.clone().clone(),
-                    curved: false,
-                });
-            }
+        let mut edges = Vec::new();
+
+        let instruction = instructions.get(pc).context("Cannot find instr")?;
+        debug!("Next instruction is {:?}", instruction);
+
+        //graph.add_statement(function, instruction, pc + 1)?;
+        let before: Vec<Fact> = graph
+            .get_facts_at(&function.name, pc)?
+            .into_iter()
+            .filter(|x| &x.belongs_to_var == variable)
+            .cloned()
+            .collect();
+
+        debug!("Facts before statement {}", before.len());
+
+        graph.add_statement(function, instruction, pc + 1, variable)?;
+
+        let after: Vec<_> = graph
+            .get_facts_at(&function.name, pc + 1)?
+            .into_iter()
+            .filter(|x| &x.belongs_to_var == variable)
+            .collect();
+
+        debug!("Facts after statement {}", after.len());
+
+        for (b, a) in before.into_iter().zip(after) {
+            edges.push(Edge::Normal {
+                from: b,
+                to: a.clone().clone(),
+                curved: false,
+            });
         }
 
         Ok(edges)
@@ -76,6 +94,7 @@ impl ConvertSummary {
         params: &Vec<String>,
         dests: &Vec<String>,
         graph: &mut Graph,
+        current_pc: usize,
     ) -> Result<Vec<Edge>> {
         let callee_function = program
             .functions
@@ -84,7 +103,7 @@ impl ConvertSummary {
             .context("Cannot find function")?;
 
         let facts = graph.init_function(callee_function)?;
-        let caller_facts = graph.get_facts_at(caller_function,0)?;
+        let caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
 
         let mut edges = Vec::new();
         for (caller, callee) in caller_facts.iter().zip(facts) {
@@ -100,11 +119,47 @@ impl ConvertSummary {
     /// Computes exit-to-return edges
     fn return_val(
         &self,
-        function: &AstFunction,
-        instructions: &Vec<Instruction>,
-        exit_fact: &Fact,
+        caller_function: &String,
+        callee_function: &String,
+        caller_pc: usize,
+        callee_pc: usize,
+        //dest: &Vec<String>,
+        caller_instructions: &Vec<Instruction>,
+        graph: &mut Graph,
     ) -> Result<Vec<Edge>> {
-        Ok(vec![])
+        let dest = match caller_instructions.get(caller_pc).as_ref() {
+            Some(Instruction::Call(_, _params, dest)) => dest,
+            Some(_) => bail!("Wrong instruction passed to return val"),
+            None => bail!("Cannot find instruction"),
+        };
+
+        let caller_facts = graph.get_facts_at(caller_function, caller_pc)?;
+        let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
+
+        // Generate edges when for all dest + taut
+
+        let mut edges = Vec::new();
+
+        // taut
+        edges.push(Edge::CallToReturn {
+            from: caller_facts.get(0).unwrap().clone().clone(),
+            to: callee_facts.get(0).unwrap().clone().clone(),
+        });
+
+        for (i, d) in dest.iter().enumerate() {
+            let caller_fact = caller_facts
+                .iter()
+                .find(|x| &x.belongs_to_var == d)
+                .context("Cannot find var")?;
+            let callee_fact = callee_facts.get(i + 1).context("Cannot find var")?;
+
+            edges.push(Edge::CallToReturn {
+                from: caller_fact.clone().clone(),
+                to: callee_fact.clone().clone(),
+            });
+        }
+
+        Ok(edges)
     }
 
     /// Computes call-to-return
@@ -118,8 +173,8 @@ impl ConvertSummary {
         graph: &mut Graph,
         pc: usize,
     ) -> Result<Vec<Edge>> {
-        let before = graph.get_facts_at(caller_function, pc - 1)?;
-        let after = graph.get_facts_at(caller_function, pc)?;
+        let before = graph.get_facts_at(&caller_function.name, pc - 1)?;
+        let after = graph.get_facts_at(&caller_function.name, pc)?;
 
         let mut edges = Vec::with_capacity(after.len());
         for fact in after
@@ -155,18 +210,6 @@ impl ConvertSummary {
             return Ok(());
         }
 
-        /*
-        graph.init_function_def(&function)?;
-        let mut vars = vec![Variable {
-            function: req.function.clone(),
-            is_taut: true,
-            is_global: false,
-            name: "taut".to_string(),
-        }];
-        let init_facts = graph.init_facts(&function, &mut vars)?;
-        let init = init_facts.get(0).context("Cannot get init fact")?;
-        */
-
         let facts = graph.init_function(&function)?;
         let init = facts.get(0).unwrap().clone();
 
@@ -184,7 +227,6 @@ impl ConvertSummary {
         });
 
         self.forwardTabulateSLRPs(
-            init,
             &prog,
             &function,
             &mut path_edge,
@@ -215,7 +257,6 @@ impl ConvertSummary {
 
     fn forwardTabulateSLRPs(
         &self,
-        init: Fact,
         program: &Program,
         function: &AstFunction,
         path_edge: &mut Vec<Edge>,
@@ -225,23 +266,24 @@ impl ConvertSummary {
         graph: &mut Graph,
     ) -> Result<()> {
         debug!("Function has {} instructions", instructions.len());
-        let flow = self.flow(function, instructions, graph, init.pc)?;
 
-        let mut end_summary: HashMap<usize, Vec<Fact>> = HashMap::new();
-        let mut incoming: HashMap<usize, Vec<Fact>> = HashMap::new();
+        let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
+        let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
         while let Some(edge) = worklist.pop_front() {
-            debug!("Popping edge from worklist {:?}", edge);
+            debug!("Popping edge from worklist {:#?}", edge);
             let pc = edge.to().pc;
             debug!("Instruction pointer is {}", pc);
             let n = instructions.get(pc);
             debug!("=> Instruction {:?}", n);
+            let d1 = edge.get_from();
+            let d2 = edge.to();
 
             if let Some(n) = n {
                 match n {
-                    Instruction::Call(callee, params, dest) => {
+                    /*Instruction::Call(callee, params, dest) => {
                         let call_edges =
-                            self.pass_args(program, function, callee, params, dest, graph)?;
+                            self.pass_args(program, function, callee, params, dest, graph, d2.pc)?;
 
                         for d3 in call_edges.into_iter() {
                             //graph.add_call_edge(d3.from().clone(), d3.to().clone());
@@ -254,17 +296,45 @@ impl ConvertSummary {
                                 },
                             )?; //self loop
 
-                            //TODO Add incoming
+                            debug!(
+                                "Propagate {:?}",
+                                Edge::Path {
+                                    from: d3.to().clone(),
+                                    to: d3.to().clone(),
+                                }
+                            );
 
-                            for d4 in end_summary.get(&d3.to().id).unwrap() {
-                                for d5 in self.return_val(function, instructions, d4)? {}
+                            //Add incoming
 
-                                //TODO returns
-                                /*
-                                summary_edge.push(Edge::Summary {
-                                    from: n.from().clone(),
-                                    to:
-                                });*/
+                            if let Some(incoming) =
+                                incoming.get_mut(&(d3.to().function.clone(), d3.to().pc))
+                            {
+                                incoming.push(d2.clone());
+                            } else {
+                                incoming.insert(
+                                    (d3.to().function.clone(), d3.to().id),
+                                    vec![d2.clone()],
+                                );
+                            }
+
+                            if let Some(end_summary) =
+                                end_summary.get(&(d3.to().function.clone(), d3.to().id))
+                            {
+                                for d4 in end_summary.iter() {
+                                    for d5 in self.return_val(
+                                        &function.name,
+                                        &d4.function,
+                                        d2.pc,
+                                        d4.pc,
+                                        instructions,
+                                        graph,
+                                    )? {
+                                        summary_edge.push(Edge::Summary {
+                                            from: d2.clone(),
+                                            to: d5.get_from().clone(),
+                                        });
+                                    }
+                                }
                             }
                         }
 
@@ -277,20 +347,35 @@ impl ConvertSummary {
                                 path_edge,
                                 worklist,
                                 Edge::Path {
-                                    from: init.clone(),
+                                    from: graph.get_taut(&d3.to().function).unwrap().clone(),
                                     to: d3.to().clone(),
                                 },
                             )?;
                         }
-                    }
+                    }*/
                     _ => {
-                        for f in flow.iter() {
+                        let new_function = program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d2.function)
+                            .unwrap();
+                        for f in self
+                            .flow(
+                                &new_function,
+                                &new_function.instructions,
+                                graph,
+                                d2.pc,
+                                &d2.belongs_to_var,
+                            )?
+                            .iter()
+                        {
+                            debug!("Normal flow {:?}", f);
                             let to = f.to();
                             self.propagate(
                                 path_edge,
                                 worklist,
                                 Edge::Path {
-                                    from: path_edge.get(0).unwrap().clone().get_from().clone(),
+                                    from: d1.clone(),
                                     to: to.clone(),
                                 },
                             )?;
@@ -299,40 +384,61 @@ impl ConvertSummary {
                 }
             } else {
                 // this is E_p
-                debug!("Instruction does not exist. Therefore breaking");
+                debug!("=> Reached end of procedure");
 
                 // Summary
-                if let Some(end_summary) = end_summary.get_mut(&init.pc) {
-                    let facts = graph.get_facts_at(function, pc)?.into_iter().map(|x| x.clone());
+                if let Some(end_summary) =
+                    end_summary.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
+                {
+                    let facts = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .map(|x| x.clone());
                     end_summary.extend(facts);
+                } else {
+                    let facts = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .map(|x| x.clone())
+                        .collect();
+                    end_summary.insert((d1.function.clone(), d1.pc, d1.belongs_to_var.clone()), facts);
                 }
-                else {
-                    let facts = graph.get_facts_at(function, pc)?.into_iter().map(|x| x.clone()).collect();
-                    end_summary.insert(init.pc, facts);
-                }
+
+                debug!("End Summary {:#?}", end_summary);
 
                 // Incoming
-                if let Some(incoming) = incoming.get_mut(&init.pc) {
+                if let Some(incoming) = incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone())) {
                     for d4 in incoming {
-                        let ret_vals = self.return_val(function, instructions, d4)?;
+                        let ret_vals = self.return_val(
+                            &function.name,
+                            &d4.function,
+                            d4.pc,
+                            d4.pc,
+                            instructions,
+                            graph,
+                        )?;
 
                         for d5 in ret_vals.into_iter() {
-                            if summary_edge.iter().find(|x| x.get_from() != d4 && x.to() != d5.to()).is_none() {
-                                summary_edge.push(Edge::Summary { from: d4.clone(), to: d5.to().clone()});
+                            if summary_edge
+                                .iter()
+                                .find(|x| x.get_from() != d4 && x.to() != d5.to())
+                                .is_none()
+                            {
+                                summary_edge.push(Edge::Summary {
+                                    from: d4.clone(),
+                                    to: d5.to().clone(),
+                                });
 
                                 //TODO propagation
-
                             }
                         }
                     }
                 }
-
-
-                break;
             }
         }
 
         graph.edges.extend_from_slice(&path_edge);
+        graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())
     }
