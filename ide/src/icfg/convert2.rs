@@ -175,7 +175,12 @@ impl ConvertSummary {
     ) -> Result<Vec<Edge>> {
         debug!("Generating call-to-return edges for {}", callee);
 
-        graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1, &"taut".to_string())?;
+        graph.add_statement(
+            caller_function,
+            format!("{:?}", "call"),
+            pc + 1,
+            &"taut".to_string(),
+        )?;
         for dest in dests.iter() {
             graph.add_statement(caller_function, format!("{:?}", "call"), pc, dest)?;
             graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1, dest)?;
@@ -220,8 +225,6 @@ impl ConvertSummary {
 
     fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
         debug!("Convert intermediate repr to graph");
-        //let mut path_edges = Vec::new();
-        //let mut worklist = Vec::new();
 
         let function = prog
             .functions
@@ -480,7 +483,19 @@ impl ConvertSummary {
                                     to: d5.to().clone(),
                                 });
 
-                                //TODO propagation
+                                let edges: Vec<_> =
+                                    path_edge.iter().filter(|x| x.to() == d4).cloned().collect();
+ 
+                                for d3 in edges.into_iter() {
+                                    self.propagate(
+                                        path_edge,
+                                        worklist,
+                                        Edge::Path {
+                                            from: d3.get_from().clone(),
+                                            to: d5.to().clone(),
+                                        },
+                                    )?;
+                                }
                             }
                         }
                     }
