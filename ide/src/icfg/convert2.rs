@@ -13,21 +13,17 @@ use std::collections::HashMap;
 
 use crate::ir::ast::Program;
 
-use crate::icfg::convert::CallHandler;
-
 use crate::icfg::graph2::Edge;
 
 #[derive(Debug)]
 pub struct ConvertSummary {
     block_counter: Counter,
-    call_handler: CallHandler,
 }
 
 impl ConvertSummary {
     pub fn new() -> Self {
         Self {
             block_counter: Counter::default(),
-            call_handler: CallHandler::default(),
         }
     }
 
@@ -45,12 +41,19 @@ impl ConvertSummary {
         function: &AstFunction,
         instructions: &Vec<Instruction>,
         graph: &mut Graph,
+        pc: usize,
     ) -> Result<Vec<Edge>> {
         let mut edges = Vec::new();
+        let mut offset_pc = 0;
         for instruction in instructions.iter() {
-            let before: Vec<Fact> = graph.facts_at(function)?.into_iter().cloned().collect();
+            let before: Vec<Fact> = graph
+                .get_facts_at(function, pc + offset_pc)?
+                .into_iter()
+                .cloned()
+                .collect();
+            offset_pc += 1;
             graph.add_statement(function, instruction)?;
-            let after = graph.facts_at(function)?;
+            let after = graph.get_facts_at(function, pc + offset_pc)?;
 
             for (b, a) in before.into_iter().zip(after) {
                 edges.push(Edge::Normal {
@@ -81,7 +84,7 @@ impl ConvertSummary {
             .context("Cannot find function")?;
 
         let facts = graph.init_function(callee_function)?;
-        let caller_facts = graph.facts_at(caller_function)?;
+        let caller_facts = graph.get_facts_at(caller_function,0)?;
 
         let mut edges = Vec::new();
         for (caller, callee) in caller_facts.iter().zip(facts) {
@@ -95,13 +98,45 @@ impl ConvertSummary {
     }
 
     /// Computes exit-to-return edges
-    fn returnVal(function: &Function, instructions: &Vec<Instruction>) -> Vec<Edge> {
-        unimplemented!()
+    fn return_val(
+        &self,
+        function: &AstFunction,
+        instructions: &Vec<Instruction>,
+        exit_fact: &Fact,
+    ) -> Result<Vec<Edge>> {
+        Ok(vec![])
     }
 
     /// Computes call-to-return
-    fn callFlow(function: &Function, instructions: &Vec<Instruction>) -> Vec<Edge> {
-        unimplemented!()
+    fn call_flow(
+        &self,
+        program: &Program,
+        caller_function: &AstFunction,
+        callee: &String,
+        params: &Vec<String>,
+        dests: &Vec<String>,
+        graph: &mut Graph,
+        pc: usize,
+    ) -> Result<Vec<Edge>> {
+        let before = graph.get_facts_at(caller_function, pc - 1)?;
+        let after = graph.get_facts_at(caller_function, pc)?;
+
+        let mut edges = Vec::with_capacity(after.len());
+        for fact in after
+            .into_iter()
+            .filter(|x| !dests.contains(&x.belongs_to_var))
+        {
+            let b = before
+                .iter()
+                .find(|x| x.belongs_to_var == fact.belongs_to_var)
+                .context("Variable mismatch.")?;
+            edges.push(Edge::CallToReturn {
+                from: b.clone().clone(),
+                to: fact.clone(),
+            });
+        }
+
+        Ok(edges)
     }
 
     fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
@@ -149,6 +184,7 @@ impl ConvertSummary {
         });
 
         self.forwardTabulateSLRPs(
+            init,
             &prog,
             &function,
             &mut path_edge,
@@ -179,6 +215,7 @@ impl ConvertSummary {
 
     fn forwardTabulateSLRPs(
         &self,
+        init: Fact,
         program: &Program,
         function: &AstFunction,
         path_edge: &mut Vec<Edge>,
@@ -188,10 +225,17 @@ impl ConvertSummary {
         graph: &mut Graph,
     ) -> Result<()> {
         debug!("Function has {} instructions", instructions.len());
-        let flow = self.flow(function, instructions, graph)?;
+        let flow = self.flow(function, instructions, graph, init.pc)?;
+
+        let mut end_summary: HashMap<usize, Vec<Fact>> = HashMap::new();
+        let mut incoming: HashMap<usize, Vec<Fact>> = HashMap::new();
+
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:?}", edge);
-            let n = instructions.get(edge.to().pc);
+            let pc = edge.to().pc;
+            debug!("Instruction pointer is {}", pc);
+            let n = instructions.get(pc);
+            debug!("=> Instruction {:?}", n);
 
             if let Some(n) = n {
                 match n {
@@ -209,22 +253,81 @@ impl ConvertSummary {
                                     to: d3.to().clone(),
                                 },
                             )?; //self loop
+
+                            //TODO Add incoming
+
+                            for d4 in end_summary.get(&d3.to().id).unwrap() {
+                                for d5 in self.return_val(function, instructions, d4)? {}
+
+                                //TODO returns
+                                /*
+                                summary_edge.push(Edge::Summary {
+                                    from: n.from().clone(),
+                                    to:
+                                });*/
+                            }
+                        }
+
+                        let call_flow =
+                            self.call_flow(program, function, callee, params, dest, graph, pc)?;
+
+                        //TODO `or` with overwritten value
+                        for d3 in call_flow {
+                            self.propagate(
+                                path_edge,
+                                worklist,
+                                Edge::Path {
+                                    from: init.clone(),
+                                    to: d3.to().clone(),
+                                },
+                            )?;
                         }
                     }
                     _ => {
-                        self.propagate(
-                            path_edge,
-                            worklist,
-                            Edge::Path {
-                                from: path_edge.get(0).unwrap().clone().from().clone(),
-                                to: flow.get(edge.to().pc).unwrap().to().clone(),
-                            },
-                        )?;
+                        for f in flow.iter() {
+                            let to = f.to();
+                            self.propagate(
+                                path_edge,
+                                worklist,
+                                Edge::Path {
+                                    from: path_edge.get(0).unwrap().clone().get_from().clone(),
+                                    to: to.clone(),
+                                },
+                            )?;
+                        }
                     }
                 }
-            }
-            else {
+            } else {
+                // this is E_p
                 debug!("Instruction does not exist. Therefore breaking");
+
+                // Summary
+                if let Some(end_summary) = end_summary.get_mut(&init.pc) {
+                    let facts = graph.get_facts_at(function, pc)?.into_iter().map(|x| x.clone());
+                    end_summary.extend(facts);
+                }
+                else {
+                    let facts = graph.get_facts_at(function, pc)?.into_iter().map(|x| x.clone()).collect();
+                    end_summary.insert(init.pc, facts);
+                }
+
+                // Incoming
+                if let Some(incoming) = incoming.get_mut(&init.pc) {
+                    for d4 in incoming {
+                        let ret_vals = self.return_val(function, instructions, d4)?;
+
+                        for d5 in ret_vals.into_iter() {
+                            if summary_edge.iter().find(|x| x.get_from() != d4 && x.to() != d5.to()).is_none() {
+                                summary_edge.push(Edge::Summary { from: d4.clone(), to: d5.to().clone()});
+
+                                //TODO propagation
+
+                            }
+                        }
+                    }
+                }
+
+
                 break;
             }
         }

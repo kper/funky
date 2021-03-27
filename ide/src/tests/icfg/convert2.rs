@@ -23,7 +23,6 @@ macro_rules! ir {
 
 #[test]
 fn test_ir_const() {
-    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -43,10 +42,11 @@ fn test_ir_const() {
 
 #[test]
 fn test_ir_double_assign() {
+    env_logger::init();
     let req = Request {
-        variable: "%2".to_string(),
+        variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 3,
+        pc: 1,
     };
     ir!(
         "test_ir_double_const",

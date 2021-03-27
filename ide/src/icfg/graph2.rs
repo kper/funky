@@ -40,6 +40,7 @@ pub struct Fact {
     pub pc: usize,
     pub track: usize,
     pub function: FunctionName,
+    pub is_return: bool,
 }
 
 #[derive(Debug)]
@@ -68,7 +69,7 @@ pub enum Edge {
 }
 
 impl Edge {
-    pub fn from(&self) -> &Fact {
+    pub fn get_from(&self) -> &Fact {
         match self {
             Edge::Normal {
                 from,
@@ -124,7 +125,7 @@ impl Graph {
     pub fn get_neighbours(&self, fact_id: usize) -> impl Iterator<Item = usize> + '_ {
         self.edges
             .iter()
-            .filter(move |x| x.from().id == fact_id)
+            .filter(move |x| x.get_from().id == fact_id)
             .map(|x| x.to().id)
     }
 
@@ -200,13 +201,19 @@ impl Graph {
             function,
             pc,
             track: 0,
+            is_return: false,
         };
 
         self.facts.push(fact);
         self.facts.get(self.facts.len() - 1).unwrap()
     }
 
-    pub fn new_facts(&mut self, function: &String, note: String) -> Result<Vec<Fact>> {
+    pub fn new_facts(
+        &mut self,
+        function: &String,
+        note: String,
+        is_return: bool,
+    ) -> Result<Vec<Fact>> {
         let mut index = 0;
 
         let pc = self.pc_counter.get();
@@ -232,6 +239,7 @@ impl Graph {
                 pc,
                 track: index,
                 function: function.clone(),
+                is_return,
             });
 
             index += 1;
@@ -297,7 +305,8 @@ impl Graph {
             });
         }
 
-        let facts = self.init_facts(function, &mut variables)
+        let facts = self
+            .init_facts(function, &mut variables)
             .context("Cannot initialize facts")?;
 
         self.vars.insert(function.name.clone(), variables);
@@ -305,7 +314,11 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn init_facts(&mut self, function: &AstFunction, variables: &mut Vec<Variable>) -> Result<Vec<Fact>> {
+    pub fn init_facts(
+        &mut self,
+        function: &AstFunction,
+        variables: &mut Vec<Variable>,
+    ) -> Result<Vec<Fact>> {
         debug!("Initializing facts for function {}", function.name);
 
         let mut index = 0;
@@ -319,6 +332,7 @@ impl Graph {
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
                 pc: 0,
+                is_return: false,
                 track: index,
                 function: function.name.clone(),
             };
@@ -334,12 +348,22 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn facts_at(&self, function: &AstFunction) -> Result<Vec<&Fact>> {
-        let pc = self.pc_counter.peek() - 1;
+    pub fn get_facts_at(&self, function: &AstFunction, pc: usize) -> Result<Vec<&Fact>> {
+        let facts = self
+            .facts
+            .iter()
+            .filter(|x| &x.function == &function.name && x.pc == pc)
+            .collect::<Vec<_>>();
 
-        let facts = self.facts.iter().filter(|x| {
-            &x.function == &function.name && x.pc == pc
-        }).collect::<Vec<_>>();
+        Ok(facts)
+    }
+
+    pub fn return_sites(&self, function: &AstFunction, var: &String) -> Result<Vec<&Fact>> {
+        let facts = self
+            .facts
+            .iter()
+            .filter(|x| &x.function == &function.name && &x.belongs_to_var == var && x.is_return)
+            .collect::<Vec<_>>();
 
         Ok(facts)
     }
@@ -348,14 +372,6 @@ impl Graph {
         self.facts.push(fact);
 
         Ok(())
-    }
-
-    pub fn get_last_facts(&self, function: &String) -> Vec<Fact> {
-        self.facts
-            .iter()
-            .filter(move |x| &x.function == function && x.pc == self.pc_counter.peek() - 1)
-            .cloned()
-            .collect()
     }
 
     pub fn add_statement(
@@ -385,6 +401,7 @@ impl Graph {
                 track,
                 function: function.name.clone(),
                 pc,
+                is_return: matches!(instruction, Instruction::Return(_)),
             });
         }
 
