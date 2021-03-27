@@ -394,10 +394,7 @@ impl Graph {
             .get_vars(&function.name)
             .context("Cannot get functions's vars")?
             .clone();
-        let vars = vars
-            .iter()
-            .enumerate()
-            .filter(|x| &x.1.name == variable);
+        let vars = vars.iter().enumerate().filter(|x| &x.1.name == variable);
 
         //let pc = self.pc_counter.get();
         //debug!("New pc {} for {}", pc, function.name);
@@ -415,16 +412,16 @@ impl Graph {
                 pc,
                 is_return: false,
             });
+
+            if track == 0 { //only taut reports
+                self.notes.push(Note {
+                    id: self.note_counter.get(),
+                    function: function.name.clone(),
+                    pc,
+                    note: instruction.clone(),
+                });
+            }
         }
-
-        // Adding stmt note
-
-        self.notes.push(Note {
-            id: self.note_counter.get(),
-            function: function.name.clone(),
-            pc,
-            note: instruction,
-        });
 
         Ok(())
     }

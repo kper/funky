@@ -58,7 +58,7 @@ impl ConvertSummary {
         let before: Vec<Fact> = graph
             .get_facts_at(&function.name, pc)?
             .into_iter()
-            .filter(|x| &x.belongs_to_var == variable)
+            //.filter(|x| &x.belongs_to_var == variable)
             .cloned()
             .collect();
 
@@ -69,7 +69,7 @@ impl ConvertSummary {
         let after: Vec<_> = graph
             .get_facts_at(&function.name, pc + 1)?
             .into_iter()
-            .filter(|x| &x.belongs_to_var == variable)
+            //.filter(|x| &x.belongs_to_var == variable)
             .collect();
 
         debug!("Facts after statement {}", after.len());
@@ -173,28 +173,42 @@ impl ConvertSummary {
         graph: &mut Graph,
         pc: usize,
     ) -> Result<Vec<Edge>> {
-        let before : Vec<_> = graph
+        debug!("Generating call-to-return edges for {}", callee);
+
+        graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1, &"taut".to_string())?;
+        for dest in dests.iter() {
+            graph.add_statement(caller_function, format!("{:?}", "call"), pc, dest)?;
+            graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1, dest)?;
+        }
+
+        let before: Vec<_> = graph
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
             .map(|x| x.clone())
             .collect();
-        graph.add_statement(
-            caller_function,
-            format!("{:?}", "call"),
-            pc + 1,
-            &"taut".to_string(),
-        )?;
+        debug!("Facts before statement {}", before.len());
+
         let after = graph.get_facts_at(&caller_function.name, pc + 1)?;
 
-        let mut edges = Vec::with_capacity(after.len());
-        for fact in after
+        debug!("Facts after statement {}", after.len());
+
+        let after: Vec<_> = after
             .into_iter()
             .filter(|x| !dests.contains(&x.belongs_to_var))
-        {
+            .collect();
+
+        debug!("Facts after statement without dests {}", after.len());
+
+        debug!("before {:#?}", before);
+        debug!("after {:#?}", after);
+
+        let mut edges = Vec::with_capacity(after.len());
+        for fact in after {
             let b = before
                 .iter()
                 .find(|x| x.belongs_to_var == fact.belongs_to_var)
                 .context("Variable mismatch.")?;
+
             edges.push(Edge::CallToReturn {
                 from: b.clone().clone(),
                 to: fact.clone(),
