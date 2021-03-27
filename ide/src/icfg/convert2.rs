@@ -1,9 +1,11 @@
 use crate::icfg::graph2::*;
+use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 /// This module is responsible to parse
 /// the webassembly AST to a graph
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
+use std::collections::VecDeque;
 
 use log::debug;
 
@@ -34,10 +36,75 @@ impl ConvertSummary {
 
         self.tabulate(&mut graph, prog, req)?;
 
-        Ok((graph))
+        Ok(graph)
     }
 
-    fn tabulate(&mut self, graph: &mut Graph, prog: &Program, req: &Request) -> Result<Vec<Fact>> {
+    /// computes all intraprocedural edges
+    fn flow(
+        &self,
+        function: &AstFunction,
+        instructions: &Vec<Instruction>,
+        graph: &mut Graph,
+    ) -> Result<Vec<Edge>> {
+        let mut edges = Vec::new();
+        for instruction in instructions.iter() {
+            let before: Vec<Fact> = graph.facts_at(function)?.into_iter().cloned().collect();
+            graph.add_statement(function, instruction)?;
+            let after = graph.facts_at(function)?;
+
+            for (b, a) in before.into_iter().zip(after) {
+                edges.push(Edge::Normal {
+                    from: b,
+                    to: a.clone().clone(),
+                    curved: false,
+                });
+            }
+        }
+
+        Ok(edges)
+    }
+
+    /// Computes call-to-start edges
+    fn pass_args(
+        &self,
+        program: &Program,
+        caller_function: &AstFunction,
+        callee: &String,
+        params: &Vec<String>,
+        dests: &Vec<String>,
+        graph: &mut Graph,
+    ) -> Result<Vec<Edge>> {
+        let callee_function = program
+            .functions
+            .iter()
+            .find(|x| &x.name == callee)
+            .context("Cannot find function")?;
+
+        let facts = graph.init_function(callee_function)?;
+        let caller_facts = graph.facts_at(caller_function)?;
+
+        let mut edges = Vec::new();
+        for (caller, callee) in caller_facts.iter().zip(facts) {
+            edges.push(Edge::Call {
+                from: caller.clone().clone(),
+                to: callee,
+            })
+        }
+
+        Ok(edges)
+    }
+
+    /// Computes exit-to-return edges
+    fn returnVal(function: &Function, instructions: &Vec<Instruction>) -> Vec<Edge> {
+        unimplemented!()
+    }
+
+    /// Computes call-to-return
+    fn callFlow(function: &Function, instructions: &Vec<Instruction>) -> Vec<Edge> {
+        unimplemented!()
+    }
+
+    fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
         debug!("Convert intermediate repr to graph");
         //let mut path_edges = Vec::new();
         //let mut worklist = Vec::new();
@@ -50,319 +117,120 @@ impl ConvertSummary {
 
         if graph.is_function_defined(&function.name) {
             debug!("==> Function was already summarised.");
-            return Ok(vec![]);
+            return Ok(());
         }
 
+        /*
         graph.init_function_def(&function)?;
-        graph.add_var(Variable {
+        let mut vars = vec![Variable {
             function: req.function.clone(),
             is_taut: true,
             is_global: false,
             name: "taut".to_string(),
+        }];
+        let init_facts = graph.init_facts(&function, &mut vars)?;
+        let init = init_facts.get(0).context("Cannot get init fact")?;
+        */
+
+        let facts = graph.init_function(&function)?;
+        let init = facts.get(0).unwrap().clone();
+
+        let mut path_edge = Vec::new();
+        let mut worklist = VecDeque::new();
+        let mut summary_edge = Vec::new();
+
+        path_edge.push(Edge::Path {
+            from: init.clone(),
+            to: init.clone(),
+        });
+        worklist.push_back(Edge::Path {
+            from: init.clone(),
+            to: init.clone(),
         });
 
-        for def in function.params.iter() {
-            graph.add_var(Variable {
-                function: req.function.clone(),
-                is_taut: false,
-                is_global: false,
-                name: def.clone(),
-            });
+        self.forwardTabulateSLRPs(
+            &prog,
+            &function,
+            &mut path_edge,
+            &mut worklist,
+            &mut summary_edge,
+            &function.instructions,
+            &mut graph,
+        )?;
+
+        Ok(())
+    }
+
+    fn propagate(
+        &self,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
+        e: Edge,
+    ) -> Result<()> {
+        let f = path_edge.iter().rev().find(|x| *x == &e);
+
+        if f.is_none() {
+            path_edge.push(e.clone());
+            worklist.push_back(e);
         }
 
-        let init = graph.new_facts(&req.function, String::new())?;
-        let init_fact = init.get(0).unwrap().clone();
+        Ok(())
+    }
 
-        graph.facts.extend_from_slice(&init);
+    fn forwardTabulateSLRPs(
+        &self,
+        program: &Program,
+        function: &AstFunction,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
+        summary_edge: &mut Vec<Edge>,
+        instructions: &Vec<Instruction>,
+        graph: &mut Graph,
+    ) -> Result<()> {
+        debug!("Function has {} instructions", instructions.len());
+        let flow = self.flow(function, instructions, graph)?;
+        while let Some(edge) = worklist.pop_front() {
+            debug!("Popping edge from worklist {:?}", edge);
+            let n = instructions.get(edge.to().pc);
 
-        for fact in init.into_iter() {
-            graph.add_path_edge(init_fact.clone(), fact)?;
-        }
+            if let Some(n) = n {
+                match n {
+                    Instruction::Call(callee, params, dest) => {
+                        let call_edges =
+                            self.pass_args(program, function, callee, params, dest, graph)?;
 
-        let _ = graph.pc_counter.set(req.pc + 1);
-        let mut offset_pc = 0;
-
-        // init
-
-        /*
-        for instruction in function.instructions.iter().skip(req.pc - 1) {
-            let mut do_break = false;
-            match instruction {
-                Instruction::Const(reg, _) => {
-                    graph.add_var(Variable {
-                        function: function.name.clone(),
-                        is_global: false,
-                        is_taut: false,
-                        name: reg.clone(),
-                    });
-                    do_break = true;
-                }
-                Instruction::Assign(dest, src) => {
-                    graph.add_var(Variable {
-                        function: function.name.clone(),
-                        is_global: false,
-                        is_taut: false,
-                        name: dest.clone(),
-                    });
-
-                    graph.add_var(Variable {
-                        function: function.name.clone(),
-                        is_global: false,
-                        is_taut: false,
-                        name: src.clone(),
-                    });
-                    do_break = true;
-                }
-                _ => {
-                    offset_pc += 1;
-                    //graph.pc_counter.get();
+                        for d3 in call_edges.into_iter() {
+                            //graph.add_call_edge(d3.from().clone(), d3.to().clone());
+                            self.propagate(
+                                path_edge,
+                                worklist,
+                                Edge::Path {
+                                    from: d3.to().clone(),
+                                    to: d3.to().clone(),
+                                },
+                            )?; //self loop
+                        }
+                    }
+                    _ => {
+                        self.propagate(
+                            path_edge,
+                            worklist,
+                            Edge::Path {
+                                from: path_edge.get(0).unwrap().clone().from().clone(),
+                                to: flow.get(edge.to().pc).unwrap().to().clone(),
+                            },
+                        )?;
+                    }
                 }
             }
-
-            let out_ = graph
-                .new_facts(&function.name, format!("{:?}", instruction))
-                .context("Cannot create a new fact")?;
-
-            graph.facts.extend_from_slice(&out_); //required for tikz
-            for fact in out_.into_iter() {
-                graph.add_path_edge(init_fact.clone(), fact)?;
-            }
-
-            if do_break {
+            else {
+                debug!("Instruction does not exist. Therefore breaking");
                 break;
             }
-        }*/
-
-        let mut skipping = false;
-        let mut callee_sites = Vec::new();
-        for instruction in function.instructions.iter().skip(req.pc - 1 + offset_pc) {
-            debug!("Instrution {:?}", instruction);
-
-            if skipping {
-                debug!("Last instruction declared to skip. Therefore skipping");
-                skipping = false;
-                break;
-            }
-
-            match instruction {
-                Instruction::Block(_num) | Instruction::Jump(_num) => {}
-                Instruction::Const(reg, _) => {
-                    if graph.get_var(&function.name, reg).is_some() {
-                        graph.remove_var(&function.name, reg)?;
-                    } else {
-                        if reg == &req.variable {
-                            // init
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: reg.clone(),
-                            });
-                        }
-                    }
-                }
-                Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
-                    debug!("Assign");
-
-                    if graph.get_var(&function.name, dest).is_some() {
-                        debug!("Assigned dest is relevant");
-                        // Relevant
-
-                        graph.remove_var(&function.name, &dest)?;
-                    } else {
-                        if dest == &req.variable {
-                            // init
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: dest.clone(),
-                            });
-                        }
-                    }
-
-                    if graph.get_var(&function.name, src).is_some() {
-                        graph.add_var(Variable {
-                            function: function.name.clone(),
-                            is_global: false,
-                            is_taut: false,
-                            name: dest.clone(),
-                        });
-                    }
-                }
-                Instruction::BinOp(dest, src1, src2) => {
-                    debug!("Bin {} = {} op {}", dest, src1, src2);
-
-                    if graph.get_var(&function.name, dest).is_some() {
-                        let mut ok = false;
-                        if graph.get_var(&function.name, src1).is_none() {
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: src1.clone(),
-                            });
-                            ok = true;
-                        }
-
-                        if graph.get_var(&function.name, src2).is_none() {
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name: src2.clone(),
-                            });
-                            ok = true;
-                        }
-
-                        if ok {
-                            let old_var = graph
-                                .get_vars(&function.name)
-                                .context("Canot find variables")?
-                                .iter()
-                                .find(|x| !x.is_taut && &x.name != dest)
-                                .context("Cannot find variable")?
-                                .name
-                                .clone();
-
-                            graph.remove_var(&function.name, &old_var)?;
-                        }
-                    }
-                }
-                Instruction::Kill(dest) => {
-                    if graph.get_var(&function.name, dest).is_some() {
-                        graph.remove_var(&function.name, &dest)?;
-                    }
-                }
-                Instruction::Unknown(dest) => {}
-                Instruction::Store => {}
-                Instruction::Return(regs) => {
-                    //skipping = true;
-
-                    let vars: Vec<Variable> = graph
-                        .get_vars(&function.name)
-                        .context("Cannot get vars")?
-                        .iter()
-                        .filter(|x| !x.is_taut)
-                        .cloned()
-                        .collect();
-
-                        /*
-                    for var in vars {
-                        if !regs.contains(&var.name) {
-                            graph.remove_var(&function.name, &var.name)?;
-                        }
-                    }*/
-
-
-                    for reg in regs.iter() {
-                        if graph.get_var(&function.name, reg).is_none() {
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                name: reg.clone(),
-                                is_taut: false,
-                            }); 
-                        }
-                    }
-
-
-                    callee_sites.push(graph.pc_counter.peek());
-                }
-                Instruction::Conditional(_reg, jumps) => {
-                    assert!(jumps.len() >= 1, "Conditional must have at least one jump");
-                }
-                Instruction::Table(jumps) => {
-                    assert!(jumps.len() >= 1, "Conditional must have at least one jump");
-                }
-                Instruction::Call(callee, _params, dests) => {
-                    let req = Request {
-                        function: callee.clone(),
-                        pc: 1,
-                        variable: "temp".to_string(), //TODO remove variable, because doesnt matter
-                    };
-
-                    let old_pc = graph.pc_counter.peek();
-                    graph.pc_counter.set(1);
-
-                    let _summary: Vec<Fact> = self
-                        .tabulate(graph, prog, &req)
-                        .context("Fail occured in nested call")?;
-
-                    graph.pc_counter.set(old_pc);
-
-                    for dest in dests.iter() {
-                        // Overwrite
-                        if graph.get_var(&function.name, dest).is_some() {
-                            graph.remove_var(&function.name, dest)?;
-                        }
-                    }
-
-                    for (i, _summ) in _summary.into_iter().enumerate().skip(1) {
-                        let name = dests.get(i - 1).unwrap().clone();
-                        graph.add_var(Variable {
-                            function: function.name.clone(),
-                            is_global: false,
-                            is_taut: false,
-                            name,
-                        });
-                    }
-                }
-                Instruction::CallIndirect(callees, _params, dests) => {
-                    for callee in callees.iter() {
-                        let req = Request {
-                            function: callee.clone(),
-                            pc: 1,
-                            variable: "temp".to_string(), //TODO remove variable, because doesnt matter
-                        };
-
-                        let old_pc = graph.pc_counter.peek();
-                        graph.pc_counter.set(1);
-
-                        let _summary: Vec<Fact> = self
-                            .tabulate(graph, prog, &req)
-                            .context("Fail occured in nested call")?;
-
-                        graph.pc_counter.set(old_pc);
-
-                        for dest in dests.iter() {
-                            // Overwrite
-                            if graph.get_var(&function.name, dest).is_some() {
-                                graph.remove_var(&function.name, dest)?;
-                            }
-                        }
-
-                        for (i, _summ) in _summary.into_iter().enumerate().skip(1) {
-                            let name = dests.get(i - 1).unwrap().clone();
-                            graph.add_var(Variable {
-                                function: function.name.clone(),
-                                is_global: false,
-                                is_taut: false,
-                                name,
-                            });
-                        }
-                    }
-                }
-
-                _ => {}
-            }
-            let out_ = graph
-                .new_facts(&function.name, format!("{:?}", instruction))
-                .context("Cannot create a new fact")?;
-
-            graph.facts.extend_from_slice(&out_); //required for tikz
-
-            for fact in out_.into_iter() {
-                graph.add_path_edge(init_fact.clone(), fact)?;
-            }
         }
 
-        let out_ = graph.get_last_facts(&function.name);
-        debug!("Summary {:?}", out_);
-        for fact in out_.iter() {
-            graph.add_summary_edge(init_fact.clone(), fact.clone())?;
-        }
+        graph.edges.extend_from_slice(&path_edge);
 
-        Ok(out_)
+        Ok(())
     }
 }

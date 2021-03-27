@@ -57,7 +57,7 @@ pub struct Variable {
     pub is_taut: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Edge {
     Normal { from: Fact, to: Fact, curved: bool },
     Call { from: Fact, to: Fact },
@@ -260,7 +260,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
+    pub fn init_function(&mut self, function: &AstFunction) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
 
         self.init_function_def(function)?;
@@ -297,22 +297,23 @@ impl Graph {
             });
         }
 
-        self.init_facts(function, &mut variables)
+        let facts = self.init_facts(function, &mut variables)
             .context("Cannot initialize facts")?;
 
         self.vars.insert(function.name.clone(), variables);
 
-        Ok(())
+        Ok(facts)
     }
 
-    fn init_facts(&mut self, function: &AstFunction, variables: &mut Vec<Variable>) -> Result<()> {
+    pub fn init_facts(&mut self, function: &AstFunction, variables: &mut Vec<Variable>) -> Result<Vec<Fact>> {
         debug!("Initializing facts for function {}", function.name);
 
         let mut index = 0;
+        let mut facts = Vec::with_capacity(variables.len());
         for var in variables {
             debug!("Creating fact for var {}", var.name);
 
-            self.facts.push(Fact {
+            let fact = Fact {
                 id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
@@ -320,12 +321,31 @@ impl Graph {
                 pc: 0,
                 track: index,
                 function: function.name.clone(),
-            });
+            };
+
+            self.facts.push(fact.clone());
+            facts.push(fact);
 
             index += 1;
         }
 
         self.pc_counter.get();
+
+        Ok(facts)
+    }
+
+    pub fn facts_at(&self, function: &AstFunction) -> Result<Vec<&Fact>> {
+        let pc = self.pc_counter.peek() - 1;
+
+        let facts = self.facts.iter().filter(|x| {
+            &x.function == &function.name && x.pc == pc
+        }).collect::<Vec<_>>();
+
+        Ok(facts)
+    }
+
+    pub fn new_fact(&mut self, fact: Fact) -> Result<()> {
+        self.facts.push(fact);
 
         Ok(())
     }
