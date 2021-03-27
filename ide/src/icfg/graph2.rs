@@ -384,7 +384,7 @@ impl Graph {
     pub fn add_statement(
         &mut self,
         function: &AstFunction,
-        instruction: &Instruction,
+        instruction: String,
         pc: usize,
         variable: &String,
     ) -> Result<()> {
@@ -413,19 +413,18 @@ impl Graph {
                 track,
                 function: function.name.clone(),
                 pc,
-                is_return: matches!(instruction, Instruction::Return(_)),
+                is_return: false,
             });
         }
 
         // Adding stmt note
 
-        /*
         self.notes.push(Note {
             id: self.note_counter.get(),
             function: function.name.clone(),
             pc,
-            note: format!("{:?}", instruction),
-        });*/
+            note: instruction,
+        });
 
         Ok(())
     }

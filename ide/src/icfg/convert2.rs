@@ -64,7 +64,7 @@ impl ConvertSummary {
 
         debug!("Facts before statement {}", before.len());
 
-        graph.add_statement(function, instruction, pc + 1, variable)?;
+        graph.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
         let after: Vec<_> = graph
             .get_facts_at(&function.name, pc + 1)?
@@ -173,8 +173,18 @@ impl ConvertSummary {
         graph: &mut Graph,
         pc: usize,
     ) -> Result<Vec<Edge>> {
-        let before = graph.get_facts_at(&caller_function.name, pc - 1)?;
-        let after = graph.get_facts_at(&caller_function.name, pc)?;
+        let before : Vec<_> = graph
+            .get_facts_at(&caller_function.name, pc)?
+            .into_iter()
+            .map(|x| x.clone())
+            .collect();
+        graph.add_statement(
+            caller_function,
+            format!("{:?}", "call"),
+            pc + 1,
+            &"taut".to_string(),
+        )?;
+        let after = graph.get_facts_at(&caller_function.name, pc + 1)?;
 
         let mut edges = Vec::with_capacity(after.len());
         for fact in after
@@ -232,7 +242,6 @@ impl ConvertSummary {
             &mut path_edge,
             &mut worklist,
             &mut summary_edge,
-            &function.instructions,
             &mut graph,
         )?;
 
@@ -262,11 +271,8 @@ impl ConvertSummary {
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
         summary_edge: &mut Vec<Edge>,
-        instructions: &Vec<Instruction>,
         graph: &mut Graph,
     ) -> Result<()> {
-        debug!("Function has {} instructions", instructions.len());
-
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
@@ -274,19 +280,26 @@ impl ConvertSummary {
             debug!("Popping edge from worklist {:#?}", edge);
             let pc = edge.to().pc;
             debug!("Instruction pointer is {}", pc);
-            let n = instructions.get(pc);
-            debug!("=> Instruction {:?}", n);
+
             let d1 = edge.get_from();
             let d2 = edge.to();
 
+            let instructions = &program
+                .functions
+                .iter()
+                .find(|x| x.name == d1.function)
+                .context("Cannot find function")?
+                .instructions;
+            let n = instructions.get(pc);
+            debug!("=> Instruction {:?}", n);
+
             if let Some(n) = n {
                 match n {
-                    /*Instruction::Call(callee, params, dest) => {
+                    Instruction::Call(callee, params, dest) => {
                         let call_edges =
                             self.pass_args(program, function, callee, params, dest, graph, d2.pc)?;
 
                         for d3 in call_edges.into_iter() {
-                            //graph.add_call_edge(d3.from().clone(), d3.to().clone());
                             self.propagate(
                                 path_edge,
                                 worklist,
@@ -306,53 +319,72 @@ impl ConvertSummary {
 
                             //Add incoming
 
-                            if let Some(incoming) =
-                                incoming.get_mut(&(d3.to().function.clone(), d3.to().pc))
-                            {
+                            if let Some(incoming) = incoming.get_mut(&(
+                                d3.to().function.clone(),
+                                d3.to().pc,
+                                d3.to().belongs_to_var.clone(),
+                            )) {
                                 incoming.push(d2.clone());
                             } else {
                                 incoming.insert(
-                                    (d3.to().function.clone(), d3.to().id),
+                                    (
+                                        d3.to().function.clone(),
+                                        d3.to().id,
+                                        d3.to().belongs_to_var.clone(),
+                                    ),
                                     vec![d2.clone()],
                                 );
                             }
 
-                            if let Some(end_summary) =
-                                end_summary.get(&(d3.to().function.clone(), d3.to().id))
-                            {
+                            debug!("Incoming {:#?}", incoming);
+
+                            if let Some(end_summary) = end_summary.get(&(
+                                d3.to().function.clone(),
+                                d3.to().pc,
+                                d3.to().belongs_to_var.clone(),
+                            )) {
                                 for d4 in end_summary.iter() {
                                     for d5 in self.return_val(
                                         &function.name,
                                         &d4.function,
                                         d2.pc,
                                         d4.pc,
-                                        instructions,
+                                        &instructions,
                                         graph,
                                     )? {
                                         summary_edge.push(Edge::Summary {
                                             from: d2.clone(),
-                                            to: d5.get_from().clone(),
+                                            to: d5.get_from().clone(), //return_site is d5.get_from?
                                         });
                                     }
                                 }
                             }
+
+                            debug!("End summary {:#?}", end_summary);
                         }
 
                         let call_flow =
                             self.call_flow(program, function, callee, params, dest, graph, pc)?;
 
+                        let new_function = program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d2.function)
+                            .unwrap();
+
                         //TODO `or` with overwritten value
                         for d3 in call_flow {
+                            let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
                             self.propagate(
                                 path_edge,
                                 worklist,
                                 Edge::Path {
-                                    from: graph.get_taut(&d3.to().function).unwrap().clone(),
+                                    from: taut,
                                     to: d3.to().clone(),
                                 },
-                            )?;
+                            )?; // adding edges to return site of caller from d1
                         }
-                    }*/
+                    }
                     _ => {
                         let new_function = program
                             .functions
@@ -401,20 +433,25 @@ impl ConvertSummary {
                         .into_iter()
                         .map(|x| x.clone())
                         .collect();
-                    end_summary.insert((d1.function.clone(), d1.pc, d1.belongs_to_var.clone()), facts);
+                    end_summary.insert(
+                        (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
+                        facts,
+                    );
                 }
 
                 debug!("End Summary {:#?}", end_summary);
 
                 // Incoming
-                if let Some(incoming) = incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone())) {
+                if let Some(incoming) =
+                    incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
+                {
                     for d4 in incoming {
                         let ret_vals = self.return_val(
-                            &function.name,
+                            &d2.function,
                             &d4.function,
+                            d2.pc,
                             d4.pc,
-                            d4.pc,
-                            instructions,
+                            &instructions,
                             graph,
                         )?;
 
