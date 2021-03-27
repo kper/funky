@@ -127,14 +127,21 @@ impl ConvertSummary {
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
     ) -> Result<Vec<Edge>> {
+        debug!("Trying to compute return_val");
+        debug!("Caller: {} ({})", caller_function, caller_pc);
+        debug!("Callee: {} ({})", callee_function, callee_pc);
+
         let dest = match caller_instructions.get(caller_pc).as_ref() {
             Some(Instruction::Call(_, _params, dest)) => dest,
-            Some(_) => bail!("Wrong instruction passed to return val"),
-            None => bail!("Cannot find instruction"),
+            Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
+            None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
         let caller_facts = graph.get_facts_at(caller_function, caller_pc)?;
         let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
+
+        debug!("caller_facts {:#?}", caller_facts);
+        debug!("callee_facts {:#?}", callee_facts);
 
         // Generate edges when for all dest + taut
 
@@ -146,17 +153,38 @@ impl ConvertSummary {
             to: callee_facts.get(0).unwrap().clone().clone(),
         });
 
+        debug!("=> dest {:?}", dest);
+
+        /*
         for (i, d) in dest.iter().enumerate() {
             let caller_fact = caller_facts
                 .iter()
                 .find(|x| &x.belongs_to_var == d)
-                .context("Cannot find var")?;
-            let callee_fact = callee_facts.get(i + 1).context("Cannot find var")?;
+                .context("Cannot find var for caller_fact")?;
+            let callee_fact = callee_facts
+                .get(i + 1)
+                .context("Cannot find var for callee_fact")?;
 
             edges.push(Edge::CallToReturn {
                 from: caller_fact.clone().clone(),
                 to: callee_fact.clone().clone(),
             });
+        }*/
+
+        let mut index = 0;
+        for callee_fact in callee_facts.iter() {
+            let caller_fact = caller_facts
+                .get(index)
+                .context("Cannot find var for caller_fact")?;
+
+            if caller_fact.var_is_taut || dest.contains(&caller_fact.belongs_to_var) {
+                edges.push(Edge::CallToReturn {
+                    from: caller_fact.clone().clone(),
+                    to: callee_fact.clone().clone(),
+                });
+
+                index += 1;
+            }
         }
 
         Ok(edges)
@@ -346,7 +374,7 @@ impl ConvertSummary {
                                 incoming.insert(
                                     (
                                         d3.to().function.clone(),
-                                        d3.to().id,
+                                        d3.to().pc,
                                         d3.to().belongs_to_var.clone(),
                                     ),
                                     vec![d2.clone()],
@@ -463,11 +491,18 @@ impl ConvertSummary {
                     incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
                 {
                     for d4 in incoming {
+                        let instructions = &program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d4.function)
+                            .context("Cannot find function")?
+                            .instructions;
+
                         let ret_vals = self.return_val(
-                            &d2.function,
                             &d4.function,
-                            d2.pc,
+                            &d2.function,
                             d4.pc,
+                            d2.pc,
                             &instructions,
                             graph,
                         )?;
@@ -485,7 +520,7 @@ impl ConvertSummary {
 
                                 let edges: Vec<_> =
                                     path_edge.iter().filter(|x| x.to() == d4).cloned().collect();
- 
+
                                 for d3 in edges.into_iter() {
                                     self.propagate(
                                         path_edge,
