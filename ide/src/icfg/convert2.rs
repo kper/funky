@@ -59,18 +59,18 @@ impl ConvertSummary {
         let before: Vec<Fact> = graph
             .get_facts_at(&function.name, pc)?
             .into_iter()
-            //.filter(|x| &x.belongs_to_var == variable)
+            .filter(|x| &x.belongs_to_var == variable)
             .cloned()
             .collect();
 
         debug!("Facts before statement {}", before.len());
 
-        graph.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
+        //graph.add_statement(function, format!("{:?} ({})", instruction, pc + 1), pc + 1)?;
 
         let after: Vec<_> = graph
             .get_facts_at(&function.name, pc + 1)?
             .into_iter()
-            //.filter(|x| &x.belongs_to_var == variable)
+            .filter(|x| &x.belongs_to_var == variable)
             .collect();
 
         debug!("Facts after statement {}", after.len());
@@ -204,16 +204,17 @@ impl ConvertSummary {
     ) -> Result<Vec<Edge>> {
         debug!("Generating call-to-return edges for {}", callee);
 
+        /* 
         graph.add_statement(
             caller_function,
             format!("{:?}", "call"),
             pc + 1,
             &"taut".to_string(),
-        )?;
-        for dest in dests.iter() {
-            graph.add_statement(caller_function, format!("{:?}", "call"), pc, dest)?;
-            graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1, dest)?;
-        }
+        )?;*/
+        //for dest in dests.iter() {
+            //graph.add_statement(caller_function, format!("{:?}", "call"), pc)?;
+            //graph.add_statement(caller_function, format!("{:?}", "call"), pc + 1)?;
+        //}
 
         let before: Vec<_> = graph
             .get_facts_at(&caller_function.name, pc)?
@@ -322,7 +323,7 @@ impl ConvertSummary {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
-        while let Some(edge) = worklist.pop_back() {
+        while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
             let d1 = edge.get_from();
