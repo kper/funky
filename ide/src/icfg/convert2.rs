@@ -35,6 +35,75 @@ impl ConvertSummary {
         Ok(graph)
     }
 
+    fn compute_init_flows(
+        &self,
+        function: &AstFunction,
+        graph: &mut Graph,
+        pc: usize,
+    ) -> Result<Vec<Edge>> {
+        debug!(
+            "Calling init flow for {} with pc {}",
+            function.name, pc
+        );
+
+        let mut edges = Vec::new();
+
+        let instructions = &function.instructions;
+
+        let instruction = instructions.get(pc).context("Cannot find instr")?;
+        debug!("Next instruction is {:?}", instruction);
+
+        match instruction {
+            Instruction::Const(reg, _) => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| x.var_is_taut)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == reg)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Assign(dest, _src) => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| x.var_is_taut)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            _ => {
+
+            }
+        }
+
+        Ok(edges)
+    }
+
     /// computes all intraprocedural edges
     fn flow(
         &self,
@@ -58,27 +127,6 @@ impl ConvertSummary {
         //let mut before: Vec<Fact> = Vec::new();
         //let mut after: Vec<Fact> = Vec::new();
         match instruction {
-            Instruction::Const(reg, _) if variable == &"taut".to_string() => {
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| x.var_is_taut)
-                    .cloned();
-
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == reg || x.var_is_taut)
-                    .cloned();
-
-                for (b, a) in before2.clone().chain(before2).zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a,
-                        curved: false,
-                    });
-                }
-            }
             Instruction::Const(reg, _) if reg != variable => {
                 // Identity
                 let before2 = graph
@@ -385,6 +433,14 @@ impl ConvertSummary {
             from: init.clone(),
             to: init.clone(),
         });
+
+        // Compute init flows
+
+        let init_normal_flows = self.compute_init_flows(function, graph, 0)?;
+
+        for edge in init_normal_flows.into_iter() {
+            self.propagate(&mut path_edge, &mut worklist, edge)?;
+        }
 
         self.forward(
             &prog,
