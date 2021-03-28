@@ -114,6 +114,27 @@ impl ConvertSummary {
                     });
                 }
             }
+            Instruction::BinOp(dest, _src, _src2) => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| x.var_is_taut)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
             _ => {}
         }
 
@@ -255,6 +276,75 @@ impl ConvertSummary {
                 }
             }
             Instruction::Unop(_dest, _src) => {
+                // kill
+            }
+            Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
+                    //.filter(|x| &x.belongs_to_var != dest)
+                    .cloned();
+
+                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::BinOp(dest, _src1, src2) if src2 == variable => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
+                    //.filter(|x| &x.belongs_to_var != dest)
+                    .cloned();
+
+                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::BinOp(dest, src1, src2) if dest != variable && src1 != variable && src2 != variable => {
+                // Identity
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::BinOp(_dest, _src, _src2) => {
                 // kill
             }
             _ => {
