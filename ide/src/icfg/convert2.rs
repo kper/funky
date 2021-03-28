@@ -282,7 +282,7 @@ impl ConvertSummary {
             to: init.clone(),
         });
 
-        self.forwardTabulateSLRPs(
+        self.forward(
             &prog,
             &function,
             &mut path_edge,
@@ -310,7 +310,7 @@ impl ConvertSummary {
         Ok(())
     }
 
-    fn forwardTabulateSLRPs(
+    fn forward(
         &self,
         program: &Program,
         function: &AstFunction,
