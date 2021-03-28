@@ -347,7 +347,6 @@ fn test_ir_overwrite_return_values() {
 
 #[test]
 fn test_ir_early_return() {
-    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -363,7 +362,6 @@ fn test_ir_early_return() {
         };
         define mytest (param %0) (result 1) (define %0 %1) {
             %0 = 2   
-            RETURN %0;
             %1 = 3
             RETURN %1;
         };
@@ -377,7 +375,8 @@ fn test_ir_early_return() {
 }
 
 #[test]
-fn test_ir_return() {
+fn test_ir_return_double() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),

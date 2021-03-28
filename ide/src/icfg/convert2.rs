@@ -321,7 +321,7 @@ impl ConvertSummary {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
-        while let Some(edge) = worklist.pop_front() {
+        while let Some(edge) = worklist.pop_back() {
             debug!("Popping edge from worklist {:#?}", edge);
             let pc = edge.to().pc;
             debug!("Instruction pointer is {}", pc);
@@ -345,6 +345,8 @@ impl ConvertSummary {
                             self.pass_args(program, function, callee, params, dest, graph, d2.pc)?;
 
                         for d3 in call_edges.into_iter() {
+                            debug!("d3 {:?}", d3);
+
                             self.propagate(
                                 path_edge,
                                 worklist,
@@ -381,7 +383,7 @@ impl ConvertSummary {
                                 );
                             }
 
-                            debug!("Incoming {:#?}", incoming);
+                            debug!("Incoming in call {:#?}", incoming);
 
                             if let Some(end_summary) = end_summary.get(&(
                                 d3.to().function.clone(),
@@ -463,18 +465,20 @@ impl ConvertSummary {
                 // this is E_p
                 debug!("=> Reached end of procedure");
 
+                assert_eq!(d1.function, d2.function);
+
                 // Summary
                 if let Some(end_summary) =
                     end_summary.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
                 {
                     let facts = graph
-                        .get_facts_at(&function.name, pc)?
+                        .get_facts_at(&d2.function.clone(), d2.pc)?
                         .into_iter()
                         .map(|x| x.clone());
                     end_summary.extend(facts);
                 } else {
                     let facts = graph
-                        .get_facts_at(&function.name, pc)?
+                        .get_facts_at(&d2.function.clone(), d2.pc)?
                         .into_iter()
                         .map(|x| x.clone())
                         .collect();
