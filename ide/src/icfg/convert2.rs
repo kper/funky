@@ -39,7 +39,6 @@ impl ConvertSummary {
     fn flow(
         &self,
         function: &AstFunction,
-        instructions: &Vec<Instruction>,
         graph: &mut Graph,
         pc: usize,
         variable: &String,
@@ -50,6 +49,8 @@ impl ConvertSummary {
         );
 
         let mut edges = Vec::new();
+
+        let instructions = &function.instructions;
 
         let instruction = instructions.get(pc).context("Cannot find instr")?;
         debug!("Next instruction is {:?}", instruction);
@@ -148,10 +149,10 @@ impl ConvertSummary {
         let mut edges = Vec::new();
 
         // taut
-        edges.push(Edge::CallToReturn {
+        /*edges.push(Edge::CallToReturn {
             from: caller_facts.get(0).unwrap().clone().clone(),
             to: callee_facts.get(0).unwrap().clone().clone(),
-        });
+        });*/
 
         debug!("=> dest {:?}", dest);
 
@@ -323,16 +324,17 @@ impl ConvertSummary {
 
         while let Some(edge) = worklist.pop_back() {
             debug!("Popping edge from worklist {:#?}", edge);
-            let pc = edge.to().pc;
-            debug!("Instruction pointer is {}", pc);
 
             let d1 = edge.get_from();
             let d2 = edge.to();
 
+            let pc = edge.to().pc;
+            debug!("Instruction pointer is {}", pc);
+
             let instructions = &program
                 .functions
                 .iter()
-                .find(|x| x.name == d1.function)
+                .find(|x| x.name == d2.function)
                 .context("Cannot find function")?
                 .instructions;
             let n = instructions.get(pc);
@@ -439,13 +441,7 @@ impl ConvertSummary {
                             .find(|x| x.name == d2.function)
                             .unwrap();
                         for f in self
-                            .flow(
-                                &new_function,
-                                &new_function.instructions,
-                                graph,
-                                d2.pc,
-                                &d2.belongs_to_var,
-                            )?
+                            .flow(&new_function, graph, d2.pc, &d2.belongs_to_var)?
                             .iter()
                         {
                             debug!("Normal flow {:?}", f);
@@ -511,19 +507,39 @@ impl ConvertSummary {
                             graph,
                         )?;
 
-                        for d5 in ret_vals.into_iter() {
+                        let return_site_facts = graph
+                            .get_facts_at(&d4.function, d4.pc + 1)?
+                            .into_iter()
+                            .map(|x| x.clone())
+                            .collect::<Vec<_>>();
+
+                        for calling_edge in ret_vals.into_iter() {
+                            let return_site_fact_of_caller = return_site_facts
+                                .iter()
+                                .find(|x| {
+                                    x.belongs_to_var == calling_edge.get_from().belongs_to_var
+                                })
+                                .context("Cannot find return site of caller")?;
+
                             if summary_edge
                                 .iter()
-                                .find(|x| x.get_from() != d4 && x.to() != d5.to())
+                                .find(|x| {
+                                    x.get_from() != d4 && x.to() != return_site_fact_of_caller
+                                }) //d5 muss hier im test sein
                                 .is_none()
                             {
                                 summary_edge.push(Edge::Summary {
                                     from: d4.clone(),
-                                    to: d5.to().clone(),
+                                    to: return_site_fact_of_caller.clone(),
                                 });
 
-                                let edges: Vec<_> =
-                                    path_edge.iter().filter(|x| x.to() == d4).cloned().collect();
+                                let edges: Vec<_> = path_edge
+                                    .iter()
+                                    .filter(|x| {
+                                        x.to() == d4 && &x.get_from().function == &d4.function
+                                    })
+                                    .cloned()
+                                    .collect();
 
                                 for d3 in edges.into_iter() {
                                     self.propagate(
@@ -531,7 +547,7 @@ impl ConvertSummary {
                                         worklist,
                                         Edge::Path {
                                             from: d3.get_from().clone(),
-                                            to: d5.to().clone(),
+                                            to: return_site_fact_of_caller.clone(),
                                         },
                                     )?;
                                 }

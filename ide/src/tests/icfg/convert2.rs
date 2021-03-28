@@ -4,6 +4,7 @@ use crate::icfg::convert2::ConvertSummary;
 use crate::icfg::tikz::render_to;
 use crate::solver::Request;
 use insta::assert_snapshot;
+use log::error;
 
 use crate::grammar::*;
 
@@ -13,9 +14,17 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(&prog, &$req).unwrap();
+        let graph = convert.visit(&prog, &$req);
 
-        let output = render_to(&graph);
+        if let Err(err) = graph {
+                error!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| error!("because: {}", cause));
+                std::process::exit(1);
+            }
+
+        let output = render_to(&graph.unwrap());
 
         assert_snapshot!(format!("{}_dot", $name), output);
     };
