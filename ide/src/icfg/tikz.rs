@@ -23,7 +23,10 @@ pub fn render_to(graph: &Graph) -> String {
             .chain(graph.edges.iter().map(|x| x.to()))
             .filter(|x| &x.function == function_name)
             .collect();
+
+        facts.sort_by(|a, b| b.id.cmp(&a.id));
         facts.dedup();
+
         let notes = graph.notes.iter().filter(|x| &x.function == function_name);
 
         for fact in facts {
