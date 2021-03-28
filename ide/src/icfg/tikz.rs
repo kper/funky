@@ -30,12 +30,12 @@ pub fn render_to(graph: &Graph) -> String {
             debug!("Drawing fact");
 
             str_vars.push_str(&format!(
-                "\\node[circle,inner sep=1pt,label=left:{}] ({}) at ({}, {}) {{ {} }};\n",
+                "\\node[circle,fill,inner sep=1pt,label=left:{}] ({}) at ({}, {}) {{ }};\n",
                 fact.belongs_to_var.replace("%", "\\%"),
                 fact.id,
                 index + fact.track,
                 fact.pc,
-                fact.id
+                //fact.id
             ));
         }
 

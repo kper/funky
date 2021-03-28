@@ -32,6 +32,7 @@ macro_rules! ir {
 
 #[test]
 fn test_ir_const() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
