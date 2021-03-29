@@ -208,6 +208,9 @@ impl ConvertSummary {
                     });
                 }
             }
+            Instruction::Const(_reg, _) =>  {
+                //kill
+            }
             Instruction::Assign(dest, src) if src == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
