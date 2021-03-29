@@ -459,7 +459,21 @@ impl ConvertSummary {
         };
 
         let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
-        let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
+        //let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
+
+        // Cannot query all facts, because some vars might not exist anymore
+        // We want to check the ones, which are still alive.
+        let callee_facts = graph
+            .edges
+            .iter()
+            .filter(|x| {
+                &x.get_from().function == callee_function
+                    && &x.to().function == callee_function
+                    && x.get_from().pc == 0
+                    && x.to().pc == callee_pc
+            })
+            .map(|x| x.to())
+            .collect::<Vec<_>>(); //(callee_function, callee_pc)?;
 
         debug!("caller_facts {:#?}", caller_facts);
         debug!("callee_facts {:#?}", callee_facts);
@@ -836,9 +850,7 @@ impl ConvertSummary {
 
                             if summary_edge
                                 .iter()
-                                .find(|x| {
-                                    x.get_from() != d4 && x.to() != d5
-                                }) 
+                                .find(|x| x.get_from() != d4 && x.to() != d5)
                                 .is_none()
                             {
                                 summary_edge.push(Edge::Summary {
