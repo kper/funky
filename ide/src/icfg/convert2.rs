@@ -463,7 +463,13 @@ impl ConvertSummary {
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let mut caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
+        let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
+
+        debug!("Caller facts {:#?}", caller_facts);
+
+        let mut caller_facts = caller_facts
+            .into_iter()
+            .collect::<Vec<_>>();
         //let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
 
         // Cannot query all facts, because some vars might not exist anymore
@@ -492,14 +498,14 @@ impl ConvertSummary {
 
         debug!("=> dest {:?}", dest);
 
-        for (to, from) in callee_facts.iter().zip(
+        for (from, to) in callee_facts.iter().zip(
             caller_facts
                 .iter()
                 .filter(|x| dest.contains(&x.belongs_to_var)),
         ) {
             edges.push(Edge::Return {
-                to: from.clone().clone(),
-                from: to.clone().clone(),
+                to: to.clone().clone().clone(),
+                from: from.clone().clone(),
             });
         }
 
@@ -833,6 +839,9 @@ impl ConvertSummary {
                 {
                     for d4 in incoming {
                         debug!("Computing return to fact to {:#?}", d4);
+
+                        assert!(d4.function != d2.function);
+
                         let instructions = &program
                             .functions
                             .iter()
@@ -855,7 +864,6 @@ impl ConvertSummary {
                         // Use only `d4`'s var
                         let ret_vals = ret_vals
                             .into_iter()
-                            .filter(|x| x.to().belongs_to_var == d4.belongs_to_var)
                             .collect::<Vec<_>>();
 
                         debug!("Exit-To-Return edges (filtered) are {:#?}", ret_vals);
@@ -866,6 +874,8 @@ impl ConvertSummary {
 
                         for d5 in ret_vals.into_iter() {
                             debug!("Handling var {:#?}", d5);
+
+                            assert!(d5.function != d2.function);
 
                             if summary_edge
                                 .iter()
@@ -882,7 +892,7 @@ impl ConvertSummary {
                                 let edges: Vec<_> = path_edge
                                     .iter()
                                     .filter(|x| {
-                                        x.to() == d4 && &x.get_from().function == &d4.function
+                                        x.to() == d4 && &x.get_from().function == &d4.function && x.get_from().pc == 0
                                     })
                                     .cloned()
                                     .collect();

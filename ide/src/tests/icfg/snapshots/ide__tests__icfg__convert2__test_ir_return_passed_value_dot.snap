@@ -16,7 +16,8 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:\%0] (7) at (1, 2) { };
+                    \node[circle,fill,inner sep=1pt,label=left:\%1] (8) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (7) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (4) at (1, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (3) at (0, 1) { };
@@ -40,7 +41,9 @@ expression: output
 		\path[->, blue] (9) [loop right] edge  node { } (9);
 		\path[->, blue] (10) [bend right] edge  node { } (13);
 		\path[->, blue] (9) [bend right] edge  node { } (12);
-		\path[->, red] (3) [bend left] edge  node { } (6);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, red] (4) [bend left] edge  node { } (6);
+		\path[->, red] (4) [bend left] edge  node { } (8);
 
 
                 \end{tikzpicture}
