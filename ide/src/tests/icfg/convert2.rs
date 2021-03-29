@@ -348,8 +348,7 @@ fn test_ir_return_values3() {
             %2 <- CALL mytest(%0)
         };
         define mytest (param %0) (result 1) (define %0 %1) {
-            %1 = 3
-            RETURN %1;
+            RETURN %0;
         };"
     );
 }
