@@ -388,6 +388,7 @@ impl ConvertSummary {
         current_pc: usize,
         caller_var: &String,
     ) -> Result<Vec<Edge>> {
+        // Why not dests?
         if !params.contains(&caller_var) && caller_var != &"taut".to_string() {
             debug!(
                 "Caller's variable is not a parameter {} in {:?} for {}",
@@ -422,13 +423,13 @@ impl ConvertSummary {
             .find(|x| &x.belongs_to_var == caller_var)
             .context("Cannot find caller's fact")?;
 
-        // The corresponding edges have to match now.
+        // The corresponding edges have to match now, but filter `dest`.
         // taut -> taut
         // %0   -> %0
         // %1   -> %1
 
         // Create an edge.
-        let mut edges = vec![Edge::Call {
+        let edges = vec![Edge::CallToReturn {
             from: caller_fact.clone().clone(),
             to: callee_fact.clone(),
         }];
@@ -457,7 +458,7 @@ impl ConvertSummary {
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let caller_facts = graph.get_facts_at(caller_function, caller_pc)?;
+        let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
         let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
 
         debug!("caller_facts {:#?}", caller_facts);
@@ -478,13 +479,13 @@ impl ConvertSummary {
                 .context("Cannot find var for caller_fact")?;
 
             if dest.contains(&caller_fact.belongs_to_var) {
-                edges.push(Edge::CallToReturn {
-                    from: caller_fact.clone().clone(),
-                    to: callee_fact.clone().clone(),
+                edges.push(Edge::Return {
+                    to: caller_fact.clone().clone(),
+                    from: callee_fact.clone().clone(),
                 });
-
-                index += 1;
             }
+
+            index += 1;
         }
 
         Ok(edges)
@@ -798,7 +799,7 @@ impl ConvertSummary {
                     incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
                 {
                     for d4 in incoming {
-                        debug!("Computing return to fact to {:?}", d4);
+                        debug!("Computing return to fact to {:#?}", d4);
                         let instructions = &program
                             .functions
                             .iter()
@@ -806,49 +807,47 @@ impl ConvertSummary {
                             .context("Cannot find function")?
                             .instructions;
 
-                        let ret_vals = self
-                            .return_val(
-                                &d4.function,
-                                &d2.function,
-                                d4.pc,
-                                d2.pc,
-                                &instructions,
-                                graph,
-                            )?;
+                        // Get all return edges
+                        let ret_vals = self.return_val(
+                            &d4.function,
+                            &d2.function,
+                            d4.pc,
+                            d2.pc,
+                            &instructions,
+                            graph,
+                        )?;
 
                         debug!("Exit-To-Return edges are {:#?}", ret_vals);
 
-                        let return_site_facts = graph
-                            .get_facts_at(&d4.function, d4.pc + 1)?
+                        // Use only `d4`'s var
+                        let ret_vals = ret_vals
                             .into_iter()
-                            .map(|x| x.clone())
+                            .filter(|x| x.to().belongs_to_var == d4.belongs_to_var)
                             .collect::<Vec<_>>();
 
-                        debug!("Return facts {:#?}", return_site_facts);
+                        debug!("Exit-To-Return edges (filtered) are {:#?}", ret_vals);
 
-                        for calling_edge in ret_vals.into_iter()
-                            .filter(|x| x.to().belongs_to_var == d4.belongs_to_var) {
-                            debug!("Handling edge {:#?}", calling_edge);
+                        let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
 
-                            let return_site_fact_of_caller = return_site_facts
-                                .iter()
-                                .find(|x| {
-                                    x.belongs_to_var == calling_edge.get_from().belongs_to_var
-                                })
-                                .context("Cannot find return site of caller")?;
+                        debug!("Exit-To-Return vars (filtered) are {:#?}", ret_vals);
+
+                        for d5 in ret_vals.into_iter() {
+                            debug!("Handling var {:#?}", d5);
 
                             if summary_edge
                                 .iter()
                                 .find(|x| {
-                                    x.get_from() != d4 && x.to() != return_site_fact_of_caller
-                                }) //d5 muss hier im test sein
+                                    x.get_from() != d4 && x.to() != d5
+                                }) 
                                 .is_none()
                             {
                                 summary_edge.push(Edge::Summary {
                                     from: d4.clone(),
-                                    to: return_site_fact_of_caller.clone(),
+                                    to: d5.clone().clone(),
                                 });
 
+                                // Get all path edges
+                                // from `d3` to `d4`
                                 let edges: Vec<_> = path_edge
                                     .iter()
                                     .filter(|x| {
@@ -863,7 +862,7 @@ impl ConvertSummary {
                                         worklist,
                                         Edge::Path {
                                             from: d3.get_from().clone(),
-                                            to: return_site_fact_of_caller.clone(),
+                                            to: d5.clone().clone(),
                                         },
                                     )?;
                                 }
