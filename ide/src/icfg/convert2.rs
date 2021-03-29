@@ -322,7 +322,9 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::BinOp(dest, src1, src2) if dest != variable && src1 != variable && src2 != variable => {
+            Instruction::BinOp(dest, src1, src2)
+                if dest != variable && src1 != variable && src2 != variable =>
+            {
                 // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
@@ -379,28 +381,57 @@ impl ConvertSummary {
         &self,
         program: &Program,
         caller_function: &AstFunction,
-        callee: &String,
+        callee_function: &String,
         params: &Vec<String>,
         dests: &Vec<String>,
         graph: &mut Graph,
         current_pc: usize,
+        caller_var: &String,
     ) -> Result<Vec<Edge>> {
+        if !params.contains(&caller_var) && caller_var != &"taut".to_string() {
+            debug!(
+                "Caller's variable is not a parameter {} in {:?} for {}",
+                caller_var, params, callee_function
+            );
+            return Ok(vec![]);
+        }
+
+        // After here, checked that the caller_var is relevant
+
         let callee_function = program
             .functions
             .iter()
-            .find(|x| &x.name == callee)
+            .find(|x| &x.name == callee_function)
             .context("Cannot find function")?;
 
-        let facts = graph.init_function(callee_function)?;
+        // Init facts of the called function
+        let init_facts = graph.init_function(callee_function)?;
+
+        // Filter by variable
+        let callee_fact = init_facts
+            .iter()
+            .find(|x| &x.belongs_to_var == caller_var)
+            .context("Cannot find callee's fact")?;
+
+        // Last caller facts
         let caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
 
-        let mut edges = Vec::new();
-        for (caller, callee) in caller_facts.iter().zip(facts) {
-            edges.push(Edge::Call {
-                from: caller.clone().clone(),
-                to: callee,
-            })
-        }
+        // Filter by variable
+        let caller_fact = caller_facts
+            .iter()
+            .find(|x| &x.belongs_to_var == caller_var)
+            .context("Cannot find caller's fact")?;
+
+        // The corresponding edges have to match now.
+        // taut -> taut
+        // %0   -> %0
+        // %1   -> %1
+
+        // Create an edge.
+        let mut edges = vec![Edge::Call {
+            from: caller_fact.clone().clone(),
+            to: callee_fact.clone(),
+        }];
 
         Ok(edges)
     }
@@ -566,6 +597,7 @@ impl ConvertSummary {
         let f = path_edge.iter().rev().find(|x| *x == &e);
 
         if f.is_none() {
+            debug!("Propagate {:#?}", e);
             path_edge.push(e.clone());
             worklist.push_back(e);
         }
@@ -606,8 +638,13 @@ impl ConvertSummary {
             if let Some(n) = n {
                 match n {
                     Instruction::Call(callee, params, dest) => {
-                        let call_edges =
-                            self.pass_args(program, function, callee, params, dest, graph, d2.pc)?;
+                        // Here becomes the `d2` the caller.
+                        // This is so on purpose, because this will become
+                        // the parameter and `d1` doesn't matter here
+                        let caller_var = &d2.belongs_to_var;
+                        let call_edges = self.pass_args(
+                            program, function, callee, params, dest, graph, d2.pc, caller_var,
+                        )?;
 
                         for d3 in call_edges.into_iter() {
                             debug!("d3 {:?}", d3);
@@ -677,15 +714,14 @@ impl ConvertSummary {
 
                         let call_flow =
                             self.call_flow(program, function, callee, params, dest, graph, pc)?;
+    
+    
+                        let return_sites = summary_edge.iter().filter(|x| {
+                            x.get_from().belongs_to_var == d2.belongs_to_var && x.get_from().pc == d2.pc &&
+                            x.to().pc == d2.pc + 1
+                        });
 
-                        let new_function = program
-                            .functions
-                            .iter()
-                            .find(|x| x.name == d2.function)
-                            .unwrap();
-
-                        //TODO `or` with overwritten value
-                        for d3 in call_flow {
+                        for d3 in call_flow.iter().chain(return_sites) {
                             let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
                             self.propagate(
                                 path_edge,
@@ -737,12 +773,14 @@ impl ConvertSummary {
                     let facts = graph
                         .get_facts_at(&d2.function.clone(), d2.pc)?
                         .into_iter()
+                        .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                         .map(|x| x.clone());
                     end_summary.extend(facts);
                 } else {
                     let facts = graph
                         .get_facts_at(&d2.function.clone(), d2.pc)?
                         .into_iter()
+                        .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                         .map(|x| x.clone())
                         .collect();
                     end_summary.insert(
@@ -758,6 +796,7 @@ impl ConvertSummary {
                     incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
                 {
                     for d4 in incoming {
+                        debug!("Computing return to fact to {:?}", d4);
                         let instructions = &program
                             .functions
                             .iter()
@@ -774,13 +813,19 @@ impl ConvertSummary {
                             graph,
                         )?;
 
+                        debug!("Exit-To-Return edges are {:#?}", ret_vals);
+
                         let return_site_facts = graph
                             .get_facts_at(&d4.function, d4.pc + 1)?
                             .into_iter()
                             .map(|x| x.clone())
                             .collect::<Vec<_>>();
 
+                        debug!("Return facts {:#?}", return_site_facts);
+
                         for calling_edge in ret_vals.into_iter() {
+                            debug!("Handling edge {:#?}", calling_edge);
+
                             let return_site_fact_of_caller = return_site_facts
                                 .iter()
                                 .find(|x| {
