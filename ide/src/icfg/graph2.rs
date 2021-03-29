@@ -278,6 +278,18 @@ impl Graph {
     pub fn init_function(&mut self, function: &AstFunction) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
 
+        if let Some(function) = self.functions.get(&function.name) {
+            debug!("Function was already initialized");
+
+            // Return the first facts of the function.
+            return Ok(self
+                .facts
+                .iter()
+                .filter(|x| x.function == function.name && x.pc == 0)
+                .cloned()
+                .collect());
+        }
+
         self.init_function_def(function)?;
 
         let mut variables = Vec::with_capacity(function.definitions.len() + 1);
