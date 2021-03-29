@@ -452,18 +452,23 @@ impl ConvertSummary {
         debug!("Caller: {} ({})", caller_function, caller_pc);
         debug!("Callee: {} ({})", callee_function, callee_pc);
 
-        let mut dest = match caller_instructions.get(caller_pc).as_ref() {
-            Some(Instruction::Call(_, _params, dest)) => dest.clone(),
+        let dest = match caller_instructions.get(caller_pc).as_ref() {
+            Some(Instruction::Call(_, _params, dest)) => {
+                let mut dd = Vec::with_capacity(dest.len());
+                dd.push("taut".to_string());
+                dd.extend(dest.clone());
+                dd
+            }
             Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
+        let mut caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
         //let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
 
         // Cannot query all facts, because some vars might not exist anymore
         // We want to check the ones, which are still alive.
-        let callee_facts = graph
+        let mut callee_facts = graph
             .edges
             .iter()
             .filter(|x| {
@@ -475,6 +480,9 @@ impl ConvertSummary {
             .map(|x| x.to())
             .collect::<Vec<_>>(); //(callee_function, callee_pc)?;
 
+        caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
+        callee_facts.sort_by(|a, b| a.track.cmp(&b.track));
+
         debug!("caller_facts {:#?}", caller_facts);
         debug!("callee_facts {:#?}", callee_facts);
 
@@ -483,12 +491,21 @@ impl ConvertSummary {
         let mut edges = Vec::new();
 
         debug!("=> dest {:?}", dest);
-        dest.push("taut".to_string());
-        debug!("=> dest (taut) {:?}", dest);
 
-        let mut index = 0;
-        for callee_fact in callee_facts.iter() {
-            let caller_fact = caller_facts
+        for (to, from) in callee_facts.iter().zip(
+            caller_facts
+                .iter()
+                .filter(|x| dest.contains(&x.belongs_to_var)),
+        ) {
+            edges.push(Edge::Return {
+                to: from.clone().clone(),
+                from: to.clone().clone(),
+            });
+        }
+
+        /*
+        for caller_fact in caller_facts.iter() {
+            let callee_fact = callee_facts
                 .get(index)
                 .context("Cannot find var for caller_fact")?;
 
@@ -500,7 +517,9 @@ impl ConvertSummary {
             }
 
             index += 1;
+
         }
+        */
 
         Ok(edges)
     }
