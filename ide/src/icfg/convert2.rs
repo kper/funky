@@ -451,8 +451,8 @@ impl ConvertSummary {
         debug!("Caller: {} ({})", caller_function, caller_pc);
         debug!("Callee: {} ({})", callee_function, callee_pc);
 
-        let dest = match caller_instructions.get(caller_pc).as_ref() {
-            Some(Instruction::Call(_, _params, dest)) => dest,
+        let mut dest = match caller_instructions.get(caller_pc).as_ref() {
+            Some(Instruction::Call(_, _params, dest)) => dest.clone(),
             Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
@@ -468,6 +468,8 @@ impl ConvertSummary {
         let mut edges = Vec::new();
 
         debug!("=> dest {:?}", dest);
+        dest.push("taut".to_string());
+        debug!("=> dest (taut) {:?}", dest);
 
         let mut index = 0;
         for callee_fact in callee_facts.iter() {
@@ -475,7 +477,7 @@ impl ConvertSummary {
                 .get(index)
                 .context("Cannot find var for caller_fact")?;
 
-            if caller_fact.var_is_taut || dest.contains(&caller_fact.belongs_to_var) {
+            if dest.contains(&caller_fact.belongs_to_var) {
                 edges.push(Edge::CallToReturn {
                     from: caller_fact.clone().clone(),
                     to: callee_fact.clone().clone(),
@@ -714,11 +716,11 @@ impl ConvertSummary {
 
                         let call_flow =
                             self.call_flow(program, function, callee, params, dest, graph, pc)?;
-    
-    
+
                         let return_sites = summary_edge.iter().filter(|x| {
-                            x.get_from().belongs_to_var == d2.belongs_to_var && x.get_from().pc == d2.pc &&
-                            x.to().pc == d2.pc + 1
+                            x.get_from().belongs_to_var == d2.belongs_to_var
+                                && x.get_from().pc == d2.pc
+                                && x.to().pc == d2.pc + 1
                         });
 
                         for d3 in call_flow.iter().chain(return_sites) {
@@ -746,7 +748,6 @@ impl ConvertSummary {
                             debug!("Normal flow {:?}", f);
                             let to = f.to();
 
-                            // TODO
                             graph.edges.push(f.clone());
 
                             self.propagate(
@@ -791,7 +792,8 @@ impl ConvertSummary {
 
                 debug!("End Summary {:#?}", end_summary);
 
-                // Incoming
+                // Incoming has as key the beginning of procedure
+                // The values are the callers of the procedure.
                 if let Some(incoming) =
                     incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
                 {
@@ -804,14 +806,15 @@ impl ConvertSummary {
                             .context("Cannot find function")?
                             .instructions;
 
-                        let ret_vals = self.return_val(
-                            &d4.function,
-                            &d2.function,
-                            d4.pc,
-                            d2.pc,
-                            &instructions,
-                            graph,
-                        )?;
+                        let ret_vals = self
+                            .return_val(
+                                &d4.function,
+                                &d2.function,
+                                d4.pc,
+                                d2.pc,
+                                &instructions,
+                                graph,
+                            )?;
 
                         debug!("Exit-To-Return edges are {:#?}", ret_vals);
 
@@ -823,7 +826,8 @@ impl ConvertSummary {
 
                         debug!("Return facts {:#?}", return_site_facts);
 
-                        for calling_edge in ret_vals.into_iter() {
+                        for calling_edge in ret_vals.into_iter()
+                            .filter(|x| x.to().belongs_to_var == d4.belongs_to_var) {
                             debug!("Handling edge {:#?}", calling_edge);
 
                             let return_site_fact_of_caller = return_site_facts
