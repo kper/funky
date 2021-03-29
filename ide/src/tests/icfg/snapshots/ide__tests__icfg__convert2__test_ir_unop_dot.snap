@@ -31,12 +31,15 @@ expression: output
 		\path[->] (0) edge (3);
 		\path[->] (4) edge (7);
 		\path[->] (4) edge (8);
+		\path[->] (4) edge (7);
+		\path[->] (4) edge (8);
 		\path[->] (3) edge (6);
 		\path[->] (7) edge (10);
 		\path[->] (7) edge (11);
 		\path[->] (6) edge (9);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (4);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (3);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (8);

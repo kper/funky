@@ -35,11 +35,13 @@ expression: output
 \node[font=\tiny] (note_3) at (3.5, 0.5) {Return([0])};
 		\path[->] (0) edge (4);
 		\path[->] (5) edge (9);
+		\path[->] (5) edge (9);
 		\path[->] (4) edge (8);
 		\path[->] (17) edge (20);
 		\path[->] (16) edge (19);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (5);
+		\path[->, blue] (0) [bend right] edge  node { } (5);
 		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (9);
 		\path[->, blue] (0) [bend right] edge  node { } (8);

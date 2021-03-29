@@ -50,6 +50,14 @@ impl ConvertSummary {
         let instruction = instructions.get(pc).context("Cannot find instr")?;
         debug!("Next instruction is {:?}", instruction);
 
+        let init_fact = graph
+            .facts
+            .iter()
+            .find(|x| {
+                x.function == function.name && x.pc == 0 && &x.belongs_to_var == &"taut".to_string()
+            })
+            .context("Cannot find taut")?;
+
         match instruction {
             Instruction::Const(reg, _) => {
                 let before2 = graph
@@ -67,8 +75,12 @@ impl ConvertSummary {
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
-                        to: a,
+                        to: a.clone(),
                         curved: false,
+                    });
+                    edges.push(Edge::Path {
+                        from: init_fact.clone(),
+                        to: a,
                     });
                 }
             }
@@ -88,8 +100,12 @@ impl ConvertSummary {
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
-                        to: a,
+                        to: a.clone(),
                         curved: false,
+                    });
+                    edges.push(Edge::Path {
+                        from: init_fact.clone(),
+                        to: a,
                     });
                 }
             }
@@ -109,8 +125,12 @@ impl ConvertSummary {
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
-                        to: a,
+                        to: a.clone(),
                         curved: false,
+                    });
+                    edges.push(Edge::Path {
+                        from: init_fact.clone(),
+                        to: a,
                     });
                 }
             }
@@ -130,8 +150,12 @@ impl ConvertSummary {
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
-                        to: a,
+                        to: a.clone(),
                         curved: false,
+                    });
+                    edges.push(Edge::Path {
+                        from: init_fact.clone(),
+                        to: a,
                     });
                 }
             }
@@ -467,9 +491,7 @@ impl ConvertSummary {
 
         debug!("Caller facts {:#?}", caller_facts);
 
-        let mut caller_facts = caller_facts
-            .into_iter()
-            .collect::<Vec<_>>();
+        let mut caller_facts = caller_facts.into_iter().collect::<Vec<_>>();
         //let callee_facts = graph.get_facts_at(callee_function, callee_pc)?;
 
         // Cannot query all facts, because some vars might not exist anymore
@@ -862,9 +884,7 @@ impl ConvertSummary {
                         debug!("Exit-To-Return edges are {:#?}", ret_vals);
 
                         // Use only `d4`'s var
-                        let ret_vals = ret_vals
-                            .into_iter()
-                            .collect::<Vec<_>>();
+                        let ret_vals = ret_vals.into_iter().collect::<Vec<_>>();
 
                         debug!("Exit-To-Return edges (filtered) are {:#?}", ret_vals);
 
@@ -892,7 +912,9 @@ impl ConvertSummary {
                                 let edges: Vec<_> = path_edge
                                     .iter()
                                     .filter(|x| {
-                                        x.to() == d4 && &x.get_from().function == &d4.function && x.get_from().pc == 0
+                                        x.to() == d4
+                                            && &x.get_from().function == &d4.function
+                                            && x.get_from().pc == 0
                                     })
                                     .cloned()
                                     .collect();
