@@ -17,7 +17,6 @@ expression: output
                     ]
 
                     \node[circle,fill,inner sep=1pt,label=left:\%2] (15) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:\%1] (14) at (2, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (13) at (1, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (12) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (9) at (1, 2) { };
@@ -46,10 +45,9 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (9);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
 		\path[->, blue] (17) [loop right] edge  node { } (17);
-		\path[->, blue] (0) [bend right] edge  node { } (12);
 		\path[->, blue] (0) [bend right] edge  node { } (13);
-		\path[->, blue] (0) [bend right] edge  node { } (14);
 		\path[->, blue] (16) [loop right] edge  node { } (16);
+		\path[->, blue] (0) [bend right] edge  node { } (12);
 		\path[->, blue] (17) [bend right] edge  node { } (20);
 		\path[->, blue] (16) [bend right] edge  node { } (19);
 		\path[->, blue] (0) [bend right] edge  node { } (15);

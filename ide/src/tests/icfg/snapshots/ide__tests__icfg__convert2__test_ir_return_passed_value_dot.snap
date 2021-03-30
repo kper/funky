@@ -37,14 +37,12 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (3);
 		\path[->, blue] (10) [loop right] edge  node { } (10);
-		\path[->, blue] (0) [bend right] edge  node { } (6);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (9) [loop right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (6);
 		\path[->, blue] (10) [bend right] edge  node { } (13);
 		\path[->, blue] (9) [bend right] edge  node { } (12);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
-		\path[->, red] (4) [bend left] edge  node { } (6);
-		\path[->, red] (4) [bend left] edge  node { } (8);
 		\path[->, red] (4) [bend left] edge  node { } (6);
 		\path[->, red] (4) [bend left] edge  node { } (8);
 
