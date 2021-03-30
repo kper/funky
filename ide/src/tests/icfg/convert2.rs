@@ -33,7 +33,7 @@ fn test_ir_const() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
 
     ir!(
@@ -52,7 +52,7 @@ fn test_ir_double_assign() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_double_const",
@@ -73,7 +73,7 @@ fn test_ir_unop() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_unop",
@@ -91,7 +91,7 @@ fn test_ir_binop() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_binop",
@@ -110,7 +110,7 @@ fn test_ir_killing_op() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_killing_op",
@@ -125,13 +125,12 @@ fn test_ir_killing_op() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_block() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 2,
+        pc: 0,
     };
     ir!(
         "test_ir_block",
@@ -152,7 +151,7 @@ fn test_ir_if_else() {
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
-        pc: 2,
+        pc: 1,
     };
     ir!(
         "test_ir_if_else",
@@ -181,7 +180,7 @@ fn test_ir_if() {
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
-        pc: 2,
+        pc: 0,
     };
     ir!(
         "test_ir_if",
@@ -203,7 +202,7 @@ fn test_ir_loop() {
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
-        pc: 2,
+        pc: 0,
     };
     ir!(
         "test_ir_loop",
@@ -223,7 +222,7 @@ fn test_ir_table() {
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
-        pc: 2,
+        pc: 0,
     };
     ir!(
         "test_ir_table",
@@ -249,7 +248,7 @@ fn test_ir_functions() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_functions",
@@ -271,7 +270,7 @@ fn test_ir_return_values() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return_values",
@@ -293,7 +292,7 @@ fn test_ir_return_passed_value() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return_passed_value",
@@ -313,7 +312,7 @@ fn test_ir_return_values2() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return_values2",
@@ -335,7 +334,7 @@ fn test_ir_return_values3() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return_values3",
@@ -356,7 +355,7 @@ fn test_ir_overwrite_return_values() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_overwrite_return_values",
@@ -378,7 +377,7 @@ fn test_ir_early_return() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_early_return",
@@ -408,7 +407,7 @@ fn test_ir_return_double() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return",
@@ -433,7 +432,7 @@ fn test_ir_return_branches() {
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_return_branches",

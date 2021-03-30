@@ -45,121 +45,157 @@ impl ConvertSummary {
 
         let mut edges = Vec::new();
 
+        // We need the offset, because not every
+        // instruction is taintable. For example BLOCK and JUMP
+        // have no registers. That's why skip to the next one.
+        let mut offset = 0;
         let instructions = &function.instructions;
 
-        let instruction = instructions.get(pc).context("Cannot find instr")?;
-        debug!("Next instruction is {:?}", instruction);
+        loop {
+            let pc = pc + offset;
+            let instruction = instructions.get(pc).context("Cannot find instr")?;
+            debug!("Next instruction is {:?}", instruction);
 
-        let init_fact = graph
-            .facts
-            .iter()
-            .find(|x| {
-                x.function == function.name && x.pc == pc && &x.belongs_to_var == &"taut".to_string()
-            })
-            .context("Cannot find taut")?;
+            let init_fact = graph
+                .facts
+                .iter()
+                .find(|x| x.function == function.name && x.pc == pc && x.var_is_taut)
+                .context("Cannot find taut")?;
 
-        match instruction {
-            Instruction::Const(reg, _) => {
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| x.var_is_taut)
-                    .cloned();
+            match instruction {
+                Instruction::Const(reg, _) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
 
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == reg)
-                    .cloned();
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == reg)
+                        .cloned();
 
-                for (b, a) in before2.zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a.clone(),
-                        curved: false,
-                    });
-                    edges.push(Edge::Path {
-                        from: init_fact.clone(),
-                        to: a,
-                    });
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
                 }
-            }
-            Instruction::Assign(dest, _src) => {
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| x.var_is_taut)
-                    .cloned();
+                Instruction::Assign(dest, _src) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
 
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == dest)
-                    .cloned();
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == dest)
+                        .cloned();
 
-                for (b, a) in before2.zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a.clone(),
-                        curved: false,
-                    });
-                    edges.push(Edge::Path {
-                        from: init_fact.clone(),
-                        to: a,
-                    });
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
                 }
-            }
-            Instruction::Unop(dest, _src) => {
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| x.var_is_taut)
-                    .cloned();
+                Instruction::Unop(dest, _src) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
 
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == dest)
-                    .cloned();
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == dest)
+                        .cloned();
 
-                for (b, a) in before2.zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a.clone(),
-                        curved: false,
-                    });
-                    edges.push(Edge::Path {
-                        from: init_fact.clone(),
-                        to: a,
-                    });
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
                 }
-            }
-            Instruction::BinOp(dest, _src, _src2) => {
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| x.var_is_taut)
-                    .cloned();
+                Instruction::BinOp(dest, _src, _src2) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
 
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == dest)
-                    .cloned();
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == dest)
+                        .cloned();
 
-                for (b, a) in before2.zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a.clone(),
-                        curved: false,
-                    });
-                    edges.push(Edge::Path {
-                        from: init_fact.clone(),
-                        to: a,
-                    });
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
                 }
+                Instruction::Block(_) | Instruction::Jump(_) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
+
+                    offset += 1;
+
+                    continue;
+                }
+                _ => {}
             }
-            _ => {}
+
+            break;
         }
 
         Ok(edges)
@@ -648,6 +684,7 @@ impl ConvertSummary {
             &mut worklist,
             &mut summary_edge,
             &mut graph,
+            req.pc,
         )?;
 
         Ok(())
@@ -678,6 +715,7 @@ impl ConvertSummary {
         worklist: &mut VecDeque<Edge>,
         summary_edge: &mut Vec<Edge>,
         graph: &mut Graph,
+        start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
