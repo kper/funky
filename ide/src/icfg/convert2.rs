@@ -15,15 +15,20 @@ use crate::ir::ast::Program;
 
 use crate::icfg::graph2::Edge;
 
+type FunctionName = String;
+type BlockNum = String;
+
 #[derive(Debug)]
 pub struct ConvertSummary {
     block_counter: Counter,
+    block_resolver: HashMap<(FunctionName, BlockNum), usize>,
 }
 
 impl ConvertSummary {
     pub fn new() -> Self {
         Self {
             block_counter: Counter::default(),
+            block_resolver: HashMap::new(),
         }
     }
 
@@ -415,6 +420,29 @@ impl ConvertSummary {
             Instruction::Kill(reg) if variable == reg => {
                 // kill
             }
+            Instruction::Jump(block) => {
+                let jump_to_pc = self.block_resolver.get(&(function.name.clone(), block.clone())).context("Cannot find block to jump to")?;
+
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, *jump_to_pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
             _ => {
                 // Identity
                 let before2 = graph
@@ -444,12 +472,11 @@ impl ConvertSummary {
 
     /// Computes call-to-start edges
     fn pass_args(
-        &self,
+        &mut self,
         program: &Program,
         caller_function: &AstFunction,
         callee_function: &String,
         params: &Vec<String>,
-        dests: &Vec<String>,
         graph: &mut Graph,
         current_pc: usize,
         caller_var: &String,
@@ -474,6 +501,7 @@ impl ConvertSummary {
         // Init facts of the called function
         // Start from the beginning.
         let init_facts = graph.init_function(callee_function, 0)?;
+        self.resolve_block_ids(&callee_function)?;
 
         // Filter by variable
         let callee_fact = init_facts
@@ -684,7 +712,6 @@ impl ConvertSummary {
             &mut worklist,
             &mut summary_edge,
             &mut graph,
-            req.pc,
         )?;
 
         Ok(())
@@ -707,18 +734,42 @@ impl ConvertSummary {
         Ok(())
     }
 
+    /// Iterates over all instructions and remembers the pc of a
+    /// BLOCK declaration. Then saves it into `block_resolver`.
+    /// Those values will be used for JUMP instructions.
+    fn resolve_block_ids(&mut self, function: &AstFunction) -> Result<()> {
+        for (pc, instruction) in function
+            .instructions
+            .iter()
+            .enumerate()
+            .filter(|x| matches!(x.1, Instruction::Block(_)))
+        {
+            match instruction {
+                Instruction::Block(block) => {
+                    self.block_resolver.insert((function.name.clone(), block.clone()), pc);
+                }
+                _ => {
+                    bail!("This code should be unreachable.");
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     fn forward(
-        &self,
+        &mut self,
         program: &Program,
         function: &AstFunction,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
         summary_edge: &mut Vec<Edge>,
         graph: &mut Graph,
-        start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
+
+        self.resolve_block_ids(&function)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
@@ -746,7 +797,7 @@ impl ConvertSummary {
                         // the parameter and `d1` doesn't matter here
                         let caller_var = &d2.belongs_to_var;
                         let call_edges = self.pass_args(
-                            program, function, callee, params, dest, graph, d2.pc, caller_var,
+                            program, function, callee, params, graph, d2.pc, caller_var,
                         )?;
 
                         for d3 in call_edges.into_iter() {
