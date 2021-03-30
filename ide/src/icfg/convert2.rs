@@ -208,7 +208,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Const(_reg, _) =>  {
+            Instruction::Const(_reg, _) => {
                 //kill
             }
             Instruction::Assign(dest, src) if src == variable => {
@@ -534,24 +534,6 @@ impl ConvertSummary {
             });
         }
 
-        /*
-        for caller_fact in caller_facts.iter() {
-            let callee_fact = callee_facts
-                .get(index)
-                .context("Cannot find var for caller_fact")?;
-
-            if dest.contains(&caller_fact.belongs_to_var) {
-                edges.push(Edge::Return {
-                    to: caller_fact.clone().clone(),
-                    from: callee_fact.clone().clone(),
-                });
-            }
-
-            index += 1;
-
-        }
-        */
-
         Ok(edges)
     }
 
@@ -565,12 +547,17 @@ impl ConvertSummary {
         dests: &Vec<String>,
         graph: &mut Graph,
         pc: usize,
+        caller: &String,
     ) -> Result<Vec<Edge>> {
-        debug!("Generating call-to-return edges for {}", callee);
+        debug!(
+            "Generating call-to-return edges for {} ({})",
+            callee, caller
+        );
 
         let before: Vec<_> = graph
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
+            .filter(|x| &x.belongs_to_var == caller)
             .map(|x| x.clone())
             .collect();
         debug!("Facts before statement {}", before.len());
@@ -581,6 +568,7 @@ impl ConvertSummary {
 
         let after: Vec<_> = after
             .into_iter()
+            .filter(|x| &x.belongs_to_var == caller)
             .filter(|x| !dests.contains(&x.belongs_to_var))
             .collect();
 
@@ -590,16 +578,22 @@ impl ConvertSummary {
         debug!("after {:#?}", after);
 
         let mut edges = Vec::with_capacity(after.len());
-        for fact in after {
-            let b = before
+        for fact in before {
+            let b = after
                 .iter()
-                .find(|x| x.belongs_to_var == fact.belongs_to_var)
-                .context("Variable mismatch.")?;
+                .find(|x| x.belongs_to_var == fact.belongs_to_var);
 
-            edges.push(Edge::CallToReturn {
-                from: b.clone().clone(),
-                to: fact.clone(),
-            });
+            if let Some(b) = b {
+                edges.push(Edge::CallToReturn {
+                    from: fact.clone(),
+                    to: b.clone().clone(),
+                });
+            } else {
+                debug!(
+                    "Skipping CallToReturn edge for {} because no match",
+                    fact.belongs_to_var
+                );
+            }
         }
 
         Ok(edges)
@@ -637,6 +631,7 @@ impl ConvertSummary {
 
         // Compute init flows
 
+        //TODO replace pc
         let init_normal_flows = self.compute_init_flows(function, graph, 0)?;
 
         for edge in init_normal_flows.into_iter() {
@@ -714,7 +709,7 @@ impl ConvertSummary {
                         )?;
 
                         for d3 in call_edges.into_iter() {
-                            debug!("d3 {:?}", d3);
+                            debug!("d3 {:#?}", d3);
 
                             self.propagate(
                                 path_edge,
@@ -740,7 +735,9 @@ impl ConvertSummary {
                                 d3.to().pc,
                                 d3.to().belongs_to_var.clone(),
                             )) {
-                                incoming.push(d2.clone());
+                                if !incoming.contains(&d2) {
+                                    incoming.push(d2.clone());
+                                }
                             } else {
                                 incoming.insert(
                                     (
@@ -770,7 +767,7 @@ impl ConvertSummary {
                                     )? {
                                         summary_edge.push(Edge::Summary {
                                             from: d2.clone(),
-                                            to: d5.get_from().clone(), //return_site is d5.get_from?
+                                            to: d5.get_from().clone(),
                                         });
                                     }
                                 }
@@ -779,8 +776,16 @@ impl ConvertSummary {
                             debug!("End summary {:#?}", end_summary);
                         }
 
-                        let call_flow =
-                            self.call_flow(program, function, callee, params, dest, graph, pc)?;
+                        let call_flow = self.call_flow(
+                            program,
+                            function,
+                            callee,
+                            params,
+                            dest,
+                            graph,
+                            pc,
+                            &d2.belongs_to_var,
+                        )?;
 
                         let return_sites = summary_edge.iter().filter(|x| {
                             x.get_from().belongs_to_var == d2.belongs_to_var

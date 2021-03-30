@@ -8,6 +8,9 @@ use anyhow::{Context, Result};
 use log::debug;
 use std::collections::{HashMap, VecDeque};
 
+use std::collections::HashSet;
+use std::iter::FromIterator;
+
 type VarId = String;
 type FunctionName = String;
 
@@ -31,7 +34,7 @@ pub struct Note {
     pub note: String,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Fact {
     pub id: usize,
     pub belongs_to_var: VarId,
