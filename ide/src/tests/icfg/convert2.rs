@@ -106,6 +106,24 @@ fn test_ir_binop() {
 }
 
 #[test]
+fn test_ir_phi() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_phi",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = phi %0 %1
+        };"
+    );
+}
+
+#[test]
 fn test_ir_killing_op() {
     let req = Request {
         variable: "%0".to_string(),

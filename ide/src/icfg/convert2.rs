@@ -222,6 +222,31 @@ impl ConvertSummary {
 
                     continue;
                 }
+                Instruction::Phi(dest ,_src1, _src2) => {
+                let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == dest)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
+                }
                 _ => {}
             }
 
@@ -548,6 +573,77 @@ impl ConvertSummary {
                         });
                     }
                 }
+            }
+            Instruction::Phi(dest, src1, _src2) if src1 == variable => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
+                    //.filter(|x| &x.belongs_to_var != dest)
+                    .cloned();
+
+                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Phi(dest, _src1, src2) if src2 == variable => {
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
+                    //.filter(|x| &x.belongs_to_var != dest)
+                    .cloned();
+
+                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Phi(dest, src1, src2)
+                if dest != variable && src1 != variable && src2 != variable =>
+            {
+                // Identity
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Phi(_dest, _src, _src2) => {
+                // kill
             }
             _ => {
                 // Identity
