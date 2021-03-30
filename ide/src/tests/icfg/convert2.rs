@@ -145,7 +145,6 @@ fn test_ir_block() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_if_else() {
     let req = Request {

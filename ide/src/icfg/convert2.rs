@@ -421,7 +421,10 @@ impl ConvertSummary {
                 // kill
             }
             Instruction::Jump(block) => {
-                let jump_to_pc = self.block_resolver.get(&(function.name.clone(), block.clone())).context("Cannot find block to jump to")?;
+                let jump_to_pc = self
+                    .block_resolver
+                    .get(&(function.name.clone(), block.clone()))
+                    .context("Cannot find block to jump to")?;
 
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
@@ -439,8 +442,36 @@ impl ConvertSummary {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
-                        curved: false,
+                        curved: true,
                     });
+                }
+            }
+            Instruction::Conditional(reg, jumps) => {
+                for block in jumps.iter() {
+                    let jump_to_pc = self
+                        .block_resolver
+                        .get(&(function.name.clone(), block.clone()))
+                        .context("Cannot find block to jump to")?;
+
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, *jump_to_pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a,
+                            curved: true,
+                        });
+                    }
                 }
             }
             _ => {
@@ -746,7 +777,8 @@ impl ConvertSummary {
         {
             match instruction {
                 Instruction::Block(block) => {
-                    self.block_resolver.insert((function.name.clone(), block.clone()), pc);
+                    self.block_resolver
+                        .insert((function.name.clone(), block.clone()), pc);
                 }
                 _ => {
                     bail!("This code should be unreachable.");
