@@ -446,7 +446,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Conditional(reg, jumps) => {
+            Instruction::Conditional(_reg, jumps) => {
                 for block in jumps.iter() {
                     let jump_to_pc = self
                         .block_resolver
@@ -531,8 +531,9 @@ impl ConvertSummary {
 
         // Init facts of the called function
         // Start from the beginning.
-        let init_facts = graph.init_function(callee_function, 0)?;
-        self.resolve_block_ids(&callee_function)?;
+        let start_pc = 0;
+        let init_facts = graph.init_function(callee_function, start_pc)?;
+        self.resolve_block_ids(&callee_function, start_pc)?;
 
         // Filter by variable
         let callee_fact = init_facts
@@ -743,6 +744,7 @@ impl ConvertSummary {
             &mut worklist,
             &mut summary_edge,
             &mut graph,
+            req.pc,
         )?;
 
         Ok(())
@@ -768,11 +770,12 @@ impl ConvertSummary {
     /// Iterates over all instructions and remembers the pc of a
     /// BLOCK declaration. Then saves it into `block_resolver`.
     /// Those values will be used for JUMP instructions.
-    fn resolve_block_ids(&mut self, function: &AstFunction) -> Result<()> {
+    fn resolve_block_ids(&mut self, function: &AstFunction, start_pc: usize) -> Result<()> {
         for (pc, instruction) in function
             .instructions
             .iter()
             .enumerate()
+            .skip(start_pc)
             .filter(|x| matches!(x.1, Instruction::Block(_)))
         {
             match instruction {
@@ -797,11 +800,12 @@ impl ConvertSummary {
         worklist: &mut VecDeque<Edge>,
         summary_edge: &mut Vec<Edge>,
         graph: &mut Graph,
+        start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
-        self.resolve_block_ids(&function)?;
+        self.resolve_block_ids(&function, start_pc)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);

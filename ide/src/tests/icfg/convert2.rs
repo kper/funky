@@ -150,7 +150,7 @@ fn test_ir_if_else() {
     let req = Request {
         variable: "%0".to_string(),
         function: "main".to_string(),
-        pc: 1,
+        pc: 0,
     };
     ir!(
         "test_ir_if_else",
