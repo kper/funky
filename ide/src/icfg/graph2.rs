@@ -20,7 +20,6 @@ pub struct Graph {
     pub functions: HashMap<FunctionName, Function>,
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
-    pub pc_counter: Counter,
     pub notes: Vec<Note>,
     fact_counter: Counter,
     note_counter: Counter,
@@ -370,8 +369,6 @@ impl Graph {
 
             index += 1;
         }
-
-        self.pc_counter.get();
 
         Ok(facts)
     }
