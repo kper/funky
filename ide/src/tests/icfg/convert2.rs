@@ -212,7 +212,6 @@ fn test_ir_if() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_loop() {
     let req = Request {
