@@ -277,7 +277,7 @@ impl Graph {
         Ok(())
     }
 
-    pub fn init_function(&mut self, function: &AstFunction) -> Result<Vec<Fact>> {
+    pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
 
         if let Some(function) = self.functions.get(&function.name) {
@@ -287,7 +287,7 @@ impl Graph {
             return Ok(self
                 .facts
                 .iter()
-                .filter(|x| x.function == function.name && x.pc == 0)
+                .filter(|x| x.function == function.name && x.pc == pc)
                 .cloned()
                 .collect());
         }
@@ -327,7 +327,7 @@ impl Graph {
         }
 
         let facts = self
-            .init_facts(function, &mut variables)
+            .init_facts(function, &mut variables, pc)
             .context("Cannot initialize facts")?;
 
         self.vars.insert(function.name.clone(), variables);
@@ -345,6 +345,7 @@ impl Graph {
         &mut self,
         function: &AstFunction,
         variables: &mut Vec<Variable>,
+        pc: usize,
     ) -> Result<Vec<Fact>> {
         debug!("Initializing facts for function {}", function.name);
 
@@ -358,7 +359,7 @@ impl Graph {
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
-                pc: 0,
+                pc,
                 is_return: false,
                 track: index,
                 function: function.name.clone(),
@@ -515,7 +516,7 @@ mod test {
                 name: "main".to_string(),
                 definitions: vec!["%0".to_string()],
                 ..Default::default()
-            })
+            }, 0)
             .unwrap();
 
         assert_eq!(2, graph.facts.len());
@@ -531,7 +532,7 @@ mod test {
                 name: "main".to_string(),
                 definitions: vec!["%-1".to_string(), "%0".to_string()],
                 ..Default::default()
-            })
+            }, 0)
             .unwrap();
 
         assert_eq!(3, graph.vars.get(&"main".to_string()).unwrap().len());

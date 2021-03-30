@@ -54,7 +54,7 @@ impl ConvertSummary {
             .facts
             .iter()
             .find(|x| {
-                x.function == function.name && x.pc == 0 && &x.belongs_to_var == &"taut".to_string()
+                x.function == function.name && x.pc == pc && &x.belongs_to_var == &"taut".to_string()
             })
             .context("Cannot find taut")?;
 
@@ -436,7 +436,8 @@ impl ConvertSummary {
             .context("Cannot find function")?;
 
         // Init facts of the called function
-        let init_facts = graph.init_function(callee_function)?;
+        // Start from the beginning.
+        let init_facts = graph.init_function(callee_function, 0)?;
 
         // Filter by variable
         let callee_fact = init_facts
@@ -616,7 +617,7 @@ impl ConvertSummary {
             return Ok(());
         }
 
-        let facts = graph.init_function(&function)?;
+        let facts = graph.init_function(&function, req.pc)?;
         let init = facts.get(0).unwrap().clone();
 
         let mut path_edge = Vec::new();
@@ -634,8 +635,7 @@ impl ConvertSummary {
 
         // Compute init flows
 
-        //TODO replace pc
-        let init_normal_flows = self.compute_init_flows(function, graph, 0)?;
+        let init_normal_flows = self.compute_init_flows(function, graph, req.pc)?;
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(&mut path_edge, &mut worklist, edge)?;
