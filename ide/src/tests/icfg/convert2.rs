@@ -173,7 +173,6 @@ fn test_ir_if_else() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_if() {
     let req = Request {

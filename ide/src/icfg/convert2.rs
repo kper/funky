@@ -168,6 +168,31 @@ impl ConvertSummary {
                         });
                     }
                 }
+                Instruction::Conditional(reg, _) => {
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| x.var_is_taut)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, pc + 1)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == reg)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a.clone(),
+                            curved: false,
+                        });
+                        edges.push(Edge::Path {
+                            from: init_fact.clone(),
+                            to: a,
+                        });
+                    }
+                }
                 Instruction::Block(_) | Instruction::Jump(_) => {
                     let before2 = graph
                         .get_facts_at(&function.name, pc)?
@@ -434,6 +459,56 @@ impl ConvertSummary {
 
                 let after2 = graph
                     .get_facts_at(&function.name, *jump_to_pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: true,
+                    });
+                }
+            }
+            Instruction::Conditional(_reg, jumps) if jumps.len() == 1 => {
+                // edge case for an `if`
+                // which continues if the condition is not successful
+                for block in jumps.iter() {
+                    let jump_to_pc = self
+                        .block_resolver
+                        .get(&(function.name.clone(), block.clone()))
+                        .context("Cannot find block to jump to")?;
+
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, *jump_to_pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a,
+                            curved: true,
+                        });
+                    }
+                }
+
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after2 = graph
+                    .get_facts_at(&function.name, pc + 1)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
