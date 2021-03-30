@@ -16,23 +16,35 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,inner sep=1pt,label=left:taut] (0) at (0, 0) { 0 };
-\node[circle,inner sep=1pt,label=left:taut] (4) at (0, 1) { 4 };
-\node[circle,inner sep=1pt,label=left:taut] (5) at (0, 2) { 5 };
-\node[circle,inner sep=1pt,label=left:taut] (6) at (0, 3) { 6 };
-\node[circle,inner sep=1pt,label=left:taut] (7) at (0, 4) { 7 };
-\node[circle,inner sep=1pt,label=left:taut] (8) at (0, 5) { 8 };
+                    \node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (16) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (12) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (9) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (5) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (4) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Kill(0)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Kill(1)};
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 1.0)};
+		\path[->] (0) edge (4);
+		\path[->] (5) edge (9);
+		\path[->] (5) edge (9);
+		\path[->] (4) edge (8);
+		\path[->] (8) edge (12);
+		\path[->] (12) edge (16);
+		\path[->] (16) edge (20);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->] (0) edge (5);
 		\path[->, blue] (0) [bend right] edge  node { } (5);
-		\path[->, blue] (0) [bend right] edge  node { } (6);
-		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->, blue] (0) [bend right] edge  node { } (9);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, blue] (0) [bend right] edge  node { } (12);
+		\path[->, blue] (0) [bend right] edge  node { } (16);
+		\path[->, blue] (0) [bend right] edge  node { } (20);
 
 
                 \end{tikzpicture}

@@ -105,7 +105,6 @@ fn test_ir_binop() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_killing_op() {
     let req = Request {

@@ -376,6 +376,9 @@ impl ConvertSummary {
             Instruction::BinOp(_dest, _src, _src2) => {
                 // kill
             }
+            Instruction::Kill(reg) if variable == reg => {
+                // kill
+            }
             _ => {
                 // Identity
                 let before2 = graph
