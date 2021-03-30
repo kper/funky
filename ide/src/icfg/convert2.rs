@@ -222,8 +222,8 @@ impl ConvertSummary {
 
                     continue;
                 }
-                Instruction::Phi(dest ,_src1, _src2) => {
-                let before2 = graph
+                Instruction::Phi(dest, _src1, _src2) => {
+                    let before2 = graph
                         .get_facts_at(&function.name, pc)?
                         .into_iter()
                         .filter(|x| x.var_is_taut)
@@ -644,6 +644,34 @@ impl ConvertSummary {
             }
             Instruction::Phi(_dest, _src, _src2) => {
                 // kill
+            }
+            Instruction::Table(jumps) => {
+                for block in jumps.iter() {
+                    let jump_to_pc = self
+                        .block_resolver
+                        .get(&(function.name.clone(), block.clone()))
+                        .context("Cannot find block to jump to")?;
+
+                    let before2 = graph
+                        .get_facts_at(&function.name, pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after2 = graph
+                        .get_facts_at(&function.name, *jump_to_pc)?
+                        .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    for (b, a) in before2.zip(after2) {
+                        edges.push(Edge::Normal {
+                            from: b,
+                            to: a,
+                            curved: true,
+                        });
+                    }
+                }
             }
             _ => {
                 // Identity
