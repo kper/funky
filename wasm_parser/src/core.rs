@@ -1,3 +1,5 @@
+#![allow(clippy::clippy::upper_case_acronyms)]
+
 use custom_display::CustomDisplay;
 use serde::{Deserialize, Serialize};
 

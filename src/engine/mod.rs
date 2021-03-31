@@ -341,11 +341,11 @@ impl Engine {
                     .get(ty as usize)
                     .ok_or_else(|| anyhow!("Global not found"))?;
 
-                return Ok(self
+                Ok(self
                     .store
                     .get_global_instance(&global_addr)
                     .context("Global not found in the store")?
-                    .val);
+                    .val)
             }
             _ => Err(anyhow!("Exported global not found")),
         }
@@ -370,9 +370,7 @@ impl Engine {
 
     /// Get function's instance by addr
     pub fn get_function_instance(&self, addr: &FuncAddr) -> Result<&FuncInstance> {
-            self
-            .store
-            .get_func_instance(addr)
+        self.store.get_func_instance(addr)
     }
 
     /// Take only exported functions into consideration
@@ -396,7 +394,7 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = self.get_function_addr_by_index(ty)?; 
+                let func_addr = self.get_function_addr_by_index(ty)?;
 
                 self.invoke_function(&func_addr, args)
                     .context("Invoking the function failed")?;
@@ -434,11 +432,8 @@ impl Engine {
         self.check_parameters_of_function(func_addr, &args)
             .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
-        let count_return_types = self
-            .get_function_instance(func_addr)?
-            .ty
-            .return_types
-            .len() as u32;
+        let count_return_types =
+            self.get_function_instance(func_addr)?.ty.return_types.len() as u32;
 
         let typed_locals = &self.store.get_func_instance(func_addr)?.code.locals;
 
