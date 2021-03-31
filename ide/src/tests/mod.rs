@@ -1,4 +1,4 @@
 mod ir;
 mod icfg;
-//mod integration;
+mod integration;
 //mod solver;

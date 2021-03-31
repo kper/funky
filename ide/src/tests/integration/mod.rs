@@ -1,13 +1,14 @@
+use crate::ir::wasm_ast::IR;
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
 use insta::assert_snapshot;
-use wasm_parser::{parse, read_wasm};
 use validation::validate;
-use crate::ir::wasm_ast::IR;
+use wasm_parser::{parse, read_wasm};
 
-use crate::icfg::convert::Convert;
-use crate::icfg::tikz::render_to;
 use crate::grammar::*;
+use crate::icfg::convert2::ConvertSummary;
+use crate::icfg::tikz::render_to;
+use crate::solver::Request;
 
 macro_rules! wasm {
     ($input:expr) => {{
@@ -37,23 +38,25 @@ macro_rules! wasm {
 
 macro_rules! run {
     ($name:expr, $fs:expr) => {
-
         let ir = wasm!($fs);
 
         let ir_code = ir.buffer();
 
-        let mut convert = Convert::new();
+        let mut convert = ConvertSummary::new();
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 
-        let graph = convert.visit(&prog).unwrap();
+        let req = Request {
+            function: "0".to_string(),
+            variable: None,
+            pc: 0,
+        };
+
+        let graph = convert.visit(&prog, &req).unwrap();
 
         let output = render_to(&graph);
 
-        assert_snapshot!(
-            format!("{}", $name),
-            output
-        );
+        assert_snapshot!(format!("{}", $name), output);
     };
 }
 
