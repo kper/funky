@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-#![allow(clippy::upper-case-acronyms)]
+#![allow(clippy::upper_case_acronyms)]
 
 pub(crate) mod export;
 pub mod func;
