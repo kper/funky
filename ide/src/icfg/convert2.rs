@@ -743,7 +743,6 @@ impl ConvertSummary {
         }
 
         // After here, checked that the caller_var is relevant
-
         let callee_function = program
             .functions
             .iter()
@@ -759,10 +758,14 @@ impl ConvertSummary {
         // Filter by variable
         let callee_fact = init_facts
             .iter()
-            .find(|x| &x.belongs_to_var == caller_var) 
+            .find(|x| &x.belongs_to_var == caller_var)
             .context("Cannot find callee's fact")?;
 
         // Last caller facts
+        debug!(
+            "caller {} with current_pc {}",
+            caller_function.name, current_pc
+        );
         let caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
 
         // Filter by variable
@@ -830,7 +833,7 @@ impl ConvertSummary {
             .context("Cannot find first statement's pc of callee")
             .unwrap_or(0);
 
-            /* 
+        /*
         debug!(
             "graph {:#?}",
             graph
@@ -964,10 +967,15 @@ impl ConvertSummary {
         let mut worklist = VecDeque::new();
         let mut summary_edge = Vec::new();
 
-        self.propagate(graph, &mut path_edge, &mut worklist, Edge::Path {
-            from: init.clone(),
-            to: init.clone()
-        })?;
+        self.propagate(
+            graph,
+            &mut path_edge,
+            &mut worklist,
+            Edge::Path {
+                from: init.clone(),
+                to: init.clone(),
+            },
+        )?;
 
         // Compute init flows
         let init_normal_flows = self.compute_init_flows(function, graph, req.pc)?;
@@ -1075,9 +1083,21 @@ impl ConvertSummary {
                         // This is so on purpose, because this will become
                         // the parameter and `d1` doesn't matter here
                         let caller_var = &d2.belongs_to_var;
-                        let call_edges = self.pass_args(
-                            program, function, callee, params, graph, d2.pc, caller_var,
-                        )?;
+
+                        let caller_function = &program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d1.function)
+                            .context("Cannot find function for the caller")?;
+
+                        let call_edges = self
+                            .pass_args(program, caller_function, callee, params, graph, d2.pc, caller_var)
+                            .with_context(|| {
+                                format!(
+                                    "Error occured during `pass_args` for function {} at {}",
+                                    callee, pc
+                                )
+                            })?;
 
                         for d3 in call_edges.into_iter() {
                             debug!("d3 {:#?}", d3);
@@ -1310,7 +1330,7 @@ impl ConvertSummary {
         // this is E_p
         debug!("=> Reached end of procedure");
 
-        assert_eq!(d1.function, d2.function);
+        //assert_eq!(d1.function, d2.function);
 
         // Summary
         if let Some(end_summary) =

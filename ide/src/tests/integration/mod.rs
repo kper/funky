@@ -77,6 +77,18 @@ fn test_fib() {
 }
 
 #[test]
+fn test_fib_func_1() {
+    env_logger::init();
+    let req = Request {
+        function: "1".to_string(),
+        variable: None,
+        pc: 0,
+    };
+
+    run!("fib", req, "../tests/fib.wasm");
+}
+
+#[test]
 fn test_fac() {
     let req = Request {
         function: "0".to_string(),

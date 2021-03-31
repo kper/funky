@@ -3,12 +3,12 @@
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    pub(crate) functions: Vec<Function>
+    pub functions: Vec<Function>
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct Function {
-    pub(crate) name: String,
+    pub name: String,
     pub(crate) params: Vec<String>,
     pub(crate) definitions: Vec<String>,
     pub(crate) results_len: usize,
