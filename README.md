@@ -116,6 +116,4 @@ cargo run --bin hustensaft -- ./testsuite/block.0.wasm "break-bare"
 
 ## Wait, there is more
 
-You will find a custom debugger in `debugger` and there are also performance counters in the folder `wolkentreiber`.
-
-![Wolkentreiber](wolkentreiber.png)
+You will find a custom debugger in `debugger`.
