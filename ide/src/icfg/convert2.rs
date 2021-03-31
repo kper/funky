@@ -759,7 +759,7 @@ impl ConvertSummary {
         // Filter by variable
         let callee_fact = init_facts
             .iter()
-            .find(|x| &x.belongs_to_var == caller_var) //TODO is caller_var correct?
+            .find(|x| &x.belongs_to_var == caller_var) 
             .context("Cannot find callee's fact")?;
 
         // Last caller facts

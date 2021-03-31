@@ -283,13 +283,23 @@ impl Graph {
         if let Some(function) = self.functions.get(&function.name) {
             debug!("Function was already initialized");
 
-            // Return the first facts of the function.
-            return Ok(self
-                .facts
-                .iter()
-                .filter(|x| x.function == function.name && x.pc == pc)
-                .cloned()
-                .collect());
+            // Handle edge case when the smallest fact greater than `pc`.
+            // This might happen if you the user starts the analysis from not `0`,
+            // but there is a self recursive call.
+
+            let min_pc = self.facts.iter().filter(|x| x.function == function.name).map(|x| x.pc).min().context("No facts found")?;
+
+            if min_pc <= pc {
+                // no self recursion
+
+                // Return the first facts of the function.
+                return Ok(self
+                    .facts
+                    .iter()
+                    .filter(|x| x.function == function.name && x.pc == pc)
+                    .cloned()
+                    .collect());
+                }
         }
 
         self.init_function_def(function)?;

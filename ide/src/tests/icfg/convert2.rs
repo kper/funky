@@ -442,7 +442,6 @@ fn test_ir_return_double() {
 
 #[test]
 fn test_ir_return_branches() {
-    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -467,6 +466,27 @@ fn test_ir_return_branches() {
             %2 = 4
             GOTO 3
             BLOCK 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_self_loop() {
+    let req = Request {
+        variable: "%0".to_string(),
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_self_loop",
+        req,
+        "define test (param %0) (result 1) (define %0 %1 %2) {
+            %2 = 1
+            %0 = 5
+            %1 <- CALL test(%0)
+            %0 = %1
             RETURN %0;
         };
         "
