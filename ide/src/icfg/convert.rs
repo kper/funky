@@ -12,14 +12,14 @@ use std::collections::HashMap;
 use crate::ir::ast::Program;
 
 #[derive(Debug)]
-struct CallMeta {
+pub struct CallMeta {
     caller: String,
     caller_dest: Vec<String>,
     pc: usize,
 }
 
 #[derive(Debug, Default)]
-struct CallHandler {
+pub struct CallHandler {
     call_handler: HashMap<String, Vec<CallMeta>>, // function name to PC
 }
 
@@ -97,6 +97,8 @@ impl Convert {
         Ok(())
     }
 
+    /// Adding a call_to_return edge between two facts.
+    /// We ignore global variables.
     fn add_call_to_return(
         &self,
         graph: &mut Graph,
@@ -107,6 +109,7 @@ impl Convert {
         for (from, after) in in_
             .iter()
             .zip(out_)
+            .filter(|(from, to)| !from.var_is_global || !to.var_is_global)
             .filter(|(from, to)| {
                 !except.contains(&from.belongs_to_var) && !except.contains(&to.belongs_to_var)
             })
@@ -237,6 +240,10 @@ impl Convert {
                 }
 
                 let facts = graph.facts.clone();
+
+                // Iterating over instructions, so the
+                // current instruction is already done.
+                // Therefore `-1` to get the instruction before.
                 let in_ = facts
                     .iter()
                     .filter(|x| x.pc == pc - 1 && x.function == function.name)
@@ -266,7 +273,7 @@ impl Convert {
                     Instruction::Const(reg, _val) => {
                         let before = in_
                             .iter()
-                            .find(|x| x.belongs_to_var == "taut".to_string())
+                            .find(|x| x.var_is_taut)
                             .map(|x| *x)
                             .context("Cannot get `before` fact")?
                             .clone();
@@ -347,11 +354,17 @@ impl Convert {
                             self.jump_to_block(&in_, function, &block_saver, &mut graph, jump)?;
                         }
                     }
+                    Instruction::Unknown(dest) => {
+                        self.add_ctrl_flow(&mut graph, &in_, &out_, Some(dest))?;
+                    }
                     Instruction::Return(_regs) => {
                         self.add_ctrl_flow(&mut graph, &in_, &out_, None)?;
-                
+
                         debug!("Instruction is a return. Therefore skipping next");
                         skipping = true;
+                    }
+                    Instruction::Store => {
+
                     }
                 }
             }
@@ -438,7 +451,8 @@ impl Convert {
                                     x.pc == pc
                                         && x.function == function.name
                                         && (regs.contains(&x.belongs_to_var)
-                                            || x.belongs_to_var == "taut".to_string())
+                                            || x.var_is_global
+                                            || x.var_is_taut)
                                 })
                                 .collect::<Vec<_>>();
 
@@ -453,7 +467,8 @@ impl Convert {
                                         x.pc == target_pc + 1
                                             && &x.function == target_name
                                             && (target_regs.contains(&x.belongs_to_var)
-                                                || x.belongs_to_var == "taut".to_string())
+                                                || x.var_is_global
+                                                || x.var_is_taut)
                                     })
                                     .collect::<Vec<_>>();
 
@@ -484,22 +499,22 @@ impl Convert {
     ) -> Result<()> {
         let before = in_
             .iter()
-            .filter(|x| {
-                params.contains(&x.belongs_to_var) || x.belongs_to_var == "taut".to_string()
-            })
+            .filter(|x| params.contains(&x.belongs_to_var) || x.var_is_taut || x.var_is_global)
             .map(|x| *x)
             .collect::<Vec<_>>();
 
-        let callee_params_vars: Vec<_> = graph
+        let variables = graph
             .get_vars(&callee_name)
-            .context("Cannot get variables of called function")?
-            .iter()
-            .take(params.len() + 1)
-            .collect();
+            .context("Cannot get variables of called function")?;
+
+        let preamble = variables.iter().take_while(|x| x.is_global || x.is_taut);
+        let preamble_len = preamble.clone().count();
+
+        let callee_params_vars = variables.iter().skip(preamble_len).take(params.len());
 
         let mut callee_first_facts = Vec::new();
 
-        for var in callee_params_vars {
+        for var in preamble.chain(callee_params_vars) {
             let first_fact = graph
                 .get_first_fact_of_var(var)
                 .context("Cannot get first fact of variable")?;

@@ -318,3 +318,80 @@ fn test_call_indirect_with_param() {
         ))"
     );
 }
+
+#[test]
+fn test_global_get() {
+    wat!(
+        "test_global_get",
+        "(module
+
+            (global $a i32 (i32.const -2))
+            (global (;1;) f32 (f32.const -3))
+            (global (;2;) f64 (f64.const -4))
+            (global $b i64 (i64.const -5))
+
+            (global $x (mut i32) (i32.const -12))
+            (global (;5;) (mut f32) (f32.const -13))
+            (global (;6;) (mut f64) (f64.const -14))
+            (global $y (mut i64) (i64.const -15))
+
+            (func (export \"get-a\") (result i32) (global.get $a))
+            (func (export \"get-b\") (result i64) (global.get $b))
+            (func (export \"get-x\") (result i32) (global.get $x))
+            (func (export \"get-y\") (result i64) (global.get $y))
+        )"
+    );
+}
+
+#[test]
+fn test_global_set() {
+    wat!(
+        "test_global_set",
+        "(module
+
+            (global $a i32 (i32.const -2))
+            (global (;1;) f32 (f32.const -3))
+            (global (;2;) f64 (f64.const -4))
+            (global $b i64 (i64.const -5))
+
+            (global $x (mut i32) (i32.const -12))
+            (global (;5;) (mut f32) (f32.const -13))
+            (global (;6;) (mut f64) (f64.const -14))
+            (global $y (mut i64) (i64.const -15))
+
+            (func (export \"set-x\") (param i32) (global.set $x (local.get 0)))
+            (func (export \"set-y\") (param i64) (global.set $y (local.get 0)))
+        )"
+    );
+}
+
+#[test]
+fn test_global_call() {
+    wat!("test_global_call", 
+  "
+      (module
+        (global $a (mut i32) (i32.const -2))
+        (global $y (mut i64) (i64.const -15))
+
+        (func (export \"set-x\") (param i32) (global.set $a (local.get 0)))
+        (func (export \"set-y\") (param i64)  (call 0 (i32.const 1)) (global.set $y (local.get 0)))
+      ) 
+  ");
+}
+
+#[test]
+fn test_memory_store() {
+  wat!("test_memory_store",
+"
+(module 
+(memory 1)
+  (data (i32.const 0) \"ABC\\a7D\") (data (i32.const 20) \"WASM\")
+  (func  
+    (i32.store (i32.const 8) (i32.const -12345))
+    (i64.store (i32.const 8) (i64.const -12345))
+    (f32.store (i32.const 8) (f32.const -12345))
+    (f64.store (i32.const 8) (f64.const -12345))
+  )
+)
+");
+}

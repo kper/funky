@@ -13,23 +13,35 @@ pub struct Variable {
 }
 
 impl Variable {
-    pub fn val(&self) -> Result<usize> {
+    pub fn val(&self) -> Result<isize> {
         self.reg.val()
     }
 }
 
+//#[derive(Debug, Clone, PartialEq)]
+//pub struct Reg(pub usize);
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct Reg(usize);
+pub enum Reg {
+    Normal(usize),
+    Global(isize),
+}
 
 impl Reg {
-    pub fn val(&self) -> Result<usize> {
-        Ok(self.0)
+   pub fn val(&self) -> Result<isize> {
+        Ok(match *self {
+            Reg::Normal(x) => x as isize,
+            Reg::Global(x) => x,
+        })
     }
 }
 
 impl fmt::Display for Reg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "%{}", self.0)
+        match *self {
+            Reg::Normal(x) => write!(f, "%{}", x),
+            Reg::Global(x) => write!(f, "%{}", x),
+        }
     }
 }
 
@@ -93,9 +105,9 @@ impl SymbolTable {
         bail!("No active variable in symbol table");
     }
 
-    pub fn new_var(&mut self) -> Result<Reg> {
+    pub fn new_reg(&mut self) -> Result<Reg> {
         let val = self.counter.get();
-        let val = Reg(val);
+        let val = Reg::Normal(val);
 
         debug!("Getting new var {:?}", val);
 

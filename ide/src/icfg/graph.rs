@@ -488,7 +488,7 @@ impl Graph {
         // Add taut
         let taut = goal_facts
             .iter()
-            .find(|x| x.belongs_to_var == "taut".to_string())
+            .find(|x| x.var_is_taut)
             .context("Cannot find taut")?;
         goals.push(taut.clone());
 

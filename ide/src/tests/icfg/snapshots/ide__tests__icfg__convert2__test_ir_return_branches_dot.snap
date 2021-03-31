@@ -1,0 +1,128 @@
+---
+source: src/tests/icfg/convert2.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:\%1] (8) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (7) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (4) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (3) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 5.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Call(mytest, [0], [1])};
+\node[circle,fill,inner sep=1pt,label=left:\%0] (58) at (5, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (57) at (4, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (54) at (5, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (53) at (4, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (50) at (5, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (49) at (4, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (46) at (5, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (45) at (4, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (42) at (5, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (41) at (4, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (38) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (37) at (4, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (34) at (5, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (33) at (4, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (30) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (29) at (4, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (26) at (5, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (25) at (4, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (22) at (5, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (21) at (4, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (18) at (5, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (17) at (4, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (14) at (5, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (13) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (10) at (5, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (9) at (4, 0) { };
+\node[font=\tiny] (note_2) at (2.5, 0.5) {Const(1, 1.0)};
+\node[font=\tiny] (note_3) at (2.5, 1.5) {Conditional(1, [1, 2])};
+\node[font=\tiny] (note_4) at (2.5, 2.5) {Block(1)};
+\node[font=\tiny] (note_5) at (2.5, 3.5) {Const(1, 2.0)};
+\node[font=\tiny] (note_6) at (2.5, 4.5) {Const(2, 3.0)};
+\node[font=\tiny] (note_7) at (2.5, 5.5) {Return([1])};
+\node[font=\tiny] (note_8) at (2.5, 6.5) {Jump(3)};
+\node[font=\tiny] (note_9) at (2.5, 7.5) {Block(2)};
+\node[font=\tiny] (note_10) at (2.5, 8.5) {Const(2, 4.0)};
+\node[font=\tiny] (note_11) at (2.5, 9.5) {Jump(3)};
+\node[font=\tiny] (note_12) at (2.5, 10.5) {Block(3)};
+\node[font=\tiny] (note_13) at (2.5, 11.5) {Return([0])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->] (0) edge (4);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->, blue] (0) [bend right] edge  node { } (3);
+		\path[->, blue] (10) [loop right] edge  node { } (10);
+		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (9) [loop right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (6);
+		\path[->, blue] (10) [bend right] edge  node { } (14);
+		\path[->, blue] (9) [bend right] edge  node { } (13);
+		\path[->, blue] (10) [bend right] edge  node { } (18);
+		\path[->, blue] (10) [bend right] edge  node { } (38);
+		\path[->, blue] (9) [bend right] edge  node { } (17);
+		\path[->, blue] (9) [bend right] edge  node { } (37);
+		\path[->, blue] (10) [bend right] edge  node { } (22);
+		\path[->, blue] (10) [bend right] edge  node { } (42);
+		\path[->, blue] (9) [bend right] edge  node { } (21);
+		\path[->, blue] (9) [bend right] edge  node { } (41);
+		\path[->, blue] (10) [bend right] edge  node { } (26);
+		\path[->, blue] (10) [bend right] edge  node { } (46);
+		\path[->, blue] (9) [bend right] edge  node { } (25);
+		\path[->, blue] (9) [bend right] edge  node { } (45);
+		\path[->, blue] (10) [bend right] edge  node { } (30);
+		\path[->, blue] (10) [bend right] edge  node { } (50);
+		\path[->, blue] (9) [bend right] edge  node { } (29);
+		\path[->, blue] (9) [bend right] edge  node { } (49);
+		\path[->, blue] (10) [bend right] edge  node { } (34);
+		\path[->, blue] (10) [bend right] edge  node { } (54);
+		\path[->, blue] (9) [bend right] edge  node { } (33);
+		\path[->, blue] (9) [bend right] edge  node { } (53);
+		\path[->, blue] (10) [bend right] edge  node { } (58);
+		\path[->, blue] (9) [bend right] edge  node { } (57);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->] (0) edge (3);
+		\path[->] (10) edge (14);
+		\path[->] (9) edge (13);
+		\path[->, bend right] (14) edge (18);
+		\path[->, bend right] (14) edge (38);
+		\path[->, bend right] (13) edge (17);
+		\path[->, bend right] (13) edge (37);
+		\path[->] (18) edge (22);
+		\path[->] (38) edge (42);
+		\path[->] (17) edge (21);
+		\path[->] (37) edge (41);
+		\path[->] (22) edge (26);
+		\path[->] (42) edge (46);
+		\path[->] (21) edge (25);
+		\path[->] (41) edge (45);
+		\path[->] (26) edge (30);
+		\path[->, bend right] (46) edge (50);
+		\path[->] (25) edge (29);
+		\path[->, bend right] (45) edge (49);
+		\path[->] (30) edge (34);
+		\path[->] (50) edge (54);
+		\path[->] (29) edge (33);
+		\path[->] (49) edge (53);
+		\path[->, bend right] (34) edge (50);
+		\path[->] (54) edge (58);
+		\path[->, bend right] (33) edge (49);
+		\path[->] (53) edge (57);
+
+
+                \end{tikzpicture}
+            \end{document}
