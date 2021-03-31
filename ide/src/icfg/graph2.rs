@@ -2,14 +2,10 @@
 
 use crate::counter::Counter;
 use crate::ir::ast::Function as AstFunction;
-use crate::ir::ast::Instruction;
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::collections::{HashMap, VecDeque};
-
-use std::collections::HashSet;
-use std::iter::FromIterator;
+use std::collections::{HashMap};
 
 type VarId = String;
 type FunctionName = String;
@@ -129,77 +125,6 @@ impl Graph {
         self.facts.iter().find(|x| x.id == id)
     }
 
-    /// Get all neighbours by given fact_id
-    pub fn get_neighbours(&self, fact_id: usize) -> impl Iterator<Item = usize> + '_ {
-        self.edges
-            .iter()
-            .filter(move |x| x.get_from().id == fact_id)
-            .map(|x| x.to().id)
-    }
-
-    pub fn get_vars(&self, function_name: &String) -> Option<&Vec<Variable>> {
-        self.vars.get(function_name)
-    }
-
-    fn get_vars_mut(&mut self, function_name: &String) -> Option<&mut Vec<Variable>> {
-        self.vars.get_mut(function_name)
-    }
-
-    pub fn get_var(&self, function_name: &String, var: &String) -> Option<&Variable> {
-        self.get_vars(function_name)?
-            .iter()
-            .find(|x| &x.name == var)
-    }
-
-    fn get_var_mut(&mut self, function_name: &String, var: &String) -> Option<&mut Variable> {
-        self.get_vars_mut(function_name)?
-            .iter_mut()
-            .find(|x| &x.name == var)
-    }
-
-    pub fn remove_var(&mut self, function_name: &String, var: &String) -> Result<()> {
-        let pos = self
-            .get_vars_mut(function_name)
-            .context("Cannot find vars")?
-            .iter()
-            .position(|x| &x.name == var)
-            .context("Variable not found")?;
-        self.get_vars_mut(function_name)
-            .context("Cannot find vars")?
-            .remove(pos);
-
-        Ok(())
-    }
-
-    pub fn remove_vars(&mut self, function_name: &String) -> Result<()> {
-        self.get_vars_mut(&function_name)
-            .context("Cannot find vars")?
-            .clear();
-
-        Ok(())
-    }
-
-    pub fn get_first_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
-        self.facts
-            .iter()
-            .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
-    }
-
-    pub fn get_last_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
-        self.facts
-            .iter()
-            .rev()
-            .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
-    }
-
-    pub fn add_var(&mut self, variable: Variable) {
-        if let Some(vars) = self.get_vars_mut(&variable.function) {
-            vars.push(variable);
-        } else {
-            self.vars.insert(variable.function.clone(), vec![variable]);
-        }
-    }
-
     pub fn get_taut(&self, function: &String) -> Option<&Fact> {
         self.facts
             .iter()
@@ -221,54 +146,6 @@ impl Graph {
         self.facts.push(fact);
         self.facts.get(self.facts.len() - 1).unwrap()
     }
-
-    /*
-    pub fn new_facts(
-        &mut self,
-        function: &String,
-        note: String,
-        is_return: bool,
-    ) -> Result<Vec<Fact>> {
-        let mut index = 0;
-
-        let pc = self.pc_counter.get();
-        let len = self
-            .get_vars(function)
-            .context("Cannot find function")?
-            .len();
-        let mut ids = (0..len)
-            .map(|_| self.fact_counter.get())
-            .rev()
-            .collect::<Vec<_>>();
-        let vars = self.get_vars(function).context("Cannot find function")?;
-        let mut facts = Vec::with_capacity(vars.len());
-
-        for var in vars {
-            debug!("Creating fact for var {}", var.name);
-
-            facts.push(Fact {
-                id: ids.pop().unwrap(),
-                belongs_to_var: var.name.clone(),
-                var_is_global: var.is_global,
-                var_is_taut: var.is_taut,
-                pc,
-                track: index,
-                function: function.clone(),
-                is_return,
-            });
-
-            index += 1;
-        }
-
-        self.notes.push(Note {
-            id: self.note_counter.get(),
-            function: function.clone(),
-            pc,
-            note,
-        });
-
-        Ok(facts)
-    }*/
 
     pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
@@ -406,16 +283,6 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn return_sites(&self, function: &AstFunction, var: &String) -> Result<Vec<&Fact>> {
-        let facts = self
-            .facts
-            .iter()
-            .filter(|x| &x.function == &function.name && &x.belongs_to_var == var && x.is_return)
-            .collect::<Vec<_>>();
-
-        Ok(facts)
-    }
-
     pub fn new_fact(&mut self, fact: Fact) -> Result<()> {
         self.facts.push(fact);
 
@@ -432,7 +299,8 @@ impl Graph {
         debug!("Adding statement {:?}", instruction);
 
         let vars = self
-            .get_vars(&function.name)
+            .vars
+            .get(&function.name)
             .context("Cannot get functions's vars")?
             .clone();
         let vars = vars.iter().enumerate();
@@ -463,63 +331,6 @@ impl Graph {
             pc,
             note: instruction.clone(),
         });
-
-        Ok(())
-    }
-
-    /// Add a normal edge from the fact `from` to the fact `to`.
-    pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal {
-            from,
-            to,
-            curved: false,
-        });
-
-        Ok(())
-    }
-
-    /// Add a normal edge from the fact `from` to the fact `to`, but also curved.
-    pub fn add_normal_curved(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Normal {
-            from,
-            to,
-            curved: true,
-        });
-
-        Ok(())
-    }
-
-    /// Add a call edge from the fact `from` to the fact `to`.
-    pub fn add_call_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Call { from, to });
-
-        Ok(())
-    }
-
-    /// Add a return edge from the fact `from` to the fact `to`.
-    pub fn add_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Return { from, to });
-
-        Ok(())
-    }
-
-    /// Add a call-to-return edge from the fact `from` to the fact `to`.
-    pub fn add_call_to_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::CallToReturn { from, to });
-
-        Ok(())
-    }
-
-    /// Add a path edge from the fact `from` to the fact `to`.
-    pub fn add_path_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Path { from, to });
-
-        Ok(())
-    }
-
-    /// Add a summary edge from the fact `from` to the fact `to`.
-    pub fn add_summary_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
-        self.edges.push(Edge::Summary { from, to });
 
         Ok(())
     }
