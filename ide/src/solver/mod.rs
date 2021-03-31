@@ -2,8 +2,6 @@ use crate::icfg::graph2::Graph;
 use anyhow::{Context, Result};
 use std::collections::HashSet;
 
-//pub mod bfs;
-
 type PC = usize;
 
 pub struct IfdsSolver;
