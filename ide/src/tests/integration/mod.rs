@@ -37,7 +37,7 @@ macro_rules! wasm {
 }
 
 macro_rules! run {
-    ($name:expr, $fs:expr) => {
+    ($name:expr, $req:expr, $fs:expr) => {
         let ir = wasm!($fs);
 
         let ir_code = ir.buffer();
@@ -46,13 +46,7 @@ macro_rules! run {
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 
-        let req = Request {
-            function: "0".to_string(),
-            variable: None,
-            pc: 0,
-        };
-
-        let graph = convert.visit(&prog, &req).unwrap();
+        let graph = convert.visit(&prog, &$req).unwrap();
 
         let output = render_to(&graph);
 
@@ -62,20 +56,44 @@ macro_rules! run {
 
 #[test]
 fn test_add() {
-    run!("add", "../tests/add.wasm");
+    let req = Request {
+        function: "0".to_string(),
+        variable: None,
+        pc: 0,
+    };
+
+    run!("add", req, "../tests/add.wasm");
 }
 
 #[test]
 fn test_fib() {
-    run!("fib", "../tests/fib.wasm");
+    let req = Request {
+        function: "0".to_string(),
+        variable: None,
+        pc: 0,
+    };
+
+    run!("fib", req, "../tests/fib.wasm");
 }
 
 #[test]
 fn test_fac() {
-    run!("fac", "../tests/fac.wasm");
+    let req = Request {
+        function: "0".to_string(),
+        variable: None,
+        pc: 0,
+    };
+
+    run!("fac", req, "../tests/fac.wasm");
 }
 
 #[test]
 fn test_br_table() {
-    run!("br_table", "../tests/br_table.wasm");
+    let req = Request {
+        function: "0".to_string(),
+        variable: None,
+        pc: 0,
+    };
+
+    run!("br_table", req, "../tests/br_table.wasm");
 }
