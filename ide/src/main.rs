@@ -221,17 +221,6 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     let mut pc = 0;
     let mut line_no = 0;
 
-    //let lines: Vec<_> = buffer.split("\n").collect();
-    /*
-    for line in buffer.split("\n") {
-        if line.starts_with("define") {
-            line_no = 0;
-        }
-
-        line_annoted_code.push((line_no, line));
-        line_no += 1;
-    }*/
-
     for function in prog.functions.iter() {
         line_annoted_code.push((pc, line_no, None, function.name.as_str()));
         pc += 1;
@@ -275,11 +264,15 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let mut taints: Vec<Taint> = Vec::new();
 
+    let mut already_computed = false;
     let mut req = None;
 
     loop {
         if let Some(ref req) = req {
-            taints = get_taints(req).context("Cannot get taints for ui")?;
+            if !already_computed {
+                taints = get_taints(req).context("Cannot get taints for ui")?;
+                already_computed = true;
+            }
         }
 
         terminal
@@ -388,6 +381,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                     variable: Some(entry.0.clone()),
                 });
                 input = format!("{:#?}", req);
+                already_computed = false;
             }
         }
     }
