@@ -281,13 +281,11 @@ impl ConvertSummary {
                 // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -305,18 +303,21 @@ impl ConvertSummary {
             Instruction::Assign(dest, src) if src == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src)
+                    .cloned();
+    
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -328,13 +329,11 @@ impl ConvertSummary {
                 // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -352,18 +351,21 @@ impl ConvertSummary {
             Instruction::Unop(dest, src) if src == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src)
+                    .cloned();
+
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -375,13 +377,11 @@ impl ConvertSummary {
                 // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -399,18 +399,21 @@ impl ConvertSummary {
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -421,18 +424,21 @@ impl ConvertSummary {
             Instruction::BinOp(dest, _src1, src2) if src2 == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -446,13 +452,11 @@ impl ConvertSummary {
                 // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -478,13 +482,11 @@ impl ConvertSummary {
 
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, *jump_to_pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -507,13 +509,11 @@ impl ConvertSummary {
 
                     let before2 = graph
                         .get_facts_at(&function.name, pc)?
-                        .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
                     let after2 = graph
                         .get_facts_at(&function.name, *jump_to_pc)?
-                        .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
@@ -534,7 +534,6 @@ impl ConvertSummary {
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -555,13 +554,11 @@ impl ConvertSummary {
 
                     let before2 = graph
                         .get_facts_at(&function.name, pc)?
-                        .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
                     let after2 = graph
                         .get_facts_at(&function.name, *jump_to_pc)?
-                        .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
@@ -577,18 +574,21 @@ impl ConvertSummary {
             Instruction::Phi(dest, src1, _src2) if src1 == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -599,18 +599,21 @@ impl ConvertSummary {
             Instruction::Phi(dest, _src1, src2) if src2 == variable => {
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let copy_before = graph
+                    .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
                 let after2 = graph
                     .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
                     //.filter(|x| &x.belongs_to_var != dest)
                     .cloned();
 
-                for (b, a) in (before2.clone().chain(before2)).zip(after2) {
+                for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -766,11 +769,10 @@ impl ConvertSummary {
             "caller {} with current_pc {}",
             caller_function.name, current_pc
         );
-        let caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
+        let mut caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
 
         // Filter by variable
         let caller_fact = caller_facts
-            .iter()
             .find(|x| &x.belongs_to_var == caller_var)
             .context("Cannot find caller's fact")?;
 
@@ -816,9 +818,8 @@ impl ConvertSummary {
 
         let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
 
-        debug!("Caller facts {:#?}", caller_facts);
-
         let mut caller_facts = caller_facts.into_iter().collect::<Vec<_>>();
+        debug!("Caller facts {:#?}", caller_facts);
 
         // We are looking for an edge from the beginning to callee_pc
         // But, we don't know if `pc` starts at 0
@@ -911,10 +912,7 @@ impl ConvertSummary {
 
         let after = graph.get_facts_at(&caller_function.name, pc + 1)?;
 
-        debug!("Facts after statement {}", after.len());
-
         let after: Vec<_> = after
-            .into_iter()
             .filter(|x| &x.belongs_to_var == caller)
             .filter(|x| !dests.contains(&x.belongs_to_var))
             .collect();
@@ -1091,7 +1089,15 @@ impl ConvertSummary {
                             .context("Cannot find function for the caller")?;
 
                         let call_edges = self
-                            .pass_args(program, caller_function, callee, params, graph, d2.pc, caller_var)
+                            .pass_args(
+                                program,
+                                caller_function,
+                                callee,
+                                params,
+                                graph,
+                                d2.pc,
+                                caller_var,
+                            )
                             .with_context(|| {
                                 format!(
                                     "Error occured during `pass_args` for function {} at {}",

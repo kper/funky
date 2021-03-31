@@ -5,7 +5,7 @@ use crate::ir::ast::Function as AstFunction;
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 type VarId = String;
 type FunctionName = String;
@@ -273,14 +273,37 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn get_facts_at(&self, function: &String, pc: usize) -> Result<Vec<&Fact>> {
-        let facts = self
+    pub fn get_facts_at(
+        &self,
+        function: &String,
+        pc: usize,
+    ) -> Result<impl Iterator<Item = &Fact>> {
+        let function = function.clone();
+
+        Ok(self
             .facts
             .iter()
-            .filter(|x| &x.function == function && x.pc == pc)
-            .collect::<Vec<_>>();
+            .filter(move |x| x.function == function && x.pc == pc))
 
-        Ok(facts)
+        /*
+        Ok(self
+            .edges
+            .iter()
+            .filter(move |x| x.get_from().function == function && x.get_from().pc == pc)
+            .map(|x| x.get_from()))*/
+    }
+
+    pub fn get_first_facts(&self, function: &String) -> Result<impl Iterator<Item = &Fact>> {
+        let function = function.clone();
+        let min = self
+            .edges
+            .iter()
+            .filter(|x| x.get_from().function == function)
+            .map(|x| x.get_from().pc)
+            .min()
+            .context("No minimum found")?;
+
+        self.get_facts_at(&function, min)
     }
 
     pub fn new_fact(&mut self, fact: Fact) -> Result<()> {
