@@ -8,7 +8,7 @@ use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use crate::icfg::convert::Convert;
+use crate::icfg::convert2::ConvertSummary as Convert;
 
 use std::fs::File;
 use std::io::Read;
@@ -159,7 +159,12 @@ fn tikz(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let prog = ProgramParser::new().parse(&buffer).unwrap();
 
-    let res = convert.visit(&prog).context("Cannot create the graph")?;
+    let req = Request { 
+        function: "test".to_string(),
+        pc: 0,
+        variable: "%0".to_string()
+    };
+    let res = convert.visit(&prog, &req).context("Cannot create the graph")?;
 
     let output = crate::icfg::tikz::render_to(&res);
 
@@ -198,8 +203,13 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     };
 
     let prog = ProgramParser::new().parse(&buffer).unwrap();
-
-    let mut graph = convert.visit(&prog).context("Cannot create the graph")?;
+    
+    let req = Request { 
+        function: "test".to_string(),
+        pc: 0,
+        variable: "%0".to_string()
+    };
+    let mut graph = convert.visit(&prog, &req).context("Cannot create the graph")?;
 
     let events = Events::new();
 

@@ -12,14 +12,14 @@ use std::collections::HashMap;
 use crate::ir::ast::Program;
 
 #[derive(Debug)]
-struct CallMeta {
+pub struct CallMeta {
     caller: String,
     caller_dest: Vec<String>,
     pc: usize,
 }
 
 #[derive(Debug, Default)]
-struct CallHandler {
+pub struct CallHandler {
     call_handler: HashMap<String, Vec<CallMeta>>, // function name to PC
 }
 

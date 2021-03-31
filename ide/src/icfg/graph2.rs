@@ -6,7 +6,10 @@ use crate::ir::ast::Instruction;
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 type VarId = String;
 type FunctionName = String;
@@ -17,7 +20,6 @@ pub struct Graph {
     pub functions: HashMap<FunctionName, Function>,
     pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
-    pub pc_counter: Counter,
     pub notes: Vec<Note>,
     fact_counter: Counter,
     note_counter: Counter,
@@ -31,7 +33,7 @@ pub struct Note {
     pub note: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Fact {
     pub id: usize,
     pub belongs_to_var: VarId,
@@ -40,6 +42,7 @@ pub struct Fact {
     pub pc: usize,
     pub track: usize,
     pub function: FunctionName,
+    pub is_return: bool,
 }
 
 #[derive(Debug)]
@@ -57,16 +60,18 @@ pub struct Variable {
     pub is_taut: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Edge {
     Normal { from: Fact, to: Fact, curved: bool },
     Call { from: Fact, to: Fact },
     CallToReturn { from: Fact, to: Fact },
     Return { from: Fact, to: Fact },
+    Path { from: Fact, to: Fact },
+    Summary { from: Fact, to: Fact },
 }
 
 impl Edge {
-    pub fn from(&self) -> &Fact {
+    pub fn get_from(&self) -> &Fact {
         match self {
             Edge::Normal {
                 from,
@@ -76,6 +81,8 @@ impl Edge {
             Edge::Call { from, to: _ } => from,
             Edge::CallToReturn { from, to: _ } => from,
             Edge::Return { from, to: _ } => from,
+            Edge::Path { from, to: _ } => from,
+            Edge::Summary { from, to: _ } => from,
         }
     }
 
@@ -89,6 +96,8 @@ impl Edge {
             Edge::Call { from: _, to } => to,
             Edge::CallToReturn { from: _, to } => to,
             Edge::Return { from: _, to } => to,
+            Edge::Path { from: _, to } => to,
+            Edge::Summary { from: _, to } => to,
         }
     }
 }
@@ -96,6 +105,10 @@ impl Edge {
 impl Graph {
     pub fn new() -> Self {
         Graph::default()
+    }
+
+    pub fn is_function_defined(&self, name: &String) -> bool {
+        self.functions.get(name).is_some()
     }
 
     /// Query graph by given Request.
@@ -114,7 +127,7 @@ impl Graph {
     pub fn get_neighbours(&self, fact_id: usize) -> impl Iterator<Item = usize> + '_ {
         self.edges
             .iter()
-            .filter(move |x| x.from().id == fact_id)
+            .filter(move |x| x.get_from().id == fact_id)
             .map(|x| x.to().id)
     }
 
@@ -138,6 +151,28 @@ impl Graph {
             .find(|x| &x.name == var)
     }
 
+    pub fn remove_var(&mut self, function_name: &String, var: &String) -> Result<()> {
+        let pos = self
+            .get_vars_mut(function_name)
+            .context("Cannot find vars")?
+            .iter()
+            .position(|x| &x.name == var)
+            .context("Variable not found")?;
+        self.get_vars_mut(function_name)
+            .context("Cannot find vars")?
+            .remove(pos);
+
+        Ok(())
+    }
+
+    pub fn remove_vars(&mut self, function_name: &String) -> Result<()> {
+        self.get_vars_mut(&function_name)
+            .context("Cannot find vars")?
+            .clear();
+
+        Ok(())
+    }
+
     pub fn get_first_fact_of_var(&self, variable: &Variable) -> Option<&Fact> {
         self.facts
             .iter()
@@ -151,9 +186,85 @@ impl Graph {
             .find(|x| x.belongs_to_var == variable.name && x.function == variable.function)
     }
 
-    pub fn init_function(&mut self, function: &AstFunction) -> Result<()> {
-        debug!("Adding new function {} to the graph", function.name);
+    pub fn add_var(&mut self, variable: Variable) {
+        if let Some(vars) = self.get_vars_mut(&variable.function) {
+            vars.push(variable);
+        } else {
+            self.vars.insert(variable.function.clone(), vec![variable]);
+        }
+    }
 
+    pub fn get_taut(&self, function: &String) -> Option<&Fact> {
+        self.facts
+            .iter()
+            .find(|x| x.var_is_taut && &x.function == function)
+    }
+
+    pub fn init_function_fact(&mut self, function: String, pc: usize) -> &Fact {
+        let fact = Fact {
+            id: self.fact_counter.get(),
+            belongs_to_var: "taut".to_string(),
+            var_is_taut: true,
+            var_is_global: false,
+            function,
+            pc,
+            track: 0,
+            is_return: false,
+        };
+
+        self.facts.push(fact);
+        self.facts.get(self.facts.len() - 1).unwrap()
+    }
+
+    /*
+    pub fn new_facts(
+        &mut self,
+        function: &String,
+        note: String,
+        is_return: bool,
+    ) -> Result<Vec<Fact>> {
+        let mut index = 0;
+
+        let pc = self.pc_counter.get();
+        let len = self
+            .get_vars(function)
+            .context("Cannot find function")?
+            .len();
+        let mut ids = (0..len)
+            .map(|_| self.fact_counter.get())
+            .rev()
+            .collect::<Vec<_>>();
+        let vars = self.get_vars(function).context("Cannot find function")?;
+        let mut facts = Vec::with_capacity(vars.len());
+
+        for var in vars {
+            debug!("Creating fact for var {}", var.name);
+
+            facts.push(Fact {
+                id: ids.pop().unwrap(),
+                belongs_to_var: var.name.clone(),
+                var_is_global: var.is_global,
+                var_is_taut: var.is_taut,
+                pc,
+                track: index,
+                function: function.clone(),
+                is_return,
+            });
+
+            index += 1;
+        }
+
+        self.notes.push(Note {
+            id: self.note_counter.get(),
+            function: function.clone(),
+            pc,
+            note,
+        });
+
+        Ok(facts)
+    }*/
+
+    pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
             function.name.clone(),
             Function {
@@ -162,6 +273,36 @@ impl Graph {
                 return_count: function.results_len,
             },
         );
+
+        Ok(())
+    }
+
+    pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
+        debug!("Adding new function {} to the graph", function.name);
+
+        if let Some(function) = self.functions.get(&function.name) {
+            debug!("Function was already initialized");
+
+            // Handle edge case when the smallest fact greater than `pc`.
+            // This might happen if you the user starts the analysis from not `0`,
+            // but there is a self recursive call.
+
+            let min_pc = self.facts.iter().filter(|x| x.function == function.name).map(|x| x.pc).min().context("No facts found")?;
+
+            if min_pc <= pc {
+                // no self recursion
+
+                // Return the first facts of the function.
+                return Ok(self
+                    .facts
+                    .iter()
+                    .filter(|x| x.function == function.name && x.pc == pc)
+                    .cloned()
+                    .collect());
+                }
+        }
+
+        self.init_function_def(function)?;
 
         let mut variables = Vec::with_capacity(function.definitions.len() + 1);
 
@@ -195,35 +336,76 @@ impl Graph {
             });
         }
 
-        self.init_facts(function, &mut variables)
+        let facts = self
+            .init_facts(function, &mut variables, pc)
             .context("Cannot initialize facts")?;
 
         self.vars.insert(function.name.clone(), variables);
 
-        Ok(())
+        // generate of all facts
+
+        for (i, instruction) in function.instructions.iter().enumerate() {
+            self.add_statement(function, format!("{:?}", instruction), i + 1)?;
+        }
+
+        Ok(facts)
     }
 
-    fn init_facts(&mut self, function: &AstFunction, variables: &mut Vec<Variable>) -> Result<()> {
+    pub fn init_facts(
+        &mut self,
+        function: &AstFunction,
+        variables: &mut Vec<Variable>,
+        pc: usize,
+    ) -> Result<Vec<Fact>> {
         debug!("Initializing facts for function {}", function.name);
 
         let mut index = 0;
+        let mut facts = Vec::with_capacity(variables.len());
         for var in variables {
             debug!("Creating fact for var {}", var.name);
 
-            self.facts.push(Fact {
+            let fact = Fact {
                 id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
-                pc: 0,
+                pc,
+                is_return: false,
                 track: index,
                 function: function.name.clone(),
-            });
+            };
+
+            self.facts.push(fact.clone());
+            facts.push(fact);
 
             index += 1;
         }
 
-        self.pc_counter.get();
+        Ok(facts)
+    }
+
+    pub fn get_facts_at(&self, function: &String, pc: usize) -> Result<Vec<&Fact>> {
+        let facts = self
+            .facts
+            .iter()
+            .filter(|x| &x.function == function && x.pc == pc)
+            .collect::<Vec<_>>();
+
+        Ok(facts)
+    }
+
+    pub fn return_sites(&self, function: &AstFunction, var: &String) -> Result<Vec<&Fact>> {
+        let facts = self
+            .facts
+            .iter()
+            .filter(|x| &x.function == &function.name && &x.belongs_to_var == var && x.is_return)
+            .collect::<Vec<_>>();
+
+        Ok(facts)
+    }
+
+    pub fn new_fact(&mut self, fact: Fact) -> Result<()> {
+        self.facts.push(fact);
 
         Ok(())
     }
@@ -231,9 +413,11 @@ impl Graph {
     pub fn add_statement(
         &mut self,
         function: &AstFunction,
-        instruction: &Instruction,
+        instruction: String,
+        pc: usize,
+        //variable: &String,
     ) -> Result<()> {
-        debug!("Adding statement");
+        debug!("Adding statement {:?}", instruction);
 
         let vars = self
             .get_vars(&function.name)
@@ -241,8 +425,10 @@ impl Graph {
             .clone();
         let vars = vars.iter().enumerate();
 
-        let pc = self.pc_counter.get();
-        debug!("New pc {} for {}", pc, function.name);
+        //.filter(|x| &x.1.name == variable);
+
+        //let pc = self.pc_counter.get();
+        //debug!("New pc {} for {}", pc, function.name);
 
         for (track, var) in vars {
             debug!("Adding new fact for {}", var.name);
@@ -255,16 +441,15 @@ impl Graph {
                 track,
                 function: function.name.clone(),
                 pc,
+                is_return: false,
             });
         }
-
-        // Adding stmt note
 
         self.notes.push(Note {
             id: self.note_counter.get(),
             function: function.name.clone(),
             pc,
-            note: format!("{:?}", instruction),
+            note: instruction.clone(),
         });
 
         Ok(())
@@ -312,6 +497,20 @@ impl Graph {
 
         Ok(())
     }
+
+    /// Add a path edge from the fact `from` to the fact `to`.
+    pub fn add_path_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Path { from, to });
+
+        Ok(())
+    }
+
+    /// Add a summary edge from the fact `from` to the fact `to`.
+    pub fn add_summary_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Summary { from, to });
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -327,7 +526,7 @@ mod test {
                 name: "main".to_string(),
                 definitions: vec!["%0".to_string()],
                 ..Default::default()
-            })
+            }, 0)
             .unwrap();
 
         assert_eq!(2, graph.facts.len());
@@ -343,7 +542,7 @@ mod test {
                 name: "main".to_string(),
                 definitions: vec!["%-1".to_string(), "%0".to_string()],
                 ..Default::default()
-            })
+            }, 0)
             .unwrap();
 
         assert_eq!(3, graph.vars.get(&"main".to_string()).unwrap().len());
