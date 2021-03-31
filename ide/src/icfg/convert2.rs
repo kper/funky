@@ -830,6 +830,7 @@ impl ConvertSummary {
             .context("Cannot find first statement's pc of callee")
             .unwrap_or(0);
 
+            /* 
         debug!(
             "graph {:#?}",
             graph
@@ -838,7 +839,7 @@ impl ConvertSummary {
                 .filter(|x| &x.get_from().function == callee_function
                     && &x.to().function == callee_function)
                 .collect::<Vec<_>>()
-        );
+        );*/
 
         // Cannot query all facts, because some vars might not exist anymore
         // We want to check the ones, which are still alive.
@@ -969,7 +970,6 @@ impl ConvertSummary {
         })?;
 
         // Compute init flows
-
         let init_normal_flows = self.compute_init_flows(function, graph, req.pc)?;
 
         for edge in init_normal_flows.into_iter() {
@@ -1345,7 +1345,7 @@ impl ConvertSummary {
             for d4 in incoming {
                 debug!("Computing return to fact to {:#?}", d4);
 
-                assert!(d4.function != d2.function);
+                //assert!(d4.function != d2.function);
 
                 let instructions = &program
                     .functions
@@ -1378,7 +1378,7 @@ impl ConvertSummary {
                 for d5 in ret_vals.into_iter() {
                     debug!("Handling var {:#?}", d5);
 
-                    assert!(d5.function != d2.function);
+                    //assert!(d5.function != d2.function);
 
                     if summary_edge
                         .iter()

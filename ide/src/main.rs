@@ -13,7 +13,7 @@ use crate::icfg::convert2::ConvertSummary as Convert;
 use std::fs::File;
 use std::io::Read;
 
-use crate::solver::bfs::*;
+//use crate::solver::bfs::*;
 use crate::solver::*;
 
 use crate::grammar::*;
@@ -63,6 +63,10 @@ enum Opt {
         file: PathBuf,
         #[structopt(long)]
         ir: bool,
+        #[structopt(short)]
+        function: String,
+        #[structopt(long)]
+        pc: usize,
     },
     Ui {
         #[structopt(parse(from_os_str))]
@@ -73,7 +77,7 @@ enum Opt {
 }
 
 fn main() {
-    env_logger::init();
+    //env_logger::init();
     let opt = Opt::from_args();
     debug!("{:?}", opt);
 
@@ -92,8 +96,13 @@ fn main() {
                 }
             };
         }
-        Opt::Tikz { file, ir } => {
-            if let Err(err) = tikz(file, ir) {
+        Opt::Tikz {
+            file,
+            ir,
+            function,
+            pc,
+        } => {
+            if let Err(err) = tikz(file, ir, function, pc) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -136,7 +145,7 @@ fn ir(file: PathBuf) -> Result<IR> {
     Ok(ir)
 }
 
-fn tikz(file: PathBuf, is_ir: bool) -> Result<()> {
+fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
     let mut convert = Convert::new();
 
     let buffer = match is_ir {
@@ -159,12 +168,14 @@ fn tikz(file: PathBuf, is_ir: bool) -> Result<()> {
 
     let prog = ProgramParser::new().parse(&buffer).unwrap();
 
-    let req = Request { 
-        function: "test".to_string(),
-        pc: 0,
-        variable: "%0".to_string()
+    let req = Request {
+        function: function,
+        pc: pc,
+        variable: None,
     };
-    let res = convert.visit(&prog, &req).context("Cannot create the graph")?;
+    let res = convert
+        .visit(&prog, &req)
+        .context("Cannot create the graph")?;
 
     let output = crate::icfg::tikz::render_to(&res);
 
@@ -203,13 +214,6 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     };
 
     let prog = ProgramParser::new().parse(&buffer).unwrap();
-    
-    let req = Request { 
-        function: "test".to_string(),
-        pc: 0,
-        variable: "%0".to_string()
-    };
-    let mut graph = convert.visit(&prog, &req).context("Cannot create the graph")?;
 
     let events = Events::new();
 
@@ -249,7 +253,12 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     };
 
     let mut get_taints = |req: &Request| {
-        let mut solver = IfdsSolver::new(BFS);
+        let mut solver = IfdsSolver;
+
+        let mut graph = convert
+            .visit(&prog, &req)
+            .context("Cannot create the graph")?;
+
         solver.all_sinks(&mut graph, &req)
     };
 
@@ -270,7 +279,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
 
     loop {
         if let Some(ref req) = req {
-            taints = get_taints(req);
+            taints = get_taints(req).context("Cannot get taints for ui")?;
         }
 
         terminal
@@ -376,7 +385,7 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
                 req = Some(Request {
                     pc: entry.2,
                     function: entry.1.clone(),
-                    variable: entry.0.clone(),
+                    variable: Some(entry.0.clone()),
                 });
                 input = format!("{:#?}", req);
             }

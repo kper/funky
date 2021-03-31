@@ -1,15 +1,11 @@
 use crate::icfg::graph2::Graph;
+use anyhow::{bail, Context, Result};
 
-pub mod bfs;
+//pub mod bfs;
 
 type PC = usize;
 
-pub struct IfdsSolver<T>
-where
-    T: GraphReachability,
-{
-    graph_reachability: T,
-}
+pub struct IfdsSolver;
 
 #[derive(Debug)]
 pub struct Taint {
@@ -20,76 +16,60 @@ pub struct Taint {
 
 #[derive(Debug, Clone)]
 pub struct Request {
-    pub variable: String,
+    pub variable: Option<String>,
     pub function: String,
     pub pc: PC,
 }
 
 pub trait Solver {
     /// Return all sinks of the `req`
-    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint>;
-    /// Ask a query the solver
-    fn ask(&mut self, graph: &mut Graph, req: &Request, response: &Request) -> bool;
-
-    /// Ask a query the solver, but doesn't care about the program counter
-    fn fast_ask(
-        &mut self,
-        graph: &mut Graph,
-        req: &Request,
-        response_var: &String,
-        response_function: &String,
-    ) -> bool;
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>>;
 }
 
-impl<T> IfdsSolver<T>
-where
-    T: GraphReachability,
-{
-    pub fn new(algorithm: T) -> Self {
-        Self {
-            graph_reachability: algorithm,
-        }
-    }
-}
-
-impl<T> Solver for IfdsSolver<T>
-where
-    T: GraphReachability,
-{
-    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint> {
-        self.graph_reachability.all_sinks(graph, req)
-    }
-
-    fn ask(&mut self, graph: &mut Graph, req: &Request, response: &Request) -> bool {
-        // TODO optimize
-        // There is no need to run the whole graph reachability algorithm
-        let sinks = self.graph_reachability.all_sinks(graph, req);
-
-        sinks
+impl Solver for IfdsSolver {
+    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>> {
+        let function = &req.function;
+        let variable = req
+            .variable
+            .as_ref()
+            .context("Request needs to have a specified variable")?;
+        let first_pc = graph
+            .edges
             .iter()
-            .find(|x| {
-                x.variable == response.variable
-                    && x.pc == response.pc
-                    && x.function == response.function
+            .filter(|x| {
+                &x.get_from().function == function && &x.get_from().belongs_to_var == variable
             })
-            .is_some()
-    }
+            .map(|x| x.get_from().pc)
+            .min();
 
-    fn fast_ask(
-        &mut self,
-        graph: &mut Graph,
-        req: &Request,
-        response_var: &String,
-        response_function: &String,
-    ) -> bool {
-        // TODO optimize
-        // There is no need to run the whole graph reachability algorithm
-        let sinks = self.graph_reachability.all_sinks(graph, req);
+        if let Some(first_pc) = first_pc {
+            let start = graph
+                .edges
+                .iter()
+                .map(|x| x.get_from())
+                .find(|x| {
+                    &x.function == function
+                        && x.pc == first_pc
+                        && (x.var_is_taut || &x.belongs_to_var == variable)
+                })
+                .context("Cannot find taut")?;
 
-        sinks
-            .iter()
-            .find(|x| &x.variable == response_var && &x.function == response_function)
-            .is_some()
+            let taints = graph
+                .edges
+                .iter()
+                .filter(|x| x.get_from() == start && &x.to().function == function)
+                .map(|x| x.to())
+                .map(|x| Taint {
+                    function: x.function.clone(),
+                    pc: x.pc,
+                    variable: x.belongs_to_var.clone(),
+                })
+                .collect();
+
+            Ok(taints)
+        } else {
+            Ok(vec![])
+        }
     }
 }
 

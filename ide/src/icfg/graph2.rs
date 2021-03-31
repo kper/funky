@@ -113,9 +113,15 @@ impl Graph {
 
     /// Query graph by given Request.
     pub fn query(&self, req: &Request) -> Option<&Fact> {
-        self.facts.iter().find(|x| {
-            x.belongs_to_var == req.variable && x.pc == req.pc && x.function == req.function
-        })
+        if let Some(var) = req.variable.as_ref() {
+            self.facts
+                .iter()
+                .find(|x| &x.belongs_to_var == var && x.pc == req.pc && x.function == req.function)
+        } else {
+            self.facts
+                .iter()
+                .find(|x| x.pc == req.pc && x.function == req.function)
+        }
     }
 
     /// Query graph by given fact_id.
@@ -287,7 +293,13 @@ impl Graph {
             // This might happen if you the user starts the analysis from not `0`,
             // but there is a self recursive call.
 
-            let min_pc = self.facts.iter().filter(|x| x.function == function.name).map(|x| x.pc).min().context("No facts found")?;
+            let min_pc = self
+                .facts
+                .iter()
+                .filter(|x| x.function == function.name)
+                .map(|x| x.pc)
+                .min()
+                .context("No facts found")?;
 
             if min_pc <= pc {
                 // no self recursion
@@ -299,7 +311,7 @@ impl Graph {
                     .filter(|x| x.function == function.name && x.pc == pc)
                     .cloned()
                     .collect());
-                }
+            }
         }
 
         self.init_function_def(function)?;
@@ -522,11 +534,14 @@ mod test {
     fn adding_var_ok() {
         let mut graph = Graph::default();
         graph
-            .init_function(&AstFunction {
-                name: "main".to_string(),
-                definitions: vec!["%0".to_string()],
-                ..Default::default()
-            }, 0)
+            .init_function(
+                &AstFunction {
+                    name: "main".to_string(),
+                    definitions: vec!["%0".to_string()],
+                    ..Default::default()
+                },
+                0,
+            )
             .unwrap();
 
         assert_eq!(2, graph.facts.len());
@@ -538,11 +553,14 @@ mod test {
     fn adding_global() {
         let mut graph = Graph::default();
         graph
-            .init_function(&AstFunction {
-                name: "main".to_string(),
-                definitions: vec!["%-1".to_string(), "%0".to_string()],
-                ..Default::default()
-            }, 0)
+            .init_function(
+                &AstFunction {
+                    name: "main".to_string(),
+                    definitions: vec!["%-1".to_string(), "%0".to_string()],
+                    ..Default::default()
+                },
+                0,
+            )
             .unwrap();
 
         assert_eq!(3, graph.vars.get(&"main".to_string()).unwrap().len());
