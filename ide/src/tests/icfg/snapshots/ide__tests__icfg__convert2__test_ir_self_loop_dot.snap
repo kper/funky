@@ -18,7 +18,6 @@ expression: output
 
                     \node[circle,fill,inner sep=1pt,label=left:taut] (44) at (0, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (40) at (0, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (36) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (32) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (25) at (1, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (24) at (0, 0) { };
@@ -28,7 +27,6 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:taut] (12) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (9) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (4) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (1) at (1, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(2, 1.0)};
@@ -57,17 +55,6 @@ expression: output
 		\path[->, blue] (24) [bend right] edge  node { } (32);
 		\path[->, blue] (0) [bend right] edge  node { } (20);
 		\path[->, blue] (0) [bend right] edge  node { } (44);
-		\path[->] (0) edge (8);
-		\path[->] (25) edge (1);
-		\path[->] (24) edge (0);
-		\path[->] (12) edge (16);
-		\path[->] (36) edge (40);
-		\path[->] (0) edge (8);
-		\path[->] (4) edge (32);
-		\path[->] (16) edge (20);
-		\path[->] (40) edge (44);
-		\path[->] (16) edge (20);
-		\path[->] (40) edge (44);
 
 
                 \end{tikzpicture}

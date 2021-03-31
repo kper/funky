@@ -76,32 +76,6 @@ expression: output
 		\path[->, blue] (4) [bend right] edge  node { } (45);
 		\path[->, blue] (0) [bend right] edge  node { } (44);
 		\path[->, blue] (0) [bend right] edge  node { } (48);
-		\path[->] (0) edge (4);
-		\path[->] (4) edge (8);
-		\path[->] (4) edge (8);
-		\path[->, bend right] (9) edge (13);
-		\path[->, bend right] (9) edge (29);
-		\path[->, bend right] (9) edge (13);
-		\path[->, bend right] (9) edge (29);
-		\path[->, bend right] (8) edge (12);
-		\path[->, bend right] (8) edge (28);
-		\path[->] (13) edge (17);
-		\path[->] (29) edge (33);
-		\path[->] (12) edge (16);
-		\path[->] (28) edge (32);
-		\path[->] (17) edge (21);
-		\path[->] (33) edge (37);
-		\path[->] (16) edge (20);
-		\path[->] (32) edge (36);
-		\path[->] (21) edge (25);
-		\path[->, bend right] (37) edge (41);
-		\path[->] (20) edge (24);
-		\path[->, bend right] (36) edge (40);
-		\path[->, bend right] (25) edge (41);
-		\path[->] (41) edge (45);
-		\path[->, bend right] (24) edge (40);
-		\path[->] (40) edge (44);
-		\path[->] (44) edge (48);
 
 
                 \end{tikzpicture}

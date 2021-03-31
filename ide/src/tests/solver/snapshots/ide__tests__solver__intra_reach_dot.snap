@@ -31,12 +31,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
 		\path[->, blue] (0) [bend right] edge  node { } (6);
-		\path[->] (0) edge (3);
-		\path[->] (4) edge (7);
-		\path[->] (4) edge (8);
-		\path[->] (4) edge (7);
-		\path[->] (4) edge (8);
-		\path[->] (3) edge (6);
 
 
                 \end{tikzpicture}

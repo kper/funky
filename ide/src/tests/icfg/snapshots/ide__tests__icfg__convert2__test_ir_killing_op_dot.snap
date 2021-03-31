@@ -38,13 +38,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (12);
 		\path[->, blue] (0) [bend right] edge  node { } (16);
 		\path[->, blue] (0) [bend right] edge  node { } (20);
-		\path[->] (0) edge (4);
-		\path[->] (5) edge (9);
-		\path[->] (5) edge (9);
-		\path[->] (4) edge (8);
-		\path[->] (8) edge (12);
-		\path[->] (12) edge (16);
-		\path[->] (16) edge (20);
 
 
                 \end{tikzpicture}

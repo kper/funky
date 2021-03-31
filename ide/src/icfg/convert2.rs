@@ -1309,7 +1309,7 @@ impl ConvertSummary {
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        graph.edges.extend_from_slice(&normal_flows_debug);
+        //graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())
@@ -1329,8 +1329,6 @@ impl ConvertSummary {
     ) -> Result<()> {
         // this is E_p
         debug!("=> Reached end of procedure");
-
-        //assert_eq!(d1.function, d2.function);
 
         // Summary
         if let Some(end_summary) =
