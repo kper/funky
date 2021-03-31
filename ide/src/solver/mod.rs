@@ -1,5 +1,6 @@
 use crate::icfg::graph2::Graph;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
+use std::collections::HashSet;
 
 //pub mod bfs;
 
@@ -37,28 +38,30 @@ impl Solver for IfdsSolver {
             .edges
             .iter()
             .filter(|x| {
-                &x.get_from().function == function && &x.get_from().belongs_to_var == variable
+                &x.get_from().function == function && (&x.get_from().belongs_to_var == variable || x.get_from().var_is_taut)
             })
             .map(|x| x.get_from().pc)
             .min();
 
         if let Some(first_pc) = first_pc {
-            let start = graph
+            let start_facts: HashSet<_> = graph
                 .edges
                 .iter()
                 .map(|x| x.get_from())
-                .find(|x| {
+                .filter(|x| {
                     &x.function == function
                         && x.pc == first_pc
                         && (x.var_is_taut || &x.belongs_to_var == variable)
                 })
-                .context("Cannot find taut")?;
+                .collect();
+
 
             let taints = graph
                 .edges
                 .iter()
-                .filter(|x| x.get_from() == start && &x.to().function == function)
+                .filter(|x| start_facts.contains(&x.get_from()) && &x.to().function == function)
                 .map(|x| x.to())
+                .filter(|x| !x.var_is_taut)
                 .map(|x| Taint {
                     function: x.function.clone(),
                     pc: x.pc,

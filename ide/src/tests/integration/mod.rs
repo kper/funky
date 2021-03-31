@@ -97,3 +97,14 @@ fn test_br_table() {
 
     run!("br_table", req, "../tests/br_table.wasm");
 }
+
+#[test]
+fn test_block_add() {
+    let req = Request {
+        function: "0".to_string(),
+        variable: Some("%2".to_string()),
+        pc: 2,
+    };
+
+    run!("block_add", req, "../tests/block_add_i32.wasm");
+}

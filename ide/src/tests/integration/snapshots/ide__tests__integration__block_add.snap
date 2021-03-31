@@ -1,0 +1,89 @@
+---
+source: src/tests/integration/mod.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:\%4] (65) at (5, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (60) at (0, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (59) at (5, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (54) at (0, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (53) at (5, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (48) at (0, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (47) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (42) at (0, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (41) at (5, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (39) at (3, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (36) at (0, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (35) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (33) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (30) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (27) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (24) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (21) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (18) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 2) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Block(1)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(2, 0)};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {Assign(3, 1)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {BinOp(4, 3, 2)};
+\node[font=\tiny] (note_5) at (-1.5, 5.5) {Kill(3)};
+\node[font=\tiny] (note_6) at (-1.5, 6.5) {Kill(2)};
+\node[font=\tiny] (note_7) at (-1.5, 7.5) {Jump(2)};
+\node[font=\tiny] (note_8) at (-1.5, 8.5) {Block(2)};
+\node[font=\tiny] (note_9) at (-1.5, 9.5) {Return([4])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->] (0) edge (21);
+		\path[->, blue] (0) [bend right] edge  node { } (21);
+		\path[->, blue] (0) [bend right] edge  node { } (18);
+		\path[->, blue] (0) [bend right] edge  node { } (27);
+		\path[->, blue] (0) [bend right] edge  node { } (24);
+		\path[->, blue] (0) [bend right] edge  node { } (33);
+		\path[->, blue] (0) [bend right] edge  node { } (35);
+		\path[->, blue] (0) [bend right] edge  node { } (30);
+		\path[->, blue] (0) [bend right] edge  node { } (39);
+		\path[->, blue] (0) [bend right] edge  node { } (41);
+		\path[->, blue] (0) [bend right] edge  node { } (36);
+		\path[->, blue] (0) [bend right] edge  node { } (47);
+		\path[->, blue] (0) [bend right] edge  node { } (42);
+		\path[->, blue] (0) [bend right] edge  node { } (53);
+		\path[->, blue] (0) [bend right] edge  node { } (48);
+		\path[->, blue] (0) [bend right] edge  node { } (59);
+		\path[->, blue] (0) [bend right] edge  node { } (54);
+		\path[->, blue] (0) [bend right] edge  node { } (65);
+		\path[->, blue] (0) [bend right] edge  node { } (60);
+		\path[->] (0) edge (18);
+		\path[->] (21) edge (27);
+		\path[->] (21) edge (27);
+		\path[->] (18) edge (24);
+		\path[->] (27) edge (33);
+		\path[->] (27) edge (35);
+		\path[->] (24) edge (30);
+		\path[->] (33) edge (39);
+		\path[->] (35) edge (41);
+		\path[->] (30) edge (36);
+		\path[->] (41) edge (47);
+		\path[->] (36) edge (42);
+		\path[->, bend right] (47) edge (53);
+		\path[->, bend right] (42) edge (48);
+		\path[->] (53) edge (59);
+		\path[->] (48) edge (54);
+		\path[->] (59) edge (65);
+		\path[->] (54) edge (60);
+
+
+                \end{tikzpicture}
+            \end{document}
