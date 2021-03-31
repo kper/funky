@@ -145,6 +145,7 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_block() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -440,9 +441,9 @@ fn test_ir_return_double() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_return_branches() {
+    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
@@ -452,9 +453,10 @@ fn test_ir_return_branches() {
         "test_ir_return_branches",
         req,
         "define test (result 0) (define %0 %1) {
-            %0 <- CALL mytest(%0)
+            %0 = 5
+            %1 <- CALL mytest(%0)
         };
-        define mytest (param %0) (result 1) (define %0 %1) {
+        define mytest (param %0) (result 1) (define %0 %1 %2) {
             %1 = 1
             IF %1 THEN GOTO 1 ELSE GOTO 2 
             BLOCK 1
@@ -464,9 +466,9 @@ fn test_ir_return_branches() {
             GOTO 3
             BLOCK 2
             %2 = 4
-            RETURN %2;
             GOTO 3
             BLOCK 3
+            RETURN %0;
         };
         "
     );

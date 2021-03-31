@@ -33,20 +33,6 @@ expression: output
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [0])};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(1, 2.0)};
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 3.0)};
-		\path[->] (0) edge (4);
-		\path[->] (4) edge (8);
-		\path[->] (4) edge (8);
-		\path[->, bend right] (9) edge (1);
-		\path[->, bend right] (9) edge (13);
-		\path[->, bend right] (9) edge (1);
-		\path[->, bend right] (9) edge (13);
-		\path[->, bend right] (8) edge (0);
-		\path[->, bend right] (8) edge (12);
-		\path[->] (1) edge (5);
-		\path[->] (13) edge (17);
-		\path[->] (12) edge (16);
-		\path[->] (17) edge (21);
-		\path[->] (16) edge (20);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (4);
 		\path[->, blue] (0) [bend right] edge  node { } (4);
@@ -61,6 +47,20 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (16);
 		\path[->, blue] (4) [bend right] edge  node { } (21);
 		\path[->, blue] (0) [bend right] edge  node { } (20);
+		\path[->] (0) edge (4);
+		\path[->] (4) edge (8);
+		\path[->] (4) edge (8);
+		\path[->, bend right] (9) edge (1);
+		\path[->, bend right] (9) edge (13);
+		\path[->, bend right] (9) edge (1);
+		\path[->, bend right] (9) edge (13);
+		\path[->, bend right] (8) edge (0);
+		\path[->, bend right] (8) edge (12);
+		\path[->] (1) edge (5);
+		\path[->] (13) edge (17);
+		\path[->] (12) edge (16);
+		\path[->] (17) edge (21);
+		\path[->] (16) edge (20);
 
 
                 \end{tikzpicture}

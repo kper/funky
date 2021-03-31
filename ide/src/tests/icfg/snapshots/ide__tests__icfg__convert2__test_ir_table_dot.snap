@@ -46,6 +46,28 @@ expression: output
 \node[font=\tiny] (note_7) at (-1.5, 7.5) {Block(2)};
 \node[font=\tiny] (note_8) at (-1.5, 8.5) {Const(2, 4.0)};
 \node[font=\tiny] (note_9) at (-1.5, 9.5) {Table([0, 1, 2, 2])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->] (0) edge (4);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->] (4) edge (9);
+		\path[->, blue] (4) [bend right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, blue] (4) [bend right] edge  node { } (13);
+		\path[->, blue] (0) [bend right] edge  node { } (12);
+		\path[->, blue] (4) [bend right] edge  node { } (17);
+		\path[->, blue] (0) [bend right] edge  node { } (16);
+		\path[->, blue] (4) [bend right] edge  node { } (21);
+		\path[->, blue] (0) [bend right] edge  node { } (20);
+		\path[->, blue] (4) [bend right] edge  node { } (25);
+		\path[->, blue] (0) [bend right] edge  node { } (24);
+		\path[->, blue] (4) [bend right] edge  node { } (29);
+		\path[->, blue] (0) [bend right] edge  node { } (28);
+		\path[->, blue] (4) [bend right] edge  node { } (33);
+		\path[->, blue] (0) [bend right] edge  node { } (32);
+		\path[->, blue] (4) [bend right] edge  node { } (37);
+		\path[->, blue] (0) [bend right] edge  node { } (36);
+		\path[->, blue] (4) [bend right] edge  node { } (1);
+		\path[->, blue] (4) [bend right] edge  node { } (5);
 		\path[->] (0) edge (4);
 		\path[->] (4) edge (8);
 		\path[->] (4) edge (8);
@@ -73,28 +95,6 @@ expression: output
 		\path[->, bend right] (36) edge (28);
 		\path[->, bend right] (36) edge (28);
 		\path[->] (1) edge (5);
-		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->] (0) edge (4);
-		\path[->, blue] (0) [bend right] edge  node { } (4);
-		\path[->] (4) edge (9);
-		\path[->, blue] (4) [bend right] edge  node { } (9);
-		\path[->, blue] (0) [bend right] edge  node { } (8);
-		\path[->, blue] (4) [bend right] edge  node { } (13);
-		\path[->, blue] (0) [bend right] edge  node { } (12);
-		\path[->, blue] (4) [bend right] edge  node { } (17);
-		\path[->, blue] (0) [bend right] edge  node { } (16);
-		\path[->, blue] (4) [bend right] edge  node { } (21);
-		\path[->, blue] (0) [bend right] edge  node { } (20);
-		\path[->, blue] (4) [bend right] edge  node { } (25);
-		\path[->, blue] (0) [bend right] edge  node { } (24);
-		\path[->, blue] (4) [bend right] edge  node { } (29);
-		\path[->, blue] (0) [bend right] edge  node { } (28);
-		\path[->, blue] (4) [bend right] edge  node { } (33);
-		\path[->, blue] (0) [bend right] edge  node { } (32);
-		\path[->, blue] (4) [bend right] edge  node { } (37);
-		\path[->, blue] (0) [bend right] edge  node { } (36);
-		\path[->, blue] (4) [bend right] edge  node { } (1);
-		\path[->, blue] (4) [bend right] edge  node { } (5);
 
 
                 \end{tikzpicture}

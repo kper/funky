@@ -29,13 +29,6 @@ expression: output
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Kill(0)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Kill(1)};
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 1.0)};
-		\path[->] (0) edge (4);
-		\path[->] (5) edge (9);
-		\path[->] (5) edge (9);
-		\path[->] (4) edge (8);
-		\path[->] (8) edge (12);
-		\path[->] (12) edge (16);
-		\path[->] (16) edge (20);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (5);
 		\path[->, blue] (0) [bend right] edge  node { } (5);
@@ -45,6 +38,13 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (12);
 		\path[->, blue] (0) [bend right] edge  node { } (16);
 		\path[->, blue] (0) [bend right] edge  node { } (20);
+		\path[->] (0) edge (4);
+		\path[->] (5) edge (9);
+		\path[->] (5) edge (9);
+		\path[->] (4) edge (8);
+		\path[->] (8) edge (12);
+		\path[->] (12) edge (16);
+		\path[->] (16) edge (20);
 
 
                 \end{tikzpicture}

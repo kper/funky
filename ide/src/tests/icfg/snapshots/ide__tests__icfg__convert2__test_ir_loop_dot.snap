@@ -25,13 +25,6 @@ expression: output
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Jump(0)};
-		\path[->] (0) edge (3);
-		\path[->] (3) edge (6);
-		\path[->] (3) edge (6);
-		\path[->, bend right] (7) edge (1);
-		\path[->, bend right] (7) edge (1);
-		\path[->, bend right] (6) edge (0);
-		\path[->] (1) edge (4);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (3);
 		\path[->, blue] (0) [bend right] edge  node { } (3);
@@ -40,6 +33,13 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (6);
 		\path[->, blue] (3) [bend right] edge  node { } (1);
 		\path[->, blue] (3) [bend right] edge  node { } (4);
+		\path[->] (0) edge (3);
+		\path[->] (3) edge (6);
+		\path[->] (3) edge (6);
+		\path[->, bend right] (7) edge (1);
+		\path[->, bend right] (7) edge (1);
+		\path[->, bend right] (6) edge (0);
+		\path[->] (1) edge (4);
 
 
                 \end{tikzpicture}

@@ -30,15 +30,6 @@ expression: output
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(2, 0)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Assign(2, 1)};
-		\path[->] (0) edge (4);
-		\path[->] (5) edge (9);
-		\path[->] (5) edge (9);
-		\path[->] (4) edge (8);
-		\path[->] (9) edge (13);
-		\path[->] (9) edge (15);
-		\path[->] (8) edge (12);
-		\path[->] (13) edge (17);
-		\path[->] (12) edge (16);
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->] (0) edge (5);
 		\path[->, blue] (0) [bend right] edge  node { } (5);
@@ -50,6 +41,15 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (12);
 		\path[->, blue] (0) [bend right] edge  node { } (17);
 		\path[->, blue] (0) [bend right] edge  node { } (16);
+		\path[->] (0) edge (4);
+		\path[->] (5) edge (9);
+		\path[->] (5) edge (9);
+		\path[->] (4) edge (8);
+		\path[->] (9) edge (13);
+		\path[->] (9) edge (15);
+		\path[->] (8) edge (12);
+		\path[->] (13) edge (17);
+		\path[->] (12) edge (16);
 
 
                 \end{tikzpicture}
