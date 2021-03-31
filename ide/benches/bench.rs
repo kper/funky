@@ -48,14 +48,16 @@ macro_rules! benchmark {
             let mut convert = ConvertSummary::new();
             let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
-            let req = Request {
-                variable: Some("%0".to_string()),
-                function: "0".to_string(),
-                pc: 0,
-            };
-            c.bench_function(stringify!($name), |b| {
-                b.iter(|| bench(&mut convert, &prog, &req))
-            });
+            for function in prog.functions.iter() {
+                let req = Request {
+                    variable: Some("%0".to_string()),
+                    function: function.name.clone(),
+                    pc: 0,
+                };
+                c.bench_function(&format!("{}_func_{}", stringify!($name), &function.name), |b| {
+                    b.iter(|| bench(&mut convert, &prog, &req))
+                });
+            }
         }
     };
 }
