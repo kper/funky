@@ -1,8 +1,6 @@
-use ide::solver::bfs::*;
-use ide::solver::*;
+use ide::{ir::ast::Program, solver::*};
 
-use ide::icfg::convert::Convert;
-use ide::icfg::graph2::Graph;
+use ide::icfg::convert2::ConvertSummary;
 
 use ide::grammar::*;
 
@@ -34,8 +32,10 @@ macro_rules! wasm {
     }};
 }
 
-fn bench_fib<T: GraphReachability>(solver: &mut IfdsSolver<T>, graph: &mut Graph, req: &Request) {
-    solver.all_sinks(graph, req);
+fn bench(convert: &mut ConvertSummary, prog: &Program, req: &Request) {
+    let mut solver = IfdsSolver;
+    let mut graph = convert.visit(&prog, req).unwrap();
+    solver.all_sinks(&mut graph, req).unwrap();
 }
 
 macro_rules! benchmark {
@@ -45,18 +45,16 @@ macro_rules! benchmark {
             let mut ir = IR::new();
             ir.visit(&engine).unwrap();
 
-            let mut convert = Convert::new();
+            let mut convert = ConvertSummary::new();
             let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
-            let mut graph = convert.visit(&prog).unwrap();
-            let mut solver = IfdsSolver::new(BFS);
 
             let req = Request {
-                variable: "%0".to_string(),
+                variable: Some("%0".to_string()),
                 function: "0".to_string(),
-                pc: 1,
+                pc: 0,
             };
             c.bench_function(stringify!($name), |b| {
-                b.iter(|| bench_fib(&mut solver, &mut graph, &req))
+                b.iter(|| bench(&mut convert, &prog, &req))
             });
         }
     };
@@ -64,7 +62,8 @@ macro_rules! benchmark {
 
 benchmark!(fib);
 benchmark!(fac);
-benchmark!(blocks);
+benchmark!(logic);
+benchmark!(gcd);
 
-criterion_group!(benches, fib, fac, blocks);
+criterion_group!(benches, fib, fac, logic, gcd);
 criterion_main!(benches);
