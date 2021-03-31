@@ -6,6 +6,8 @@ Focus of this implementation is not performance but the general ability to execu
 
 You will find the parser for parsing the binary wasm files in the folder `wasm-parser`. The logic for the runtime and execution will be in the `src` folder. The code for validating the AST is in the `validation` folder.
 
+In addition, I am working on static taint analysis for webassembly. This means you can see which variables have the same value, statically.
+
 ## Building
 
 Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `ide` and execute `cargo build` again.
