@@ -16,7 +16,8 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:\%0] (13) at (1, 3) { };
+                    \node[circle,fill,inner sep=1pt,label=left:\%2] (15) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:\%0] (13) at (1, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (12) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (9) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) { };
@@ -48,6 +49,7 @@ expression: output
 		\path[->, blue] (16) [bend right] edge  node { } (19);
 		\path[->, blue] (17) [bend right] edge  node { } (23);
 		\path[->, blue] (16) [bend right] edge  node { } (22);
+		\path[->, blue] (0) [bend right] edge  node { } (15);
 		\path[->] (0) edge (4);
 		\path[->] (5) edge (9);
 		\path[->] (5) edge (9);

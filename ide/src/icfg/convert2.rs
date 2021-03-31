@@ -817,17 +817,18 @@ impl ConvertSummary {
 
         let mut caller_facts = caller_facts.into_iter().collect::<Vec<_>>();
 
-        /* 
         // We are looking for an edge from the beginning to callee_pc
         // But, we don't know if `pc` starts at 0
         let first_statement_pc_callee = graph
             .edges
             .iter()
-            .filter(|x| &x.get_from().function == callee_function)
+            .filter(|x| {
+                &x.get_from().function == callee_function && &x.to().function == callee_function
+            })
             .map(|x| x.get_from().pc)
             .min()
-            .context("Cannot find first statement's pc of callee")?;
-        */
+            .context("Cannot find first statement's pc of callee")
+            .unwrap_or(0);
 
         debug!(
             "graph {:#?}",
@@ -847,7 +848,7 @@ impl ConvertSummary {
             .filter(|x| {
                 &x.get_from().function == callee_function
                     && &x.to().function == callee_function
-                    && x.get_from().pc == 0
+                    && x.get_from().pc == first_statement_pc_callee
                     && x.to().pc == callee_pc
             })
             .map(|x| x.to())
@@ -962,21 +963,17 @@ impl ConvertSummary {
         let mut worklist = VecDeque::new();
         let mut summary_edge = Vec::new();
 
-        path_edge.push(Edge::Path {
+        self.propagate(graph, &mut path_edge, &mut worklist, Edge::Path {
             from: init.clone(),
-            to: init.clone(),
-        });
-        worklist.push_back(Edge::Path {
-            from: init.clone(),
-            to: init.clone(),
-        });
+            to: init.clone()
+        })?;
 
         // Compute init flows
 
         let init_normal_flows = self.compute_init_flows(function, graph, req.pc)?;
 
         for edge in init_normal_flows.into_iter() {
-            self.propagate(&mut path_edge, &mut worklist, edge)?;
+            self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
         }
 
         self.forward(
@@ -994,6 +991,7 @@ impl ConvertSummary {
 
     fn propagate(
         &self,
+        graph: &mut Graph,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
         e: Edge,
@@ -1002,6 +1000,7 @@ impl ConvertSummary {
 
         if f.is_none() {
             debug!("Propagate {:#?}", e);
+            graph.edges.push(e.clone());
             path_edge.push(e.clone());
             worklist.push_back(e);
         }
@@ -1084,6 +1083,7 @@ impl ConvertSummary {
                             debug!("d3 {:#?}", d3);
 
                             self.propagate(
+                                graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -1168,6 +1168,7 @@ impl ConvertSummary {
                         for d3 in call_flow.iter().chain(return_sites) {
                             let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
                             self.propagate(
+                                graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -1194,6 +1195,7 @@ impl ConvertSummary {
                             normal_flows_debug.push(f.clone());
 
                             self.propagate(
+                                graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -1202,6 +1204,46 @@ impl ConvertSummary {
                                 },
                             )?;
                         }
+
+                        assert_eq!(d1.function, d2.function);
+
+                        let first_statement_pc_callee = graph
+                            .edges
+                            .iter()
+                            .filter(|x| {
+                                x.get_from().function == d1.function
+                                    && x.to().function == d1.function
+                            })
+                            .map(|x| x.get_from().pc)
+                            .min()
+                            .context("Cannot find first statement's pc of callee")
+                            .unwrap_or(0);
+
+                        if let Some(end_summary) = end_summary.get_mut(&(
+                            d1.function.clone(),
+                            first_statement_pc_callee,
+                            d1.belongs_to_var.clone(),
+                        )) {
+                            let facts = graph
+                                .get_facts_at(&d2.function.clone(), d2.pc)?
+                                .into_iter()
+                                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                                .map(|x| x.clone());
+                            end_summary.extend(facts);
+                        } else {
+                            let facts = graph
+                                .get_facts_at(&d2.function.clone(), d2.pc)?
+                                .into_iter()
+                                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                                .map(|x| x.clone())
+                                .collect();
+                            end_summary.insert(
+                                (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
+                                facts,
+                            );
+                        }
+
+                        debug!("End Summary {:#?}", end_summary);
                     }
                     _ => {
                         let new_function = program
@@ -1220,6 +1262,7 @@ impl ConvertSummary {
                             normal_flows_debug.push(f.clone());
 
                             self.propagate(
+                                graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -1245,7 +1288,7 @@ impl ConvertSummary {
             }
         }
 
-        graph.edges.extend_from_slice(&path_edge);
+        //graph.edges.extend_from_slice(&path_edge);
         graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
@@ -1361,6 +1404,7 @@ impl ConvertSummary {
 
                         for d3 in edges.into_iter() {
                             self.propagate(
+                                graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {

@@ -145,7 +145,6 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_block() {
-    env_logger::init();
     let req = Request {
         variable: "%0".to_string(),
         function: "test".to_string(),
