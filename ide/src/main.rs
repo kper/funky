@@ -34,6 +34,8 @@ use tui::{
 
 use crate::ir::ast::Instruction;
 
+use std::net::UdpSocket;
+
 #[macro_use]
 extern crate lalrpop_util;
 
@@ -267,11 +269,16 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     let mut already_computed = false;
     let mut req = None;
 
+    let udp_socket = setup_logging();
+
     loop {
         if let Some(ref req) = req {
             if !already_computed {
                 taints = get_taints(req).context("Cannot get taints for ui")?;
                 already_computed = true;
+                udp_socket
+                    .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242")
+                    .context("Cannot send logging information")?;
             }
         }
 
@@ -434,4 +441,9 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         }
         _ => false,
     }
+}
+
+fn setup_logging() -> UdpSocket {
+    let socket = UdpSocket::bind("127.0.0.1:34254").expect("couldn't bind to address");
+    socket
 }
