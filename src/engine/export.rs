@@ -6,11 +6,11 @@ pub struct ExportInstance {
     pub value: ExternalKindType,
 }
 
-impl Into<ExportInstance> for &ExportEntry {
-    fn into(self) -> ExportInstance {
+impl From<&ExportEntry> for ExportInstance {
+    fn from(state: &ExportEntry) -> ExportInstance {
         ExportInstance {
-            name: self.name.clone(),
-            value: self.kind,
+            name: state.name.clone(),
+            value: state.kind,
         }
     }
 }
