@@ -46,6 +46,7 @@ impl ConvertSummary {
         graph: &mut Graph,
         pc: usize,
         init_facts: &Vec<Fact>,
+        normal_flows_debug: &mut Vec<Edge>,
     ) -> Result<Vec<Edge>> {
         debug!("Calling init flow for {} with pc {}", function.name, pc);
 
@@ -85,7 +86,7 @@ impl ConvertSummary {
             )?;
             let after2 = _after2.get(0).unwrap();
 
-            edges.push(Edge::Normal {
+            normal_flows_debug.push(Edge::Normal {
                 from: init_fact.clone(),
                 to: after2.clone(),
                 curved: false,
@@ -110,7 +111,7 @@ impl ConvertSummary {
                         graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -139,7 +140,7 @@ impl ConvertSummary {
                     )?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -168,7 +169,7 @@ impl ConvertSummary {
                     )?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -197,7 +198,7 @@ impl ConvertSummary {
                     )?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -222,7 +223,7 @@ impl ConvertSummary {
                         graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -251,7 +252,7 @@ impl ConvertSummary {
                     )?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -284,7 +285,7 @@ impl ConvertSummary {
                     )?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
-                        edges.push(Edge::Normal {
+                        normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
                             curved: false,
@@ -1168,6 +1169,7 @@ impl ConvertSummary {
         let mut path_edge = Vec::new();
         let mut worklist = VecDeque::new();
         let mut summary_edge = Vec::new();
+        let mut normal_flows_debug = Vec::new();
 
         self.propagate(
             graph,
@@ -1180,7 +1182,8 @@ impl ConvertSummary {
         )?;
 
         // Compute init flows
-        let init_normal_flows = self.compute_init_flows(function, graph, req.pc, &facts)?;
+        let init_normal_flows =
+            self.compute_init_flows(function, graph, req.pc, &facts, &mut normal_flows_debug)?;
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -1192,6 +1195,7 @@ impl ConvertSummary {
             &mut path_edge,
             &mut worklist,
             &mut summary_edge,
+            &mut normal_flows_debug,
             &mut graph,
             req.pc,
         )?;
@@ -1257,18 +1261,19 @@ impl ConvertSummary {
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
         summary_edge: &mut Vec<Edge>,
+        normal_flows_debug: &mut Vec<Edge>,
         graph: &mut Graph,
         start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
-        let mut normal_flows_debug = Vec::new();
-
         self.resolve_block_ids(&function, start_pc)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
+
+            assert!(matches!(edge, Edge::Path { .. }), "Edge in the worklist has wrong type");
 
             let d1 = edge.get_from();
             let d2 = edge.to();
@@ -1291,7 +1296,7 @@ impl ConvertSummary {
                 pc,
                 graph,
                 function,
-                &mut normal_flows_debug,
+                normal_flows_debug,
                 d1,
                 path_edge,
                 worklist,
@@ -1323,7 +1328,7 @@ impl ConvertSummary {
                             program,
                             d2,
                             graph,
-                            &mut normal_flows_debug,
+                            normal_flows_debug,
                             path_edge,
                             worklist,
                             d1,
@@ -1379,8 +1384,6 @@ impl ConvertSummary {
 
         Ok(())
     }
-
-    
 
     fn handle_call(
         &mut self,
@@ -1605,7 +1608,7 @@ impl ConvertSummary {
         worklist: &mut VecDeque<Edge>,
     ) -> Result<()> {
         Ok({
-            let instruction = instructions.get(pc+ 1);
+            let instruction = instructions.get(pc + 1);
 
             if let Some(instruction) = instruction {
                 let after = graph.add_statement(
