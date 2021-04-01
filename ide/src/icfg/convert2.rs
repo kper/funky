@@ -282,16 +282,17 @@ impl ConvertSummary {
         let instructions = &function.instructions;
 
         let instruction = instructions.get(pc).context("Cannot find instr")?;
-        debug!("Next instruction is {:?}", instruction);
+        debug!("Next instruction is {:?} for {}", instruction, variable);
 
         match instruction {
-            Instruction::Const(reg, _) if reg != variable => {
+            Instruction::Const(reg, _) if reg == variable => {
+                /*
                 let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .filter(|x| x.var_is_taut)
+                    .filter(|x| &x.belongs_to_var == reg)
                     .cloned();
 
                 for (b, a) in before2.zip(after2) {
@@ -301,9 +302,10 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
+                */
             }
-            Instruction::Const(_reg, _) => {
-                //kill
+            Instruction::Const(reg, _) if reg != variable => {
+                // ignore
             }
             Instruction::Assign(dest, src) if src == variable => {
                 let mut after2 =
@@ -353,9 +355,6 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Assign(_dest, _src) => {
-                // kill
-            }
             Instruction::Unop(dest, src) if src == variable => {
                 let mut after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -403,9 +402,6 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
-            }
-            Instruction::Unop(_dest, _src) => {
-                // kill
             }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
                 let mut after2 =
@@ -483,9 +479,6 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
-            }
-            Instruction::BinOp(_dest, _src, _src2) => {
-                // kill
             }
             Instruction::Kill(reg) if variable == reg => {
                 // kill
@@ -674,9 +667,6 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Phi(_dest, _src, _src2) => {
-                // kill
-            }
             Instruction::Table(jumps) => {
                 for block in jumps.iter() {
                     let jump_to_pc = self
@@ -754,6 +744,31 @@ impl ConvertSummary {
             }
         }
 
+        // Identity for the rest
+
+        let before2 = graph
+            .get_facts_at(&function.name, pc)?
+            .into_iter()
+            .filter(|x| &x.belongs_to_var != variable && !x.var_is_taut)
+            .cloned()
+            .collect::<Vec<_>>();
+
+        for b in before2 {
+            let after2 = graph.add_statement(
+                function,
+                format!("{:?}", instruction),
+                pc + 1,
+                &b.belongs_to_var,
+            )?;
+            let a = after2.get(0).context("Cannot get statement")?.clone();
+
+            edges.push(Edge::Normal {
+                from: b,
+                to: a,
+                curved: false,
+            });
+        }
+
         Ok(edges)
     }
 
@@ -802,17 +817,18 @@ impl ConvertSummary {
             worklist,
             normal_flows_debug,
             init_taut_fact,
+            init_taut_fact.next_pc,
         )
         .context("Pacemaker for pass_args failed")?;
 
         self.resolve_block_ids(&callee_function, start_pc)?;
-        self.compute_init_flows(
+        /*self.compute_init_flows(
             callee_function,
             graph,
             start_pc,
             &init_facts,
             normal_flows_debug,
-        )?;
+        )?;*/
 
         // Filter by variable
         let callee_fact = init_facts
@@ -902,6 +918,10 @@ impl ConvertSummary {
                 });
             } else {
                 //Create the dest
+                let track = graph
+                    .get_track(caller_function, &to_reg)
+                    .context("Cannot find track")?;
+
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
                     to: Fact {
@@ -909,9 +929,7 @@ impl ConvertSummary {
                         belongs_to_var: to_reg.clone(),
                         function: caller_function.clone(),
                         next_pc: caller_pc + 1,
-                        track: graph
-                            .get_track(caller_function, &to_reg)
-                            .context("Cannot find track")?,
+                        track,
                         var_is_global: false,
                         var_is_taut: from.var_is_taut,
                     },
@@ -1020,6 +1038,7 @@ impl ConvertSummary {
             &mut worklist,
             &mut normal_flows_debug,
             &init,
+            init.next_pc + 1, //skip fi
         )?;
 
         // Compute init flows
@@ -1559,10 +1578,24 @@ impl ConvertSummary {
                             let d3 = d3.to();
 
                             // Take the old and replace it with new var.
+                            /* 
                             let mut new_return_site_d5 = d3.clone();
-                            new_return_site_d5.id = graph.fact_counter.get();
+                            new_return_site_d5.id = ;
                             new_return_site_d5.next_pc = new_return_site_d5.next_pc + 1; // + 1 is the return site.
                             new_return_site_d5.belongs_to_var = d5.belongs_to_var.clone();
+                            new_return_site_d5.var_is_global = d5.var_is_global;
+                            new_return_site_d5.var_is_taut = d5.var_is_taut;
+                            */
+
+                            let new_return_site_d5 = Fact {
+                                id: graph.fact_counter.get(),
+                                next_pc: d3.next_pc + 1,
+                                belongs_to_var: d5.belongs_to_var.clone(),
+                                function: d3.function.clone(),
+                                var_is_global: d5.var_is_global,
+                                var_is_taut: d5.var_is_taut,
+                                track: d5.track,
+                            };
 
                             self.propagate(
                                 graph,
@@ -1590,11 +1623,12 @@ impl ConvertSummary {
         worklist: &mut VecDeque<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         start_taut: &Fact,
+        start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let mut edges = Vec::new();
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
-        for (i, instruction) in function.instructions.iter().enumerate().skip(1) {
+        for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
             let facts = graph.add_statement(
                 function,
                 format!("{:?}", instruction),
