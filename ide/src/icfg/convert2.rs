@@ -998,7 +998,7 @@ impl ConvertSummary {
         // %1   -> %1
 
         // Create an edge.
-        let edges = vec![Edge::CallToReturn {
+        let edges = vec![Edge::Call {
             from: caller_fact.clone().clone(),
             to: callee_fact.clone(),
         }];
@@ -1039,6 +1039,7 @@ impl ConvertSummary {
 
         // We are looking for an edge from the beginning to callee_pc
         // But, we don't know if `pc` starts at 0
+        /*
         let first_statement_pc_callee = graph
             .edges
             .iter()
@@ -1049,9 +1050,11 @@ impl ConvertSummary {
             .min()
             .context("Cannot find first statement's pc of callee")
             .unwrap_or(0);
+            */
 
         // Cannot query all facts, because some vars might not exist anymore
         // We want to check the ones, which are still alive.
+        /*
         let mut callee_facts = graph
             .edges
             .iter()
@@ -1063,6 +1066,11 @@ impl ConvertSummary {
             })
             .map(|x| x.to())
             .collect::<Vec<_>>(); //(callee_function, callee_pc)?;
+            */
+
+        let mut callee_facts = graph
+            .get_facts_at(callee_function, callee_pc)?
+            .collect::<Vec<_>>();
 
         caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
         callee_facts.sort_by(|a, b| a.track.cmp(&b.track));
@@ -1076,7 +1084,7 @@ impl ConvertSummary {
 
         debug!("=> dest {:?}", dest);
 
-        for (from, to) in callee_facts.iter().zip(
+        for (to, from) in callee_facts.iter().zip(
             caller_facts
                 .iter()
                 .filter(|x| dest.contains(&x.belongs_to_var)),
@@ -1273,7 +1281,10 @@ impl ConvertSummary {
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
-            assert!(matches!(edge, Edge::Path { .. }), "Edge in the worklist has wrong type");
+            assert!(
+                matches!(edge, Edge::Path { .. }),
+                "Edge in the worklist has wrong type"
+            );
 
             let d1 = edge.get_from();
             let d2 = edge.to();
@@ -1292,12 +1303,12 @@ impl ConvertSummary {
 
             // Prepare next instruction
             self.pacemaker(
-                instructions,
+                program,
+                d1,
+                d2,
                 pc,
                 graph,
-                function,
                 normal_flows_debug,
-                d1,
                 path_edge,
                 worklist,
             )?;
@@ -1598,16 +1609,23 @@ impl ConvertSummary {
     /// Generate new taut instruction
     fn pacemaker(
         &mut self,
-        instructions: &Vec<Instruction>,
+        program: &Program,
+        d1: &Fact,
+        d2: &Fact,
         pc: usize,
         graph: &mut Graph,
-        function: &AstFunction,
         normal_flows_debug: &mut Vec<Edge>,
-        d1: &Fact,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
     ) -> Result<()> {
         Ok({
+            let function = program
+                .functions
+                .iter()
+                .find(|x| x.name == d2.function)
+                .context("Cannot fund function")?;
+            let instructions = &function.instructions;
+
             let instruction = instructions.get(pc + 1);
 
             if let Some(instruction) = instruction {
@@ -1655,6 +1673,11 @@ impl ConvertSummary {
     ) -> Result<()> {
         // this is E_p
         debug!("=> Reached end of procedure");
+
+        if d1.function != d2.function {
+            debug!("=> From and End of the edge are not the same function. Therefore aborting.");
+            return Ok(());
+        }
 
         // Summary
         if let Some(end_summary) =
@@ -1745,13 +1768,23 @@ impl ConvertSummary {
                             .collect();
 
                         for d3 in edges.into_iter() {
+                            // here d5 should be var of caller
+                            let root = d3.get_from();
+                            let d3 = d3.to();
+
+                            // Take the old and replace it with new var.
+                            let mut new_return_site_d5 = d3.clone();
+                            new_return_site_d5.id = graph.fact_counter.get();
+                            new_return_site_d5.pc = new_return_site_d5.pc + 1; // + 1 is the return site.
+                            new_return_site_d5.belongs_to_var = d5.belongs_to_var.clone();
+
                             self.propagate(
                                 graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
-                                    from: d3.get_from().clone(),
-                                    to: d5.clone().clone(),
+                                    from: root.clone(),
+                                    to: new_return_site_d5,
                                 },
                             )?;
                         }

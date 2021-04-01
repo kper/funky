@@ -17,8 +17,12 @@ pub struct Graph {
     //pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     pub notes: Vec<Note>,
-    fact_counter: Counter,
+    pub fact_counter: Counter,
     note_counter: Counter,
+    /// `init_facts` is a helper struct for getting the initial facts
+    /// of a functions. We need this because we have to reinitalize the
+    /// function when function is calling itself.
+    init_facts: HashMap<FunctionName, Vec<Fact>>,
 }
 
 #[derive(Debug, Clone)]
@@ -166,13 +170,13 @@ impl Graph {
 
                 // Return the first facts of the function.
                 return Ok(self
-                    .edges
-                    .iter()
-                    .filter(|x| x.get_from().function == function.name && x.get_from().pc == pc)
-                    .map(|x| x.get_from())
-                    .cloned()
-                    .collect());
+                    .init_facts
+                    .get(&function.name)
+                    .context("Cannot get function's stored init facts")?
+                    .clone());
             }
+
+            // else reinitalize the function.
         }
 
         self.init_function_def(function)?;
@@ -215,14 +219,8 @@ impl Graph {
 
         self.vars.insert(function.name.clone(), variables);
 
-        // generate of all facts
-        
-        //self.add_statement(function, format!("{:?}", instruction), i + 1)?;
-
-        /*
-        for (i, instruction) in function.instructions.iter().enumerate() {
-            self.add_statement(function, format!("{:?}", instruction), i + 1)?;
-        }*/
+        // insert the initial facts or update them.
+        self.init_facts.insert(function.name.clone(), facts.clone());
 
         Ok(facts)
     }
@@ -266,17 +264,26 @@ impl Graph {
     ) -> Result<impl Iterator<Item = &Fact>> {
         let function = function.clone();
 
-        /*
+        // changed to `to()` because all edges start usually at root
         Ok(self
-            .facts
+            .edges
             .iter()
-            .filter(move |x| x.function == function && x.pc == pc))*/
+            .filter(move |x| x.get_from().function == function && x.to().pc == pc)
+            .map(|x| x.to()))
+    }
+
+    pub fn get_facts_at2(
+        &self,
+        function: &String,
+        pc: usize,
+    ) -> Result<impl Iterator<Item = &Fact>> {
+        let function = function.clone();
 
         Ok(self
             .edges
             .iter()
             .filter(move |x| x.get_from().function == function && x.get_from().pc == pc)
-            .map(|x| x.get_from()))
+            .map(|x| x.to()))
     }
 
     pub fn get_first_facts(&self, function: &String) -> Result<impl Iterator<Item = &Fact>> {
