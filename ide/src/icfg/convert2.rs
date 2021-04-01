@@ -480,6 +480,9 @@ impl ConvertSummary {
                     });
                 }
             }
+            Instruction::BinOp(_dest, _src1, _src2) => {
+                //kill
+            }
             Instruction::Kill(reg) if variable == reg => {
                 // kill
             }
@@ -1578,15 +1581,6 @@ impl ConvertSummary {
                             let d3 = d3.to();
 
                             // Take the old and replace it with new var.
-                            /* 
-                            let mut new_return_site_d5 = d3.clone();
-                            new_return_site_d5.id = ;
-                            new_return_site_d5.next_pc = new_return_site_d5.next_pc + 1; // + 1 is the return site.
-                            new_return_site_d5.belongs_to_var = d5.belongs_to_var.clone();
-                            new_return_site_d5.var_is_global = d5.var_is_global;
-                            new_return_site_d5.var_is_taut = d5.var_is_taut;
-                            */
-
                             let new_return_site_d5 = Fact {
                                 id: graph.fact_counter.get(),
                                 next_pc: d3.next_pc + 1,
