@@ -38,7 +38,7 @@ impl Solver for IfdsSolver {
             .filter(|x| {
                 &x.get_from().function == function && (&x.get_from().belongs_to_var == variable || x.get_from().var_is_taut)
             })
-            .map(|x| x.get_from().pc)
+            .map(|x| x.get_from().next_pc)
             .min();
 
         if let Some(first_pc) = first_pc {
@@ -48,7 +48,7 @@ impl Solver for IfdsSolver {
                 .map(|x| x.get_from())
                 .filter(|x| {
                     &x.function == function
-                        && x.pc == first_pc
+                        && x.next_pc == first_pc
                         && (x.var_is_taut || &x.belongs_to_var == variable)
                 })
                 .collect();
@@ -62,7 +62,7 @@ impl Solver for IfdsSolver {
                 .filter(|x| !x.var_is_taut)
                 .map(|x| Taint {
                     function: x.function.clone(),
-                    pc: x.pc,
+                    pc: x.next_pc,
                     variable: x.belongs_to_var.clone(),
                 })
                 .collect();

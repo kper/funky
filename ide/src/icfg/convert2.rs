@@ -968,11 +968,17 @@ impl ConvertSummary {
             .collect();
         debug!("Facts before statement {}", before.len());
 
-        let after = graph.get_facts_at(&caller_function.name, pc + 1)?;
+        let after = graph.get_facts_at(&caller_function.name, pc)?;
 
         let after: Vec<_> = after
-            .filter(|x| &x.belongs_to_var == caller)
+            .filter(|x| !x.var_is_taut)
             .filter(|x| !dests.contains(&x.belongs_to_var))
+            .cloned()
+            .map(|x| {
+                let mut y = x;
+                y.next_pc += 1;
+                y
+            })
             .collect();
 
         debug!("Facts after statement without dests {}", after.len());
@@ -987,9 +993,11 @@ impl ConvertSummary {
                 .find(|x| x.belongs_to_var == fact.belongs_to_var);
 
             if let Some(b) = b {
+                let mut b = b.clone();
+                b.id = graph.fact_counter.get();
                 edges.push(Edge::CallToReturn {
                     from: fact.clone(),
-                    to: b.clone().clone(),
+                    to: b,
                 });
             } else {
                 debug!(
@@ -1381,6 +1389,7 @@ impl ConvertSummary {
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
             let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
+            normal_flows_debug.push(d3.clone());
             self.propagate(
                 graph,
                 path_edge,
