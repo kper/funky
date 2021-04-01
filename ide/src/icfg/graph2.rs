@@ -5,7 +5,7 @@ use crate::ir::ast::Function as AstFunction;
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::collections::HashMap;
+use std::{collections::HashMap, env::var};
 
 type VarId = String;
 type FunctionName = String;
@@ -14,7 +14,7 @@ type FunctionName = String;
 pub struct Graph {
     pub vars: HashMap<FunctionName, Vec<Variable>>,
     pub functions: HashMap<FunctionName, Function>,
-    pub facts: Vec<Fact>,
+    //pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
     pub notes: Vec<Note>,
     fact_counter: Counter,
@@ -38,7 +38,6 @@ pub struct Fact {
     pub pc: usize,
     pub track: usize,
     pub function: FunctionName,
-    pub is_return: bool,
 }
 
 #[derive(Debug)]
@@ -107,31 +106,14 @@ impl Graph {
         self.functions.get(name).is_some()
     }
 
-    /// Query graph by given Request.
-    pub fn query(&self, req: &Request) -> Option<&Fact> {
-        if let Some(var) = req.variable.as_ref() {
-            self.facts
-                .iter()
-                .find(|x| &x.belongs_to_var == var && x.pc == req.pc && x.function == req.function)
-        } else {
-            self.facts
-                .iter()
-                .find(|x| x.pc == req.pc && x.function == req.function)
-        }
-    }
-
-    /// Query graph by given fact_id.
-    pub fn query_by_fact_id(&self, id: usize) -> Option<&Fact> {
-        self.facts.iter().find(|x| x.id == id)
-    }
-
     pub fn get_taut(&self, function: &String) -> Option<&Fact> {
-        self.facts
+        self.edges
             .iter()
-            .find(|x| x.var_is_taut && &x.function == function)
+            .find(|x| x.get_from().var_is_taut && &x.get_from().function == function)
+            .map(|x| x.get_from())
     }
 
-    pub fn init_function_fact(&mut self, function: String, pc: usize) -> &Fact {
+    pub fn init_function_fact(&mut self, function: String, pc: usize) -> Fact {
         let fact = Fact {
             id: self.fact_counter.get(),
             belongs_to_var: "taut".to_string(),
@@ -140,11 +122,12 @@ impl Graph {
             function,
             pc,
             track: 0,
-            is_return: false,
         };
 
-        self.facts.push(fact);
-        self.facts.get(self.facts.len() - 1).unwrap()
+        fact
+
+        //self.facts.push(fact);
+        //self.facts.get(self.facts.len() - 1).unwrap()
     }
 
     pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
@@ -171,10 +154,10 @@ impl Graph {
             // but there is a self recursive call.
 
             let min_pc = self
-                .facts
+                .edges
                 .iter()
-                .filter(|x| x.function == function.name)
-                .map(|x| x.pc)
+                .filter(|x| x.get_from().function == function.name)
+                .map(|x| x.get_from().pc)
                 .min()
                 .context("No facts found")?;
 
@@ -183,9 +166,10 @@ impl Graph {
 
                 // Return the first facts of the function.
                 return Ok(self
-                    .facts
+                    .edges
                     .iter()
-                    .filter(|x| x.function == function.name && x.pc == pc)
+                    .filter(|x| x.get_from().function == function.name && x.get_from().pc == pc)
+                    .map(|x| x.get_from())
                     .cloned()
                     .collect());
             }
@@ -232,10 +216,13 @@ impl Graph {
         self.vars.insert(function.name.clone(), variables);
 
         // generate of all facts
+        
+        //self.add_statement(function, format!("{:?}", instruction), i + 1)?;
 
+        /*
         for (i, instruction) in function.instructions.iter().enumerate() {
             self.add_statement(function, format!("{:?}", instruction), i + 1)?;
-        }
+        }*/
 
         Ok(facts)
     }
@@ -259,12 +246,11 @@ impl Graph {
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
                 pc,
-                is_return: false,
                 track: index,
                 function: function.name.clone(),
             };
 
-            self.facts.push(fact.clone());
+            //self.facts.push(fact.clone());
             facts.push(fact);
 
             index += 1;
@@ -280,17 +266,17 @@ impl Graph {
     ) -> Result<impl Iterator<Item = &Fact>> {
         let function = function.clone();
 
+        /*
         Ok(self
             .facts
             .iter()
-            .filter(move |x| x.function == function && x.pc == pc))
+            .filter(move |x| x.function == function && x.pc == pc))*/
 
-        /*
         Ok(self
             .edges
             .iter()
             .filter(move |x| x.get_from().function == function && x.get_from().pc == pc)
-            .map(|x| x.get_from()))*/
+            .map(|x| x.get_from()))
     }
 
     pub fn get_first_facts(&self, function: &String) -> Result<impl Iterator<Item = &Fact>> {
@@ -306,37 +292,36 @@ impl Graph {
         self.get_facts_at(&function, min)
     }
 
-    pub fn new_fact(&mut self, fact: Fact) -> Result<()> {
-        self.facts.push(fact);
-
-        Ok(())
-    }
-
     pub fn add_statement(
         &mut self,
         function: &AstFunction,
         instruction: String,
         pc: usize,
-        //variable: &String,
-    ) -> Result<()> {
-        debug!("Adding statement {:?}", instruction);
+        variable: &String,
+    ) -> Result<Vec<Fact>> {
+        debug!(
+            "Adding statement {:?} at {} for {}",
+            instruction, pc, variable
+        );
 
         let vars = self
             .vars
             .get(&function.name)
             .context("Cannot get functions's vars")?
             .clone();
-        let vars = vars.iter().enumerate();
+        let mut vars = vars.iter().enumerate();
 
         //.filter(|x| &x.1.name == variable);
 
         //let pc = self.pc_counter.get();
         //debug!("New pc {} for {}", pc, function.name);
 
-        for (track, var) in vars {
+        let mut facts = Vec::new();
+
+        for (track, var) in vars.find(|x| &x.1.name == variable) {
             debug!("Adding new fact for {}", var.name);
 
-            self.facts.push(Fact {
+            facts.push(Fact {
                 id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
@@ -344,18 +329,32 @@ impl Graph {
                 track,
                 function: function.name.clone(),
                 pc,
-                is_return: false,
             });
+
+            if var.is_taut {
+                self.notes.push(Note {
+                    id: self.note_counter.get(),
+                    function: function.name.clone(),
+                    pc,
+                    note: instruction.clone(),
+                });
+            }
         }
 
-        self.notes.push(Note {
-            id: self.note_counter.get(),
-            function: function.name.clone(),
-            pc,
-            note: instruction.clone(),
-        });
+        Ok(facts)
+    }
 
-        Ok(())
+    /// Create new tautological fact by given function and pc.
+    pub fn taut(&mut self, function: String, pc: usize) -> Fact {
+        Fact {
+            id: self.fact_counter.get(),
+            belongs_to_var: "taut".to_string(),
+            var_is_taut: true,
+            var_is_global: false,
+            function,
+            pc,
+            track: 0,
+        }
     }
 }
 
@@ -378,7 +377,7 @@ mod test {
             )
             .unwrap();
 
-        assert_eq!(2, graph.facts.len());
+        //assert_eq!(2, graph.facts.len());
         assert_eq!(1, graph.vars.len());
         assert_eq!(2, graph.vars.get(&"main".to_string()).unwrap().len());
     }
