@@ -37,7 +37,7 @@ pub fn render_to(graph: &Graph) -> String {
                 fact.belongs_to_var.replace("%", "\\%"),
                 fact.id,
                 index + fact.track,
-                fact.pc,
+                fact.next_pc,
                 //fact.id
             ));
         }
@@ -49,7 +49,7 @@ pub fn render_to(graph: &Graph) -> String {
                 "\\node[font=\\tiny] (note_{}) at ({}, {}) {{{}}};\n",
                 note.id,
                 index as f64 - 1.5,   //x
-                note.pc as f64 - 0.5, //y
+                note.pc as f64 + 0.5, //y
                 note.note.replace("%", "").replace("\"", "").escape_debug(),
             ));
         }

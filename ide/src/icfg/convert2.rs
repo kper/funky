@@ -62,35 +62,22 @@ impl ConvertSummary {
             let pc = pc + offset;
             let instruction = instructions.get(pc).context("Cannot find instr")?;
             debug!("Next instruction is {:?}", instruction);
-            /*
-            let instruction_after = instructions.get(pc + 1).context("Cannot find instr")?;
-            graph.add_statement(function, format!("{:?}", instruction), pc)?;
-            graph.add_statement(function, format!("{:?}", instruction_after), pc + 1)?;*/
-
-            /*
-            let init_fact = graph
-                .facts
-                .iter()
-                .find(|x| x.function == function.name && x.pc == pc && x.var_is_taut)
-                .context("Cannot find taut")?;
-                */
-
-            //let next_instruction = instructions.get(pc + 1).context("Cannot find instr")?;
 
             let init_fact = init_facts.get(0).context("Cannot find taut")?;
             let _after2 = graph.add_statement(
                 function,
                 format!("{:?}", instruction),
-                pc + 1,
+                pc,
                 &"taut".to_string(),
             )?;
             let after2 = _after2.get(0).unwrap();
 
+            /*
             normal_flows_debug.push(Edge::Normal {
                 from: init_fact.clone(),
                 to: after2.clone(),
                 curved: false,
-            });
+            });*/
             edges.push(Edge::Path {
                 from: init_fact.clone().clone(),
                 to: after2.clone(),
@@ -183,13 +170,6 @@ impl ConvertSummary {
                 Instruction::BinOp(dest, _src, _src2) => {
                     let before2 = vec![init_fact.clone()];
 
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();*/
-
                     let after2 = graph.add_statement(
                         function,
                         format!("{:?}", instruction),
@@ -212,13 +192,6 @@ impl ConvertSummary {
                 Instruction::Conditional(reg, _) => {
                     let before2 = vec![init_fact.clone()];
 
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == reg)
-                        .cloned();*/
-
                     let after2 =
                         graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
@@ -236,13 +209,6 @@ impl ConvertSummary {
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
                     let before2 = vec![init_fact.clone()];
-
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| x.var_is_taut)
-                        .cloned();*/
 
                     let after2 = graph.add_statement(
                         function,
@@ -269,13 +235,6 @@ impl ConvertSummary {
                 }
                 Instruction::Phi(dest, _src1, _src2) => {
                     let before2 = vec![init_fact.clone()];
-
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();*/
 
                     let after2 = graph.add_statement(
                         function,
@@ -325,25 +284,15 @@ impl ConvertSummary {
         let instruction = instructions.get(pc).context("Cannot find instr")?;
         debug!("Next instruction is {:?}", instruction);
 
-        //graph.add_statement(function, format!("{:?}", instruction), pc + 1)?;
-
         match instruction {
             Instruction::Const(reg, _) if reg != variable => {
                 let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
-                // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
-                    .filter(|x| &x.belongs_to_var == variable)
+                    .filter(|x| x.var_is_taut)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -375,14 +324,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();
-                    */
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -399,18 +340,10 @@ impl ConvertSummary {
                     variable,
                 )?;
 
-                // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -442,14 +375,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();
-                    */
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -466,18 +391,10 @@ impl ConvertSummary {
                     variable,
                 )?;
 
-                // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -509,14 +426,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();
-                    */
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -544,13 +453,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();*/
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -569,18 +471,10 @@ impl ConvertSummary {
                     variable,
                 )?;
 
-                // Identity
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -614,13 +508,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, *jump_to_pc)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
-
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -650,13 +537,6 @@ impl ConvertSummary {
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, *jump_to_pc)?
-                        .filter(|x| &x.belongs_to_var == variable)
-                        .cloned();
-                        */
-
                     for (b, a) in before2.zip(after2) {
                         edges.push(Edge::Normal {
                             from: b,
@@ -678,13 +558,6 @@ impl ConvertSummary {
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -712,13 +585,6 @@ impl ConvertSummary {
                         .get_facts_at(&function.name, pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
-
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, *jump_to_pc)?
-                        .filter(|x| &x.belongs_to_var == variable)
-                        .cloned();
-                        */
 
                     for (b, a) in before2.zip(after2) {
                         edges.push(Edge::Normal {
@@ -748,14 +614,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src1)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();
-                    */
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -783,14 +641,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest || &x.belongs_to_var == src2)
-                    //.filter(|x| &x.belongs_to_var != dest)
-                    .cloned();
-                    */
-
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -815,14 +665,6 @@ impl ConvertSummary {
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -855,14 +697,6 @@ impl ConvertSummary {
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, *jump_to_pc)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == variable)
-                        .cloned();
-                        */
-
                     for (b, a) in before2.zip(after2) {
                         edges.push(Edge::Normal {
                             from: b,
@@ -887,14 +721,6 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
-
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -917,14 +743,6 @@ impl ConvertSummary {
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
-
-                /*
-                let after2 = graph
-                    .get_facts_at(&function.name, pc + 1)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-                    */
 
                 for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
@@ -949,6 +767,9 @@ impl ConvertSummary {
         graph: &mut Graph,
         current_pc: usize,
         caller_var: &String,
+        normal_flows_debug: &mut Vec<Edge>,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
     ) -> Result<Vec<Edge>> {
         // Why not dests? Because we don't care about
         // the destination for the function call in
@@ -972,7 +793,26 @@ impl ConvertSummary {
         // Start from the beginning.
         let start_pc = 0;
         let init_facts = graph.init_function(callee_function, start_pc)?;
+
+        let init_taut_fact = init_facts.get(0).context("Cannot find taut")?;
+        self.pacemaker(
+            callee_function,
+            graph,
+            path_edge,
+            worklist,
+            normal_flows_debug,
+            init_taut_fact,
+        )
+        .context("Pacemaker for pass_args failed")?;
+
         self.resolve_block_ids(&callee_function, start_pc)?;
+        self.compute_init_flows(
+            callee_function,
+            graph,
+            start_pc,
+            &init_facts,
+            normal_flows_debug,
+        )?;
 
         // Filter by variable
         let callee_fact = init_facts
@@ -998,10 +838,11 @@ impl ConvertSummary {
         // %1   -> %1
 
         // Create an edge.
-        let edges = vec![Edge::Call {
+        let mut edges = vec![];
+        edges.push(Edge::Call {
             from: caller_fact.clone().clone(),
             to: callee_fact.clone(),
-        }];
+        });
 
         Ok(edges)
     }
@@ -1013,7 +854,6 @@ impl ConvertSummary {
         callee_function: &String,
         caller_pc: usize,
         callee_pc: usize,
-        //dest: &Vec<String>,
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
     ) -> Result<Vec<Edge>> {
@@ -1034,42 +874,14 @@ impl ConvertSummary {
 
         let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
 
-        let mut caller_facts = caller_facts.into_iter().collect::<Vec<_>>();
+        let mut edges = Vec::new();
+
+        let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
         debug!("Caller facts {:#?}", caller_facts);
-
-        // We are looking for an edge from the beginning to callee_pc
-        // But, we don't know if `pc` starts at 0
-        /*
-        let first_statement_pc_callee = graph
-            .edges
-            .iter()
-            .filter(|x| {
-                &x.get_from().function == callee_function && &x.to().function == callee_function
-            })
-            .map(|x| x.get_from().pc)
-            .min()
-            .context("Cannot find first statement's pc of callee")
-            .unwrap_or(0);
-            */
-
-        // Cannot query all facts, because some vars might not exist anymore
-        // We want to check the ones, which are still alive.
-        /*
-        let mut callee_facts = graph
-            .edges
-            .iter()
-            .filter(|x| {
-                &x.get_from().function == callee_function
-                    && &x.to().function == callee_function
-                    && x.get_from().pc == first_statement_pc_callee
-                    && x.to().pc == callee_pc
-            })
-            .map(|x| x.to())
-            .collect::<Vec<_>>(); //(callee_function, callee_pc)?;
-            */
 
         let mut callee_facts = graph
             .get_facts_at(callee_function, callee_pc)?
+            .cloned()
             .collect::<Vec<_>>();
 
         caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
@@ -1080,19 +892,31 @@ impl ConvertSummary {
 
         // Generate edges when for all dest + taut
 
-        let mut edges = Vec::new();
-
         debug!("=> dest {:?}", dest);
 
-        for (to, from) in callee_facts.iter().zip(
-            caller_facts
-                .iter()
-                .filter(|x| dest.contains(&x.belongs_to_var)),
-        ) {
-            edges.push(Edge::Return {
-                to: to.clone().clone().clone(),
-                from: from.clone().clone(),
-            });
+        for (from, to_reg) in callee_facts.clone().into_iter().zip(dest.into_iter()) {
+            if let Some(to) = caller_facts.iter().find(|x| x.belongs_to_var == to_reg) {
+                edges.push(Edge::Return {
+                    from: from.clone().clone(),
+                    to: to.clone().clone().clone(),
+                });
+            } else {
+                //Create the dest
+                edges.push(Edge::Return {
+                    from: from.clone().clone(),
+                    to: Fact {
+                        id: graph.fact_counter.get(),
+                        belongs_to_var: to_reg.clone(),
+                        function: caller_function.clone(),
+                        next_pc: caller_pc + 1,
+                        track: graph
+                            .get_track(caller_function, &to_reg)
+                            .context("Cannot find track")?,
+                        var_is_global: false,
+                        var_is_taut: from.var_is_taut,
+                    },
+                });
+            }
         }
 
         Ok(edges)
@@ -1189,9 +1013,24 @@ impl ConvertSummary {
             },
         )?;
 
+        self.pacemaker(
+            function,
+            &mut graph,
+            &mut path_edge,
+            &mut worklist,
+            &mut normal_flows_debug,
+            &init,
+        )?;
+
         // Compute init flows
         let init_normal_flows =
             self.compute_init_flows(function, graph, req.pc, &facts, &mut normal_flows_debug)?;
+
+        let init_taut = init_normal_flows
+            .get(0)
+            .context("No edges")?
+            .get_from()
+            .clone();
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -1221,10 +1060,10 @@ impl ConvertSummary {
         let f = path_edge.iter().find(|x| {
             x.get_from().belongs_to_var == e.get_from().belongs_to_var
                 && *x.get_from().function == e.get_from().function
-                && x.get_from().pc == e.get_from().pc
+                && x.get_from().next_pc == e.get_from().next_pc
                 && (x.to().belongs_to_var == e.to().belongs_to_var
                     && x.to().function == e.to().function
-                    && x.to().pc == e.to().pc)
+                    && x.to().next_pc == e.to().next_pc)
         });
 
         if f.is_none() {
@@ -1289,7 +1128,7 @@ impl ConvertSummary {
             let d1 = edge.get_from();
             let d2 = edge.to();
 
-            let pc = edge.to().pc;
+            let pc = edge.to().next_pc;
             debug!("Instruction pointer is {}", pc);
 
             let instructions = &program
@@ -1301,6 +1140,7 @@ impl ConvertSummary {
             let n = instructions.get(pc);
             debug!("=> Instruction {:?}", n);
 
+            /*
             // Prepare next instruction
             self.pacemaker(
                 program,
@@ -1311,7 +1151,7 @@ impl ConvertSummary {
                 normal_flows_debug,
                 path_edge,
                 worklist,
-            )?;
+            )?;*/
 
             if let Some(n) = n {
                 match n {
@@ -1332,6 +1172,7 @@ impl ConvertSummary {
                             summary_edge,
                             dest,
                             pc,
+                            normal_flows_debug,
                         )?;
                     }
                     Instruction::Return(_dest) => {
@@ -1353,7 +1194,7 @@ impl ConvertSummary {
                             .find(|x| x.name == d2.function)
                             .unwrap();
                         for f in self
-                            .flow(&new_function, graph, d2.pc, &d2.belongs_to_var)?
+                            .flow(&new_function, graph, d2.next_pc, &d2.belongs_to_var)?
                             .iter()
                         {
                             debug!("Normal flow {:#?}", f);
@@ -1413,6 +1254,7 @@ impl ConvertSummary {
         summary_edge: &mut Vec<Edge>,
         dest: &Vec<String>,
         pc: usize,
+        normal_flows_debug: &mut Vec<Edge>,
     ) -> Result<(), anyhow::Error> {
         let caller_var = &d2.belongs_to_var;
         let caller_function = &program
@@ -1420,6 +1262,7 @@ impl ConvertSummary {
             .iter()
             .find(|x| x.name == d1.function)
             .context("Cannot find function for the caller")?;
+
         let call_edges = self
             .pass_args(
                 program,
@@ -1427,8 +1270,11 @@ impl ConvertSummary {
                 callee,
                 params,
                 graph,
-                d2.pc,
+                d2.next_pc,
                 caller_var,
+                normal_flows_debug,
+                path_edge,
+                worklist,
             )
             .with_context(|| {
                 format!(
@@ -1449,19 +1295,11 @@ impl ConvertSummary {
                 },
             )?; //self loop
 
-            debug!(
-                "Propagate {:?}",
-                Edge::Path {
-                    from: d3.to().clone(),
-                    to: d3.to().clone(),
-                }
-            );
-
             //Add incoming
 
             if let Some(incoming) = incoming.get_mut(&(
                 d3.to().function.clone(),
-                d3.to().pc,
+                d3.to().next_pc,
                 d3.to().belongs_to_var.clone(),
             )) {
                 if !incoming.contains(&d2) {
@@ -1471,7 +1309,7 @@ impl ConvertSummary {
                 incoming.insert(
                     (
                         d3.to().function.clone(),
-                        d3.to().pc,
+                        d3.to().next_pc,
                         d3.to().belongs_to_var.clone(),
                     ),
                     vec![d2.clone()],
@@ -1482,15 +1320,15 @@ impl ConvertSummary {
 
             if let Some(end_summary) = end_summary.get(&(
                 d3.to().function.clone(),
-                d3.to().pc,
+                d3.to().next_pc,
                 d3.to().belongs_to_var.clone(),
             )) {
                 for d4 in end_summary.iter() {
                     for d5 in self.return_val(
                         &function.name,
                         &d4.function,
-                        d2.pc,
-                        d4.pc,
+                        d2.next_pc,
+                        d4.next_pc,
                         &instructions,
                         graph,
                     )? {
@@ -1516,8 +1354,8 @@ impl ConvertSummary {
         )?;
         let return_sites = summary_edge.iter().filter(|x| {
             x.get_from().belongs_to_var == d2.belongs_to_var
-                && x.get_from().pc == d2.pc
-                && x.to().pc == d2.pc + 1
+                && x.get_from().next_pc == d2.next_pc
+                && x.to().next_pc == d2.next_pc + 1
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
             let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
@@ -1551,7 +1389,7 @@ impl ConvertSummary {
             .context("Cannot find function")?;
 
         for f in self
-            .flow(&new_function, graph, d2.pc, &d2.belongs_to_var)?
+            .flow(&new_function, graph, d2.next_pc, &d2.belongs_to_var)?
             .iter()
         {
             debug!("Normal flow {:?}", f);
@@ -1575,7 +1413,7 @@ impl ConvertSummary {
             .edges
             .iter()
             .filter(|x| x.get_from().function == d1.function && x.to().function == d1.function)
-            .map(|x| x.get_from().pc)
+            .map(|x| x.get_from().next_pc)
             .min()
             .context("Cannot find first statement's pc of callee")
             .unwrap_or(0);
@@ -1585,78 +1423,25 @@ impl ConvertSummary {
             d1.belongs_to_var.clone(),
         )) {
             let facts = graph
-                .get_facts_at(&d2.function.clone(), d2.pc)?
+                .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone());
             end_summary.extend(facts);
         } else {
             let facts = graph
-                .get_facts_at(&d2.function.clone(), d2.pc)?
+                .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone())
                 .collect();
             end_summary.insert(
-                (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
+                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
                 facts,
             );
         }
         debug!("End Summary {:#?}", end_summary);
         Ok(())
-    }
-
-    /// Generate new taut instruction
-    fn pacemaker(
-        &mut self,
-        program: &Program,
-        d1: &Fact,
-        d2: &Fact,
-        pc: usize,
-        graph: &mut Graph,
-        normal_flows_debug: &mut Vec<Edge>,
-        path_edge: &mut Vec<Edge>,
-        worklist: &mut VecDeque<Edge>,
-    ) -> Result<()> {
-        Ok({
-            let function = program
-                .functions
-                .iter()
-                .find(|x| x.name == d2.function)
-                .context("Cannot fund function")?;
-            let instructions = &function.instructions;
-
-            let instruction = instructions.get(pc + 1);
-
-            if let Some(instruction) = instruction {
-                let after = graph.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 2,
-                    &"taut".to_string(),
-                )?;
-
-                //let taut = graph.taut(d2.function.clone(), start_pc);
-
-                for goal in after.iter() {
-                    normal_flows_debug.push(Edge::Normal {
-                        from: d1.clone(),
-                        to: goal.clone(),
-                        curved: false,
-                    });
-
-                    self.propagate(
-                        graph,
-                        path_edge,
-                        worklist,
-                        Edge::Path {
-                            from: d1.clone(),
-                            to: goal.clone(),
-                        },
-                    )?;
-                }
-            }
-        })
     }
 
     fn end_procedure(
@@ -1681,21 +1466,21 @@ impl ConvertSummary {
 
         // Summary
         if let Some(end_summary) =
-            end_summary.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
+            end_summary.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
         {
             let facts = graph
-                .get_facts_at(&d2.function.clone(), d2.pc)?
+                .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone());
             end_summary.extend(facts);
         } else {
             let facts = graph
-                .get_facts_at(&d2.function.clone(), d2.pc)?
+                .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone())
                 .collect();
             end_summary.insert(
-                (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
+                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
                 facts,
             );
         }
@@ -1705,7 +1490,7 @@ impl ConvertSummary {
         // Incoming has as key the beginning of procedure
         // The values are the callers of the procedure.
         if let Some(incoming) =
-            incoming.get_mut(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
+            incoming.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
         {
             for d4 in incoming {
                 debug!("Computing return to fact to {:#?}", d4);
@@ -1723,8 +1508,8 @@ impl ConvertSummary {
                 let ret_vals = self.return_val(
                     &d4.function,
                     &d2.function,
-                    d4.pc,
-                    d2.pc,
+                    d4.next_pc,
+                    d2.next_pc,
                     &instructions,
                     graph,
                 )?;
@@ -1745,9 +1530,10 @@ impl ConvertSummary {
 
                     //assert!(d5.function != d2.function);
 
+                    debug!("summary_edge {:#?}", summary_edge);
                     if summary_edge
                         .iter()
-                        .find(|x| x.get_from() != d4 && x.to() != d5)
+                        .find(|x| x.get_from() == d4 && x.to() == d5)
                         .is_none()
                     {
                         summary_edge.push(Edge::Summary {
@@ -1762,7 +1548,7 @@ impl ConvertSummary {
                             .filter(|x| {
                                 x.to() == d4
                                     && &x.get_from().function == &d4.function
-                                    && x.get_from().pc == 0
+                                    && x.get_from().next_pc == 0
                             })
                             .cloned()
                             .collect();
@@ -1775,7 +1561,7 @@ impl ConvertSummary {
                             // Take the old and replace it with new var.
                             let mut new_return_site_d5 = d3.clone();
                             new_return_site_d5.id = graph.fact_counter.get();
-                            new_return_site_d5.pc = new_return_site_d5.pc + 1; // + 1 is the return site.
+                            new_return_site_d5.next_pc = new_return_site_d5.next_pc + 1; // + 1 is the return site.
                             new_return_site_d5.belongs_to_var = d5.belongs_to_var.clone();
 
                             self.propagate(
@@ -1791,6 +1577,82 @@ impl ConvertSummary {
                     }
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    fn pacemaker(
+        &self,
+        function: &AstFunction,
+        graph: &mut Graph,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
+        normal_flows_debug: &mut Vec<Edge>,
+        start_taut: &Fact,
+    ) -> Result<(), anyhow::Error> {
+        let mut edges = Vec::new();
+        let mut last_taut: Option<Fact> = Some(start_taut.clone());
+
+        for (i, instruction) in function.instructions.iter().enumerate().skip(1) {
+            let facts = graph.add_statement(
+                function,
+                format!("{:?}", instruction),
+                i,
+                &"taut".to_string(),
+            )?;
+            let taut = facts.get(0).context("Expected only taut")?;
+            debug_assert!(taut.var_is_taut);
+
+            if let Some(last_taut) = last_taut {
+                edges.push(Edge::Normal {
+                    from: last_taut.clone(),
+                    to: taut.clone(),
+                    curved: false,
+                });
+                normal_flows_debug.push(Edge::Normal {
+                    from: last_taut.clone(),
+                    to: taut.clone(),
+                    curved: false,
+                });
+            }
+
+            last_taut = Some(taut.clone());
+        }
+
+        //end
+        let facts = graph.add_statement(
+            function,
+            "end".to_string(),
+            function.instructions.len(),
+            &"taut".to_string(),
+        )?;
+        let taut = facts.get(0).context("Expected only taut")?;
+        debug_assert!(taut.var_is_taut);
+
+        if let Some(last_taut) = last_taut {
+            edges.push(Edge::Normal {
+                from: last_taut.clone(),
+                to: taut.clone(),
+                curved: false,
+            });
+            normal_flows_debug.push(Edge::Normal {
+                from: last_taut.clone(),
+                to: taut.clone(),
+                curved: false,
+            });
+        }
+
+        for edge in edges.into_iter() {
+            self.propagate(
+                graph,
+                path_edge,
+                worklist,
+                Edge::Path {
+                    from: start_taut.clone(),
+                    to: edge.to().clone(),
+                },
+            )?;
         }
 
         Ok(())

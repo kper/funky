@@ -2,10 +2,9 @@
 
 use crate::counter::Counter;
 use crate::ir::ast::Function as AstFunction;
-use crate::solver::Request;
 use anyhow::{Context, Result};
 use log::debug;
-use std::{collections::HashMap, env::var};
+use std::collections::HashMap;
 
 type VarId = String;
 type FunctionName = String;
@@ -39,7 +38,7 @@ pub struct Fact {
     pub belongs_to_var: VarId,
     pub var_is_global: bool,
     pub var_is_taut: bool,
-    pub pc: usize,
+    pub next_pc: usize,
     pub track: usize,
     pub function: FunctionName,
 }
@@ -124,7 +123,7 @@ impl Graph {
             var_is_taut: true,
             var_is_global: false,
             function,
-            pc,
+            next_pc: pc,
             track: 0,
         };
 
@@ -161,7 +160,7 @@ impl Graph {
                 .edges
                 .iter()
                 .filter(|x| x.get_from().function == function.name)
-                .map(|x| x.get_from().pc)
+                .map(|x| x.get_from().next_pc)
                 .min()
                 .context("No facts found")?;
 
@@ -243,7 +242,7 @@ impl Graph {
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
-                pc,
+                next_pc: pc,
                 track: index,
                 function: function.name.clone(),
             };
@@ -268,8 +267,12 @@ impl Graph {
         Ok(self
             .edges
             .iter()
-            .filter(move |x| x.get_from().function == function && x.to().pc == pc)
+            .filter(move |x| x.get_from().function == function && x.to().next_pc == pc)
             .map(|x| x.to()))
+    }
+
+    pub fn get_track(&self, function: &String, variable: &String) -> Option<usize> {
+        self.vars.get(function)?.iter().position(|x| &x.name == variable)
     }
 
     pub fn get_facts_at2(
@@ -282,7 +285,7 @@ impl Graph {
         Ok(self
             .edges
             .iter()
-            .filter(move |x| x.get_from().function == function && x.get_from().pc == pc)
+            .filter(move |x| x.get_from().function == function && x.get_from().next_pc == pc)
             .map(|x| x.to()))
     }
 
@@ -292,7 +295,7 @@ impl Graph {
             .edges
             .iter()
             .filter(|x| x.get_from().function == function)
-            .map(|x| x.get_from().pc)
+            .map(|x| x.get_from().next_pc)
             .min()
             .context("No minimum found")?;
 
@@ -307,8 +310,8 @@ impl Graph {
         variable: &String,
     ) -> Result<Vec<Fact>> {
         debug!(
-            "Adding statement {:?} at {} for {}",
-            instruction, pc, variable
+            "Adding statement {} at {} for {} ({})",
+            instruction, pc, variable, function.name
         );
 
         let vars = self
@@ -317,11 +320,6 @@ impl Graph {
             .context("Cannot get functions's vars")?
             .clone();
         let mut vars = vars.iter().enumerate();
-
-        //.filter(|x| &x.1.name == variable);
-
-        //let pc = self.pc_counter.get();
-        //debug!("New pc {} for {}", pc, function.name);
 
         let mut facts = Vec::new();
 
@@ -335,10 +333,10 @@ impl Graph {
                 var_is_taut: var.is_taut,
                 track,
                 function: function.name.clone(),
-                pc,
+                next_pc: pc,
             });
 
-            if var.is_taut {
+            if var.is_taut && pc < function.instructions.len(){
                 self.notes.push(Note {
                     id: self.note_counter.get(),
                     function: function.name.clone(),
@@ -359,7 +357,7 @@ impl Graph {
             var_is_taut: true,
             var_is_global: false,
             function,
-            pc,
+            next_pc: pc,
             track: 0,
         }
     }
