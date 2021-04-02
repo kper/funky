@@ -77,7 +77,7 @@ fn test_intra_reachability() {
     assert_eq!(4, sinks.len());
 
     let touched_vars = vars(&sinks);
-    assert_eq!(2, touched_vars.len());
+    assert_eq!(3, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
@@ -116,10 +116,10 @@ fn test_loop() {
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
-    assert_eq!(1, sinks.len());
+    assert_eq!(4, sinks.len());
 
     let touched_vars = vars(&sinks);
-    assert_eq!(1, touched_vars.len());
+    assert_eq!(2, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
@@ -162,10 +162,10 @@ fn test_functions() {
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
-    assert_eq!(1, sinks.len());
+    assert_eq!(3, sinks.len());
 
     let touched_vars = vars(&sinks);
-    assert_eq!(1, touched_vars.len());
+    assert_eq!(2, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
@@ -228,10 +228,10 @@ fn test_gcd() {
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
-    assert_eq!(1, sinks.len());
+    assert_eq!(34, sinks.len());
 
     let touched_vars = vars(&sinks);
-    assert_eq!(1, touched_vars.len());
+    assert_eq!(7, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());

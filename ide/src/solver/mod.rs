@@ -1,4 +1,4 @@
-use crate::icfg::graph2::Graph;
+use crate::icfg::graph2::{Edge, Graph};
 use anyhow::{Context, Result};
 use std::collections::HashSet;
 
@@ -27,50 +27,33 @@ pub trait Solver {
 
 impl Solver for IfdsSolver {
     fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>> {
+        assert!(req.variable.is_some());
+        assert!(req.variable.as_ref().unwrap().starts_with("%"));
+
         let function = &req.function;
-        let variable = req
-            .variable
-            .as_ref()
-            .context("Request needs to have a specified variable")?;
-        let first_pc = graph
+
+        let f1: Vec<_> = graph
             .edges
             .iter()
-            .filter(|x| {
-                &x.get_from().function == function && (&x.get_from().belongs_to_var == variable || x.get_from().var_is_taut)
+            .filter(|x| matches!(x, Edge::Path { .. }) && &x.to().function == function)
+            .collect();
+
+        let f2: Vec<_> = f1
+            .into_iter()
+            .map(|x| x.to())
+            .filter(|x| (x.var_is_taut && x.next_pc == 0) || !x.var_is_taut)
+            .collect();
+
+        let taints = f2
+            .into_iter()
+            .map(|x| Taint {
+                function: x.function.clone(),
+                pc: x.next_pc,
+                variable: x.belongs_to_var.clone(),
             })
-            .map(|x| x.get_from().next_pc)
-            .min();
+            .collect();
 
-        if let Some(first_pc) = first_pc {
-            let start_facts: HashSet<_> = graph
-                .edges
-                .iter()
-                .map(|x| x.get_from())
-                .filter(|x| {
-                    &x.function == function
-                        && x.next_pc == first_pc
-                        && (x.var_is_taut || &x.belongs_to_var == variable)
-                })
-                .collect();
-
-
-            let taints = graph
-                .edges
-                .iter()
-                .filter(|x| start_facts.contains(&x.get_from()) && &x.to().function == function)
-                .map(|x| x.to())
-                .filter(|x| !x.var_is_taut)
-                .map(|x| Taint {
-                    function: x.function.clone(),
-                    pc: x.next_pc - 1,
-                    variable: x.belongs_to_var.clone(),
-                })
-                .collect();
-
-            Ok(taints)
-        } else {
-            Ok(vec![])
-        }
+        Ok(taints)
     }
 }
 

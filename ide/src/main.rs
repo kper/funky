@@ -78,6 +78,14 @@ enum Opt {
         #[structopt(short, parse(from_os_str))]
         export_graph: Option<PathBuf>,
     },
+    Repl {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
+    },
 }
 
 fn main() {
@@ -120,6 +128,19 @@ fn main() {
             export_graph,
         } => {
             if let Err(err) = ui(file, ir, export_graph) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Repl {
+            file,
+            ir,
+            export_graph,
+        } => {
+            if let Err(err) = repl(file, ir, export_graph) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -231,7 +252,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
 
     for function in prog.functions.iter() {
         line_annoted_code.push((pc, line_no, None, function.name.as_str()));
-        pc += 1;
         line_no += 1;
 
         for instruction in function.instructions.iter() {
@@ -410,6 +430,69 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
+    let mut convert = Convert::new();
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = IfdsSolver;
+
+        let graph = convert.visit(&prog, &req);
+        let mut graph = graph.expect("Cannot create graph");
+
+        let taints = solver.all_sinks(&mut graph, &req);
+
+        (graph, taints)
+    };
+
+    loop {
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;
+
+        let splitted = buffer.trim().split(" ").collect::<Vec<_>>();
+
+        let req = Request {
+            function: splitted.get(0).unwrap().to_string(),
+            pc: splitted.get(1).unwrap().parse::<usize>().unwrap(),
+            variable: splitted.get(2).map(|x| x.to_string())
+        };
+
+        println!("{:?}", req);
+
+        let res = get_taints(&req);
+        let taints = res.1.context("Cannot get taints for ui")?;
+
+        println!("{:#?}", taints);
+
+        if let Some(ref export_graph) = export_graph {
+            let output = crate::icfg::tikz::render_to(&res.0);
+
+            let mut fs = File::create(export_graph).context("Cannot write export file")?;
+            fs.write_all(output.as_bytes())
+                .context("Cannto write file")?;
+        }
+    }
 }
 
 fn get_variable_by_index(
