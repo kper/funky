@@ -11,7 +11,7 @@ use wasm_parser::{parse, read_wasm};
 use crate::icfg::convert2::ConvertSummary as Convert;
 
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 
 //use crate::solver::bfs::*;
 use crate::solver::*;
@@ -75,6 +75,8 @@ enum Opt {
         file: PathBuf,
         #[structopt(long)]
         ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
     },
 }
 
@@ -112,8 +114,12 @@ fn main() {
                 std::process::exit(1);
             }
         }
-        Opt::Ui { file, ir } => {
-            if let Err(err) = ui(file, ir) {
+        Opt::Ui {
+            file,
+            ir,
+            export_graph,
+        } => {
+            if let Err(err) = ui(file, ir, export_graph) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -194,7 +200,7 @@ struct InstructionList<'a> {
     current: usize,
 }
 
-fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
+fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     let mut convert = Convert::new();
 
     let buffer = match is_ir {
@@ -246,11 +252,12 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     let mut get_taints = |req: &Request| {
         let mut solver = IfdsSolver;
 
-        let mut graph = convert
-            .visit(&prog, &req)
-            .context("Cannot create the graph")?;
+        let graph = convert.visit(&prog, &req);
+        let mut graph = graph.expect("Cannot create graph");
 
-        solver.all_sinks(&mut graph, &req)
+        let taints = solver.all_sinks(&mut graph, &req);
+
+        (graph, taints)
     };
 
     let mut input = String::new();
@@ -274,11 +281,20 @@ fn ui(file: PathBuf, is_ir: bool) -> Result<()> {
     loop {
         if let Some(ref req) = req {
             if !already_computed {
-                taints = get_taints(req).context("Cannot get taints for ui")?;
+                let res = get_taints(req);
+                taints = res.1.context("Cannot get taints for ui")?;
                 already_computed = true;
                 udp_socket
                     .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242")
                     .context("Cannot send logging information")?;
+
+                if let Some(ref export_graph) = export_graph {
+                    let output = crate::icfg::tikz::render_to(&res.0);
+
+                    let mut fs = File::create(export_graph).context("Cannot write export file")?;
+                    fs.write_all(output.as_bytes())
+                        .context("Cannto write file")?;
+                }
             }
         }
 

@@ -1149,19 +1149,6 @@ impl ConvertSummary {
             let n = instructions.get(pc);
             debug!("=> Instruction {:?}", n);
 
-            /*
-            // Prepare next instruction
-            self.pacemaker(
-                program,
-                d1,
-                d2,
-                pc,
-                graph,
-                normal_flows_debug,
-                path_edge,
-                worklist,
-            )?;*/
-
             if let Some(n) = n {
                 match n {
                     Instruction::Call(callee, params, dest) => {
@@ -1610,7 +1597,8 @@ impl ConvertSummary {
         let mut edges = Vec::new();
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
-        for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
+        //for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
+        for (i, instruction) in function.instructions.iter().enumerate() {
             let facts = graph.add_statement_with_note(
                 function,
                 format!("{:?}", instruction),
