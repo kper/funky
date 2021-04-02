@@ -1,6 +1,5 @@
 /// This module is responsible to parse
 /// the webassembly AST to a graph
-
 use crate::icfg::graph::*;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
@@ -73,12 +72,6 @@ impl ConvertSummary {
             )?;
             let after2 = _after2.get(0).unwrap();
 
-            /*
-            normal_flows_debug.push(Edge::Normal {
-                from: init_fact.clone(),
-                to: after2.clone(),
-                curved: false,
-            });*/
             edges.push(Edge::Path {
                 from: init_fact.clone().clone(),
                 to: after2.clone(),
@@ -272,22 +265,22 @@ impl ConvertSummary {
 
         match instruction {
             Instruction::Const(reg, _) if reg == variable => {
-                
+                //kill
             }
             Instruction::Const(reg, _) if reg != variable && !is_taut => {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -295,18 +288,19 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Const(_reg, _) => {}
-
+            Instruction::Const(_reg, _) => {
+                //kill
+            }
             Instruction::Assign(dest, src) if src == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
@@ -316,7 +310,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -325,19 +319,19 @@ impl ConvertSummary {
                 }
             }
             Instruction::Assign(dest, src) if dest != variable && src != variable => {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -345,17 +339,19 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Assign(_dest, _src) => {}
+            Instruction::Assign(_dest, _src) => {
+                //kill
+            }
             Instruction::Unop(dest, src) if src == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
@@ -365,7 +361,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -374,19 +370,19 @@ impl ConvertSummary {
                 }
             }
             Instruction::Unop(dest, src) if dest != variable && src != variable => {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -394,17 +390,19 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Unop(_dest, _src) => {}
+            Instruction::Unop(_dest, _src) => {
+                //kill
+            }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
@@ -414,7 +412,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -423,15 +421,15 @@ impl ConvertSummary {
                 }
             }
             Instruction::BinOp(dest, _src1, src2) if src2 == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
@@ -441,7 +439,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -461,19 +459,19 @@ impl ConvertSummary {
                     .get(&(function.name.clone(), block.clone()))
                     .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     *jump_to_pc,
                     variable,
                 )?;
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -490,19 +488,19 @@ impl ConvertSummary {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after2 = graph.add_statement(
+                    let after = graph.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before2 = graph
+                    let before = graph
                         .get_facts_at(&function.name, pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
-                    for (b, a) in before2.zip(after2) {
+                    for (b, a) in before.zip(after) {
                         edges.push(Edge::Normal {
                             from: b,
                             to: a,
@@ -511,20 +509,20 @@ impl ConvertSummary {
                     }
                 }
 
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -539,19 +537,19 @@ impl ConvertSummary {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after2 = graph.add_statement(
+                    let after = graph.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before2 = graph
+                    let before = graph
                         .get_facts_at(&function.name, pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
-                    for (b, a) in before2.zip(after2) {
+                    for (b, a) in before.zip(after) {
                         edges.push(Edge::Normal {
                             from: b,
                             to: a,
@@ -561,15 +559,15 @@ impl ConvertSummary {
                 }
             }
             Instruction::Phi(dest, src1, _src2) if src1 == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
@@ -579,7 +577,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -588,15 +586,15 @@ impl ConvertSummary {
                 }
             }
             Instruction::Phi(dest, _src1, src2) if src2 == variable => {
-                let mut after2 =
+                let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after3 =
+                let after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
-                after2.extend(after3);
+                after.extend(after2);
 
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
@@ -606,7 +604,7 @@ impl ConvertSummary {
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                for (b, a) in (before2.chain(copy_before)).zip(after2) {
+                for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -617,7 +615,7 @@ impl ConvertSummary {
             Instruction::Phi(dest, src1, src2)
                 if dest != variable && src1 != variable && src2 != variable =>
             {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -625,13 +623,13 @@ impl ConvertSummary {
                 )?;
 
                 // Identity
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -639,7 +637,9 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Phi(_dest, _src1, _src2) => {}
+            Instruction::Phi(_dest, _src1, _src2) => {
+                //kill
+            }
             Instruction::Table(jumps) => {
                 for block in jumps.iter() {
                     let jump_to_pc = self
@@ -647,20 +647,20 @@ impl ConvertSummary {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after2 = graph.add_statement(
+                    let after = graph.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before2 = graph
+                    let before = graph
                         .get_facts_at(&function.name, pc)?
                         .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
-                    for (b, a) in before2.zip(after2) {
+                    for (b, a) in before.zip(after) {
                         edges.push(Edge::Normal {
                             from: b,
                             to: a,
@@ -670,7 +670,7 @@ impl ConvertSummary {
                 }
             }
             Instruction::Return(dest) if dest.contains(variable) => {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -678,13 +678,13 @@ impl ConvertSummary {
                 )?;
 
                 // Identity
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -693,7 +693,7 @@ impl ConvertSummary {
                 }
             }
             _ => {
-                let after2 = graph.add_statement(
+                let after = graph.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -701,13 +701,13 @@ impl ConvertSummary {
                 )?;
 
                 // Identity
-                let before2 = graph
+                let before = graph
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
-                for (b, a) in before2.zip(after2) {
+                for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -716,31 +716,6 @@ impl ConvertSummary {
                 }
             }
         }
-
-        /*
-        // Identity for the rest
-        let before2 = graph
-            .get_facts_at(&function.name, pc)?
-            .into_iter()
-            .filter(|x| &x.belongs_to_var != variable && !x.var_is_taut)
-            .cloned()
-            .collect::<Vec<_>>();
-
-        for b in before2 {
-            let after2 = graph.add_statement(
-                function,
-                format!("{:?}", instruction),
-                pc + 1,
-                &b.belongs_to_var,
-            )?;
-            let a = after2.get(0).context("Cannot get statement")?.clone();
-
-            edges.push(Edge::Normal {
-                from: b,
-                to: a,
-                curved: false,
-            });
-        }*/
 
         Ok(edges)
     }
@@ -790,18 +765,12 @@ impl ConvertSummary {
             worklist,
             normal_flows_debug,
             init_taut_fact,
-            init_taut_fact.next_pc,
         )
         .context("Pacemaker for pass_args failed")?;
 
+        // Save all blocks of the `callee_function`.
+        // Because we want to jump to them later.
         self.resolve_block_ids(&callee_function, start_pc)?;
-        /*self.compute_init_flows(
-            callee_function,
-            graph,
-            start_pc,
-            &init_facts,
-            normal_flows_debug,
-        )?;*/
 
         // Filter by variable
         let callee_fact = init_facts
@@ -1019,7 +988,6 @@ impl ConvertSummary {
             &mut worklist,
             &mut normal_flows_debug,
             &init,
-            init.next_pc,
         )?;
 
         // Compute init flows
@@ -1038,7 +1006,6 @@ impl ConvertSummary {
             &mut summary_edge,
             &mut normal_flows_debug,
             &mut graph,
-            req.pc,
         )?;
 
         Ok(())
@@ -1104,11 +1071,11 @@ impl ConvertSummary {
         summary_edge: &mut Vec<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         graph: &mut Graph,
-        start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
+        // Save all blocks from the beginning.
         self.resolve_block_ids(&function, 0)?;
 
         while let Some(edge) = worklist.pop_front() {
@@ -1377,7 +1344,6 @@ impl ConvertSummary {
             debug!("Normal flow {:?}", f);
             let to = f.to();
 
-            //graph.edges.push(f.clone());
             normal_flows_debug.push(f.clone());
 
             self.propagate(
@@ -1486,31 +1452,26 @@ impl ConvertSummary {
                     .context("Cannot find function")?
                     .instructions;
 
-                // Get all return edges
-                let ret_vals = self.return_val(
-                    &d4.function,
-                    &d2.function,
-                    d4.next_pc,
-                    d2.next_pc,
-                    &instructions,
-                    graph,
-                )?;
+                // Use only `d4`'s var
+                let ret_vals = self
+                    .return_val(
+                        &d4.function,
+                        &d2.function,
+                        d4.next_pc,
+                        d2.next_pc,
+                        &instructions,
+                        graph,
+                    )?;
+
+                let ret_vals = ret_vals
+                    .iter()
+                    .map(|x| x.to())
+                    .collect::<Vec<_>>();
 
                 debug!("Exit-To-Return edges are {:#?}", ret_vals);
 
-                // Use only `d4`'s var
-                let ret_vals = ret_vals.into_iter().collect::<Vec<_>>();
-
-                debug!("Exit-To-Return edges (filtered) are {:#?}", ret_vals);
-
-                let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
-
-                debug!("Exit-To-Return vars (filtered) are {:#?}", ret_vals);
-
                 for d5 in ret_vals.into_iter() {
                     debug!("Handling var {:#?}", d5);
-
-                    //assert!(d5.function != d2.function);
 
                     debug!("summary_edge {:#?}", summary_edge);
                     if summary_edge
@@ -1569,6 +1530,9 @@ impl ConvertSummary {
         Ok(())
     }
 
+    /// Creates the control flow of taut facts.
+    /// This is the backbone of the program.
+    /// It also propagates them to the `path_edge`.
     fn pacemaker(
         &self,
         function: &AstFunction,
@@ -1577,12 +1541,10 @@ impl ConvertSummary {
         worklist: &mut VecDeque<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         start_taut: &Fact,
-        start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let mut edges = Vec::new();
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
-        //for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
         for (i, instruction) in function.instructions.iter().enumerate() {
             let facts = graph.add_statement_with_note(
                 function,

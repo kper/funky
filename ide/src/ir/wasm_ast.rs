@@ -1065,9 +1065,6 @@ impl IR {
                     )
                     .unwrap();
                 }
-                _ => {
-                    writeln!(function_buffer, "{}", instr.get_instruction()).unwrap();
-                }
             }
         }
 

@@ -1,6 +1,5 @@
 use crate::icfg::graph::{Edge, Graph};
-use anyhow::{Context, Result};
-use std::collections::HashSet;
+use anyhow::Result;
 
 type PC = usize;
 
