@@ -272,7 +272,10 @@ impl Graph {
     }
 
     pub fn get_track(&self, function: &String, variable: &String) -> Option<usize> {
-        self.vars.get(function)?.iter().position(|x| &x.name == variable)
+        self.vars
+            .get(function)?
+            .iter()
+            .position(|x| &x.name == variable)
     }
 
     pub fn get_facts_at2(
@@ -335,8 +338,33 @@ impl Graph {
                 function: function.name.clone(),
                 next_pc: pc,
             });
+        }
 
-            if var.is_taut && pc < function.instructions.len(){
+        Ok(facts)
+    }
+
+    pub fn add_statement_with_note(
+        &mut self,
+        function: &AstFunction,
+        instruction: String,
+        pc: usize,
+        variable: &String,
+    ) -> Result<Vec<Fact>> {
+        let facts = self
+            .add_statement(function, instruction.clone(), pc, variable)
+            .context("While add statement with note")?;
+
+        let vars = self
+            .vars
+            .get(&function.name)
+            .context("Cannot get functions's vars")?
+            .clone();
+        let mut vars = vars.iter().enumerate();
+
+        for (_track, var) in vars.find(|x| &x.1.name == variable) {
+            debug!("Adding new fact for {}", var.name);
+
+            if var.is_taut && pc < function.instructions.len() {
                 self.notes.push(Note {
                     id: self.note_counter.get(),
                     function: function.name.clone(),

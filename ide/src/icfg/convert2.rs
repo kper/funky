@@ -301,8 +301,7 @@ impl ConvertSummary {
                         to: a,
                         curved: false,
                     });
-                }
-                */
+                }*/
             }
             Instruction::Const(reg, _) if reg != variable => {
                 // ignore
@@ -450,29 +449,6 @@ impl ConvertSummary {
                     .cloned();
 
                 for (b, a) in (before2.chain(copy_before)).zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a,
-                        curved: false,
-                    });
-                }
-            }
-            Instruction::BinOp(dest, src1, src2)
-                if dest != variable && src1 != variable && src2 != variable =>
-            {
-                let after2 = graph.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
-
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
-
-                for (b, a) in before2.zip(after2) {
                     edges.push(Edge::Normal {
                         from: b,
                         to: a,
@@ -748,7 +724,6 @@ impl ConvertSummary {
         }
 
         // Identity for the rest
-
         let before2 = graph
             .get_facts_at(&function.name, pc)?
             .into_iter()
@@ -1049,18 +1024,12 @@ impl ConvertSummary {
             &mut worklist,
             &mut normal_flows_debug,
             &init,
-            init.next_pc + 1, //skip fi
+            init.next_pc,
         )?;
 
         // Compute init flows
         let init_normal_flows =
             self.compute_init_flows(function, graph, req.pc, &facts, &mut normal_flows_debug)?;
-
-        let init_taut = init_normal_flows
-            .get(0)
-            .context("No edges")?
-            .get_from()
-            .clone();
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -1632,7 +1601,7 @@ impl ConvertSummary {
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
         for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
-            let facts = graph.add_statement(
+            let facts = graph.add_statement_with_note(
                 function,
                 format!("{:?}", instruction),
                 i,
@@ -1658,7 +1627,7 @@ impl ConvertSummary {
         }
 
         //end
-        let facts = graph.add_statement(
+        let facts = graph.add_statement_with_note(
             function,
             "end".to_string(),
             function.instructions.len(),
