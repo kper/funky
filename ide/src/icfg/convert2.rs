@@ -374,7 +374,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Assign(dest, _src) => {
+            Instruction::Assign(_dest, _src) => {
 
             }
             Instruction::Unop(dest, src) if src == variable => {
@@ -424,6 +424,9 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
+            }
+            Instruction::Unop(_dest, _src) => {
+
             }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
                 let mut after2 =
@@ -668,6 +671,9 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
+            }
+            Instruction::Phi(_dest, _src1, _src2) => {
+
             }
             Instruction::Table(jumps) => {
                 for block in jumps.iter() {

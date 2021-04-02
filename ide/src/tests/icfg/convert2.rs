@@ -88,7 +88,6 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -409,7 +408,6 @@ fn test_ir_early_return() {
             RETURN %1;
         };
         define mytestfoo (param %0) (result 1) (define %0 %1) {
-            %0 = 2
             %1 = 3
             RETURN %0;
         };

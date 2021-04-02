@@ -78,14 +78,13 @@ fn test_fib() {
 
 #[test]
 fn test_fib_func_1() {
-    env_logger::init();
     let req = Request {
         function: "1".to_string(),
         variable: None,
         pc: 0,
     };
 
-    run!("fib", req, "../tests/fib.wasm");
+    run!("fib_func_1", req, "../tests/fib.wasm");
 }
 
 #[test]
