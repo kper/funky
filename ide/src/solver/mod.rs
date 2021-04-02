@@ -62,7 +62,7 @@ impl Solver for IfdsSolver {
                 .filter(|x| !x.var_is_taut)
                 .map(|x| Taint {
                     function: x.function.clone(),
-                    pc: x.next_pc,
+                    pc: x.next_pc - 1,
                     variable: x.belongs_to_var.clone(),
                 })
                 .collect();
