@@ -757,14 +757,13 @@ impl ConvertSummary {
         let start_pc = 0;
         let init_facts = graph.init_function(callee_function, start_pc)?;
 
-        let init_taut_fact = init_facts.get(0).context("Cannot find taut")?;
         self.pacemaker(
             callee_function,
             graph,
             path_edge,
             worklist,
             normal_flows_debug,
-            init_taut_fact,
+            &init_facts,
         )
         .context("Pacemaker for pass_args failed")?;
 
@@ -964,13 +963,13 @@ impl ConvertSummary {
         }
 
         let facts = graph.init_function(&function, req.pc)?;
-        let init = facts.get(0).unwrap().clone();
 
         let mut path_edge = Vec::new();
         let mut worklist = VecDeque::new();
         let mut summary_edge = Vec::new();
         let mut normal_flows_debug = Vec::new();
 
+        let init = facts.get(0).unwrap().clone();
         self.propagate(
             graph,
             &mut path_edge,
@@ -987,7 +986,7 @@ impl ConvertSummary {
             &mut path_edge,
             &mut worklist,
             &mut normal_flows_debug,
-            &init,
+            &facts,
         )?;
 
         // Compute init flows
@@ -1540,9 +1539,12 @@ impl ConvertSummary {
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
-        start_taut: &Fact,
+        init_facts: &Vec<Fact>,
     ) -> Result<(), anyhow::Error> {
         let mut edges = Vec::new();
+
+
+        let start_taut = init_facts.get(0).context("Cannot find taut")?;
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
         for (i, instruction) in function.instructions.iter().enumerate() {

@@ -531,3 +531,48 @@ fn test_ir_self_loop() {
         "
     );
 }
+
+#[test]
+fn test_global_get_and_set() {
+     let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!("test_ir_global_get_and_set", 
+    req,
+    "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        %1 = %-1
+        %-2 = %1
+        };
+    ");
+}
+
+#[ignore]
+#[test]
+fn test_global_call() {
+     let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!("test_ir_global_call", 
+    req,
+    "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        BLOCK 0
+        %1 = %0
+        %-1 = %1
+        RETURN ;
+        };
+        define 1 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        BLOCK 1
+        %1 = 1
+        CALL 0(%1)
+        %2 = %0
+        %-2 = %2
+        RETURN ;
+        };
+    ");
+}
