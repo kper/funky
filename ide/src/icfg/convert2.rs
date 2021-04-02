@@ -284,6 +284,8 @@ impl ConvertSummary {
         let instruction = instructions.get(pc).context("Cannot find instr")?;
         debug!("Next instruction is {:?} for {}", instruction, variable);
 
+        let is_taut = variable == &"taut".to_string();
+
         match instruction {
             Instruction::Const(reg, _) if reg == variable => {
                 /*
@@ -303,9 +305,27 @@ impl ConvertSummary {
                     });
                 }*/
             }
-            Instruction::Const(reg, _) if reg != variable => {
-                // ignore
+            Instruction::Const(reg, _) if reg != variable && !is_taut => {
+                let after2 =
+                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
+
+                let before2 = graph
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before2.zip(after2) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
             }
+            Instruction::Const(_reg, _) => {
+
+            }
+            
             Instruction::Assign(dest, src) if src == variable => {
                 let mut after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -353,6 +373,9 @@ impl ConvertSummary {
                         curved: false,
                     });
                 }
+            }
+            Instruction::Assign(dest, _src) => {
+
             }
             Instruction::Unop(dest, src) if src == variable => {
                 let mut after2 =
@@ -723,6 +746,7 @@ impl ConvertSummary {
             }
         }
 
+        /*
         // Identity for the rest
         let before2 = graph
             .get_facts_at(&function.name, pc)?
@@ -745,7 +769,7 @@ impl ConvertSummary {
                 to: a,
                 curved: false,
             });
-        }
+        }*/
 
         Ok(edges)
     }
