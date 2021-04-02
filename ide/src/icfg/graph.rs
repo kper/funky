@@ -116,23 +116,6 @@ impl Graph {
             .map(|x| x.get_from())
     }
 
-    pub fn init_function_fact(&mut self, function: String, pc: usize) -> Fact {
-        let fact = Fact {
-            id: self.fact_counter.get(),
-            belongs_to_var: "taut".to_string(),
-            var_is_taut: true,
-            var_is_global: false,
-            function,
-            next_pc: pc,
-            track: 0,
-        };
-
-        fact
-
-        //self.facts.push(fact);
-        //self.facts.get(self.facts.len() - 1).unwrap()
-    }
-
     pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
             function.name.clone(),
@@ -276,33 +259,6 @@ impl Graph {
             .get(function)?
             .iter()
             .position(|x| &x.name == variable)
-    }
-
-    pub fn get_facts_at2(
-        &self,
-        function: &String,
-        pc: usize,
-    ) -> Result<impl Iterator<Item = &Fact>> {
-        let function = function.clone();
-
-        Ok(self
-            .edges
-            .iter()
-            .filter(move |x| x.get_from().function == function && x.get_from().next_pc == pc)
-            .map(|x| x.to()))
-    }
-
-    pub fn get_first_facts(&self, function: &String) -> Result<impl Iterator<Item = &Fact>> {
-        let function = function.clone();
-        let min = self
-            .edges
-            .iter()
-            .filter(|x| x.get_from().function == function)
-            .map(|x| x.get_from().next_pc)
-            .min()
-            .context("No minimum found")?;
-
-        self.get_facts_at(&function, min)
     }
 
     pub fn add_statement(
