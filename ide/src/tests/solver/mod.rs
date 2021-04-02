@@ -116,10 +116,10 @@ fn test_loop() {
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
-    assert_eq!(4, sinks.len());
+    assert_eq!(1, sinks.len());
 
     let touched_vars = vars(&sinks);
-    assert_eq!(2, touched_vars.len());
+    assert_eq!(1, touched_vars.len());
 
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
