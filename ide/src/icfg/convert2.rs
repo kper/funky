@@ -272,22 +272,7 @@ impl ConvertSummary {
 
         match instruction {
             Instruction::Const(reg, _) if reg == variable => {
-                /*
-                let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
-
-                let before2 = graph
-                    .get_facts_at(&function.name, pc)?
-                    .filter(|x| &x.belongs_to_var == reg)
-                    .cloned();
-
-                for (b, a) in before2.zip(after2) {
-                    edges.push(Edge::Normal {
-                        from: b,
-                        to: a,
-                        curved: false,
-                    });
-                }*/
+                
             }
             Instruction::Const(reg, _) if reg != variable && !is_taut => {
                 let after2 = graph.add_statement(
@@ -474,7 +459,7 @@ impl ConvertSummary {
                 let jump_to_pc = self
                     .block_resolver
                     .get(&(function.name.clone(), block.clone()))
-                    .context("Cannot find block to jump to")?;
+                    .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
                 let after2 = graph.add_statement(
                     function,
@@ -503,7 +488,7 @@ impl ConvertSummary {
                     let jump_to_pc = self
                         .block_resolver
                         .get(&(function.name.clone(), block.clone()))
-                        .context("Cannot find block to jump to")?;
+                        .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
                     let after2 = graph.add_statement(
                         function,
@@ -552,7 +537,7 @@ impl ConvertSummary {
                     let jump_to_pc = self
                         .block_resolver
                         .get(&(function.name.clone(), block.clone()))
-                        .context("Cannot find block to jump to")?;
+                        .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
                     let after2 = graph.add_statement(
                         function,
@@ -660,7 +645,7 @@ impl ConvertSummary {
                     let jump_to_pc = self
                         .block_resolver
                         .get(&(function.name.clone(), block.clone()))
-                        .context("Cannot find block to jump to")?;
+                        .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
                     let after2 = graph.add_statement(
                         function,
@@ -1124,7 +1109,7 @@ impl ConvertSummary {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
-        self.resolve_block_ids(&function, start_pc)?;
+        self.resolve_block_ids(&function, 0)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
