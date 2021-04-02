@@ -58,12 +58,13 @@ impl ConvertSummary {
         let mut offset = 0;
         let instructions = &function.instructions;
 
+        let mut init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
+
         loop {
             let pc = pc + offset;
             let instruction = instructions.get(pc).context("Cannot find instr")?;
             debug!("Next instruction is {:?}", instruction);
 
-            let init_fact = init_facts.get(0).context("Cannot find taut")?;
             let _after2 = graph.add_statement(
                 function,
                 format!("{:?}", instruction),
@@ -87,13 +88,6 @@ impl ConvertSummary {
                 Instruction::Const(reg, _) => {
                     let before2 = vec![init_fact.clone()];
 
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == reg)
-                        .cloned();*/
-
                     let after2 =
                         graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
@@ -111,13 +105,6 @@ impl ConvertSummary {
                 }
                 Instruction::Assign(dest, _src) => {
                     let before2 = vec![init_fact.clone()];
-
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();*/
 
                     let after2 = graph.add_statement(
                         function,
@@ -140,13 +127,6 @@ impl ConvertSummary {
                 }
                 Instruction::Unop(dest, _src) => {
                     let before2 = vec![init_fact.clone()];
-
-                    /*
-                    let after2 = graph
-                        .get_facts_at(&function.name, pc + 1)?
-                        .into_iter()
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();*/
 
                     let after2 = graph.add_statement(
                         function,
@@ -217,7 +197,7 @@ impl ConvertSummary {
                         &"taut".to_string(),
                     )?;
 
-                    for (b, a) in before2.into_iter().zip(after2) {
+                    for (b, a) in before2.into_iter().zip(after2.clone()) {
                         normal_flows_debug.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
@@ -230,6 +210,10 @@ impl ConvertSummary {
                     }
 
                     offset += 1;
+
+                    // Replace the init_fact for the next iteration.
+                    // Because, we would skip one row if not.
+                    init_fact = after2.get(0).unwrap().clone();
 
                     continue;
                 }
@@ -306,8 +290,12 @@ impl ConvertSummary {
                 }*/
             }
             Instruction::Const(reg, _) if reg != variable && !is_taut => {
-                let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
+                let after2 = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    variable,
+                )?;
 
                 let before2 = graph
                     .get_facts_at(&function.name, pc)?
@@ -322,10 +310,8 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Const(_reg, _) => {
+            Instruction::Const(_reg, _) => {}
 
-            }
-            
             Instruction::Assign(dest, src) if src == variable => {
                 let mut after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -374,9 +360,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Assign(_dest, _src) => {
-
-            }
+            Instruction::Assign(_dest, _src) => {}
             Instruction::Unop(dest, src) if src == variable => {
                 let mut after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -425,9 +409,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Unop(_dest, _src) => {
-
-            }
+            Instruction::Unop(_dest, _src) => {}
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
                 let mut after2 =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -672,9 +654,7 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Phi(_dest, _src1, _src2) => {
-
-            }
+            Instruction::Phi(_dest, _src1, _src2) => {}
             Instruction::Table(jumps) => {
                 for block in jumps.iter() {
                     let jump_to_pc = self

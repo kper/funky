@@ -23,6 +23,7 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:taut] (14) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (13) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:\%0] (12) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (11) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (10) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:taut] (7) at (0, 4) { };
@@ -42,10 +43,11 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (6);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
-		\path[->, blue] (0) [bend right] edge  node { } (12);
-		\path[->, blue] (0) [bend right] edge  node { } (16);
-		\path[->, blue] (0) [bend right] edge  node { } (17);
-		\path[->, blue] (0) [bend right] edge  node { } (18);
+		\path[->, blue] (10) [bend right] edge  node { } (11);
+		\path[->, blue] (10) [bend right] edge  node { } (12);
+		\path[->, blue] (10) [bend right] edge  node { } (16);
+		\path[->, blue] (10) [bend right] edge  node { } (17);
+		\path[->, blue] (10) [bend right] edge  node { } (18);
 		\path[->] (0) edge (3);
 		\path[->] (3) edge (4);
 		\path[->] (4) edge (5);
@@ -53,7 +55,7 @@ expression: output
 		\path[->] (6) edge (7);
 		\path[->] (7) edge (8);
 		\path[->] (0) edge (10);
-		\path[->] (0) edge (12);
+		\path[->] (10) edge (12);
 		\path[->] (0) edge (13);
 		\path[->, bend right] (5) edge (14);
 		\path[->] (6) edge (15);

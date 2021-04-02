@@ -82,3 +82,45 @@ fn test_intra_reachability() {
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
 }
+
+#[test]
+fn test_loop() {
+    let mut solver = IfdsSolver;
+
+    let name = "test_loop";
+
+    let req = Request {
+        function: "main".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define main (result 0) (define %0 %1) {
+            BLOCK 0
+            %0 = 1
+            GOTO 0 
+        };
+    "
+    );
+
+    let sinks = solver
+        .all_sinks(
+            &mut graph,
+            &req,
+        )
+        .unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert_eq!(4, sinks.len());
+
+    let touched_vars = vars(&sinks);
+    assert_eq!(2, touched_vars.len());
+
+    let touched_funcs = functions(&sinks);
+    assert_eq!(1, touched_funcs.len());
+}
