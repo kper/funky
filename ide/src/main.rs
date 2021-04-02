@@ -8,7 +8,7 @@ use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use crate::icfg::convert2::ConvertSummary as Convert;
+use crate::icfg::convert::ConvertSummary as Convert;
 
 use std::fs::File;
 use std::io::{Read, Write};

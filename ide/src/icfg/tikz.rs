@@ -1,4 +1,4 @@
-use crate::icfg::graph2::{Edge, Graph};
+use crate::icfg::graph::{Edge, Graph};
 use log::debug;
 
 pub const TAU: usize = 1;

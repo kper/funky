@@ -1,18 +1,28 @@
-use crate::icfg::convert::Convert;
+use crate::icfg::convert::ConvertSummary;
 use crate::icfg::tikz::render_to;
+use crate::solver::Request;
 use insta::assert_snapshot;
+use log::error;
 
 use crate::grammar::*;
 
 macro_rules! ir {
-    ($name:expr, $ir:expr) => {
-        let mut convert = Convert::new();
+    ($name:expr, $req:expr, $ir:expr) => {
+        let mut convert = ConvertSummary::new();
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(&prog).unwrap();
+        let graph = convert.visit(&prog, &$req);
 
-        let output = render_to(&graph);
+        if let Err(err) = graph {
+                error!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| error!("because: {}", cause));
+                std::process::exit(1);
+            }
+
+        let output = render_to(&graph.unwrap());
 
         assert_snapshot!(format!("{}_dot", $name), output);
     };
@@ -20,8 +30,15 @@ macro_rules! ir {
 
 #[test]
 fn test_ir_const() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+
     ir!(
         "test_ir_const",
+        req,
         "
          define test (result 0) (define %0) {
             %0 = 1
@@ -31,74 +48,57 @@ fn test_ir_const() {
 }
 
 #[test]
-fn test_ir_double_const() {
+fn test_ir_double_assign() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_double_const",
+        req,
         "
-         define test (result 0) (define %0 %1){
+         define test (result 0) (define %0 %1 %2){
             %0 = 1
             %1 = 1
+            %2 = %0
+            %2 = %1
          };
     "
     );
 }
 
 #[test]
-fn test_ir_assignment() {
+fn test_ir_chain_assign() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
-        "test_ir_assignment",
+        "test_ir_chain_assign",
+        req,
         "
-         define test (result 0) (define %0 %1){
+         define test (result 0) (define %0 %1 %2 %3){
+            %0 = 1
             %1 = 1
-            %0 = %1
+            %2 = %0
+            %3 = %2
          };
     "
-    );
-}
-
-#[test]
-fn test_ir_double_assignment() {
-    ir!(
-        "test_ir_double_assignment",
-        "
-         define test (result 0) (define %0 %1) {
-            %1 = 1
-            %0 = %1
-            %0 = %1
-         };
-    "
-    );
-}
-
-#[test]
-fn test_ir_block() {
-    ir!(
-        "test_ir_block",
-        "define test (result 0) (define %0 %1) {
-            BLOCK 0
-            %0 = 1
-            GOTO 1
-            BLOCK 1
-            %1 = 2
-        };"
-    );
-}
-
-#[test]
-fn test_ir_killing() {
-    ir!(
-        "test_ir_killing",
-        "define test (result 0) (define %0) {
-            %0 = 1
-            %0 = 2
-        };"
     );
 }
 
 #[test]
 fn test_ir_unop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_unop",
+        req,
         "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 = op %0
@@ -109,8 +109,14 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_binop",
+        req,
         "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = 1
@@ -121,9 +127,52 @@ fn test_ir_binop() {
 }
 
 #[test]
+fn test_ir_binop_offset() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_binop_offset",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = %0 op %1
+            %2 = %1 op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_phi() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_phi",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = phi %0 %1
+        };"
+    );
+}
+
+#[test]
 fn test_ir_killing_op() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_killing_op",
+        req,
         "define test (result 0) (define %0 %1 %2)  {
             %0 = 1
             %1 = 1
@@ -135,135 +184,35 @@ fn test_ir_killing_op() {
 }
 
 #[test]
-fn test_ir_functions() {
+fn test_ir_block() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
-        "test_ir_functions",
-        "define test (result 0) (define %0) {
-            %0 = 1
-            CALL mytest(%0)
-        };
-        define mytest (param %0) (result 0) (define %0 %1)  {
-            %0 = 2   
-            %1 = 3
-            RETURN;
-        };"
-    );
-}
-
-#[test]
-fn test_ir_return_values() {
-    ir!(
-        "test_ir_return_values",
+        "test_ir_block",
+        req,
         "define test (result 0) (define %0 %1) {
+            BLOCK 0
             %0 = 1
-            %1 <- CALL mytest(%0)
-        };
-        define mytest (param %0) (result 1) (define %0 %1) {
-            %0 = 2   
-            %1 = 3
-            RETURN %1;
-        };"
-    );
-}
-
-#[should_panic]
-#[test]
-fn test_ir_return_mismatched_values() {
-    // Assigning %1 but `result 0`
-    ir!(
-        "test_ir_mismatched_functions",
-        "define test (result 0) (define %0 %1) {
-            %0 = 1
-            %1 <- CALL mytest(%0)
-        };
-        define mytest (param %0) (result 0) (define %0 %1){
-            %0 = 2   
-            %1 = 3
-            RETURN %0;
-        };"
-    );
-}
-
-#[should_panic]
-#[test]
-fn test_ir_return_mismatched_values2() {
-    // Assigning void but `result 1`
-    ir!(
-        "test_ir_mismatched_functions2",
-        "define test (result 0) (define %0){
-            %0 = 1
-            CALL mytest(%0)
-        };
-        define mytest (param %0) (result 1) (define %0 %1){
-            %0 = 2   
-            %1 = 3
-            RETURN %1;
-        };"
-    );
-}
-
-#[test]
-fn test_ir_multiple_return_values() {
-    ir!(
-        "test_ir_multiple_return_values",
-        "define test (result 0) (define %0 %1 %2) {
-            %0 = 1
-            %1 %2 <- CALL mytest(%0)
-        };
-        define mytest (param %0) (result 2) (define %0 %1) {
-            %0 = 2   
-            %1 = 3
-            RETURN %0 %1;
-        };"
-    );
-}
-
-#[test]
-fn test_ir_early_return() {
-    ir!(
-        "test_ir_early_return",
-        "define test (result 0) (define %0 %1) {
-            %0 = 1
-            %1 <- CALL mytest(%0)
-            %0 <- CALL mytestfoo(%0)
-        };
-        define mytest (param %0) (result 1) (define %0 %1) {
-            %0 = 2   
-            RETURN %0;
-            %1 = 3
-            RETURN %1;
-        };
-        define mytestfoo (param %0) (result 1) (define %0 %1) {
-            %0 = 2
-            %1 = 3
-            RETURN %0;
-        };
-        "
-    );
-}
-
-#[test]
-fn test_ir_return() {
-    ir!(
-        "test_ir_return",
-        "define test (result 0) (define %0 %1) {
-            %0 = 1
-            %0 %1 <- CALL mytest(%0)
+            GOTO 1
+            BLOCK 1
             %1 = 2
-        };
-        define mytest (param %0) (result 2) (define %0 %1) {
-            %0 = 2   
-            %1 = 3
-            RETURN %0 %1;
-        };
-        "
+        };"
     );
 }
 
 #[test]
 fn test_ir_if_else() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_if_else",
+        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -276,6 +225,7 @@ fn test_ir_if_else() {
             %2 = 4
             GOTO 3
             BLOCK 3
+            %0 = %2
         };
         "
     );
@@ -283,8 +233,14 @@ fn test_ir_if_else() {
 
 #[test]
 fn test_ir_if() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_if",
+        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -298,8 +254,14 @@ fn test_ir_if() {
 
 #[test]
 fn test_ir_loop() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_loop",
+        req,
         "define main (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
@@ -311,8 +273,14 @@ fn test_ir_loop() {
 
 #[test]
 fn test_ir_table() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
     ir!(
         "test_ir_table",
+        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -330,54 +298,236 @@ fn test_ir_table() {
 }
 
 #[test]
-fn test_call_indirect() {
+fn test_ir_functions() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
     ir!(
-        "test_ir_indirect_call",
-        "
-  define 0 (param %0) (result 1) (define %0 %1) {
-        BLOCK 0
-        %1 = %0
-        RETURN %1;
+        "test_ir_functions",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            CALL mytest(%0)
         };
-        define 1 (param %0) (result 1) (define %0 %1) {
-        BLOCK 1
-        %1 = %0
-        RETURN %1;
-        };
-        define 4 (result 1) (define %0 %1 %2) {
-        BLOCK 4
-        %0 = 32
-        %1 = 0
-        %2 <- CALL INDIRECT 0 (%1)
-        RETURN %2;
-        };
-        define 5 (result 1) (define %0 %1 %2) {
-        BLOCK 5
-        %0 = 64
-        %1 = 1
-        %2 <- CALL INDIRECT 1 (%1)
-        RETURN %2;
-        };  "
+        define mytest (param %0) (result 0) (define %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN;
+        };"
     );
 }
 
 #[test]
-fn test_global_call() {
-    ir!("test_ir_global_call", 
-    "
-        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
-        BLOCK 0
-        %1 = %0
-        %-1 = %1
-        RETURN ;
+fn test_ir_return_values() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_values",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
         };
-        define 1 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
-        BLOCK 1
-        %1 = 1
-        CALL 0(%1)
-        %2 = %0
-        %-2 = %2
-        RETURN ;
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_passed_value() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_passed_value",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
         };
-    ");
+        define mytest (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values2() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_values2",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 2
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values3() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_values3",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 2
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_overwrite_return_values() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_overwrite_return_values",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            %0 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_early_return() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_early_return",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %0 <- CALL mytestfoo(%0)
+            %1 <- CALL mytestfoo(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };
+        define mytestfoo (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_return_double() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %0 %1 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %0 %1;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_return_branches() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_branches",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 5
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1 %2) {
+            %1 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            RETURN %1;
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_self_loop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_self_loop",
+        req,
+        "define test (param %0) (result 1) (define %0 %1 %2) {
+            %2 = 1
+            %0 = 5
+            %1 <- CALL test(%0)
+            %0 = %1
+            RETURN %0;
+        };
+        "
+    );
 }

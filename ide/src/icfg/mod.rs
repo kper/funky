@@ -1,4 +1,3 @@
-pub mod graph2;
+pub mod graph;
 pub mod tikz;
-
-pub mod convert2;
+pub mod convert;

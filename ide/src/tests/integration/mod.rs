@@ -6,7 +6,7 @@ use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
 use crate::grammar::*;
-use crate::icfg::convert2::ConvertSummary;
+use crate::icfg::convert::ConvertSummary;
 use crate::icfg::tikz::render_to;
 use crate::solver::Request;
 

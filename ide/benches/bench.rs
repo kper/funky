@@ -1,6 +1,6 @@
 use ide::{ir::ast::Program, solver::*};
 
-use ide::icfg::convert2::ConvertSummary;
+use ide::icfg::convert::ConvertSummary;
 
 use ide::grammar::*;
 

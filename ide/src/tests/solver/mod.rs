@@ -1,6 +1,6 @@
 use crate::solver::*;
 
-use crate::icfg::convert2::ConvertSummary;
+use crate::icfg::convert::ConvertSummary;
 use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
 

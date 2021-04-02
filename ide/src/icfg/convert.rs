@@ -1,8 +1,10 @@
-use crate::icfg::graph2::*;
-use crate::ir::ast::Function as AstFunction;
-use crate::ir::ast::Instruction;
 /// This module is responsible to parse
 /// the webassembly AST to a graph
+
+use crate::icfg::graph::*;
+use crate::ir::ast::Function as AstFunction;
+use crate::ir::ast::Instruction;
+
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
 use std::collections::VecDeque;
@@ -12,8 +14,6 @@ use log::debug;
 use std::collections::HashMap;
 
 use crate::ir::ast::Program;
-
-use crate::icfg::graph2::Edge;
 
 type FunctionName = String;
 type BlockNum = String;

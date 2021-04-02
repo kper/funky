@@ -1,4 +1,4 @@
-use crate::icfg::graph2::{Edge, Graph};
+use crate::icfg::graph::{Edge, Graph};
 use anyhow::{Context, Result};
 use std::collections::HashSet;
 
