@@ -261,6 +261,13 @@ impl Graph {
             .position(|x| &x.name == variable)
     }
 
+    pub fn get_var(&self, function: &String, variable: &String) -> Option<&Variable> {
+        self.vars
+            .get(function)?
+            .iter()
+            .find(|x| &x.name == variable)
+    }
+
     pub fn add_statement(
         &mut self,
         function: &AstFunction,

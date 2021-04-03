@@ -736,81 +736,94 @@ impl ConvertSummary {
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
     ) -> Result<Vec<Edge>> {
+        let caller_variable = graph
+            .get_var(&caller_function.name, caller_var)
+            .context("Variable is not defined")?
+            .clone();
+
         // Why not dests? Because we don't care about
         // the destination for the function call in
         // `pass_args`
-        if !params.contains(&caller_var) && caller_var != &"taut".to_string() {
+        if params.contains(&caller_var) || caller_variable.is_taut || caller_variable.is_global {
+            // After here, checked that the caller_var is relevant
+            let callee_function = program
+                .functions
+                .iter()
+                .find(|x| &x.name == callee_function)
+                .context("Cannot find function")?;
+
+            // Init facts of the called function
+            // Start from the beginning.
+            let start_pc = 0;
+            let init_facts = graph.init_function(callee_function, start_pc)?;
+
+            self.pacemaker(
+                callee_function,
+                graph,
+                path_edge,
+                worklist,
+                normal_flows_debug,
+                &init_facts,
+            )
+            .context("Pacemaker for pass_args failed")?;
+
+            // Save all blocks of the `callee_function`.
+            // Because we want to jump to them later.
+            self.resolve_block_ids(&callee_function, start_pc)?;
+
+            // Filter by variable
+            let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
+
+            // Get the position in the parameters. If it does not exist then
+            // it is `taut`.
+            let pos_in_param = params
+                .iter()
+                .position(|x| x == caller_var)
+                .map(|x| x + TAUT)
+                .unwrap_or(callee_globals);
+
+            let callee_offset = match caller_variable.is_global {
+                false => callee_globals + pos_in_param, // if not global, than start at normal beginning
+                true => pos_in_param,                   //look for the global
+            };
+
+            let callee_fact = init_facts
+                .get(callee_offset)
+                .context("Cannot find callee's fact")?;
+
+            // Last caller facts
+            debug!(
+                "caller {} with current_pc {}",
+                caller_function.name, current_pc
+            );
+            let mut caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
+
+            // Filter by variable
+            let caller_fact = caller_facts
+                .find(|x| &x.belongs_to_var == caller_var)
+                .context("Cannot find caller's fact")?;
+
+            // The corresponding edges have to match now, but filter `dest`.
+            // taut -> taut
+            // %0   -> %0
+            // %1   -> %1
+
+            // Create an edge.
+            let mut edges = vec![];
+            edges.push(Edge::Call {
+                from: caller_fact.clone().clone(),
+                to: callee_fact.clone(),
+            });
+
+            Ok(edges)
+        } else {
             debug!(
                 "Caller's variable is not a parameter {} in {:?} for {}",
                 caller_var, params, callee_function
             );
+
             return Ok(vec![]);
         }
-
-        // After here, checked that the caller_var is relevant
-        let callee_function = program
-            .functions
-            .iter()
-            .find(|x| &x.name == callee_function)
-            .context("Cannot find function")?;
-
-        // Init facts of the called function
-        // Start from the beginning.
-        let start_pc = 0;
-        let init_facts = graph.init_function(callee_function, start_pc)?;
-
-        self.pacemaker(
-            callee_function,
-            graph,
-            path_edge,
-            worklist,
-            normal_flows_debug,
-            &init_facts,
-        )
-        .context("Pacemaker for pass_args failed")?;
-
-        // Save all blocks of the `callee_function`.
-        // Because we want to jump to them later.
-        self.resolve_block_ids(&callee_function, start_pc)?;
-
-        // Filter by variable
-        let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
-        // Get the position in the parameters. If it does not exist then
-        // it is `taut`.
-        let pos_in_param = params
-            .iter()
-            .position(|x| x == caller_var)
-            .map(|x| x + TAUT)
-            .unwrap_or(callee_globals);
-        let callee_fact = init_facts
-            .get(callee_globals + pos_in_param)
-            .context("Cannot find callee's fact")?;
-
-        // Last caller facts
-        debug!(
-            "caller {} with current_pc {}",
-            caller_function.name, current_pc
-        );
-        let mut caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
-
-        // Filter by variable
-        let caller_fact = caller_facts
-            .find(|x| &x.belongs_to_var == caller_var)
-            .context("Cannot find caller's fact")?;
-
-        // The corresponding edges have to match now, but filter `dest`.
-        // taut -> taut
-        // %0   -> %0
-        // %1   -> %1
-
-        // Create an edge.
-        let mut edges = vec![];
-        edges.push(Edge::Call {
-            from: caller_fact.clone().clone(),
-            to: callee_fact.clone(),
-        });
-
-        Ok(edges)
     }
 
     /// Computes exit-to-return edges
@@ -845,26 +858,38 @@ impl ConvertSummary {
         let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
         debug!("Caller facts {:#?}", caller_facts);
 
-        let mut callee_facts = graph
+        let mut callee_facts_without_globals = graph
             .get_facts_at(callee_function, callee_pc)?
+            .filter(|x| !x.var_is_global)
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let mut callee_facts_with_globals = graph
+            .get_facts_at(callee_function, callee_pc)?
+            .filter(|x| x.var_is_global)
             .cloned()
             .collect::<Vec<_>>();
 
         caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
-        callee_facts.sort_by(|a, b| a.track.cmp(&b.track));
+        callee_facts_without_globals.sort_by(|a, b| a.track.cmp(&b.track));
+        callee_facts_with_globals.sort_by(|a, b| a.track.cmp(&b.track));
 
         debug!("caller_facts {:#?}", caller_facts);
-        debug!("callee_facts {:#?}", callee_facts);
+        debug!("callee_facts {:#?}", callee_facts_without_globals);
 
         // Generate edges when for all dest + taut
 
         debug!("=> dest {:?}", dest);
 
-        for (from, to_reg) in callee_facts.clone().into_iter().zip(dest.into_iter()) {
+        for (from, to_reg) in callee_facts_without_globals
+            .clone()
+            .into_iter()
+            .zip(dest.into_iter())
+        {
             if let Some(to) = caller_facts.iter().find(|x| x.belongs_to_var == to_reg) {
                 edges.push(Edge::Return {
-                    from: from.clone().clone(),
-                    to: to.clone().clone().clone(),
+                    from: from,
+                    to: to.clone(),
                 });
             } else {
                 //Create the dest
@@ -885,6 +910,26 @@ impl ConvertSummary {
                     },
                 });
             }
+        }
+
+        for from in callee_facts_with_globals.clone().into_iter() {
+            //Create the dest
+            let track = graph
+                .get_track(caller_function, &from.belongs_to_var) //name must match
+                .context("Cannot find track")?;
+
+            edges.push(Edge::Return {
+                from: from.clone().clone(),
+                to: Fact {
+                    id: graph.fact_counter.get(),
+                    belongs_to_var: from.belongs_to_var.clone(),
+                    function: caller_function.clone(),
+                    next_pc: caller_pc + 1,
+                    track,
+                    var_is_global: true,
+                    var_is_taut: from.var_is_taut,
+                },
+            });
         }
 
         Ok(edges)
@@ -911,6 +956,7 @@ impl ConvertSummary {
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
             .filter(|x| &x.belongs_to_var == caller)
+            .filter(|x| !x.var_is_global)
             .map(|x| x.clone())
             .collect();
         debug!("Facts before statement {}", before.len());
@@ -919,6 +965,7 @@ impl ConvertSummary {
 
         let after: Vec<_> = after
             .filter(|x| !x.var_is_taut)
+            .filter(|x| !x.var_is_global)
             .filter(|x| !dests.contains(&x.belongs_to_var))
             .cloned()
             .map(|x| {
@@ -1349,7 +1396,7 @@ impl ConvertSummary {
             .flow(&new_function, graph, d2.next_pc, &d2.belongs_to_var)?
             .iter()
         {
-            debug!("Normal flow {:?}", f);
+            debug!("Normal flow {:#?}", f);
             let to = f.to();
 
             normal_flows_debug.push(f.clone());

@@ -572,7 +572,6 @@ fn test_global_get_and_set() {
 
 #[test]
 fn test_global_get_and_set_multiple_functions() {
-    env_logger::init();
      let req = Request {
         variable: None,
         function: "0".to_string(),
@@ -586,10 +585,17 @@ fn test_global_get_and_set_multiple_functions() {
         %-2 = %1
         %2 = 1
         %0 <- CALL 1 (%2)
+        %1 <- CALL 2 ()
         };
 
         define 1 (param %0) (result 1) (define %-2 %0) {
         %0 = %-2
+        RETURN %0;
+        };
+
+        define 2 (result 1) (define %-2 %0) {
+        %0 = 1
+        %-2 = 1
         RETURN %0;
         };
     ");
