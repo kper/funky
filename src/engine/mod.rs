@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::upper_case_acronyms)]
 
 pub(crate) mod export;
 pub mod func;
@@ -19,10 +20,10 @@ use crate::convert;
 pub use crate::debugger::BorrowedProgramState;
 pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
+use crate::engine::import_resolver::Import;
 use crate::engine::module::ModuleInstance;
 pub use crate::engine::store::GlobalInstance;
 pub use crate::engine::table::TableInstance;
-use crate::engine::import_resolver::Import;
 use crate::operations::*;
 pub use crate::page::Page;
 use crate::value::{Value, Value::*};
@@ -341,11 +342,11 @@ impl Engine {
                     .get(ty as usize)
                     .ok_or_else(|| anyhow!("Global not found"))?;
 
-                return Ok(self
+                Ok(self
                     .store
                     .get_global_instance(&global_addr)
                     .context("Global not found in the store")?
-                    .val);
+                    .val)
             }
             _ => Err(anyhow!("Exported global not found")),
         }
@@ -353,14 +354,24 @@ impl Engine {
 
     /// Adding new function to the engine
     /// It will allocate the function in store and add it to the module's code.
-    pub(crate) fn add_function(
-        &mut self,
-        signature: FunctionSignature,
-        body: FunctionBody,
-    ) {
+    pub(crate) fn add_function(&mut self, signature: FunctionSignature, body: FunctionBody) {
         self.module.code.push(body.clone());
-        self.store
-            .allocate_func_instance(signature, body);
+        self.store.allocate_func_instance(signature, body);
+    }
+
+    /// Get function's address by index.
+    pub fn get_function_addr_by_index(&self, ty: u32) -> Result<FuncAddr> {
+        Ok(self
+            .module
+            .funcaddrs
+            .get(ty as usize)
+            .ok_or_else(|| anyhow!("Function not found"))?
+            .clone())
+    }
+
+    /// Get function's instance by addr
+    pub fn get_function_instance(&self, addr: &FuncAddr) -> Result<&FuncInstance> {
+        self.store.get_func_instance(addr)
     }
 
     /// Take only exported functions into consideration
@@ -384,12 +395,7 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = self
-                    .module
-                    .funcaddrs
-                    .get(ty as usize)
-                    .ok_or_else(|| anyhow!("Function not found"))?
-                    .clone();
+                let func_addr = self.get_function_addr_by_index(ty)?;
 
                 self.invoke_function(&func_addr, args)
                     .context("Invoking the function failed")?;
@@ -427,12 +433,8 @@ impl Engine {
         self.check_parameters_of_function(func_addr, &args)
             .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
-        let count_return_types = self
-            .store
-            .get_func_instance(func_addr)?
-            .ty
-            .return_types
-            .len() as u32;
+        let count_return_types =
+            self.get_function_instance(func_addr)?.ty.return_types.len() as u32;
 
         let typed_locals = &self.store.get_func_instance(func_addr)?.code.locals;
 
@@ -444,6 +446,7 @@ impl Engine {
         // we can additionaly define more of them.
         // This is done in the function definition of locals
         // It is very important to use the correct type
+        debug!("Adding additional locals");
         for i in 0..typed_locals.len() {
             let entry = typed_locals.get(i).unwrap();
 
@@ -457,6 +460,8 @@ impl Engine {
                 }
             }
         }
+
+        debug!("Locals for frame are {:?}", locals);
 
         let mut frame = Frame {
             arity: count_return_types,

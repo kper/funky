@@ -1,9 +1,9 @@
+use crate::engine::stack::StackContent;
 use crate::value::Value::*;
 use log::trace;
+use std::fmt;
 use std::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Rem, Shl, Shr, Sub};
 use wasm_parser::core::*;
-use std::fmt;
-use crate::engine::stack::StackContent;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Value {
@@ -15,9 +15,9 @@ pub enum Value {
 
 pub type Arity = u32;
 
-impl Into<ValueType> for Value {
-    fn into(self) -> ValueType {
-        match self {
+impl From<Value> for ValueType {
+    fn from(num: Value) -> ValueType {
+        match num {
             Value::I32(_) => ValueType::I32,
             Value::I64(_) => ValueType::I64,
             Value::F32(_) => ValueType::F32,
@@ -190,8 +190,8 @@ impl fmt::Display for Value {
     }
 }
 
-impl Into<StackContent> for Value {
-    fn into(self) -> StackContent {
-        StackContent::Value(self)
+impl From<Value> for StackContent {
+    fn from(val: Value) -> StackContent {
+        StackContent::Value(val)
     }
 }

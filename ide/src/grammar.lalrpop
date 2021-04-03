@@ -1,0 +1,105 @@
+use std::str::FromStr;
+use crate::ir::ast::*;
+
+grammar;
+
+Comma<T>: Vec<T> = { 
+    <v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+pub Program : Program = {
+   <functions:Function*> => Program {
+       functions: functions
+   } 
+};
+
+pub Function : Function = {
+    "define" <name:Id> "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: Vec::new(),
+            definitions: def,
+            results_len: result as usize,
+            instructions: instr
+        }
+    },
+    "define" <name:Id> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: reg,
+            definitions: def,
+            results_len: result as usize,
+            instructions: instr
+        }
+    },
+    "define" <name:Name> "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: Vec::new(),
+            definitions: def,
+            results_len: result as usize,
+            instructions: instr
+        }
+    },
+    "define" <name:Name> "(param" <reg:Reg*> ")" "(result" <result:Num> ")" "(define" <def:Reg*> ")" "{" <instr:Instruction*>  "}" ";" => {
+        Function {
+            name,
+            params: reg,
+            definitions: def,
+            results_len: result as usize,
+            instructions: instr
+        }
+    }
+};
+
+pub Instruction : Instruction = {
+    "BLOCK" <n:Id> => Instruction::Block(n),
+    <dest:Reg> "=" <src:Reg> => Instruction::Assign(dest, src),
+    <dest:Reg> "=" <n:Num> => Instruction::Const(dest, n),
+    <dest:Reg> "=" "UNKNOWN" => Instruction::Unknown(dest),
+    <dest:Reg> "=" "op" <src:Reg> => Instruction::Unop(dest, src),
+    <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => Instruction::BinOp(dest, src1, src2),
+    <dest:Reg> "=" "phi" <src1:Reg> <src2:Reg> => Instruction::Phi(dest, src1, src2),
+    <dest:Reg> "=" "STORE" <src:Reg> "TO" <offset:Reg> "ALIGN" <align:Num> <size:Num> => Instruction::Store,
+    "GOTO" <n:Id> => Instruction::Jump(n),
+    "IF" <reg:Reg> "THEN" "GOTO" <n:Id> "ELSE" "GOTO" <n2:Id> => {
+        Instruction::Conditional(reg, vec![n, n2])
+    },
+    "IF" <reg:Reg> "THEN" "GOTO" <n:Id> => {
+        Instruction::Conditional(reg, vec![n])
+    },
+    "TABLE GOTO" <n:Id*> "ELSE" "GOTO" <n2:Id> => {
+        let mut n = n.clone();
+        n.push(n2);
+        Instruction::Table(n)
+    },
+    "KILL" <reg:Reg> => Instruction::Kill(reg),
+    "CALL" <n:Name> "(" <r:Reg*> ")" => Instruction::Call(n, r, vec![]),
+    <dest:Reg*> "<-" "CALL" <n:Name> "(" <r:Reg*> ")" => Instruction::Call(n, r, dest),
+    "CALL" <n:Id> "(" <r:Reg*> ")" => Instruction::Call(n, r, vec![]),
+    <dest:Reg*> "<-" "CALL" <n:Id> "(" <r:Reg*> ")" => Instruction::Call(n, r, dest),
+    "RETURN" <n:Reg*> ";" => {
+        Instruction::Return(n)
+    },
+    "CALL INDIRECT" <n:Id*> "(" <p:Reg*> ")" => Instruction::CallIndirect(n, p, vec![]),
+    <dest:Reg*> "<-" "CALL INDIRECT" <n:Id*> "(" <p:Reg*> ")" => Instruction::CallIndirect(n, p, dest),
+};
+
+Id : String = {
+    <n:Num> => (n as usize).to_string()
+};
+
+pub Reg: String = {
+    "%" <n:Num> => format!("%{}", n),
+    "%" <n:Name> => format!("%{}", n),
+};
+
+pub Num: f64 = <s:r"[+-]?[0-9]*[.,]?[0-9]+"> => f64::from_str(s).unwrap();
+pub Name: String = <s:r"[a-zA-Z]+"> => s.to_string();

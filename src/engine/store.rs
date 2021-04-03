@@ -49,7 +49,7 @@ impl Store {
     }
 
     /// Get the function instance by address
-    pub(crate) fn get_func_instance(&self, func_addr: &FuncAddr) -> Result<&FuncInstance> {
+    pub fn get_func_instance(&self, func_addr: &FuncAddr) -> Result<&FuncInstance> {
         debug!("Get function's instance by addr {:?}", func_addr);
 
         self.funcs

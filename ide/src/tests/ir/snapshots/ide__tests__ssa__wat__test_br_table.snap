@@ -1,0 +1,26 @@
+---
+source: src/tests/ssa/wat.rs
+expression: "format!(\"{}\", ir . buffer())"
+
+---
+define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4) {
+BLOCK 0
+BLOCK 1
+BLOCK 3
+%1 = %0
+TABLE GOTO 2 ELSE GOTO 4
+%2 = 21
+KILL %2
+KILL %1
+RETURN ;
+GOTO 4 // BLOCK ended for 3
+BLOCK 4 // THEN block for 3
+%3 = 20
+KILL %3
+RETURN ;
+GOTO 2 // BLOCK ended for 1
+BLOCK 2 // THEN block for 1
+%4 = 22
+RETURN %4;
+};
+

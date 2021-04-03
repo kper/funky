@@ -26,12 +26,12 @@ impl<'a> BorrowedProgramState<'a> {
     }
 }
 
-impl<'a> Into<ProgramState> for BorrowedProgramState<'a> {
-    fn into(self) -> ProgramState {
+impl<'a> From<BorrowedProgramState<'a>> for ProgramState {
+    fn from(state: BorrowedProgramState) -> ProgramState {
         ProgramState {
-            current_pc: self.current_pc,
-            stack: self.stack.to_vec(),
-            locals: self.locals.to_vec()
+            current_pc: state.current_pc,
+            stack: state.stack.to_vec(),
+            locals: state.locals.to_vec()
         }
     }
 }

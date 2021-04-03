@@ -1,0 +1,82 @@
+---
+source: src/tests/integration/mod.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:\%2] (26) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (25) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (24) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:\%4] (23) at (5, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (22) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (21) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (19) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (18) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (17) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (16) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:\%2] (15) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (14) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (13) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (11) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (10) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (9) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (7) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(2, 0)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(3, 1)};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {BinOp(4, 3, 2)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Return([4])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, blue] (0) [bend right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (10);
+		\path[->, blue] (0) [bend right] edge  node { } (11);
+		\path[->, blue] (13) [bend right] edge  node { } (14);
+		\path[->, blue] (13) [bend right] edge  node { } (15);
+		\path[->, blue] (13) [bend right] edge  node { } (20);
+		\path[->, blue] (13) [bend right] edge  node { } (21);
+		\path[->, blue] (13) [bend right] edge  node { } (22);
+		\path[->, blue] (13) [bend right] edge  node { } (23);
+		\path[->, blue] (13) [bend right] edge  node { } (24);
+		\path[->, blue] (13) [bend right] edge  node { } (25);
+		\path[->, blue] (13) [bend right] edge  node { } (26);
+		\path[->] (0) edge (6);
+		\path[->] (6) edge (7);
+		\path[->] (7) edge (8);
+		\path[->] (8) edge (9);
+		\path[->] (9) edge (10);
+		\path[->] (10) edge (11);
+		\path[->] (0) edge (13);
+		\path[->] (13) edge (15);
+		\path[->] (0) edge (16);
+		\path[->] (7) edge (17);
+		\path[->] (8) edge (18);
+		\path[->] (10) edge (19);
+		\path[->] (7) edge (20);
+		\path[->] (15) edge (21);
+		\path[->] (8) edge (22);
+		\path[->] (21) edge (23);
+		\path[->] (21) edge (24);
+		\path[->] (23) edge (25);
+		\path[->] (24) edge (26);
+
+
+                \end{tikzpicture}
+            \end{document}

@@ -1,0 +1,22 @@
+---
+source: src/tests/solver/mod.rs
+expression: "format!(\"{:#?}\", sinks)"
+
+---
+[
+    Taint {
+        variable: "taut",
+        function: "test",
+        pc: 0,
+    },
+    Taint {
+        variable: "%0",
+        function: "test",
+        pc: 1,
+    },
+    Taint {
+        variable: "%0",
+        function: "test",
+        pc: 2,
+    },
+]
