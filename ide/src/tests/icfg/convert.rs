@@ -19,7 +19,7 @@ macro_rules! ir {
                 err.chain()
                     .skip(1)
                     .for_each(|cause| error!("because: {}", cause));
-                std::process::exit(1);
+                panic!("")
             }
 
         let output = render_to(&graph.unwrap());
@@ -320,6 +320,27 @@ fn test_ir_functions() {
 }
 
 #[test]
+fn test_ir_functions_rename_reg() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_functions_rename_regs",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            %0 <- CALL mytest(%0)
+        };
+        define mytest (param %5) (result 1) (define %5 %6)  {
+            %6 = %5
+            RETURN %6;
+        };"
+    );
+}
+
+#[test]
 fn test_ir_return_values() {
     let req = Request {
         variable: None,
@@ -545,6 +566,31 @@ fn test_global_get_and_set() {
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         %1 = %-1
         %-2 = %1
+        };
+    ");
+}
+
+#[test]
+fn test_global_get_and_set_multiple_functions() {
+    env_logger::init();
+     let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!("test_ir_global_get_and_set_multiple_functions", 
+    req,
+    "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        %1 = %-1
+        %-2 = %1
+        %2 = 1
+        %0 <- CALL 1 (%2)
+        };
+
+        define 1 (param %0) (result 1) (define %-2 %0) {
+        %0 = %-2
+        RETURN %0;
         };
     ");
 }

@@ -17,6 +17,8 @@ use crate::ir::ast::Program;
 type FunctionName = String;
 type BlockNum = String;
 
+const TAUT: usize = 1;
+
 #[derive(Debug)]
 pub struct ConvertSummary {
     block_counter: Counter,
@@ -772,9 +774,16 @@ impl ConvertSummary {
         self.resolve_block_ids(&callee_function, start_pc)?;
 
         // Filter by variable
-        let callee_fact = init_facts
+        let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
+        // Get the position in the parameters. If it does not exist then
+        // it is `taut`.
+        let pos_in_param = params
             .iter()
-            .find(|x| &x.belongs_to_var == caller_var)
+            .position(|x| x == caller_var)
+            .map(|x| x + TAUT)
+            .unwrap_or(callee_globals);
+        let callee_fact = init_facts
+            .get(callee_globals + pos_in_param)
             .context("Cannot find callee's fact")?;
 
         // Last caller facts
@@ -1452,20 +1461,16 @@ impl ConvertSummary {
                     .instructions;
 
                 // Use only `d4`'s var
-                let ret_vals = self
-                    .return_val(
-                        &d4.function,
-                        &d2.function,
-                        d4.next_pc,
-                        d2.next_pc,
-                        &instructions,
-                        graph,
-                    )?;
+                let ret_vals = self.return_val(
+                    &d4.function,
+                    &d2.function,
+                    d4.next_pc,
+                    d2.next_pc,
+                    &instructions,
+                    graph,
+                )?;
 
-                let ret_vals = ret_vals
-                    .iter()
-                    .map(|x| x.to())
-                    .collect::<Vec<_>>();
+                let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
 
                 debug!("Exit-To-Return edges are {:#?}", ret_vals);
 
@@ -1542,7 +1547,6 @@ impl ConvertSummary {
         init_facts: &Vec<Fact>,
     ) -> Result<(), anyhow::Error> {
         let mut edges = Vec::new();
-
 
         let start_taut = init_facts.get(0).context("Cannot find taut")?;
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
