@@ -10,7 +10,7 @@ In addition, I am working on static taint analysis for webassembly. This means y
 
 ## Building
 
-Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `ide` and execute `cargo build` again.
+Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `idfs` and execute `cargo build` again.
 
 ## Usage
 
