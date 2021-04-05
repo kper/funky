@@ -838,6 +838,7 @@ impl ConvertSummary {
         callee_pc: usize,
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
+        return_vals: &Vec<String>,
     ) -> Result<Vec<Edge>> {
         debug!("Trying to compute return_val");
         debug!("Caller: {} ({})", caller_function, caller_pc);
@@ -880,13 +881,19 @@ impl ConvertSummary {
         debug!("caller_facts {:#?}", caller_facts);
         debug!("callee_facts {:#?}", callee_facts_without_globals);
 
-        // Generate edges when for all dest + taut
-
+        // Generate edges for all dest + taut
         debug!("=> dest {:?}", dest);
+
+        // we need to chain because we can also return globals
+        let callee_facts_globals_that_were_returned = callee_facts_with_globals
+            .clone()
+            .into_iter()
+            .filter(|x| return_vals.contains(&x.belongs_to_var));
 
         for (from, to_reg) in callee_facts_without_globals
             .clone()
             .into_iter()
+            .chain(callee_facts_globals_that_were_returned)
             .zip(dest.into_iter())
         {
             if let Some(to) = caller_facts.iter().find(|x| x.belongs_to_var == to_reg) {
@@ -915,6 +922,8 @@ impl ConvertSummary {
             }
         }
 
+        // Edges only for globals
+        // doesn't handle when you return into local from global
         for from in callee_facts_with_globals.clone().into_iter() {
             //Create the dest
             let track = graph
@@ -1330,6 +1339,19 @@ impl ConvertSummary {
                 d3.to().belongs_to_var.clone(),
             )) {
                 for d4 in end_summary.iter() {
+                    let return_vals = &program
+                        .functions
+                        .iter()
+                        .find(|x| x.name == d2.function)
+                        .context("Cannot find function")?
+                        .instructions
+                        .get(d2.next_pc - 1)
+                        .map(|x| match x {
+                            Instruction::Return(x) => x.clone(),
+                            _ => Vec::new(),
+                        })
+                        .unwrap_or(Vec::new());
+
                     for d5 in self.return_val(
                         &function.name,
                         &d4.function,
@@ -1337,6 +1359,7 @@ impl ConvertSummary {
                         d4.next_pc,
                         &instructions,
                         graph,
+                        &return_vals,
                     )? {
                         summary_edge.push(Edge::Summary {
                             from: d2.clone(),
@@ -1510,6 +1533,19 @@ impl ConvertSummary {
                     .context("Cannot find function")?
                     .instructions;
 
+                let return_vals = &program
+                    .functions
+                    .iter()
+                    .find(|x| x.name == d2.function)
+                    .context("Cannot find function")?
+                    .instructions
+                    .get(d2.next_pc - 1)
+                    .map(|x| match x {
+                        Instruction::Return(x) => x.clone(),
+                        _ => Vec::new(),
+                    })
+                    .unwrap_or(Vec::new());
+
                 // Use only `d4`'s var
                 let ret_vals = self.return_val(
                     &d4.function,
@@ -1518,6 +1554,7 @@ impl ConvertSummary {
                     d2.next_pc,
                     &instructions,
                     graph,
+                    return_vals,
                 )?;
 
                 let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();

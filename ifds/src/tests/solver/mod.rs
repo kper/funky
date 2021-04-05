@@ -237,3 +237,49 @@ fn test_gcd() {
     assert_eq!(1, touched_funcs.len());
 }
 
+#[test]
+fn test_globals() {
+    let mut solver = IfdsSolver;
+
+    let name = "test_globals";
+
+    let req = Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define test (result 0) (define %-1 %0 %2) {
+            %0 = 1
+            %-1 = %0 
+            %2 <- CALL mytest()
+        };
+        define mytest (param) (result 1) (define %-1 %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN %-1;
+        };
+    "
+    );
+
+    let sinks = solver
+        .all_sinks(
+            &mut graph,
+            &req,
+        )
+        .unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert_eq!(7, sinks.len());
+
+    let touched_vars = vars(&sinks);
+    assert_eq!(4, touched_vars.len());
+
+    let touched_funcs = functions(&sinks);
+    assert_eq!(1, touched_funcs.len());
+}
