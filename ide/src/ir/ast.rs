@@ -1,13 +1,13 @@
-#![allow(dead_code)]
-/// This module is responsible for converting the IR to an AST.
-
+/// IR datastructure for the webassembly module.
 #[derive(Debug, Clone)]
 pub struct Program {
     pub functions: Vec<Function>
 }
 
+/// IR datastructure for the webassembly function.
 #[derive(Debug, Clone, Default)]
 pub struct Function {
+    /// Name of the function
     pub name: String,
     pub(crate) params: Vec<String>,
     pub(crate) definitions: Vec<String>,
@@ -17,13 +17,10 @@ pub struct Function {
 
 type Dest = String;
 type Src = String;
-type Name = usize;
 type Reg = String;
 type Regs = Vec<String>;
-type FunctionName = usize;
-type Count = usize;
-type Cont = bool;
 
+/// IR datastructure for abstracted webassembly instructions.
 #[derive(Debug, Clone)]
 pub enum Instruction {
     Block(String),

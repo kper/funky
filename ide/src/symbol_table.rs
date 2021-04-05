@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use std::fmt;
 
 use crate::counter::Counter;
@@ -17,9 +15,6 @@ impl Variable {
         self.reg.val()
     }
 }
-
-//#[derive(Debug, Clone, PartialEq)]
-//pub struct Reg(pub usize);
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reg {

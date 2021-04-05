@@ -19,6 +19,7 @@ type BlockNum = String;
 
 const TAUT: usize = 1;
 
+/// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug)]
 pub struct ConvertSummary {
     block_counter: Counter,
@@ -33,6 +34,8 @@ impl ConvertSummary {
         }
     }
 
+    /// Computes a graph by a given program and `req` ([`Request`]).
+    /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<Graph> {
         let mut graph = Graph::new();
 

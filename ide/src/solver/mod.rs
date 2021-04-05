@@ -1,3 +1,5 @@
+//! The implementation for extracting the taints from the graph.
+
 use crate::icfg::graph::{Edge, Graph};
 use anyhow::Result;
 
@@ -5,6 +7,7 @@ type PC = usize;
 
 pub struct IfdsSolver;
 
+/// Represents the taints from the execution of the solver.
 #[derive(Debug)]
 pub struct Taint {
     pub variable: String,
@@ -12,6 +15,7 @@ pub struct Taint {
     pub pc: PC,
 }
 
+/// Request is the datastructure which defines at what instruction the [`Graph`] should be build from.
 #[derive(Debug, Clone)]
 pub struct Request {
     pub variable: Option<String>,

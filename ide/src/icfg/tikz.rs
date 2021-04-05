@@ -1,8 +1,9 @@
 use crate::icfg::graph::{Edge, Graph};
 use log::debug;
 
-pub const TAU: usize = 1;
+const TAU: usize = 1;
 
+/// Convert the given graph into string in .tex format.
 pub fn render_to(graph: &Graph) -> String {
     let mut str_vars = String::new();
 

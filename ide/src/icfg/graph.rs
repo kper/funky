@@ -9,6 +9,7 @@ use std::collections::HashMap;
 type VarId = String;
 type FunctionName = String;
 
+/// The datastructure for the graph.
 #[derive(Debug, Default)]
 pub struct Graph {
     pub vars: HashMap<FunctionName, Vec<Variable>>,
@@ -24,6 +25,8 @@ pub struct Graph {
     init_facts: HashMap<FunctionName, Vec<Fact>>,
 }
 
+/// A helper struct for the graph representation in `tikz`
+/// An instruction is a note in the .tex file because it makes the graph easier to read.
 #[derive(Debug, Clone)]
 pub struct Note {
     pub id: usize,
@@ -32,6 +35,8 @@ pub struct Note {
     pub note: String,
 }
 
+/// A fact is an variable at a given instruction. The instruction is defined
+/// as `next_pc`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Fact {
     pub id: usize,
@@ -43,6 +48,7 @@ pub struct Fact {
     pub function: FunctionName,
 }
 
+/// An IFDS representation for a function.
 #[derive(Debug)]
 pub struct Function {
     pub name: FunctionName,
@@ -50,6 +56,7 @@ pub struct Function {
     pub return_count: usize,
 }
 
+/// The register which will be used at some point in the module.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     pub name: FunctionName,
@@ -58,6 +65,7 @@ pub struct Variable {
     pub is_taut: bool,
 }
 
+/// The datastructure for an edge in the graph.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Edge {
     Normal { from: Fact, to: Fact, curved: bool },
@@ -69,6 +77,7 @@ pub enum Edge {
 }
 
 impl Edge {
+    /// Extract `from`'s [`Fact`] from the edge, no matter which variant.
     pub fn get_from(&self) -> &Fact {
         match self {
             Edge::Normal {
@@ -84,6 +93,7 @@ impl Edge {
         }
     }
 
+    /// Extract `to`'s [`Fact`] from the edge, no matter which variant.
     pub fn to(&self) -> &Fact {
         match self {
             Edge::Normal {
@@ -116,7 +126,7 @@ impl Graph {
             .map(|x| x.get_from())
     }
 
-    pub fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
+    fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
         self.functions.insert(
             function.name.clone(),
             Function {
@@ -129,6 +139,7 @@ impl Graph {
         Ok(())
     }
 
+    /// Initialise the function.
     pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
 
@@ -207,7 +218,7 @@ impl Graph {
         Ok(facts)
     }
 
-    pub fn init_facts(
+    fn init_facts(
         &mut self,
         function: &AstFunction,
         variables: &mut Vec<Variable>,
@@ -239,6 +250,7 @@ impl Graph {
         Ok(facts)
     }
 
+    /// Get the facts at a certain instruction for a given function.
     pub fn get_facts_at(
         &self,
         function: &String,
@@ -254,6 +266,7 @@ impl Graph {
             .map(|x| x.to()))
     }
 
+    /// Get the track by given name and function.
     pub fn get_track(&self, function: &String, variable: &String) -> Option<usize> {
         self.vars
             .get(function)?
@@ -261,6 +274,7 @@ impl Graph {
             .position(|x| &x.name == variable)
     }
 
+    /// Get a variable by given name and function.
     pub fn get_var(&self, function: &String, variable: &String) -> Option<&Variable> {
         self.vars
             .get(function)?
@@ -268,6 +282,7 @@ impl Graph {
             .find(|x| &x.name == variable)
     }
 
+    /// Add a new statement to the graph.
     pub fn add_statement(
         &mut self,
         function: &AstFunction,
@@ -306,6 +321,9 @@ impl Graph {
         Ok(facts)
     }
 
+    /// Add a statement with the instruction with a note [`Note`]. 
+    /// The notes has the instruction as content, which makes it easier to read in the
+    /// `tikz` representation.
     pub fn add_statement_with_note(
         &mut self,
         function: &AstFunction,

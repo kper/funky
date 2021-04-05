@@ -1,3 +1,5 @@
+//! This project allows to do taint analysis for web assembly.
+
 #[macro_use]
 extern crate lalrpop_util;
 

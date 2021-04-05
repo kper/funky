@@ -1,8 +1,10 @@
+//! This module is responsible to parse
+//! the webassembly AST to an IR
+
 #![allow(dead_code)]
 use crate::symbol_table::{Reg, SymbolTable};
 use anyhow::{Context, Result};
-/// This module is responsible to parse
-/// the webassembly AST to an IR
+
 use funky::engine::func::FuncInstance;
 use funky::engine::Engine;
 use log::debug;
@@ -12,13 +14,19 @@ use wasm_parser::core::*;
 
 use std::collections::HashMap;
 
+/// Central datastructure for the intermediate representation.
 #[derive(Debug)]
 pub struct IR {
+    /// the output buffer
     buffer: String,
+    /// keeps track of the symbols
     symbol_table: SymbolTable,
+    /// the `block_counter` return unique numbers for jumps
     block_counter: Counter,
+    /// the `function_counter` return unique numbers for functions
     function_counter: Counter,
     functions: Vec<Function>,
+    /// saves the the global variable for later use
     globals: HashMap<usize, Reg>, //key to register
     global_counter: ReverseCounter,
 }
@@ -34,11 +42,6 @@ struct Function {
 struct Block {
     name: usize,
     is_loop: bool,
-}
-
-#[derive(Debug)]
-struct JumpList {
-    blocks: Vec<Block>,
 }
 
 #[derive(Debug, Default)]
@@ -97,6 +100,7 @@ impl IR {
         }
     }
 
+    /// Return the intermediate representation of the webassembly module.
     pub fn buffer(&self) -> String {
         self.buffer.clone()
     }
@@ -110,6 +114,8 @@ impl IR {
         Ok(())
     }
 
+    /// This method triggers the conversion to the intermediate representation by the given engine.
+    /// This is the main entry point.
     pub fn visit(&mut self, engine: &Engine) -> Result<()> {
         self.init_globals(engine)
             .context("Error occured during global initialization")?;
