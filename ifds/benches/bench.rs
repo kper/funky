@@ -1,12 +1,10 @@
-use ide::{ir::ast::Program, solver::*};
-
-use ide::icfg::convert::ConvertSummary;
-
-use ide::grammar::*;
+use ifds::{ir::ast::Program, solver::*};
+use ifds::icfg::convert::ConvertSummary;
+use ifds::grammar::*;
 
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
-use ide::ir::wasm_ast::IR;
+use ifds::ir::wasm_ast::IR;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
