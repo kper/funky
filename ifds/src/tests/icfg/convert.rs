@@ -257,7 +257,7 @@ fn test_ir_loop() {
     let req = Request {
         variable: None,
         function: "main".to_string(),
-        pc: 0,
+        pc: 2,
     };
     ir!(
         "test_ir_loop",
@@ -265,6 +265,7 @@ fn test_ir_loop() {
         "define main (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
+            %1 = 2
             GOTO 0 
         };
         "
