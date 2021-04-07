@@ -16,15 +16,15 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:\%1] (13) at (4, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:\%-2] (12) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (11) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (10) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:\%1] (9) at (4, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (7) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (5) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$\%1$] (13) at (4, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%-2$] (12) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (10) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (9) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (5) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Assign(1, -1)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(-2, 1)};
 		\path[->, blue] (0) [loop right] edge  node { } (0);

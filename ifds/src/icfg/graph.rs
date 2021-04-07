@@ -61,8 +61,15 @@ pub struct Function {
 pub struct Variable {
     pub name: FunctionName,
     pub function: FunctionName,
+    /// variable is a global variable
     pub is_global: bool,
+    /// variable represents the tautological fact
     pub is_taut: bool,
+    /// variable is a memory variable
+    pub is_memory: bool,
+    /// if variable is a memory variable, then also save
+    /// the memory's offset
+    pub memory_offset: Option<f64>,
 }
 
 /// The datastructure for an edge in the graph.
@@ -139,6 +146,30 @@ impl Graph {
         Ok(())
     }
 
+    /// Add a memory variable to the graph's variables
+    pub fn add_memory_var(&mut self, variable: String, function: String, offset: f64) -> Variable {
+        let name = format!("{}@{}", variable, offset);
+        let var = Variable {
+            function: function.clone(),
+            is_global: false,
+            is_memory: true,
+            is_taut: false,
+            name,
+            memory_offset: Some(offset),
+        };
+
+        if let Some(vars) = self.vars.get_mut(&function) {
+            if !vars.contains(&var) {
+                vars.push(var.clone());
+            }
+        }
+        else {
+            self.vars.insert(function, vec![var.clone()]);
+        }
+
+        var 
+    }
+
     /// Initialise the function.
     pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
@@ -181,6 +212,8 @@ impl Graph {
             function: function.name.clone(),
             is_global: false,
             is_taut: true,
+            is_memory: false,
+            memory_offset: None,
         });
 
         // add definitions
@@ -203,6 +236,8 @@ impl Graph {
                 function: function.name.clone(),
                 is_global,
                 is_taut: false,
+                is_memory: false,
+                memory_offset: None,
             });
         }
 
@@ -416,7 +451,9 @@ mod test {
                 function: "main".to_string(),
                 is_global: true,
                 is_taut: false,
-                name: "%-1".to_string()
+                name: "%-1".to_string(),
+                is_memory: false,
+                memory_offset: None,
             },
             graph.vars.get(&"main".to_string()).unwrap().get(1).unwrap()
         );

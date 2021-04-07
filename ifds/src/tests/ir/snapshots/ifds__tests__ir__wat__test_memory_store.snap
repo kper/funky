@@ -3,28 +3,20 @@ source: src/tests/ir/wat.rs
 expression: "format!(\"{}\", ir . buffer())"
 
 ---
-define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19) {
+define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
 BLOCK 0
 %0 = 8
 %1 = -12345
-%2 = 0
-%3 = %0 op %2
-%4 = STORE %1 TO %3 ALIGN 2 32
-%5 = 8
-%6 = -12345
-%7 = 0
-%8 = %5 op %7
-%9 = STORE %6 TO %8 ALIGN 3 64
-%10 = 8
-%11 = -12345
-%12 = 0
-%13 = %10 op %12
-%14 = STORE %11 TO %13 ALIGN 2 32
-%15 = 8
-%16 = -12345
-%17 = 0
-%18 = %15 op %17
-%19 = STORE %16 TO %18 ALIGN 3 64
+STORE %1 AT 0 + %0 ALIGN 2 32
+%2 = 8
+%3 = -12345
+STORE %3 AT 0 + %2 ALIGN 3 64
+%4 = 8
+%5 = -12345
+STORE %5 AT 0 + %4 ALIGN 2 32
+%6 = 8
+%7 = -12345
+STORE %7 AT 0 + %6 ALIGN 3 64
 RETURN ;
 };
 

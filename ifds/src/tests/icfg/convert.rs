@@ -674,3 +674,31 @@ fn test_global_check_order() {
         };
     ");
 }
+
+#[test]
+fn test_memory_store() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0
+    };
+    ir!("test_ir_memory_store", 
+    req, 
+    "
+        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
+        BLOCK 0
+        %1 = -12345
+        STORE %1 AT 0 + %0 ALIGN 2 32
+        %2 = 8
+        %3 = -12345
+        STORE %3 AT 0 + %2 ALIGN 3 64
+        %5 = 8
+        %6 = -12345
+        STORE %6 AT 0 + %5 ALIGN 2 32
+        %7 = 8
+        %8 = -12345
+        STORE %8 AT 0 + %7 ALIGN 3 64
+        RETURN ;
+        };
+    ");
+}

@@ -16,27 +16,27 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:\%2] (26) at (3, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:\%4] (25) at (5, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:\%2] (24) at (3, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:\%4] (23) at (5, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (22) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:\%2] (21) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (20) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (19) at (0, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (18) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (17) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (16) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:\%2] (15) at (3, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (14) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (13) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (11) at (0, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (10) at (0, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (9) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (8) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (7) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (6) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:taut] (0) at (0, 0) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$\%2$] (26) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (25) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (24) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (23) at (5, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (22) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (21) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (20) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (19) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (18) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (17) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (15) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (14) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (13) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (10) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (9) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (8) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(2, 0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(3, 1)};

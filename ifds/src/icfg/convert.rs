@@ -697,6 +697,34 @@ impl ConvertSummary {
                     });
                 }
             }
+            Instruction::Store(src, offset) if variable == src => {
+                let mem_var = graph.add_memory_var("mem".to_string(), function.name.clone(), *offset);
+
+                let after = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    &mem_var.name,
+                )?;
+
+                // Identity
+                let before = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| x.var_is_taut)
+                    .cloned();
+
+                for (b, a) in before.zip(after) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Store(_src, _offset) => {
+                // kill
+            }
             _ => {
                 let after = graph.add_statement(
                     function,
