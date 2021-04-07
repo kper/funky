@@ -6,9 +6,12 @@ use insta::assert_snapshot;
 
 use crate::grammar::*;
 
+use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {{
-        let mut convert = ConvertSummary::new();
+        let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
@@ -107,12 +110,7 @@ fn test_loop() {
     "
     );
 
-    let sinks = solver
-        .all_sinks(
-            &mut graph,
-            &req,
-        )
-        .unwrap();
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
@@ -153,12 +151,7 @@ fn test_functions() {
     "
     );
 
-    let sinks = solver
-        .all_sinks(
-            &mut graph,
-            &req,
-        )
-        .unwrap();
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
@@ -219,12 +212,7 @@ fn test_gcd() {
     "
     );
 
-    let sinks = solver
-        .all_sinks(
-            &mut graph,
-            &req,
-        )
-        .unwrap();
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 
@@ -266,12 +254,7 @@ fn test_globals() {
     "
     );
 
-    let sinks = solver
-        .all_sinks(
-            &mut graph,
-            &req,
-        )
-        .unwrap();
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 

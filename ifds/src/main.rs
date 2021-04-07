@@ -8,7 +8,9 @@ use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use crate::icfg::convert::ConvertSummary as Convert;
+use crate::icfg::convert::ConvertSummary;
+use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
 use std::fs::File;
 use std::io::{Read, Write};
@@ -175,7 +177,7 @@ fn ir(file: PathBuf) -> Result<IR> {
 }
 
 fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
-    let mut convert = Convert::new();
+    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -222,7 +224,7 @@ struct InstructionList<'a> {
 }
 
 fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
-    let mut convert = Convert::new();
+    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -433,7 +435,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
 }
 
 fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
-    let mut convert = Convert::new();
+    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -475,7 +477,7 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
         let req = Request {
             function: splitted.get(0).unwrap().to_string(),
             pc: splitted.get(1).unwrap().parse::<usize>().unwrap(),
-            variable: splitted.get(2).map(|x| x.to_string())
+            variable: splitted.get(2).map(|x| x.to_string()),
         };
 
         println!("{:?}", req);

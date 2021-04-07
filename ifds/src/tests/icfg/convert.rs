@@ -6,21 +6,24 @@ use log::error;
 
 use crate::grammar::*;
 
+use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {
-        let mut convert = ConvertSummary::new();
+        let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
         let graph = convert.visit(&prog, &$req);
 
         if let Err(err) = graph {
-                error!("ERROR: {}", err);
-                err.chain()
-                    .skip(1)
-                    .for_each(|cause| error!("because: {}", cause));
-                panic!("")
-            }
+            error!("ERROR: {}", err);
+            err.chain()
+                .skip(1)
+                .for_each(|cause| error!("because: {}", cause));
+            panic!("")
+        }
 
         let output = render_to(&graph.unwrap());
 
@@ -556,31 +559,34 @@ fn test_ir_self_loop() {
 
 #[test]
 fn test_global_get_and_set() {
-     let req = Request {
+    let req = Request {
         variable: None,
         function: "0".to_string(),
         pc: 0,
     };
-    ir!("test_ir_global_get_and_set", 
-    req,
-    "
+    ir!(
+        "test_ir_global_get_and_set",
+        req,
+        "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         %1 = %-1
         %-2 = %1
         };
-    ");
+    "
+    );
 }
 
 #[test]
 fn test_global_get_and_set_multiple_functions() {
-     let req = Request {
+    let req = Request {
         variable: None,
         function: "0".to_string(),
         pc: 0,
     };
-    ir!("test_ir_global_get_and_set_multiple_functions", 
-    req,
-    "
+    ir!(
+        "test_ir_global_get_and_set_multiple_functions",
+        req,
+        "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
         %1 = %-1
         %-2 = %1
@@ -599,19 +605,21 @@ fn test_global_get_and_set_multiple_functions() {
         %-2 = 1
         RETURN %0;
         };
-    ");
+    "
+    );
 }
 
 #[test]
 fn test_global_call() {
-     let req = Request {
+    let req = Request {
         variable: None,
         function: "1".to_string(),
         pc: 0,
     };
-    ir!("test_ir_global_call", 
-    req,
-    "
+    ir!(
+        "test_ir_global_call",
+        req,
+        "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         BLOCK 0
         %1 = %0
@@ -626,7 +634,8 @@ fn test_global_call() {
         %-2 = %2
         RETURN ;
         };
-    ");
+    "
+    );
 }
 
 #[test]
@@ -636,9 +645,10 @@ fn test_global_writes() {
         function: "test".to_string(),
         pc: 0,
     };
-    ir!("test_ir_globals", 
-    req,
-    "
+    ir!(
+        "test_ir_globals",
+        req,
+        "
         define test (result 0) (define %-1 %0 %2) {
             %0 = 1
             %-1 = %0 
@@ -649,7 +659,8 @@ fn test_global_writes() {
             %1 = 3
             RETURN %-1;
         };
-    ");
+    "
+    );
 }
 
 #[test]
@@ -659,9 +670,10 @@ fn test_global_check_order() {
         function: "test".to_string(),
         pc: 0,
     };
-    ir!("test_ir_globals_check_order", 
-    req,
-    "
+    ir!(
+        "test_ir_globals_check_order",
+        req,
+        "
         define test (result 0) (define %-2 %-1 %0 %2) {
             %0 = 1
             %-1 = %0 
@@ -672,7 +684,8 @@ fn test_global_check_order() {
             %1 = 3
             RETURN %-1;
         };
-    ");
+    "
+    );
 }
 
 #[test]
@@ -680,11 +693,12 @@ fn test_memory_store() {
     let req = Request {
         variable: None,
         function: "0".to_string(),
-        pc: 0
+        pc: 0,
     };
-    ir!("test_ir_memory_store", 
-    req, 
-    "
+    ir!(
+        "test_ir_memory_store",
+        req,
+        "
         define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
         BLOCK 0
         %1 = -12345
@@ -700,7 +714,8 @@ fn test_memory_store() {
         STORE %8 AT 0 + %7 ALIGN 3 64
         RETURN ;
         };
-    ");
+    "
+    );
 }
 
 #[test]
@@ -708,11 +723,12 @@ fn test_memory_load() {
     let req = Request {
         variable: None,
         function: "0".to_string(),
-        pc: 2
+        pc: 2,
     };
-    ir!("test_ir_memory_load", 
-    req, 
-    "
+    ir!(
+        "test_ir_memory_load",
+        req,
+        "
        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
         BLOCK 0
         %0 = 8
@@ -726,5 +742,6 @@ fn test_memory_load() {
         KILL %6
         RETURN ;
        }; 
-    ");
+    "
+    );
 }

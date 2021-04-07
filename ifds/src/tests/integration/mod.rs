@@ -10,6 +10,9 @@ use crate::icfg::convert::ConvertSummary;
 use crate::icfg::tikz::render_to;
 use crate::solver::Request;
 
+use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+
 macro_rules! wasm {
     ($input:expr) => {{
         // Read it
@@ -42,7 +45,7 @@ macro_rules! run {
 
         let ir_code = ir.buffer();
 
-        let mut convert = ConvertSummary::new();
+        let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 
