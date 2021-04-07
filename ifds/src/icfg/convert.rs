@@ -697,8 +697,9 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Store(src, offset) if variable == src => {
-                let mem_var = graph.add_memory_var("mem".to_string(), function.name.clone(), *offset);
+            Instruction::Store(src, offset, i) if variable == src || variable == i => {
+                let mem_var =
+                    graph.add_memory_var("mem".to_string(), function.name.clone(), *offset);
 
                 let after = graph.add_statement(
                     function,
@@ -707,11 +708,48 @@ impl ConvertSummary {
                     &mem_var.name,
                 )?;
 
+                let after_var = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    &variable,
+                )?;
+
                 // Identity
                 let before = graph
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
-                    .filter(|x| x.var_is_taut)
+                    .filter(|x| &x.belongs_to_var == src)
+                    .cloned();
+
+                for b in before {
+                    for a in after.iter().chain(after_var.iter()) {
+                        edges.push(Edge::Normal {
+                            from: b.clone(),
+                            to: a.clone(),
+                            curved: false,
+                        });
+                    }
+                }
+            }
+            Instruction::Store(src, offset, i)
+                if variable != src
+                    && variable != i
+                    && variable != &"taut".to_string()
+                    && variable != &format!("mem@{}", offset) =>
+            {
+                let after = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    variable,
+                )?;
+
+                // Identity
+                let before = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
                 for (b, a) in before.zip(after) {
@@ -722,8 +760,65 @@ impl ConvertSummary {
                     });
                 }
             }
-            Instruction::Store(_src, _offset) => {
+            Instruction::Store(_src, _offset, _i) => {
                 // kill
+            }
+            Instruction::Load(dest, _offset, _i)
+                if variable != dest && variable != _i && !variable.starts_with("mem") =>
+            {
+                let after = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    variable,
+                )?;
+
+                // Identity
+                let before = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                for (b, a) in before.zip(after) {
+                    edges.push(Edge::Normal {
+                        from: b,
+                        to: a,
+                        curved: false,
+                    });
+                }
+            }
+            Instruction::Load(dest, offset, _i) => {
+                let after =
+                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
+
+                let after_var = graph.add_statement(
+                    function,
+                    format!("{:?}", instruction),
+                    pc + 1,
+                    &variable,
+                )?;
+
+                // we cannot know which exact variables, because we only
+                // know the `offset`. But, we can eliminate all cases
+                // where the offset is higher, so they can't be meant.
+                let before = graph
+                    .get_facts_at(&function.name, pc)?
+                    .into_iter()
+                    .filter(|x| {
+                        (x.memory_offset.is_some() && x.memory_offset <= Some(*offset))
+                            || _i == variable
+                    });
+
+                for b in before {
+                    for a in after.iter().chain(after_var.iter()) {
+                        edges.push(Edge::Normal {
+                            from: b.clone(),
+                            to: a.clone(),
+                            curved: false,
+                        });
+                    }
+                }
             }
             _ => {
                 let after = graph.add_statement(
@@ -945,6 +1040,8 @@ impl ConvertSummary {
                         track,
                         var_is_global: false,
                         var_is_taut: from.var_is_taut,
+                        memory_offset: from.memory_offset,
+                        var_is_memory: from.var_is_memory,
                     },
                 });
             }
@@ -968,6 +1065,8 @@ impl ConvertSummary {
                     track,
                     var_is_global: true,
                     var_is_taut: from.var_is_taut,
+                    var_is_memory: false,
+                    memory_offset: None,
                 },
             });
         }
@@ -1629,6 +1728,8 @@ impl ConvertSummary {
                                 var_is_global: d5.var_is_global,
                                 var_is_taut: d5.var_is_taut,
                                 track: d5.track,
+                                memory_offset: d5.memory_offset,
+                                var_is_memory: d5.var_is_memory,
                             };
 
                             self.propagate(

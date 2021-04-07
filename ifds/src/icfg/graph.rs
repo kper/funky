@@ -37,15 +37,19 @@ pub struct Note {
 
 /// A fact is an variable at a given instruction. The instruction is defined
 /// as `next_pc`.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Fact {
     pub id: usize,
     pub belongs_to_var: VarId,
     pub var_is_global: bool,
     pub var_is_taut: bool,
+    pub var_is_memory: bool,
     pub next_pc: usize,
     pub track: usize,
     pub function: FunctionName,
+    /// if the fact saves a memory variable
+    /// then save the offset.
+    pub memory_offset: Option<f64>,
 }
 
 /// An IFDS representation for a function.
@@ -271,9 +275,11 @@ impl Graph {
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
+                var_is_memory: var.is_memory,
                 next_pc: pc,
                 track: index,
                 function: function.name.clone(),
+                memory_offset: var.memory_offset,
             };
 
             //self.facts.push(fact.clone());
@@ -347,9 +353,11 @@ impl Graph {
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
+                var_is_memory: var.is_memory,
                 track,
                 function: function.name.clone(),
                 next_pc: pc,
+                memory_offset: var.memory_offset,
             });
         }
 
@@ -400,9 +408,11 @@ impl Graph {
             belongs_to_var: "taut".to_string(),
             var_is_taut: true,
             var_is_global: false,
+            var_is_memory: false,
             function,
             next_pc: pc,
             track: 0,
+            memory_offset: None,
         }
     }
 }

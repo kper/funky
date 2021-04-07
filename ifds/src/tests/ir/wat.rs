@@ -395,3 +395,23 @@ fn test_memory_store() {
 )
 ");
 }
+
+
+#[test]
+fn test_memory_load() {
+  wat!("test_memory_load",
+"
+(module 
+(memory 1)
+  (data (i32.const 0) \"ABC\\a7D\") (data (i32.const 20) \"WASM\")
+  (func  
+    (i32.store (i32.const 8) (i32.const -12345))
+    (i64.store (i32.const 8) (i64.const -12345))
+    (i32.load8_s (i32.const 8))
+    (i64.load8_s (i32.const 8))
+    (drop) 
+    (drop) 
+  )
+)
+");
+}

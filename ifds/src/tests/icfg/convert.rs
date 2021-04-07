@@ -702,3 +702,29 @@ fn test_memory_store() {
         };
     ");
 }
+
+#[test]
+fn test_memory_load() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2
+    };
+    ir!("test_ir_memory_load", 
+    req, 
+    "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE %1 AT 0 + %0 ALIGN 2 32
+        %4 = 8
+        %5 = LOAD %4 OFFSET 0 ALIGN 0
+        %6 = 8
+        %7 = LOAD %6 OFFSET 0 ALIGN 0
+        KILL %7
+        KILL %6
+        RETURN ;
+       }; 
+    ");
+}

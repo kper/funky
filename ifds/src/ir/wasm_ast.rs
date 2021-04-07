@@ -825,17 +825,32 @@ impl IR {
                     )
                     .unwrap();
                 }
-                OP_I32_LOAD(_arg) | OP_F32_LOAD(_arg) | OP_I64_LOAD(_arg) | OP_F64_LOAD(_arg) => {}
-                OP_I64_LOAD_32_u(_arg)
-                | OP_I32_LOAD_16_s(_arg)
-                | OP_I32_LOAD_16_u(_arg)
-                | OP_I32_LOAD_8_s(_arg)
-                | OP_I32_LOAD_8_u(_arg)
-                | OP_I64_LOAD_32_s(_arg)
-                | OP_I64_LOAD_16_s(_arg)
-                | OP_I64_LOAD_16_u(_arg)
-                | OP_I64_LOAD_8_s(_arg)
-                | OP_I64_LOAD_8_u(_arg) => {}
+                OP_I32_LOAD(arg)
+                | OP_F32_LOAD(arg)
+                | OP_I64_LOAD(arg)
+                | OP_F64_LOAD(arg)
+                | OP_I64_LOAD_32_u(arg)
+                | OP_I32_LOAD_16_s(arg)
+                | OP_I32_LOAD_16_u(arg)
+                | OP_I32_LOAD_8_s(arg)
+                | OP_I32_LOAD_8_u(arg)
+                | OP_I64_LOAD_32_s(arg)
+                | OP_I64_LOAD_16_s(arg)
+                | OP_I64_LOAD_16_u(arg)
+                | OP_I64_LOAD_8_s(arg)
+                | OP_I64_LOAD_8_u(arg) => {
+                    let c = self.symbol_table.peek()?;
+
+                    writeln!(
+                        function_buffer,
+                        "{} = LOAD {} OFFSET {} ALIGN {}",
+                        self.symbol_table.new_reg()?,
+                        c,
+                        arg.offset,
+                        arg.align
+                    )
+                    .unwrap();
+                }
                 OP_UNREACHABLE => {}
                 OP_MEMORY_SIZE | OP_MEMORY_GROW => {
                     writeln!(

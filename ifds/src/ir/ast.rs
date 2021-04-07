@@ -37,5 +37,6 @@ pub enum Instruction {
     Phi(Dest, Src, Src),
     CallIndirect(Vec<String>, Vec<Reg>, Vec<Reg>), // names, parameters, dests
     Unknown(Dest), // Value is not known statically
-    Store(Src, f64),
+    Store(Src, f64, Src),
+    Load(Dest, f64, Src),
 }
