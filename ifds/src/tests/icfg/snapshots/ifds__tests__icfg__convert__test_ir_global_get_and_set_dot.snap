@@ -16,31 +16,41 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:$\%1$] (13) at (4, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%-2$] (12) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (10) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%1$] (9) at (4, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 1) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (1) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (2) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (3) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (4) at (4, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (5) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (8) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%-2$] (9) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (10) at (4, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (12) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (13) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (14) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (15) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%-2$] (17) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (18) at (4, 2) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Assign(1, -1)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(-2, 1)};
 		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->, blue] (0) [bend right] edge  node { } (6);
+		\path[->, blue] (0) [bend right] edge  node { } (1);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (9);
-		\path[->, blue] (0) [bend right] edge  node { } (12);
-		\path[->, blue] (0) [bend right] edge  node { } (13);
-		\path[->] (0) edge (5);
-		\path[->] (5) edge (6);
-		\path[->] (6) edge (7);
-		\path[->] (0) edge (9);
-		\path[->] (0) edge (10);
-		\path[->] (6) edge (11);
-		\path[->] (9) edge (12);
-		\path[->] (9) edge (13);
+		\path[->, blue] (0) [bend right] edge  node { } (10);
+		\path[->] (0) edge (0);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (7);
+		\path[->] (0) edge (4);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (7);
+		\path[->] (4) edge (9);
+		\path[->] (4) edge (10);
 
 
                 \end{tikzpicture}

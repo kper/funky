@@ -239,7 +239,6 @@ where
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
                     to: Fact {
-                        id: graph.fact_counter.get(),
                         belongs_to_var: to_reg.clone(),
                         function: caller_function.clone(),
                         next_pc: caller_pc + 1,
@@ -264,7 +263,6 @@ where
             edges.push(Edge::Return {
                 from: from.clone().clone(),
                 to: Fact {
-                    id: graph.fact_counter.get(),
                     belongs_to_var: from.belongs_to_var.clone(),
                     function: caller_function.clone(),
                     next_pc: caller_pc + 1,
@@ -332,11 +330,9 @@ where
                 .find(|x| x.belongs_to_var == fact.belongs_to_var);
 
             if let Some(b) = b {
-                let mut b = b.clone();
-                b.id = graph.fact_counter.get();
                 edges.push(Edge::CallToReturn {
-                    from: fact.clone(),
-                    to: b,
+                    from: b.clone(),
+                    to: b.clone(),
                 });
             } else {
                 debug!(
@@ -950,7 +946,6 @@ where
 
                             // Take the old and replace it with new var.
                             let new_return_site_d5 = Fact {
-                                id: graph.fact_counter.get(),
                                 next_pc: d3.next_pc + 1,
                                 belongs_to_var: d5.belongs_to_var.clone(),
                                 function: d3.function.clone(),

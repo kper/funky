@@ -16,19 +16,21 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 1) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (1) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (2) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (3) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (4) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$\%0$] (5) at (1, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (3) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (2) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->, blue] (0) [bend right] edge  node { } (3);
-		\path[->, blue] (0) [bend right] edge  node { } (5);
+		\path[->, blue] (0) [bend right] edge  node { } (1);
+		\path[->, blue] (0) [bend right] edge  node { } (2);
+		\path[->] (0) edge (0);
+		\path[->] (0) edge (1);
 		\path[->] (0) edge (2);
-		\path[->] (2) edge (3);
-		\path[->] (0) edge (5);
-		\path[->] (0) edge (6);
+		\path[->] (0) edge (1);
 
 
                 \end{tikzpicture}

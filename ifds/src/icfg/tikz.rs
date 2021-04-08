@@ -1,7 +1,20 @@
-use crate::icfg::graph::{Edge, Graph};
+use crate::counter::Counter;
+use crate::icfg::graph::{Edge, Fact, Graph};
 use log::debug;
+use std::cmp::Ordering;
 
 const TAU: usize = 1;
+
+struct FactWrapper<'a> {
+    id: usize,
+    fact: &'a Fact,
+}
+
+impl<'a> FactWrapper<'a> {
+    pub fn get(&'a self) -> &'a Fact {
+        self.fact
+    }
+}
 
 /// Convert the given graph into string in .tex format.
 pub fn render_to(graph: &Graph) -> String {
@@ -12,21 +25,46 @@ pub fn render_to(graph: &Graph) -> String {
 
     functions.sort_by(|a, b| b.name.cmp(&a.name));
 
+    let mut counter = Counter::default();
+
+    let mut facts: Vec<_> = graph
+        .edges
+        .iter()
+        .map(|x| x.get_from())
+        .chain(graph.edges.iter().map(|x| x.to()))
+        .collect();
+
+    fn chain_ordering(o1: Ordering, o2: Ordering) -> Ordering {
+        match o1 {
+            Ordering::Equal => o1,
+            _ => o2,
+        }
+    }
+
+    facts.sort_by(|a, b| {
+        chain_ordering(
+            chain_ordering(
+                b.function.cmp(&a.function),
+                b.belongs_to_var.cmp(&a.belongs_to_var),
+            ),
+            b.next_pc.cmp(&a.next_pc),
+        )
+    });
+    facts.dedup();
+
+    let facts = facts
+        .into_iter()
+        .map(|x| FactWrapper {
+            id: counter.get(),
+            fact: x,
+        })
+        .collect::<Vec<_>>();
+
     for function in functions {
         let function_name = &function.name;
         debug!("Drawing function {}", function_name);
 
-        //let facts = graph.facts.iter().filter(|x| &x.function == function_name);
-        let mut facts: Vec<_> = graph
-            .edges
-            .iter()
-            .map(|x| x.get_from())
-            .chain(graph.edges.iter().map(|x| x.to()))
-            .filter(|x| &x.function == function_name)
-            .collect();
-
-        facts.sort_by(|a, b| b.id.cmp(&a.id));
-        facts.dedup();
+        let facts = facts.iter().filter(|x| &x.get().function == function_name);
 
         let notes = graph.notes.iter().filter(|x| &x.function == function_name);
 
@@ -35,11 +73,10 @@ pub fn render_to(graph: &Graph) -> String {
 
             str_vars.push_str(&format!(
                 "\\node[circle,fill,inner sep=1pt,label=left:${}$] ({}) at ({}, {}) {{ }};\n",
-                fact.belongs_to_var
-                    .replace("%", "\\%"),
+                fact.get().belongs_to_var.replace("%", "\\%"),
                 fact.id,
-                index + fact.track,
-                fact.next_pc,
+                index + fact.get().track,
+                fact.get().next_pc,
                 //fact.id
             ));
         }
@@ -59,53 +96,69 @@ pub fn render_to(graph: &Graph) -> String {
         index += function.definitions + TAU + 1;
     }
 
+    let get_fact_id = |fact| {
+        let pos = facts.iter().position(|x| x.get() == fact).unwrap();
+        facts.get(pos).unwrap().id
+    };
+
     for edge in graph.edges.iter() {
         match edge {
             Edge::Normal { from, to, curved } => {
                 if *curved {
                     str_vars.push_str(&format!(
                         "\t\t\\path[->, bend right] ({}) edge ({});\n",
-                        from.id, to.id
+                        get_fact_id(from),
+                        get_fact_id(to)
                     ));
                 } else {
-                    str_vars.push_str(&format!("\t\t\\path[->] ({}) edge ({});\n", from.id, to.id));
+                    str_vars.push_str(&format!(
+                        "\t\t\\path[->] ({}) edge ({});\n",
+                        get_fact_id(from),
+                        get_fact_id(to)
+                    ));
                 }
             }
             Edge::Call { from, to } => {
                 str_vars.push_str(&format!(
                     "\t\t\\path[->, green] ({}) [bend left] edge node {{ }} ({});\n",
-                    from.id, to.id
+                    get_fact_id(from),
+                    get_fact_id(to)
                 ));
             }
             Edge::CallToReturn { from, to } => {
                 str_vars.push_str(&format!(
                     "\t\t\\path[->] ({}) edge node {{ }} ({});\n",
-                    from.id, to.id
+                    get_fact_id(from),
+                    get_fact_id(to)
                 ));
             }
             Edge::Return { from, to } => {
                 str_vars.push_str(&format!(
                     "\t\t\\path[->, red] ({}) [bend right] edge  node {{ }} ({});\n",
-                    from.id, to.id
+                    get_fact_id(from),
+                    get_fact_id(to)
                 ));
             }
             Edge::Path { from, to } => {
                 if from != to {
                     str_vars.push_str(&format!(
                         "\t\t\\path[->, blue] ({}) [bend right] edge  node {{ }} ({});\n",
-                        from.id, to.id
+                        get_fact_id(from),
+                        get_fact_id(to)
                     ));
                 } else {
                     str_vars.push_str(&format!(
                         "\t\t\\path[->, blue] ({}) [loop right] edge  node {{ }} ({});\n",
-                        from.id, to.id
+                        get_fact_id(from),
+                        get_fact_id(to)
                     ));
                 }
             }
             Edge::Summary { from, to } => {
                 str_vars.push_str(&format!(
                     "\t\t\\path[->, red] ({}) [bend left] edge  node {{ }} ({});\n",
-                    from.id, to.id
+                    get_fact_id(from),
+                    get_fact_id(to)
                 ));
             }
         }

@@ -37,9 +37,8 @@ pub struct Note {
 
 /// A fact is an variable at a given instruction. The instruction is defined
 /// as `next_pc`.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Fact {
-    pub id: usize,
     pub belongs_to_var: VarId,
     pub var_is_global: bool,
     pub var_is_taut: bool,
@@ -271,7 +270,6 @@ impl Graph {
             debug!("Creating fact for var {}", var.name);
 
             let fact = Fact {
-                id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
@@ -349,7 +347,6 @@ impl Graph {
             debug!("Adding new fact for {}", var.name);
 
             facts.push(Fact {
-                id: self.fact_counter.get(),
                 belongs_to_var: var.name.clone(),
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
@@ -404,7 +401,6 @@ impl Graph {
     /// Create new tautological fact by given function and pc.
     pub fn taut(&mut self, function: String, pc: usize) -> Fact {
         Fact {
-            id: self.fact_counter.get(),
             belongs_to_var: "taut".to_string(),
             var_is_taut: true,
             var_is_global: false,
