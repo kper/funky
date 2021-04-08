@@ -50,9 +50,6 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Const(_reg, _) => {
-                //kill
-            }
             Instruction::Assign(dest, src) if src == variable => {
                 let mut after =
                     graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -101,7 +98,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Assign(_dest, _src) => {
+            Instruction::Assign(_dest, _src) if _dest == variable => {
                 //kill
             }
             Instruction::Unop(dest, src) if src == variable => {
@@ -152,7 +149,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Unop(_dest, _src) => {
+            Instruction::Unop(_dest, _src) if _dest == variable => {
                 //kill
             }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
