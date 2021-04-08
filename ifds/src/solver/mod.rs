@@ -38,7 +38,12 @@ impl Solver for IfdsSolver {
         let f1: Vec<_> = graph
             .edges
             .iter()
-            .filter(|x| matches!(x, Edge::Path { .. }) && &x.to().function == function)
+            .filter(|x| {
+                matches!(x, Edge::Path { .. })
+                    && &x.to().function == function
+                    && x.get_from().var_is_taut
+                    && x.get_from().next_pc == req.pc
+            })
             .collect();
 
         let f2: Vec<_> = f1
