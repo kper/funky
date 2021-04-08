@@ -72,6 +72,26 @@ fn test_ir_double_assign() {
 }
 
 #[test]
+fn test_ir_double_assign_with_params() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_double_const_with_params",
+        req,
+        "
+         define test (param %0) (result 0) (define %0 %1 %2){
+            %1 = 1
+            %2 = %0
+            %2 = %1
+         };
+    "
+    );
+}
+
+#[test]
 fn test_ir_chain_assign() {
     let req = Request {
         variable: None,

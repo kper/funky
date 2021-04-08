@@ -5,11 +5,6 @@ expression: "format!(\"{:#?}\", sinks)"
 ---
 [
     Taint {
-        variable: "taut",
-        function: "main",
-        pc: 0,
-    },
-    Taint {
         variable: "%0",
         function: "main",
         pc: 2,

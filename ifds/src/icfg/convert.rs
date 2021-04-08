@@ -370,16 +370,22 @@ where
         let mut summary_edge = Vec::new();
         let mut normal_flows_debug = Vec::new();
 
-        let init = facts.get(0).unwrap().clone();
-        self.propagate(
-            graph,
-            &mut path_edge,
-            &mut worklist,
-            Edge::Path {
-                from: init.clone(),
-                to: init.clone(),
-            },
-        )?;
+        // self loops
+        for param in facts
+            .iter()
+            .filter(|x| !x.var_is_global)
+            .take(function.params.len() + TAUT)
+        {
+            self.propagate(
+                graph,
+                &mut path_edge,
+                &mut worklist,
+                Edge::Path {
+                    from: param.clone(),
+                    to: param.clone(),
+                },
+            )?;
+        }
 
         self.pacemaker(
             function,

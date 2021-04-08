@@ -266,3 +266,46 @@ fn test_globals() {
     let touched_funcs = functions(&sinks);
     assert_eq!(1, touched_funcs.len());
 }
+
+#[test]
+fn test_returned_value() {
+    env_logger::init();
+    let mut solver = IfdsSolver;
+
+    let name = "test_returned_values";
+
+    let req = Request {
+        function: "0".to_string(),
+        pc: 8,
+        variable: Some("%11".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+            BLOCK 0
+            BLOCK 1
+            BLOCK 3
+            %1 = %0
+            %7 = %0
+            %8 = -1
+            %9 = %8 op %7
+            %10 <- CALL 0(%9)
+            %11 = %0
+            %12 = -2
+            %13 = %12 op %11
+            %14 <- CALL 0(%13)
+            %15 = %14 op %13
+            KILL %15
+            KILL %14
+            RETURN %0;
+        }; 
+    "
+    );
+
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+}
