@@ -161,10 +161,10 @@ where
     /// Computes exit-to-return edges
     fn return_val(
         &self,
-        caller_function: &String,
-        callee_function: &String,
-        caller_pc: usize,
-        callee_pc: usize,
+        caller_function: &String, //d4
+        callee_function: &String, //d2
+        caller_pc: usize, //d4
+        callee_pc: usize, //d2
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
         return_vals: &Vec<String>,
@@ -232,11 +232,6 @@ where
                 });
             } else {
                 //Create the dest
-
-                if(to_reg == "%14".to_string()) {
-                    debug!("test");
-                }
-
                 let track = graph
                     .get_track(caller_function, &to_reg)
                     .with_context(|| format!("Cannot find track {}", to_reg))?;
@@ -682,6 +677,7 @@ where
             }
 
             debug!("Incoming in call {:#?}", incoming);
+            debug!("end summary {:#?}", end_summary);
 
             if let Some(end_summary) = end_summary.get(&(
                 d3.to().function.clone(),
@@ -689,6 +685,8 @@ where
                 d3.to().belongs_to_var.clone(),
             )) {
                 for d4 in end_summary.iter() {
+                    debug!("d4 {:#?}", d4);
+
                     let return_vals = &program
                         .functions
                         .iter()
@@ -703,7 +701,7 @@ where
                         .unwrap_or(Vec::new());
 
                     for d5 in self.return_val(
-                        &function.name,
+                        &d2.function,
                         &d4.function,
                         d2.next_pc,
                         d4.next_pc,
@@ -878,10 +876,9 @@ where
         if let Some(incoming) =
             incoming.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
         {
+            debug!("Incoming {:#?}", incoming);
             for d4 in incoming {
                 debug!("Computing return to fact to {:#?}", d4);
-
-                //assert!(d4.function != d2.function);
 
                 let instructions = &program
                     .functions
