@@ -232,9 +232,14 @@ where
                 });
             } else {
                 //Create the dest
+
+                if(to_reg == "%14".to_string()) {
+                    debug!("test");
+                }
+
                 let track = graph
                     .get_track(caller_function, &to_reg)
-                    .context("Cannot find track")?;
+                    .with_context(|| format!("Cannot find track {}", to_reg))?;
 
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
@@ -258,7 +263,7 @@ where
             //Create the dest
             let track = graph
                 .get_track(caller_function, &from.belongs_to_var) //name must match
-                .context("Cannot find track")?;
+                .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
 
             edges.push(Edge::Return {
                 from: from.clone().clone(),
@@ -379,7 +384,7 @@ where
             },
         )?;
 
-        /* 
+        /*
         // self loops
         for param in facts.iter().take(function.params.len() + TAUT) {
 

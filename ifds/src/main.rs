@@ -307,8 +307,8 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                 taints = res.1.context("Cannot get taints for ui")?;
                 already_computed = true;
                 udp_socket
-                    .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242")
-                    .context("Cannot send logging information")?;
+                    .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
+                    //.context("Cannot send logging information")?;
 
                 if let Some(ref export_graph) = export_graph {
                     let output = crate::icfg::tikz::render_to(&res.0);

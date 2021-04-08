@@ -666,7 +666,7 @@ fn test_global_writes() {
         pc: 0,
     };
     ir!(
-        "test_ir_globals",
+        "test_ir_globals_writes",
         req,
         "
         define test (result 0) (define %-1 %0 %2) {
