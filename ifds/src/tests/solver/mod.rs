@@ -76,14 +76,6 @@ fn test_intra_reachability() {
         .unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
-
-    assert_eq!(4, sinks.len());
-
-    let touched_vars = vars(&sinks);
-    assert_eq!(3, touched_vars.len());
-
-    let touched_funcs = functions(&sinks);
-    assert_eq!(1, touched_funcs.len());
 }
 
 #[test]
@@ -113,14 +105,6 @@ fn test_loop() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
-
-    assert_eq!(4, sinks.len());
-
-    let touched_vars = vars(&sinks);
-    assert_eq!(2, touched_vars.len());
-
-    let touched_funcs = functions(&sinks);
-    assert_eq!(1, touched_funcs.len());
 }
 
 #[test]
@@ -154,14 +138,6 @@ fn test_functions() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
-
-    assert_eq!(3, sinks.len());
-
-    let touched_vars = vars(&sinks);
-    assert_eq!(2, touched_vars.len());
-
-    let touched_funcs = functions(&sinks);
-    assert_eq!(1, touched_funcs.len());
 }
 
 #[test]
@@ -215,14 +191,6 @@ fn test_gcd() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
-
-    assert_eq!(34, sinks.len());
-
-    let touched_vars = vars(&sinks);
-    assert_eq!(7, touched_vars.len());
-
-    let touched_funcs = functions(&sinks);
-    assert_eq!(1, touched_funcs.len());
 }
 
 #[test]
@@ -257,14 +225,6 @@ fn test_globals() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
-
-    assert_eq!(7, sinks.len());
-
-    let touched_vars = vars(&sinks);
-    assert_eq!(4, touched_vars.len());
-
-    let touched_funcs = functions(&sinks);
-    assert_eq!(1, touched_funcs.len());
 }
 
 #[test]
