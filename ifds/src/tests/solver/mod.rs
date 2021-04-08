@@ -269,7 +269,6 @@ fn test_globals() {
 
 #[test]
 fn test_returned_value() {
-    env_logger::init();
     let mut solver = IfdsSolver;
 
     let name = "test_returned_values";
@@ -302,6 +301,38 @@ fn test_returned_value() {
             KILL %14
             RETURN %0;
         }; 
+    "
+    );
+
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+}
+
+#[test]
+fn test_looped_param() {
+    let mut solver = IfdsSolver;
+
+    let name = "test_looped_param";
+
+    let req = Request {
+        function: "0".to_string(),
+        pc: 1,
+        variable: Some("%7".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+            %1 = %0
+            %7 = %0
+            %9 = %8 op %7
+            %10 <- CALL 0(%9)
+            %11 = %0
+            RETURN %0;
+        };
     "
     );
 

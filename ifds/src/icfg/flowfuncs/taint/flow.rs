@@ -209,7 +209,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::BinOp(_dest, _src1, _src2) => {
+            Instruction::BinOp(_dest, _src1, _src2) if _dest == variable => {
                 //kill
             }
             Instruction::Kill(reg) if variable == reg => {

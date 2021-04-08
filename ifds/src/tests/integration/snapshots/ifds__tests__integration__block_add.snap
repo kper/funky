@@ -16,20 +16,21 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:$\%4$] (36) at (5, 10) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (35) at (5, 9) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (34) at (5, 8) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (33) at (5, 7) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (32) at (3, 6) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (31) at (5, 6) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (30) at (3, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (29) at (5, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (28) at (3, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (27) at (0, 10) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (26) at (0, 9) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (25) at (0, 8) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (24) at (0, 7) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (23) at (0, 6) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$\%4$] (37) at (5, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (36) at (5, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (35) at (5, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (34) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (33) at (3, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (32) at (5, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (31) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (30) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (29) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (28) at (0, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (27) at (0, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (26) at (0, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (25) at (0, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (24) at (0, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (23) at (0, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (22) at (0, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (21) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (20) at (0, 1) { };
@@ -69,7 +70,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (15);
 		\path[->, blue] (0) [bend right] edge  node { } (16);
 		\path[->, blue] (0) [bend right] edge  node { } (18);
-		\path[->, blue] (0) [bend right] edge  node { } (28);
 		\path[->, blue] (0) [bend right] edge  node { } (29);
 		\path[->, blue] (0) [bend right] edge  node { } (30);
 		\path[->, blue] (0) [bend right] edge  node { } (31);
@@ -78,6 +78,7 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (34);
 		\path[->, blue] (0) [bend right] edge  node { } (35);
 		\path[->, blue] (0) [bend right] edge  node { } (36);
+		\path[->, blue] (0) [bend right] edge  node { } (37);
 		\path[->] (0) edge (6);
 		\path[->] (6) edge (7);
 		\path[->] (7) edge (8);
@@ -94,20 +95,21 @@ expression: output
 		\path[->] (6) edge (20);
 		\path[->] (7) edge (21);
 		\path[->] (9) edge (22);
-		\path[->] (11) edge (23);
-		\path[->] (12) edge (24);
-		\path[->, bend right] (13) edge (25);
-		\path[->] (14) edge (26);
-		\path[->] (15) edge (27);
-		\path[->] (18) edge (28);
-		\path[->] (28) edge (29);
-		\path[->] (28) edge (30);
+		\path[->] (10) edge (23);
+		\path[->] (11) edge (24);
+		\path[->] (12) edge (25);
+		\path[->, bend right] (13) edge (26);
+		\path[->] (14) edge (27);
+		\path[->] (15) edge (28);
+		\path[->] (18) edge (29);
+		\path[->] (29) edge (30);
 		\path[->] (29) edge (31);
 		\path[->] (30) edge (32);
 		\path[->] (31) edge (33);
-		\path[->, bend right] (33) edge (34);
-		\path[->] (34) edge (35);
+		\path[->] (32) edge (34);
+		\path[->, bend right] (34) edge (35);
 		\path[->] (35) edge (36);
+		\path[->] (36) edge (37);
 
 
                 \end{tikzpicture}

@@ -16,14 +16,17 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:$\%2$] (26) at (3, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (25) at (5, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (24) at (3, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%4$] (23) at (5, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (22) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (21) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (20) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (19) at (0, 5) { };
+                    \node[circle,fill,inner sep=1pt,label=left:$taut$] (29) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (28) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (27) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (26) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (25) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%4$] (24) at (5, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (23) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (22) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (21) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (20) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (19) at (0, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (18) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (17) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 1) { };
@@ -50,13 +53,15 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (11);
 		\path[->, blue] (13) [bend right] edge  node { } (14);
 		\path[->, blue] (13) [bend right] edge  node { } (15);
-		\path[->, blue] (13) [bend right] edge  node { } (20);
 		\path[->, blue] (13) [bend right] edge  node { } (21);
 		\path[->, blue] (13) [bend right] edge  node { } (22);
 		\path[->, blue] (13) [bend right] edge  node { } (23);
 		\path[->, blue] (13) [bend right] edge  node { } (24);
 		\path[->, blue] (13) [bend right] edge  node { } (25);
 		\path[->, blue] (13) [bend right] edge  node { } (26);
+		\path[->, blue] (13) [bend right] edge  node { } (27);
+		\path[->, blue] (13) [bend right] edge  node { } (28);
+		\path[->, blue] (13) [bend right] edge  node { } (29);
 		\path[->] (0) edge (6);
 		\path[->] (6) edge (7);
 		\path[->] (7) edge (8);
@@ -68,14 +73,17 @@ expression: output
 		\path[->] (0) edge (16);
 		\path[->] (7) edge (17);
 		\path[->] (8) edge (18);
-		\path[->] (10) edge (19);
-		\path[->] (7) edge (20);
-		\path[->] (15) edge (21);
-		\path[->] (8) edge (22);
-		\path[->] (21) edge (23);
-		\path[->] (21) edge (24);
-		\path[->] (23) edge (25);
-		\path[->] (24) edge (26);
+		\path[->] (9) edge (19);
+		\path[->] (10) edge (20);
+		\path[->] (7) edge (21);
+		\path[->] (15) edge (22);
+		\path[->] (8) edge (23);
+		\path[->] (22) edge (24);
+		\path[->] (22) edge (25);
+		\path[->] (9) edge (26);
+		\path[->] (24) edge (27);
+		\path[->] (25) edge (28);
+		\path[->] (10) edge (29);
 
 
                 \end{tikzpicture}
