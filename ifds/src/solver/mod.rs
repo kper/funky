@@ -42,13 +42,13 @@ impl Solver for IfdsSolver {
             .collect();
 
         let f2: Vec<_> = f1
-            .into_iter()
+            .iter()
             .map(|x| x.to())
-            .filter(|x| (x.var_is_taut && x.next_pc == 0) || !x.var_is_taut)
+            .filter(|x| !x.var_is_taut)
             .collect();
 
         let taints = f2
-            .into_iter()
+            .iter()
             .map(|x| Taint {
                 function: x.function.clone(),
                 pc: x.next_pc,

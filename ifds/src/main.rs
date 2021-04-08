@@ -518,6 +518,12 @@ fn get_variable_by_index(
         Some(Instruction::Conditional(src, _)) => {
             Some((src.clone(), function.clone().to_string(), *pc))
         }
+        Some(Instruction::Unknown(dest)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
+        }
+        Some(Instruction::Phi(dest, _, _)) => {
+            Some((dest.clone(), function.clone().to_string(), *pc))
+        }
         _ => None,
     }
 }
@@ -530,7 +536,7 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
             &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
         }
         Instruction::Const(dest, _) => &taint.variable == dest,
-        Instruction::Assign(dest, _) => &taint.variable == dest,
+        Instruction::Assign(dest, src) => &taint.variable == dest || &taint.variable == src,
         Instruction::Call(_callee, params, dest) => {
             params.contains(&taint.variable) || dest.contains(&taint.variable)
         }
