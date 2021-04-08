@@ -8,6 +8,9 @@ use ifds::ir::wasm_ast::IR;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
+use ifds::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use ifds::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+
 use criterion::{criterion_group, criterion_main, Criterion};
 macro_rules! wasm {
     ($input:expr) => {{
@@ -30,7 +33,7 @@ macro_rules! wasm {
     }};
 }
 
-fn bench(convert: &mut ConvertSummary, prog: &Program, req: &Request) {
+fn bench(convert: &mut ConvertSummary<TaintInitialFlowFunction, TaintNormalFlowFunction>, prog: &Program, req: &Request) {
     let mut solver = IfdsSolver;
     let mut graph = convert.visit(&prog, req).unwrap();
     solver.all_sinks(&mut graph, req).unwrap();
@@ -43,7 +46,7 @@ macro_rules! benchmark {
             let mut ir = IR::new();
             ir.visit(&engine).unwrap();
 
-            let mut convert = ConvertSummary::new();
+            let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
             let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
             for function in prog.functions.iter() {
