@@ -54,7 +54,6 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (5) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (4) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (1) at (1, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(2, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 5.0)};
@@ -77,7 +76,6 @@ expression: output
 \node[font=\tiny] (note_18) at (-1.5, 3.5) {Assign(0, 1)};
 \node[font=\tiny] (note_19) at (-1.5, 4.5) {Return([0])};
 		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->, blue] (1) [loop right] edge  node { } (1);
 		\path[->, blue] (0) [bend right] edge  node { } (4);
 		\path[->, blue] (0) [bend right] edge  node { } (6);
 		\path[->, blue] (0) [bend right] edge  node { } (7);
