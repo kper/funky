@@ -379,12 +379,6 @@ where
             },
         )?;
 
-        /*
-        // self loops
-        for param in facts.iter().take(function.params.len() + TAUT) {
-
-        }*/
-
         self.pacemaker(
             function,
             &mut graph,

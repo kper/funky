@@ -26,12 +26,12 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (8) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (9) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (10) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (10) at (1, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (12) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (13) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (14) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%2$] (15) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%2$] (15) at (1, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (17) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (18) at (0, 2) { };

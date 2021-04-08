@@ -2,6 +2,7 @@ use crate::counter::Counter;
 use crate::icfg::graph::{Edge, Fact, Graph};
 use log::debug;
 use std::cmp::Ordering;
+use std::iter::FromIterator;
 
 const TAU: usize = 1;
 
@@ -68,6 +69,12 @@ pub fn render_to(graph: &Graph) -> String {
 
         let notes = graph.notes.iter().filter(|x| &x.function == function_name);
 
+        let mut vars : Vec<_> = facts.clone().map(|x| &x.get().belongs_to_var).collect();
+        vars.sort_by(|a, b| {
+            b.cmp(a)
+        });
+        vars.dedup();
+
         for fact in facts {
             debug!("Drawing fact");
 
@@ -75,9 +82,8 @@ pub fn render_to(graph: &Graph) -> String {
                 "\\node[circle,fill,inner sep=1pt,label=left:${}$] ({}) at ({}, {}) {{ }};\n",
                 fact.get().belongs_to_var.replace("%", "\\%"),
                 fact.id,
-                index + fact.get().track,
+                index + vars.iter().position(|x| x == &&fact.get().belongs_to_var).unwrap(),
                 fact.get().next_pc,
-                //fact.id
             ));
         }
 
