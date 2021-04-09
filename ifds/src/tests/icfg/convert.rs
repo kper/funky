@@ -483,11 +483,11 @@ fn test_ir_early_return() {
     ir!(
         "test_ir_early_return",
         req,
-        "define test (result 0) (define %0 %1 %2) {
+        "define test (result 0) (define %0 %1 %2 %3) {
             %0 = 1
             %1 <- CALL mytest(%0)
-            %0 <- CALL mytestfoo(%0)
-            %1 <- CALL mytestfoo(%0)
+            %2 <- CALL mytestfoo(%0)
+            %3 <- CALL mytestfoo(%0)
         };
         define mytest (param %0) (result 1) (define %0 %1) {
             %0 = 2   

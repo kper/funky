@@ -106,6 +106,7 @@ expression: output
 		\path[->] (5) edge (6);
 		\path[->] (6) edge (27);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
 		\path[->] (1) edge (15);
 		\path[->] (0) edge (1);
 		\path[->] (0) edge (1);

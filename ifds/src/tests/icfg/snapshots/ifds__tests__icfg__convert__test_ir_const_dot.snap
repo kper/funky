@@ -29,6 +29,7 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (2);
 		\path[->] (0) edge (0);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
 		\path[->] (0) edge (2);
 		\path[->] (0) edge (1);
 		\path[->] (0) edge (1);

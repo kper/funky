@@ -26,12 +26,6 @@ pub struct State {
 
 impl State {
     pub fn get_taut(&self, function: &String) -> Result<Option<&Fact>> {
-        /*
-        self.edges
-            .iter()
-            .find(|x| x.get_from().var_is_taut && &x.get_from().function == function)
-            .map(|x| x.get_from())*/
-
         Ok(self
             .facts
             .get(function)
@@ -45,7 +39,7 @@ impl State {
     }
 
     /// Saving facts into an internal structure for fast lookup.
-    fn cache_facts(&mut self, function: &String, facts: Vec<Fact>) -> Result<&[Fact]> {
+    pub fn cache_facts(&mut self, function: &String, facts: Vec<Fact>) -> Result<&[Fact]> {
         let mut reference: Option<&[Fact]> = None;
 
         use std::collections::hash_map::Entry;
@@ -112,36 +106,6 @@ impl State {
     /// Initialise the function.
     pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
-
-        if let Some(function) = self.functions.get(&function.name) {
-            debug!("Function was already initialized");
-
-            // Handle edge case when the smallest fact greater than `pc`.
-            // This might happen if you the user starts the analysis from not `0`,
-            // but there is a self recursive call.
-
-            let min_pc = self
-                .facts
-                .get(&function.name)
-                .context("Cannot find function")?
-                .iter()
-                .map(|x| x.next_pc)
-                .min()
-                .context("No facts found")?;
-
-            if min_pc <= pc {
-                // no self recursion
-
-                // Return the first facts of the function.
-                return Ok(self
-                    .init_facts
-                    .get(&function.name)
-                    .context("Cannot get function's stored init facts")?
-                    .clone());
-            }
-
-            // else reinitalize the function.
-        }
 
         self.init_function_def(function)?;
 
@@ -308,8 +272,7 @@ impl State {
         pc: usize,
         variable: &String,
     ) -> Result<()> {
-        self
-            .add_statement(function, instruction.clone(), pc, variable)
+        self.add_statement(function, instruction.clone(), pc, variable)
             .context("While add statement with note")?;
 
         let vars = self

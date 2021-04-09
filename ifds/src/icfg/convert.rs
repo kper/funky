@@ -90,7 +90,7 @@ where
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
-            let init_facts = state.init_function(callee_function, start_pc)?;
+            let init_facts = state.init_function(callee_function, start_pc).context("Error during function init")?;
 
             self.pacemaker(
                 callee_function,
@@ -137,7 +137,12 @@ where
             // Filter by variable
             let caller_fact = caller_facts
                 .find(|x| &x.belongs_to_var == caller_var)
-                .context("Cannot find caller's fact")?;
+                .with_context(|| {
+                    format!(
+                        "Cannot find caller's fact {} for \"{}\" at {}",
+                        caller_var, caller_function.name, current_pc
+                    )
+                })?;
 
             // The corresponding edges have to match now, but filter `dest`.
             // taut -> taut
@@ -242,21 +247,21 @@ where
                     .with_context(|| format!("Cannot find track {}", to_reg))?;
 
                 let fact = Fact {
-                        belongs_to_var: to_reg.clone(),
-                        function: caller_function.clone(),
-                        next_pc: caller_pc + 1,
-                        track,
-                        var_is_global: false,
-                        var_is_taut: from.var_is_taut,
-                        memory_offset: from.memory_offset,
-                        var_is_memory: from.var_is_memory,
-                    };
+                    belongs_to_var: to_reg.clone(),
+                    function: caller_function.clone(),
+                    next_pc: caller_pc + 1,
+                    track,
+                    var_is_global: false,
+                    var_is_taut: from.var_is_taut,
+                    memory_offset: from.memory_offset,
+                    var_is_memory: from.var_is_memory,
+                };
 
                 let to = state.cache_fact(caller_function, fact)?;
 
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
-                    to: to.clone()
+                    to: to.clone(),
                 });
             }
         }
@@ -270,15 +275,15 @@ where
                 .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
 
             let fact = Fact {
-                    belongs_to_var: from.belongs_to_var.clone(),
-                    function: caller_function.clone(),
-                    next_pc: caller_pc + 1,
-                    track,
-                    var_is_global: true,
-                    var_is_taut: from.var_is_taut,
-                    var_is_memory: false,
-                    memory_offset: None,
-                };
+                belongs_to_var: from.belongs_to_var.clone(),
+                function: caller_function.clone(),
+                next_pc: caller_pc + 1,
+                track,
+                var_is_global: true,
+                var_is_taut: from.var_is_taut,
+                var_is_memory: false,
+                memory_offset: None,
+            };
 
             let to = state.cache_fact(caller_function, fact)?;
 
@@ -318,8 +323,25 @@ where
             .collect();
         debug!("Facts before statement {}", before.len());
 
-        let after = state.get_facts_at(&caller_function.name, pc)?;
+        /*
+        // This fact is not part of dest and continues to live
+        state.add_statement(
+            &caller_function,
+            format!(
+                "{:?}",
+                caller_function
+                    .instructions
+                    .get(pc - 1)
+                    .context("Cannot find instruction")?
+            ),
+            pc,
+            &caller,
+        )?;*/
+        
+        let after = state.get_facts_at(&caller_function.name, pc)?; //clone
 
+        // Create a copy of `before`, but eliminate all not needed facts
+        // and advance `next_pc`
         let after: Vec<_> = after
             .filter(|x| !x.var_is_taut)
             .filter(|x| !x.var_is_global)
@@ -344,13 +366,15 @@ where
                 .find(|x| x.belongs_to_var == fact.belongs_to_var);
 
             if let Some(b) = b {
+                // Save the new fact because it is relevant
+                state.cache_fact(&b.function, b.clone())?;
                 edges.push(Edge::CallToReturn {
-                    from: b.clone(),
+                    from: fact.clone(),
                     to: b.clone(),
                 });
             } else {
                 debug!(
-                    "Skipping CallToReturn edge for {} because no match",
+                    "Creating CallToReturn edge for \"{}\" because no match",
                     fact.belongs_to_var
                 );
             }
@@ -765,7 +789,11 @@ where
                 && x.to().next_pc == d2.next_pc + 1
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
-            let taut = state.get_taut(&d3.get_from().function).unwrap().unwrap().clone();
+            let taut = state
+                .get_taut(&d3.get_from().function)
+                .unwrap()
+                .unwrap()
+                .clone();
             normal_flows_debug.push(d3.clone());
             self.propagate(
                 graph,

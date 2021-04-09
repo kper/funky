@@ -30,11 +30,12 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (11) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (12) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (13) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (14) at (2, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (15) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%1$] (17) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (18) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (14) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (15) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (16) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$taut$] (17) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (18) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (19) at (2, 2) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(1, 0)};
 		\path[->, blue] (0) [loop right] edge  node { } (0);
@@ -46,6 +47,7 @@ expression: output
 		\path[->] (0) edge (0);
 		\path[->] (0) edge (1);
 		\path[->] (1) edge (7);
+		\path[->] (0) edge (1);
 		\path[->] (0) edge (4);
 		\path[->] (0) edge (1);
 		\path[->] (0) edge (1);

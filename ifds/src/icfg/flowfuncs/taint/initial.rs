@@ -54,21 +54,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| &x.belongs_to_var == reg)
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == reg || x.var_is_taut)
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a.clone(),
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 Instruction::Assign(dest, _src) => {
@@ -76,21 +78,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 Instruction::Unop(dest, _src) => {
@@ -98,21 +102,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 Instruction::BinOp(dest, _src, _src2) => {
@@ -120,21 +126,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 Instruction::Conditional(reg, _) => {
@@ -142,21 +150,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| x.belongs_to_var == "taut".to_string())
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
@@ -169,11 +179,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                         &"taut".to_string(),
                     )?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| x.belongs_to_var == "taut".to_string())
-                        .cloned();
-
                     // Replace the init_fact for the next iteration.
                     // Because, we would skip one row if not.
                     let after3 = state
@@ -183,16 +188,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     init_fact = after3.collect::<Vec<_>>().get(0).unwrap().clone();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .cloned();
+
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
 
                     offset += 1;
@@ -204,21 +216,23 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                    let after2 = state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| &x.belongs_to_var == dest)
-                        .cloned();
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
 
-                    for (b, a) in before2.into_iter().zip(after2) {
-                        normal_flows_debug.push(Edge::Normal {
-                            from: b.clone(),
-                            to: a.clone(),
-                            curved: false,
-                        });
-                        edges.push(Edge::Path {
-                            from: init_fact.clone().clone(),
-                            to: a,
-                        });
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
                     }
                 }
                 _ => {}

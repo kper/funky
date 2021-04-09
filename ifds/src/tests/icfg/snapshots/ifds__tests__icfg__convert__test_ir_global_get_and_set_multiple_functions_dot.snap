@@ -66,7 +66,7 @@ expression: output
 \node[font=\tiny] (note_10) at (2.5, 0.5) {Assign(0, -2)};
 \node[font=\tiny] (note_11) at (2.5, 1.5) {Return([0])};
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (8, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%1$] (1) at (9, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (1) at (9, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (6) at (8, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (8) at (8, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (9) at (8, 1) { };
@@ -130,9 +130,9 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (27);
 		\path[->, blue] (0) [bend right] edge  node { } (28);
 		\path[->, blue] (0) [bend right] edge  node { } (45);
-		\path[->, blue] (0) [bend right] edge  node { } (46);
-		\path[->, blue] (7) [loop right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (1);
+		\path[->, blue] (7) [loop right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (37);
 		\path[->] (0) edge (0);
 		\path[->] (0) edge (9);
 		\path[->] (9) edge (10);
@@ -164,11 +164,11 @@ expression: output
 		\path[->] (20) edge (41);
 		\path[->] (20) edge (41);
 		\path[->] (27) edge (45);
-		\path[->] (28) edge (46);
+		\path[->] (28) edge (1);
 		\path[->] (2) edge (2);
 		\path[->] (2) edge (17);
 		\path[->] (17) edge (49);
-		\path[->] (1) edge node { } (1);
+		\path[->] (1) edge node { } (37);
 
 
                 \end{tikzpicture}

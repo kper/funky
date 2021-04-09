@@ -1183,10 +1183,16 @@ expression: output
 		\path[->] (92) edge (93);
 		\path[->] (93) edge (362);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (2);
 		\path[->] (1) edge (2);
 		\path[->] (2) edge (3);
+		\path[->] (2) edge (3);
+		\path[->] (3) edge (4);
 		\path[->] (3) edge (4);
 		\path[->] (4) edge (5);
+		\path[->] (4) edge (5);
+		\path[->] (5) edge (6);
 		\path[->] (5) edge (6);
 		\path[->] (6) edge (143);
 		\path[->] (0) edge (1);
