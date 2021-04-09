@@ -6,7 +6,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        graph: &mut Graph,
+        _graph: &mut Graph,
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,

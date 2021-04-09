@@ -1,26 +1,12 @@
 #![allow(dead_code)]
 
-use crate::counter::Counter;
-use crate::ir::ast::Function as AstFunction;
-use anyhow::{Context, Result};
-use log::debug;
-use std::collections::HashMap;
-
 type VarId = String;
 type FunctionName = String;
 
 /// The datastructure for the graph.
 #[derive(Debug, Default)]
 pub struct Graph {
-    //pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
-    //pub notes: Vec<Note>,
-    pub fact_counter: Counter,
-    note_counter: Counter,
-    /// `init_facts` is a helper struct for getting the initial facts
-    /// of a functions. We need this because we have to reinitalize the
-    /// function when function is calling itself.
-    init_facts: HashMap<FunctionName, Vec<Fact>>,
 }
 
 /// A helper struct for the graph representation in `tikz`
@@ -117,65 +103,3 @@ impl Edge {
         }
     }
 }
-
-impl Graph {
-    pub fn new() -> Self {
-        Graph::default()
-    }
-}
-
-/* 
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crate::ir::ast::Function as AstFunction;
-
-    #[test]
-    fn adding_var_ok() {
-        let mut graph = Graph::default();
-        graph
-            .init_function(
-                &AstFunction {
-                    name: "main".to_string(),
-                    definitions: vec!["%0".to_string()],
-                    ..Default::default()
-                },
-                0,
-            )
-            .unwrap();
-
-        //assert_eq!(2, graph.facts.len());
-        assert_eq!(1, graph.vars.len());
-        assert_eq!(2, graph.vars.get(&"main".to_string()).unwrap().len());
-    }
-
-    #[test]
-    fn adding_global() {
-        let mut graph = Graph::default();
-        graph
-            .init_function(
-                &AstFunction {
-                    name: "main".to_string(),
-                    definitions: vec!["%-1".to_string(), "%0".to_string()],
-                    ..Default::default()
-                },
-                0,
-            )
-            .unwrap();
-
-        assert_eq!(3, graph.vars.get(&"main".to_string()).unwrap().len());
-        assert_eq!(
-            &Variable {
-                function: "main".to_string(),
-                is_global: true,
-                is_taut: false,
-                name: "%-1".to_string(),
-                is_memory: false,
-                memory_offset: None,
-            },
-            graph.vars.get(&"main".to_string()).unwrap().get(1).unwrap()
-        );
-    }
-}
-*/

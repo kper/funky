@@ -234,7 +234,7 @@ fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
         pc: pc,
         variable: None,
     };
-    let (mut graph, state) = convert
+    let (graph, state) = convert
         .visit(&prog, &req)
         .context("Cannot create the graph")?;
 
@@ -336,7 +336,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                 let res = get_taints(req);
                 taints = res.2.context("Cannot get taints for ui")?;
                 already_computed = true;
-                udp_socket.send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
+                let _ = udp_socket.send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
                 //.context("Cannot send logging information")?;
 
                 if let Some(ref export_graph) = export_graph {

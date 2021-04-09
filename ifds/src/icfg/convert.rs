@@ -48,7 +48,7 @@ where
     /// Computes a graph by a given program and `req` ([`Request`]).
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {
-        let mut graph = Graph::new();
+        let mut graph = Graph::default();
         let mut state = State::default();
 
         self.tabulate(&mut graph, prog, req, &mut state)?;
@@ -175,7 +175,7 @@ where
         caller_pc: usize,         //d4
         callee_pc: usize,         //d2
         caller_instructions: &Vec<Instruction>,
-        graph: &mut Graph,
+        _graph: &mut Graph,
         return_vals: &Vec<String>,
         state: &mut State,
     ) -> Result<Vec<Edge>> {
@@ -304,7 +304,7 @@ where
         callee: &String,
         _params: &Vec<String>,
         dests: &Vec<String>,
-        graph: &mut Graph,
+        _graph: &mut Graph,
         pc: usize,
         caller: &String,
         state: &mut State,
@@ -323,21 +323,6 @@ where
             .collect();
         debug!("Facts before statement {}", before.len());
 
-        /*
-        // This fact is not part of dest and continues to live
-        state.add_statement(
-            &caller_function,
-            format!(
-                "{:?}",
-                caller_function
-                    .instructions
-                    .get(pc - 1)
-                    .context("Cannot find instruction")?
-            ),
-            pc,
-            &caller,
-        )?;*/
-        
         let after = state.get_facts_at(&caller_function.name, pc)?; //clone
 
         // Create a copy of `before`, but eliminate all not needed facts
@@ -388,7 +373,7 @@ where
         mut graph: &mut Graph,
         prog: &Program,
         req: &Request,
-        mut state: &mut State,
+        state: &mut State,
     ) -> Result<()> {
         debug!("Convert intermediate repr to graph");
 

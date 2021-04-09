@@ -7,7 +7,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        graph: &mut Graph,
+        _graph: &mut Graph,
         pc: usize,
         variable: &String,
         block_resolver: &BlockResolver,

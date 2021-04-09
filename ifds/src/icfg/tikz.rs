@@ -3,7 +3,6 @@ use crate::icfg::graph::{Edge, Fact, Graph};
 use crate::icfg::state::State;
 use log::debug;
 use std::cmp::Ordering;
-use std::iter::FromIterator;
 
 const TAU: usize = 1;
 

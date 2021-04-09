@@ -1,9 +1,9 @@
 use crate::icfg::graph::*;
 use crate::ir::ast::Function as AstFunction;
-use crate::ir::ast::Instruction;
 
-use crate::{counter::Counter, solver::Request};
-use anyhow::{anyhow, bail, Context, Result};
+use crate::{counter::Counter};
+use anyhow::{Context, Result};
+use std::collections::hash_map::Entry;
 
 use log::debug;
 
@@ -40,10 +40,6 @@ impl State {
 
     /// Saving facts into an internal structure for fast lookup.
     pub fn cache_facts(&mut self, function: &String, facts: Vec<Fact>) -> Result<&[Fact]> {
-        let mut reference: Option<&[Fact]> = None;
-
-        use std::collections::hash_map::Entry;
-
         match self.facts.entry(function.clone()) {
             Entry::Occupied(entry) => {
                 let saver = entry.into_mut();
@@ -51,14 +47,12 @@ impl State {
                 saver.extend_from_slice(facts.as_slice());
                 let len2 = saver.len();
 
-                reference = Some(&saver[len1..len2]);
+                return Ok(&saver[len1..len2]);
             }
             Entry::Vacant(entry) => {
-                reference = Some(entry.insert(facts));
+                return Ok(entry.insert(facts));
             }
         }
-
-        Ok(reference.unwrap())
     }
 
     pub fn cache_fact(&mut self, function: &String, fact: Fact) -> Result<&Fact> {
@@ -296,19 +290,5 @@ impl State {
         }
 
         Ok(())
-    }
-
-    /// Create new tautological fact by given function and pc.
-    pub fn taut(&mut self, function: String, pc: usize) -> Fact {
-        Fact {
-            belongs_to_var: "taut".to_string(),
-            var_is_taut: true,
-            var_is_global: false,
-            var_is_memory: false,
-            function,
-            next_pc: pc,
-            track: 0,
-            memory_offset: None,
-        }
     }
 }
