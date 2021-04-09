@@ -22,7 +22,7 @@ expression: "format!(\"{:#?}\", sinks)"
     Taint {
         variable: "%0",
         function: "0",
-        pc: 1,
+        pc: 0,
     },
     Taint {
         variable: "%9",
@@ -33,5 +33,35 @@ expression: "format!(\"{:#?}\", sinks)"
         variable: "%7",
         function: "0",
         pc: 4,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%9",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%7",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%9",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%7",
+        function: "0",
+        pc: 6,
     },
 ]

@@ -25,9 +25,24 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 11,
     },
     Taint {
+        variable: "%10",
+        function: "0",
+        pc: 9,
+    },
+    Taint {
+        variable: "%15",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
+        variable: "%14",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
         variable: "%0",
         function: "0",
-        pc: 8,
+        pc: 0,
     },
     Taint {
         variable: "%13",
@@ -38,5 +53,65 @@ expression: "format!(\"{:#?}\", sinks)"
         variable: "%11",
         function: "0",
         pc: 12,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 10,
+    },
+    Taint {
+        variable: "%14",
+        function: "0",
+        pc: 14,
+    },
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 11,
+    },
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 14,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 12,
+    },
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 15,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 16,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 14,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 15,
+    },
+    Taint {
+        variable: "%10",
+        function: "0",
+        pc: 16,
     },
 ]
