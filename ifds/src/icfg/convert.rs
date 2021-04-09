@@ -1,9 +1,9 @@
 /// This module is responsible to parse
 /// the webassembly AST to a graph
 use crate::icfg::graph::*;
+use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
-use crate::icfg::state::State;
 
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
@@ -47,13 +47,13 @@ where
 
     /// Computes a graph by a given program and `req` ([`Request`]).
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
-    pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<Graph> {
+    pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {
         let mut graph = Graph::new();
         let mut state = State::default();
 
         self.tabulate(&mut graph, prog, req, &mut state)?;
 
-        Ok(graph)
+        Ok((graph, state))
     }
 
     /// Computes call-to-start edges
@@ -71,7 +71,7 @@ where
         worklist: &mut VecDeque<Edge>,
         state: &mut State,
     ) -> Result<Vec<Edge>> {
-        let caller_variable = state 
+        let caller_variable = state
             .get_var(&caller_function.name, caller_var)
             .context("Variable is not defined")?
             .clone();
@@ -167,8 +167,8 @@ where
         &self,
         caller_function: &String, //d4
         callee_function: &String, //d2
-        caller_pc: usize, //d4
-        callee_pc: usize, //d2
+        caller_pc: usize,         //d4
+        callee_pc: usize,         //d2
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
         return_vals: &Vec<String>,
@@ -196,13 +196,13 @@ where
         let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
         debug!("Caller facts {:#?}", caller_facts);
 
-        let mut callee_facts_without_globals = state 
+        let mut callee_facts_without_globals = state
             .get_facts_at(callee_function, callee_pc)?
             .filter(|x| !x.var_is_global)
             .cloned()
             .collect::<Vec<_>>();
 
-        let mut callee_facts_with_globals = state 
+        let mut callee_facts_with_globals = state
             .get_facts_at(callee_function, callee_pc)?
             .filter(|x| x.var_is_global)
             .cloned()
@@ -237,13 +237,11 @@ where
                 });
             } else {
                 //Create the dest
-                let track = state 
+                let track = state
                     .get_track(caller_function, &to_reg)
                     .with_context(|| format!("Cannot find track {}", to_reg))?;
 
-                edges.push(Edge::Return {
-                    from: from.clone().clone(),
-                    to: Fact {
+                let fact = Fact {
                         belongs_to_var: to_reg.clone(),
                         function: caller_function.clone(),
                         next_pc: caller_pc + 1,
@@ -252,7 +250,13 @@ where
                         var_is_taut: from.var_is_taut,
                         memory_offset: from.memory_offset,
                         var_is_memory: from.var_is_memory,
-                    },
+                    };
+
+                let to = state.cache_fact(caller_function, fact)?;
+
+                edges.push(Edge::Return {
+                    from: from.clone().clone(),
+                    to: to.clone()
                 });
             }
         }
@@ -265,9 +269,7 @@ where
                 .get_track(caller_function, &from.belongs_to_var) //name must match
                 .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
 
-            edges.push(Edge::Return {
-                from: from.clone().clone(),
-                to: Fact {
+            let fact = Fact {
                     belongs_to_var: from.belongs_to_var.clone(),
                     function: caller_function.clone(),
                     next_pc: caller_pc + 1,
@@ -276,7 +278,13 @@ where
                     var_is_taut: from.var_is_taut,
                     var_is_memory: false,
                     memory_offset: None,
-                },
+                };
+
+            let to = state.cache_fact(caller_function, fact)?;
+
+            edges.push(Edge::Return {
+                from: from.clone().clone(),
+                to: to.clone(),
             });
         }
 
@@ -351,7 +359,13 @@ where
         Ok(edges)
     }
 
-    fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request, mut state: &mut State,) -> Result<()> {
+    fn tabulate(
+        &mut self,
+        mut graph: &mut Graph,
+        prog: &Program,
+        req: &Request,
+        mut state: &mut State,
+    ) -> Result<()> {
         debug!("Convert intermediate repr to graph");
 
         let function = prog
@@ -360,7 +374,7 @@ where
             .find(|x| x.name == req.function)
             .context("Cannot find function")?;
 
-        if graph.is_function_defined(&function.name) {
+        if state.is_function_defined(&function.name) {
             debug!("==> Function was already summarised.");
             return Ok(());
         }
@@ -396,9 +410,14 @@ where
         )?;
 
         // Compute init flows
-        let init_normal_flows =
-            self.init_flow
-                .flow(function, graph, req.pc, &facts, &mut normal_flows_debug, state)?;
+        let init_normal_flows = self.init_flow.flow(
+            function,
+            graph,
+            req.pc,
+            &facts,
+            &mut normal_flows_debug,
+            state,
+        )?;
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -746,7 +765,7 @@ where
                 && x.to().next_pc == d2.next_pc + 1
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
-            let taut = graph.get_taut(&d3.get_from().function).unwrap().clone();
+            let taut = state.get_taut(&d3.get_from().function).unwrap().unwrap().clone();
             normal_flows_debug.push(d3.clone());
             self.propagate(
                 graph,
@@ -1010,13 +1029,17 @@ where
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
         for (i, instruction) in function.instructions.iter().enumerate() {
-            let facts = state.add_statement_with_note(
+            state.add_statement_with_note(
                 function,
                 format!("{:?}", instruction),
                 i,
                 &"taut".to_string(),
             )?;
-            let taut = facts.get(0).context("Expected only taut")?;
+            let facts = state
+                .get_facts_at(&function.name, i)?
+                .filter(|x| x.belongs_to_var == "taut".to_string())
+                .collect::<Vec<_>>();
+            let taut = facts.get(0).context("Expected only taut")?.clone();
             debug_assert!(taut.var_is_taut);
 
             if let Some(last_taut) = last_taut {
@@ -1036,13 +1059,18 @@ where
         }
 
         //end
-        let facts = state.add_statement_with_note(
+        state.add_statement_with_note(
             function,
             "end".to_string(),
             function.instructions.len(),
             &"taut".to_string(),
         )?;
-        let taut = facts.get(0).context("Expected only taut")?;
+        let facts = state
+            .get_facts_at(&function.name, function.instructions.len())?
+            .filter(|x| x.belongs_to_var == "taut".to_string())
+            .collect::<Vec<_>>();
+
+        let taut = facts.get(0).context("Expected only taut")?.clone();
         debug_assert!(taut.var_is_taut);
 
         if let Some(last_taut) = last_taut {

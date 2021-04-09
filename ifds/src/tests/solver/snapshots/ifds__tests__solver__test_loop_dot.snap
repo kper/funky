@@ -74,12 +74,22 @@ expression: output
 		\path[->] (0) edge (1);
 		\path[->] (1) edge (11);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (4);
 		\path[->] (1) edge (4);
 		\path[->, bend right] (4) edge (0);
+		\path[->, bend right] (4) edge (0);
+		\path[->] (1) edge (4);
+		\path[->] (1) edge (4);
 		\path[->] (1) edge (4);
 		\path[->, bend right] (11) edge (13);
 		\path[->, bend right] (4) edge (0);
+		\path[->, bend right] (4) edge (0);
+		\path[->, bend right] (4) edge (0);
 		\path[->] (13) edge (23);
+		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
 		\path[->] (0) edge (1);
 
 

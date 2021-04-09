@@ -1,5 +1,6 @@
 use crate::counter::Counter;
 use crate::icfg::graph::{Edge, Fact, Graph};
+use crate::icfg::state::State;
 use log::debug;
 use std::cmp::Ordering;
 use std::iter::FromIterator;
@@ -18,11 +19,11 @@ impl<'a> FactWrapper<'a> {
 }
 
 /// Convert the given graph into string in .tex format.
-pub fn render_to(graph: &Graph) -> String {
+pub fn render_to(graph: &Graph, state: &State) -> String {
     let mut str_vars = String::new();
 
     let mut index = 0;
-    let mut functions: Vec<_> = graph.functions.iter().map(|(_, f)| f).collect();
+    let mut functions: Vec<_> = state.functions.iter().map(|(_, f)| f).collect();
 
     functions.sort_by(|a, b| b.name.cmp(&a.name));
 
@@ -67,7 +68,7 @@ pub fn render_to(graph: &Graph) -> String {
 
         let facts = facts.iter().filter(|x| &x.get().function == function_name);
 
-        let notes = graph.notes.iter().filter(|x| &x.function == function_name);
+        let notes = state.notes.iter().filter(|x| &x.function == function_name);
 
         let mut vars : Vec<_> = facts.clone().map(|x| &x.get().belongs_to_var).collect();
         vars.sort_by(|a, b| {

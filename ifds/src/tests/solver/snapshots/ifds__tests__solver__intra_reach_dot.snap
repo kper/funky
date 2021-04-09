@@ -48,6 +48,8 @@ expression: output
 		\path[->] (1) edge (7);
 		\path[->] (0) edge (4);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (7);
 		\path[->] (1) edge (7);
 		\path[->] (4) edge (9);
 		\path[->] (4) edge (10);

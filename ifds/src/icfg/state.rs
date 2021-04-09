@@ -263,7 +263,7 @@ impl State {
         instruction: String,
         pc: usize,
         variable: &String,
-    ) -> Result<Vec<Fact>> {
+    ) -> Result<()> {
         debug!(
             "Adding statement {} at {} for {} ({})",
             instruction, pc, variable, function.name
@@ -293,7 +293,9 @@ impl State {
             });
         }
 
-        Ok(facts)
+        self.cache_facts(&function.name, facts)?;
+
+        Ok(())
     }
 
     /// Add a statement with the instruction with a note [`Note`].
@@ -305,8 +307,8 @@ impl State {
         instruction: String,
         pc: usize,
         variable: &String,
-    ) -> Result<Vec<Fact>> {
-        let facts = self
+    ) -> Result<()> {
+        self
             .add_statement(function, instruction.clone(), pc, variable)
             .context("While add statement with note")?;
 
@@ -330,7 +332,7 @@ impl State {
             }
         }
 
-        Ok(facts)
+        Ok(())
     }
 
     /// Create new tautological fact by given function and pc.

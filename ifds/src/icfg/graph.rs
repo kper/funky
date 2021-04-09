@@ -12,11 +12,9 @@ type FunctionName = String;
 /// The datastructure for the graph.
 #[derive(Debug, Default)]
 pub struct Graph {
-    pub vars: HashMap<FunctionName, Vec<Variable>>,
-    pub functions: HashMap<FunctionName, Function>,
     //pub facts: Vec<Fact>,
     pub edges: Vec<Edge>,
-    pub notes: Vec<Note>,
+    //pub notes: Vec<Note>,
     pub fact_counter: Counter,
     note_counter: Counter,
     /// `init_facts` is a helper struct for getting the initial facts
@@ -123,17 +121,6 @@ impl Edge {
 impl Graph {
     pub fn new() -> Self {
         Graph::default()
-    }
-
-    pub fn is_function_defined(&self, name: &String) -> bool {
-        self.functions.get(name).is_some()
-    }
-
-    pub fn get_taut(&self, function: &String) -> Option<&Fact> {
-        self.edges
-            .iter()
-            .find(|x| x.get_from().var_is_taut && &x.get_from().function == function)
-            .map(|x| x.get_from())
     }
 }
 

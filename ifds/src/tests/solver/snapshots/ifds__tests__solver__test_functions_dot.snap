@@ -82,6 +82,7 @@ expression: output
 		\path[->] (4) edge (18);
 		\path[->] (0) edge (19);
 		\path[->] (0) edge (4);
+		\path[->] (0) edge (4);
 		\path[->] (1) edge (1);
 		\path[->] (1) edge (7);
 		\path[->] (7) edge (8);
@@ -92,7 +93,12 @@ expression: output
 		\path[->] (8) edge (23);
 		\path[->] (12) edge node { } (12);
 		\path[->] (1) edge (7);
+		\path[->] (1) edge (7);
 		\path[->] (7) edge (8);
+		\path[->] (7) edge (8);
+		\path[->] (7) edge (8);
+		\path[->] (8) edge (23);
+		\path[->] (8) edge (23);
 		\path[->] (8) edge (23);
 
 

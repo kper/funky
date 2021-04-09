@@ -15,9 +15,9 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(&prog, &$req);
+        let res = convert.visit(&prog, &$req);
 
-        if let Err(err) = graph {
+        if let Err(err) = res {
             error!("ERROR: {}", err);
             err.chain()
                 .skip(1)
@@ -25,7 +25,9 @@ macro_rules! ir {
             panic!("")
         }
 
-        let output = render_to(&graph.unwrap());
+        let (graph, state) = res.unwrap();
+
+        let output = render_to(&graph, &state);
 
         assert_snapshot!(format!("{}_dot", $name), output);
     };

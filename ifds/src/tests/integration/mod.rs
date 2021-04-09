@@ -49,9 +49,9 @@ macro_rules! run {
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 
-        let graph = convert.visit(&prog, &$req).unwrap();
+        let (graph, res) = convert.visit(&prog, &$req).unwrap();
 
-        let output = render_to(&graph);
+        let output = render_to(&graph, &res);
 
         assert_snapshot!(format!("{}", $name), output);
     };
@@ -92,7 +92,6 @@ fn test_fib_func_1() {
 
 #[test]
 fn test_fib_func_1_offset() {
-    env_logger::init();
     let req = Request {
         function: "1".to_string(),
         variable: None,

@@ -79,8 +79,12 @@ expression: output
 		\path[->] (3) edge (16);
 		\path[->] (0) edge (8);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (2);
 		\path[->] (1) edge (2);
 		\path[->] (2) edge (3);
+		\path[->] (2) edge (3);
+		\path[->] (3) edge (16);
 		\path[->] (3) edge (16);
 		\path[->] (8) edge (9);
 		\path[->] (9) edge (10);

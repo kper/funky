@@ -31,6 +31,7 @@ expression: output
 		\path[->] (0) edge (1);
 		\path[->] (0) edge (2);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
 
 
                 \end{tikzpicture}

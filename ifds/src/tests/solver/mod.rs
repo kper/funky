@@ -15,9 +15,9 @@ macro_rules! ir {
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
-        let graph = convert.visit(&prog, &$req).unwrap();
+        let (graph, state) = convert.visit(&prog, &$req).unwrap();
 
-        let output = render_to(&graph);
+        let output = render_to(&graph, &state);
 
         assert_snapshot!(format!("{}_dot", $name), output);
 

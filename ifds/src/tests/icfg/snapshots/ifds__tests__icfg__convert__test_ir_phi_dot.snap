@@ -60,7 +60,10 @@ expression: output
 		\path[->] (2) edge (11);
 		\path[->] (0) edge (6);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
 		\path[->] (1) edge (2);
+		\path[->] (1) edge (2);
+		\path[->] (2) edge (11);
 		\path[->] (2) edge (11);
 		\path[->] (6) edge (7);
 		\path[->] (7) edge (14);

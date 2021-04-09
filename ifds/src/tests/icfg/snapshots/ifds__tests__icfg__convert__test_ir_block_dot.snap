@@ -101,16 +101,29 @@ expression: output
 		\path[->] (0) edge (1);
 		\path[->] (1) edge (15);
 		\path[->] (0) edge (1);
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (4);
 		\path[->] (1) edge (4);
 		\path[->, bend right] (4) edge (5);
+		\path[->, bend right] (4) edge (5);
+		\path[->] (5) edge (6);
 		\path[->] (5) edge (6);
 		\path[->] (6) edge (26);
+		\path[->] (6) edge (26);
+		\path[->] (1) edge (4);
+		\path[->] (1) edge (4);
 		\path[->] (1) edge (4);
 		\path[->, bend right] (15) edge (17);
 		\path[->, bend right] (4) edge (5);
+		\path[->, bend right] (4) edge (5);
+		\path[->, bend right] (4) edge (5);
 		\path[->] (17) edge (19);
 		\path[->] (5) edge (6);
+		\path[->] (5) edge (6);
+		\path[->] (5) edge (6);
 		\path[->] (19) edge (34);
+		\path[->] (6) edge (26);
+		\path[->] (6) edge (26);
 		\path[->] (6) edge (26);
 
 

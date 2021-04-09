@@ -204,11 +204,11 @@ fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
         pc: pc,
         variable: None,
     };
-    let res = convert
+    let (mut graph, state) = convert
         .visit(&prog, &req)
         .context("Cannot create the graph")?;
 
-    let output = crate::icfg::tikz::render_to(&res);
+    let output = crate::icfg::tikz::render_to(&graph, &state);
 
     println!("{}", output);
 
@@ -274,12 +274,12 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     let mut get_taints = |req: &Request| {
         let mut solver = IfdsSolver;
 
-        let graph = convert.visit(&prog, &req);
-        let mut graph = graph.expect("Cannot create graph");
+        let res = convert.visit(&prog, &req);
+        let (mut graph, state) = res.expect("Cannot create graph");
 
         let taints = solver.all_sinks(&mut graph, &req);
 
-        (graph, taints)
+        (graph, state, taints)
     };
 
     let mut input = String::new();
@@ -304,14 +304,14 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
         if let Some(ref req) = req {
             if !already_computed {
                 let res = get_taints(req);
-                taints = res.1.context("Cannot get taints for ui")?;
+                taints = res.2.context("Cannot get taints for ui")?;
                 already_computed = true;
                 udp_socket
                     .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
                     //.context("Cannot send logging information")?;
 
                 if let Some(ref export_graph) = export_graph {
-                    let output = crate::icfg::tikz::render_to(&res.0);
+                    let output = crate::icfg::tikz::render_to(&res.0, &res.1);
 
                     let mut fs = File::create(export_graph).context("Cannot write export file")?;
                     fs.write_all(output.as_bytes())
@@ -460,12 +460,12 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
     let mut get_taints = |req: &Request| {
         let mut solver = IfdsSolver;
 
-        let graph = convert.visit(&prog, &req);
-        let mut graph = graph.expect("Cannot create graph");
+        let res = convert.visit(&prog, &req);
+        let (mut graph, state) = res.expect("Cannot create graph");
 
         let taints = solver.all_sinks(&mut graph, &req);
 
-        (graph, taints)
+        (graph, state, taints)
     };
 
     loop {
@@ -483,12 +483,13 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
         println!("{:?}", req);
 
         let res = get_taints(&req);
-        let taints = res.1.context("Cannot get taints for ui")?;
+        let state = res.1;
+        let taints = res.2.context("Cannot get taints for ui")?;
 
         println!("{:#?}", taints);
 
         if let Some(ref export_graph) = export_graph {
-            let output = crate::icfg::tikz::render_to(&res.0);
+            let output = crate::icfg::tikz::render_to(&res.0, &state);
 
             let mut fs = File::create(export_graph).context("Cannot write export file")?;
             fs.write_all(output.as_bytes())

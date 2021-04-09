@@ -32,34 +32,27 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 //kill
             }
             Instruction::Const(reg, _) if reg != variable && !is_taut => {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
+                    .filter(|x| &x.belongs_to_var == variable);
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == variable);
 
                 for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
-                        from: b,
-                        to: a,
+                        from: b.clone(),
+                        to: a.clone(),
                         curved: false,
                     });
                 }
             }
             Instruction::Assign(dest, src) if src == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -71,6 +64,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src || &x.belongs_to_var == dest)
+                    .cloned();
+
                 for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -80,15 +78,15 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Assign(dest, src) if dest != variable && src != variable => {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
-                let before = state 
+                let before = state
                     .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -104,13 +102,8 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 //kill
             }
             Instruction::Unop(dest, src) if src == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -122,6 +115,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src || &x.belongs_to_var == dest)
+                    .cloned();
+
                 for (b, a) in (before.chain(copy_before)).zip(after) {
                     edges.push(Edge::Normal {
                         from: b,
@@ -131,15 +129,15 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Unop(dest, src) if dest != variable && src != variable => {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -155,13 +153,8 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 //kill
             }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -171,6 +164,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src1 || &x.belongs_to_var == dest)
                     .cloned();
 
                 for (b, a) in (before.chain(copy_before)).zip(after) {
@@ -182,13 +180,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::BinOp(dest, _src1, src2) if src2 == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -198,6 +192,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src2 || &x.belongs_to_var == dest)
                     .cloned();
 
                 for (b, a) in (before.chain(copy_before)).zip(after) {
@@ -219,7 +218,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     .get(&(function.name.clone(), block.clone()))
                     .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                let after = state.add_statement(
+                state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     *jump_to_pc,
@@ -228,6 +227,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, *jump_to_pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -247,7 +251,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = state.add_statement(
+                    state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
@@ -256,6 +260,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
 
                     let before = state
                         .get_facts_at(&function.name, pc)?
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after = state
+                        .get_facts_at(&function.name, *jump_to_pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
@@ -268,16 +277,15 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     }
                 }
 
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -295,7 +303,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = state.add_statement(
+                    state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
@@ -304,6 +312,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
 
                     let before = state
                         .get_facts_at(&function.name, pc)?
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after = state
+                        .get_facts_at(&function.name, *jump_to_pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
@@ -317,13 +330,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Phi(dest, src1, _src2) if src1 == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -333,6 +342,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src1 || &x.belongs_to_var == dest)
                     .cloned();
 
                 for (b, a) in (before.chain(copy_before)).zip(after) {
@@ -344,13 +358,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Phi(dest, _src1, src2) if src2 == variable => {
-                let mut after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
-                let after2 =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
-
-                after.extend(after2);
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
                 let before = state
                     .get_facts_at(&function.name, pc)?
@@ -360,6 +370,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == src2 || &x.belongs_to_var == dest)
                     .cloned();
 
                 for (b, a) in (before.chain(copy_before)).zip(after) {
@@ -373,17 +388,17 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             Instruction::Phi(dest, src1, src2)
                 if dest != variable && src1 != variable && src2 != variable =>
             {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -404,7 +419,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = state.add_statement(
+                    state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
@@ -414,6 +429,11 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     let before = state
                         .get_facts_at(&function.name, pc)?
                         .into_iter()
+                        .filter(|x| &x.belongs_to_var == variable)
+                        .cloned();
+
+                    let after = state
+                        .get_facts_at(&function.name, *jump_to_pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
 
@@ -427,17 +447,17 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Return(dest) if dest.contains(variable) => {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -453,29 +473,28 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let mem_var =
                     state.add_memory_var("mem".to_string(), function.name.clone(), *offset);
 
-                let after = state.add_statement(
+                state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     &mem_var.name,
                 )?;
 
-                let after_var = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    &variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, &variable)?;
 
-                // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| x.belongs_to_var == mem_var.name || &x.belongs_to_var == variable)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
                 for b in before {
-                    for a in after.iter().chain(after_var.iter()) {
+                    for a in after.iter() {
                         edges.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
@@ -490,17 +509,16 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     && variable != &"taut".to_string()
                     && variable != &format!("mem@{}", offset) =>
             {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -518,17 +536,17 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             Instruction::Load(dest, _offset, _i)
                 if variable != dest && variable != _i && !variable.starts_with("mem") =>
             {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
+                    .filter(|x| &x.belongs_to_var == variable)
+                    .cloned();
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
 
@@ -541,15 +559,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Load(dest, offset, _i) => {
-                let after =
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
 
-                let after_var = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    &variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, &variable)?;
 
                 // we cannot know which exact variables, because we only
                 // know the `offset`. But, we can eliminate all cases
@@ -562,8 +574,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                             || _i == variable
                     });
 
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == variable || &x.belongs_to_var == dest)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
                 for b in before {
-                    for a in after.iter().chain(after_var.iter()) {
+                    for a in after.iter() {
                         edges.push(Edge::Normal {
                             from: b.clone(),
                             to: a.clone(),
@@ -573,24 +591,21 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             _ => {
-                let after = state.add_statement(
-                    function,
-                    format!("{:?}", instruction),
-                    pc + 1,
-                    variable,
-                )?;
+                state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 // Identity
                 let before = state
                     .get_facts_at(&function.name, pc)?
-                    .into_iter()
-                    .filter(|x| &x.belongs_to_var == variable)
-                    .cloned();
+                    .filter(|x| &x.belongs_to_var == variable);
+
+                let after = state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == variable);
 
                 for (b, a) in before.zip(after) {
                     edges.push(Edge::Normal {
-                        from: b,
-                        to: a,
+                        from: b.clone(),
+                        to: a.clone(),
                         curved: false,
                     });
                 }
