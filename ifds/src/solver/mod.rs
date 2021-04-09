@@ -42,7 +42,7 @@ impl Solver for IfdsSolver {
                 matches!(x, Edge::Path { .. })
                     && &x.to().function == function
                     //&& x.get_from().var_is_taut
-                    //&& x.get_from().next_pc == req.pc
+                    && x.get_from().next_pc == req.pc
             })
             .collect();
 
