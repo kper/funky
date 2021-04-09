@@ -88,6 +88,20 @@ enum Opt {
         #[structopt(short, parse(from_os_str))]
         export_graph: Option<PathBuf>,
     },
+    Run {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
+        #[structopt(short)]
+        function: String,
+        #[structopt(short)]
+        pc: usize,
+        #[structopt(short)]
+        var: String,
+    },
 }
 
 fn main() {
@@ -143,6 +157,22 @@ fn main() {
             export_graph,
         } => {
             if let Err(err) = repl(file, ir, export_graph) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Run {
+            file,
+            ir,
+            export_graph,
+            function,
+            pc,
+            var,
+        } => {
+            if let Err(err) = run(file, ir, export_graph, function, pc, var) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -306,9 +336,8 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                 let res = get_taints(req);
                 taints = res.2.context("Cannot get taints for ui")?;
                 already_computed = true;
-                udp_socket
-                    .send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
-                    //.context("Cannot send logging information")?;
+                udp_socket.send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
+                //.context("Cannot send logging information")?;
 
                 if let Some(ref export_graph) = export_graph {
                     let output = crate::icfg::tikz::render_to(&res.0, &res.1);
@@ -498,6 +527,70 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
     }
 }
 
+fn run(
+    file: PathBuf,
+    is_ir: bool,
+    export_graph: Option<PathBuf>,
+    function: String,
+    pc: usize,
+    var: String,
+) -> Result<()> {
+    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = IfdsSolver;
+
+        let res = convert.visit(&prog, &req);
+        let (mut graph, state) = res.expect("Cannot create graph");
+
+        let taints = solver.all_sinks(&mut graph, &req);
+
+        (graph, state, taints)
+    };
+
+    let req = Request {
+        function,
+        pc,
+        variable: Some(var),
+    };
+
+    let res = get_taints(&req);
+    let state = res.1;
+    let taints = res.2.context("Cannot get taints for ui")?;
+
+    println!("{:#?}", taints);
+
+    if let Some(ref export_graph) = export_graph {
+        let output = crate::icfg::tikz::render_to(&res.0, &state);
+
+        let mut fs = File::create(export_graph).context("Cannot write export file")?;
+        fs.write_all(output.as_bytes())
+            .context("Cannto write file")?;
+    }
+
+    Ok(())
+}
+
 fn get_variable_by_index(
     instructions: &Vec<(usize, usize, Option<&Instruction>, &str)>,
     index: usize,
@@ -519,9 +612,7 @@ fn get_variable_by_index(
         Some(Instruction::Conditional(src, _)) => {
             Some((src.clone(), function.clone().to_string(), *pc))
         }
-        Some(Instruction::Unknown(dest)) => {
-            Some((dest.clone(), function.clone().to_string(), *pc))
-        }
+        Some(Instruction::Unknown(dest)) => Some((dest.clone(), function.clone().to_string(), *pc)),
         Some(Instruction::Phi(dest, _, _)) => {
             Some((dest.clone(), function.clone().to_string(), *pc))
         }
