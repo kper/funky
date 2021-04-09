@@ -1,4 +1,5 @@
 use crate::icfg::flowfuncs::*;
+use crate::icfg::state::State;
 
 pub struct TaintNormalFlowFunction;
 
@@ -10,6 +11,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
         pc: usize,
         variable: &String,
         block_resolver: &BlockResolver,
+        state: &mut State,
     ) -> Result<Vec<Edge>> {
         debug!(
             "Calling flow for {} with var {} with pc {}",
@@ -30,14 +32,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 //kill
             }
             Instruction::Const(reg, _) if reg != variable && !is_taut => {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
@@ -52,19 +54,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Assign(dest, src) if src == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
@@ -78,14 +80,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Assign(dest, src) if dest != variable && src != variable => {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before = graph
+                let before = state 
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
@@ -103,19 +105,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Unop(dest, src) if src == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src)
                     .cloned();
@@ -129,14 +131,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Unop(dest, src) if dest != variable && src != variable => {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
@@ -154,19 +156,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::BinOp(dest, src1, _src2) if src1 == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
@@ -181,19 +183,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::BinOp(dest, _src1, src2) if src2 == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
@@ -217,14 +219,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     .get(&(function.name.clone(), block.clone()))
                     .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     *jump_to_pc,
                     variable,
                 )?;
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == variable)
                     .cloned();
@@ -245,14 +247,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = graph.add_statement(
+                    let after = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before = graph
+                    let before = state
                         .get_facts_at(&function.name, pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
@@ -266,14 +268,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     }
                 }
 
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     variable,
                 )?;
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
@@ -293,14 +295,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = graph.add_statement(
+                    let after = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before = graph
+                    let before = state
                         .get_facts_at(&function.name, pc)?
                         .filter(|x| &x.belongs_to_var == variable)
                         .cloned();
@@ -316,19 +318,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Phi(dest, src1, _src2) if src1 == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src1)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src1)
                     .cloned();
@@ -343,19 +345,19 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Phi(dest, _src1, src2) if src2 == variable => {
                 let mut after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
 
                 let after2 =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, src2)?;
 
                 after.extend(after2);
 
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
 
-                let copy_before = graph
+                let copy_before = state
                     .get_facts_at(&function.name, pc)?
                     .filter(|x| &x.belongs_to_var == src2)
                     .cloned();
@@ -371,7 +373,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             Instruction::Phi(dest, src1, src2)
                 if dest != variable && src1 != variable && src2 != variable =>
             {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -379,7 +381,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
@@ -402,14 +404,14 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         .get(&(function.name.clone(), block.clone()))
                         .with_context(|| format!("Cannot find block to jump to {}", block))?;
 
-                    let after = graph.add_statement(
+                    let after = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         *jump_to_pc,
                         variable,
                     )?;
 
-                    let before = graph
+                    let before = state
                         .get_facts_at(&function.name, pc)?
                         .into_iter()
                         .filter(|x| &x.belongs_to_var == variable)
@@ -425,7 +427,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Return(dest) if dest.contains(variable) => {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -433,7 +435,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
@@ -449,16 +451,16 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Store(src, offset, i) if variable == src || variable == i => {
                 let mem_var =
-                    graph.add_memory_var("mem".to_string(), function.name.clone(), *offset);
+                    state.add_memory_var("mem".to_string(), function.name.clone(), *offset);
 
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
                     &mem_var.name,
                 )?;
 
-                let after_var = graph.add_statement(
+                let after_var = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -466,7 +468,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == src)
@@ -488,7 +490,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     && variable != &"taut".to_string()
                     && variable != &format!("mem@{}", offset) =>
             {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -496,7 +498,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
@@ -516,7 +518,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             Instruction::Load(dest, _offset, _i)
                 if variable != dest && variable != _i && !variable.starts_with("mem") =>
             {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -524,7 +526,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)
@@ -540,9 +542,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
             }
             Instruction::Load(dest, offset, _i) => {
                 let after =
-                    graph.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
 
-                let after_var = graph.add_statement(
+                let after_var = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -552,7 +554,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 // we cannot know which exact variables, because we only
                 // know the `offset`. But, we can eliminate all cases
                 // where the offset is higher, so they can't be meant.
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| {
@@ -571,7 +573,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             _ => {
-                let after = graph.add_statement(
+                let after = state.add_statement(
                     function,
                     format!("{:?}", instruction),
                     pc + 1,
@@ -579,7 +581,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 )?;
 
                 // Identity
-                let before = graph
+                let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| &x.belongs_to_var == variable)

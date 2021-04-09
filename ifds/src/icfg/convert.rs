@@ -3,6 +3,7 @@
 use crate::icfg::graph::*;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
+use crate::icfg::state::State;
 
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
@@ -48,8 +49,9 @@ where
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<Graph> {
         let mut graph = Graph::new();
+        let mut state = State::default();
 
-        self.tabulate(&mut graph, prog, req)?;
+        self.tabulate(&mut graph, prog, req, &mut state)?;
 
         Ok(graph)
     }
@@ -67,8 +69,9 @@ where
         normal_flows_debug: &mut Vec<Edge>,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
+        state: &mut State,
     ) -> Result<Vec<Edge>> {
-        let caller_variable = graph
+        let caller_variable = state 
             .get_var(&caller_function.name, caller_var)
             .context("Variable is not defined")?
             .clone();
@@ -87,7 +90,7 @@ where
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
-            let init_facts = graph.init_function(callee_function, start_pc)?;
+            let init_facts = state.init_function(callee_function, start_pc)?;
 
             self.pacemaker(
                 callee_function,
@@ -96,6 +99,7 @@ where
                 worklist,
                 normal_flows_debug,
                 &init_facts,
+                state,
             )
             .context("Pacemaker for pass_args failed")?;
 
@@ -128,7 +132,7 @@ where
                 "caller {} with current_pc {}",
                 caller_function.name, current_pc
             );
-            let mut caller_facts = graph.get_facts_at(&caller_function.name, current_pc)?;
+            let mut caller_facts = state.get_facts_at(&caller_function.name, current_pc)?;
 
             // Filter by variable
             let caller_fact = caller_facts
@@ -168,6 +172,7 @@ where
         caller_instructions: &Vec<Instruction>,
         graph: &mut Graph,
         return_vals: &Vec<String>,
+        state: &mut State,
     ) -> Result<Vec<Edge>> {
         debug!("Trying to compute return_val");
         debug!("Caller: {} ({})", caller_function, caller_pc);
@@ -184,20 +189,20 @@ where
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let caller_facts = graph.get_facts_at(caller_function, caller_pc + 1)?;
+        let caller_facts = state.get_facts_at(caller_function, caller_pc + 1)?;
 
         let mut edges = Vec::new();
 
         let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
         debug!("Caller facts {:#?}", caller_facts);
 
-        let mut callee_facts_without_globals = graph
+        let mut callee_facts_without_globals = state 
             .get_facts_at(callee_function, callee_pc)?
             .filter(|x| !x.var_is_global)
             .cloned()
             .collect::<Vec<_>>();
 
-        let mut callee_facts_with_globals = graph
+        let mut callee_facts_with_globals = state 
             .get_facts_at(callee_function, callee_pc)?
             .filter(|x| x.var_is_global)
             .cloned()
@@ -232,7 +237,7 @@ where
                 });
             } else {
                 //Create the dest
-                let track = graph
+                let track = state 
                     .get_track(caller_function, &to_reg)
                     .with_context(|| format!("Cannot find track {}", to_reg))?;
 
@@ -256,7 +261,7 @@ where
         // doesn't handle when you return into local from global
         for from in callee_facts_with_globals.clone().into_iter() {
             //Create the dest
-            let track = graph
+            let track = state
                 .get_track(caller_function, &from.belongs_to_var) //name must match
                 .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
 
@@ -289,13 +294,14 @@ where
         graph: &mut Graph,
         pc: usize,
         caller: &String,
+        state: &mut State,
     ) -> Result<Vec<Edge>> {
         debug!(
             "Generating call-to-return edges for {} ({})",
             callee, caller
         );
 
-        let before: Vec<_> = graph
+        let before: Vec<_> = state
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
             .filter(|x| &x.belongs_to_var == caller)
@@ -304,7 +310,7 @@ where
             .collect();
         debug!("Facts before statement {}", before.len());
 
-        let after = graph.get_facts_at(&caller_function.name, pc)?;
+        let after = state.get_facts_at(&caller_function.name, pc)?;
 
         let after: Vec<_> = after
             .filter(|x| !x.var_is_taut)
@@ -345,7 +351,7 @@ where
         Ok(edges)
     }
 
-    fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request) -> Result<()> {
+    fn tabulate(&mut self, mut graph: &mut Graph, prog: &Program, req: &Request, mut state: &mut State,) -> Result<()> {
         debug!("Convert intermediate repr to graph");
 
         let function = prog
@@ -359,7 +365,7 @@ where
             return Ok(());
         }
 
-        let facts = graph.init_function(&function, req.pc)?;
+        let facts = state.init_function(&function, req.pc)?;
 
         let mut path_edge = Vec::new();
         let mut worklist = VecDeque::new();
@@ -386,12 +392,13 @@ where
             &mut worklist,
             &mut normal_flows_debug,
             &facts,
+            state,
         )?;
 
         // Compute init flows
         let init_normal_flows =
             self.init_flow
-                .flow(function, graph, req.pc, &facts, &mut normal_flows_debug)?;
+                .flow(function, graph, req.pc, &facts, &mut normal_flows_debug, state)?;
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -405,6 +412,7 @@ where
             &mut summary_edge,
             &mut normal_flows_debug,
             &mut graph,
+            state,
         )?;
 
         Ok(())
@@ -470,6 +478,7 @@ where
         summary_edge: &mut Vec<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         graph: &mut Graph,
+        state: &mut State,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
@@ -520,6 +529,7 @@ where
                             dest,
                             pc,
                             normal_flows_debug,
+                            state,
                         )?;
                     }
                     Instruction::Return(_dest) => {
@@ -532,6 +542,7 @@ where
                             worklist,
                             d1,
                             &mut end_summary,
+                            state,
                         )?;
                     }
                     _ => {
@@ -548,6 +559,7 @@ where
                                 d2.next_pc,
                                 &d2.belongs_to_var,
                                 &self.block_resolver,
+                                state,
                             )?
                             .iter()
                         {
@@ -580,6 +592,7 @@ where
                     d2,
                     path_edge,
                     worklist,
+                    state,
                 )?;
             }
         }
@@ -609,6 +622,7 @@ where
         dest: &Vec<String>,
         pc: usize,
         normal_flows_debug: &mut Vec<Edge>,
+        state: &mut State,
     ) -> Result<(), anyhow::Error> {
         let caller_var = &d2.belongs_to_var;
         let caller_function = &program
@@ -629,6 +643,7 @@ where
                 normal_flows_debug,
                 path_edge,
                 worklist,
+                state,
             )
             .with_context(|| {
                 format!(
@@ -702,6 +717,7 @@ where
                         &instructions,
                         graph,
                         &return_vals,
+                        state,
                     )? {
                         summary_edge.push(Edge::Summary {
                             from: d2.clone(),
@@ -722,6 +738,7 @@ where
             graph,
             pc,
             &d2.belongs_to_var,
+            state,
         )?;
         let return_sites = summary_edge.iter().filter(|x| {
             x.get_from().belongs_to_var == d2.belongs_to_var
@@ -753,6 +770,7 @@ where
         worklist: &mut VecDeque<Edge>,
         d1: &Fact,
         end_summary: &mut HashMap<(String, usize, String), Vec<Fact>>,
+        state: &mut State,
     ) -> Result<(), anyhow::Error> {
         let new_function = program
             .functions
@@ -768,6 +786,7 @@ where
                 d2.next_pc,
                 &d2.belongs_to_var,
                 &self.block_resolver,
+                state,
             )?
             .iter()
         {
@@ -787,7 +806,7 @@ where
             )?;
         }
         assert_eq!(d1.function, d2.function);
-        let first_statement_pc_callee = graph
+        let first_statement_pc_callee = graph //TODO
             .edges
             .iter()
             .filter(|x| x.get_from().function == d1.function && x.to().function == d1.function)
@@ -800,14 +819,14 @@ where
             first_statement_pc_callee,
             d1.belongs_to_var.clone(),
         )) {
-            let facts = graph
+            let facts = state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone());
             end_summary.extend(facts);
         } else {
-            let facts = graph
+            let facts = state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
@@ -833,6 +852,7 @@ where
         d2: &Fact,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
+        state: &mut State,
     ) -> Result<()> {
         // this is E_p
         debug!("=> Reached end of procedure");
@@ -846,13 +866,13 @@ where
         if let Some(end_summary) =
             end_summary.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
         {
-            let facts = graph
+            let facts = state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone());
             end_summary.extend(facts);
         } else {
-            let facts = graph
+            let facts = state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone())
@@ -903,6 +923,7 @@ where
                     &instructions,
                     graph,
                     return_vals,
+                    state,
                 )?;
 
                 let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
@@ -981,6 +1002,7 @@ where
         worklist: &mut VecDeque<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         init_facts: &Vec<Fact>,
+        state: &mut State,
     ) -> Result<(), anyhow::Error> {
         let mut edges = Vec::new();
 
@@ -988,7 +1010,7 @@ where
         let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
         for (i, instruction) in function.instructions.iter().enumerate() {
-            let facts = graph.add_statement_with_note(
+            let facts = state.add_statement_with_note(
                 function,
                 format!("{:?}", instruction),
                 i,
@@ -1014,7 +1036,7 @@ where
         }
 
         //end
-        let facts = graph.add_statement_with_note(
+        let facts = state.add_statement_with_note(
             function,
             "end".to_string(),
             function.instructions.len(),

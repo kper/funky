@@ -8,3 +8,6 @@ pub mod convert;
 
 /// contains the flow functions which be used to build up the graph
 pub mod flowfuncs;
+
+/// Keeps node information about the program
+pub mod state;

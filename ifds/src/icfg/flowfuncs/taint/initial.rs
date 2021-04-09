@@ -10,6 +10,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
+        state: &mut State,
     ) -> Result<Vec<Edge>> {
         debug!("Calling init flow for {} with pc {}", function.name, pc);
 
@@ -28,7 +29,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
             let instruction = instructions.get(pc).context("Cannot find instr")?;
             debug!("Next instruction is {:?}", instruction);
 
-            let _after2 = graph.add_statement(
+            let _after2 = state.add_statement(
                 function,
                 format!("{:?}", instruction),
                 pc,
@@ -46,7 +47,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     let before2 = vec![init_fact.clone()];
 
                     let after2 =
-                        graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
+                        state.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
                         normal_flows_debug.push(Edge::Normal {
@@ -63,7 +64,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Assign(dest, _src) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = graph.add_statement(
+                    let after2 = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         pc + 1,
@@ -85,7 +86,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Unop(dest, _src) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = graph.add_statement(
+                    let after2 = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         pc + 1,
@@ -107,7 +108,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::BinOp(dest, _src, _src2) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = graph.add_statement(
+                    let after2 = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         pc + 1,
@@ -130,7 +131,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     let before2 = vec![init_fact.clone()];
 
                     let after2 =
-                        graph.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
+                        state.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
 
                     for (b, a) in before2.into_iter().zip(after2) {
                         normal_flows_debug.push(Edge::Normal {
@@ -147,7 +148,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Block(_) | Instruction::Jump(_) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = graph.add_statement(
+                    let after2 = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         pc + 1,
@@ -177,7 +178,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Phi(dest, _src1, _src2) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let after2 = graph.add_statement(
+                    let after2 = state.add_statement(
                         function,
                         format!("{:?}", instruction),
                         pc + 1,

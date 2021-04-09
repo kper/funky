@@ -6,6 +6,7 @@ pub use crate::ir::ast::Function as AstFunction;
 pub use crate::ir::ast::Instruction;
 pub use anyhow::{Result, Context};
 pub use log::debug;
+use crate::icfg::state::State;
 
 pub mod taint;
 
@@ -29,6 +30,7 @@ pub trait InitialFlowFunction {
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
+        state: &mut State,
     ) -> Result<Vec<Edge>>;
 }
 
@@ -41,6 +43,7 @@ pub trait NormalFlowFunction {
         graph: &mut Graph,
         pc: usize,
         variable: &String,
-        block_resolver: &BlockResolver
+        block_resolver: &BlockResolver,
+        state: &mut State,
     ) -> Result<Vec<Edge>>;
 }
