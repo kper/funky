@@ -35,7 +35,7 @@ impl Solver for IfdsSolver {
 
         let function = &req.function;
 
-        let f1: Vec<_> = graph
+        let taints: Vec<_> = graph
             .edges
             .iter()
             .filter(|x| {
@@ -44,16 +44,8 @@ impl Solver for IfdsSolver {
                     //&& x.get_from().var_is_taut
                     && x.get_from().next_pc == req.pc
             })
-            .collect();
-
-        let f2: Vec<_> = f1
-            .iter()
             .map(|x| x.to())
             .filter(|x| !x.var_is_taut)
-            .collect();
-
-        let taints = f2
-            .iter()
             .map(|x| Taint {
                 function: x.function.clone(),
                 pc: x.next_pc,

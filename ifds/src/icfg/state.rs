@@ -269,14 +269,14 @@ impl State {
         self.add_statement(function, instruction.clone(), pc, variable)
             .context("While add statement with note")?;
 
-        let vars = self
+        let mut vars = self
             .vars
             .get(&function.name)
             .context("Cannot get functions's vars")?
-            .clone();
-        let mut vars = vars.iter().enumerate();
+            .iter()
+            .enumerate();
 
-        for (_track, var) in vars.find(|x| &x.1.name == variable) {
+        if let Some((_track, var)) = vars.find(|x| &x.1.name == variable) {
             debug!("Adding new fact for {}", var.name);
 
             if var.is_taut && pc < function.instructions.len() {
