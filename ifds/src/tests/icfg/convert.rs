@@ -9,6 +9,20 @@ use crate::grammar::*;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
+use std::fs::OpenOptions;
+use std::io::Write;
+
+/// Write the IR to a seperate file. This makes it possible
+/// to run it in the UI.
+fn write_ir(name: &str, ir: &str) {
+    let mut fs = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(format!("src/tests/icfg/ir_code/{}.ir", name))
+        .unwrap();
+    fs.write_all(&ir.as_bytes()).unwrap();
+}
+
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {
         let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
@@ -24,6 +38,8 @@ macro_rules! ir {
                 .for_each(|cause| error!("because: {}", cause));
             panic!("")
         }
+
+        write_ir($name, $ir);
 
         let (graph, state) = res.unwrap();
 
@@ -593,6 +609,32 @@ fn test_global_get_and_set() {
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         %1 = %-1
         %-2 = %1
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_set() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_set",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-1 %0 %1) {
+            %0 = 1
+            %-1 = %0
+            %1 <- CALL 1()
+        };
+
+        define 1 (param) (result 1) (define %-1 %0) {
+            %0 = %-1
+            RETURN %0;
         };
     "
     );

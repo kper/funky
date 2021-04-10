@@ -77,7 +77,10 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Assign(dest, src) if dest != variable && src != variable => {
+            Instruction::Assign(_dest, _src) if _dest == variable => {
+                //kill
+            }
+            Instruction::Assign(_dest, _src) => {
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, variable)?;
 
                 let before = state
@@ -97,9 +100,6 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                         curved: false,
                     });
                 }
-            }
-            Instruction::Assign(_dest, _src) if _dest == variable => {
-                //kill
             }
             Instruction::Unop(dest, src) if src == variable => {
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;

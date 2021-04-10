@@ -90,7 +90,9 @@ where
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
-            let init_facts = state.init_function(callee_function, start_pc).context("Error during function init")?;
+            let init_facts = state
+                .init_function(callee_function, start_pc)
+                .context("Error during function init")?;
 
             self.pacemaker(
                 callee_function,
@@ -102,6 +104,9 @@ where
                 state,
             )
             .context("Pacemaker for pass_args failed")?;
+
+            // Create all params
+            state.cache_facts(&callee_function.name, init_facts.clone())?;
 
             // Save all blocks of the `callee_function`.
             // Because we want to jump to them later.
