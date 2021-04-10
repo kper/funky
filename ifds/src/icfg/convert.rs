@@ -635,7 +635,7 @@ where
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        graph.edges.extend_from_slice(&normal_flows_debug);
+        //graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())
