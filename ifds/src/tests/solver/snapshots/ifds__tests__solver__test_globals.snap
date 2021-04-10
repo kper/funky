@@ -24,4 +24,14 @@ expression: "format!(\"{:#?}\", sinks)"
         function: "test",
         pc: 3,
     },
+    Taint {
+        variable: "%2",
+        function: "test",
+        pc: 3,
+    },
+    Taint {
+        variable: "%-1",
+        function: "test",
+        pc: 3,
+    },
 ]

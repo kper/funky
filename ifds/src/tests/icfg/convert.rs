@@ -616,7 +616,6 @@ fn test_global_get_and_set() {
 
 #[test]
 fn test_global_set() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),

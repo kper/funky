@@ -27,7 +27,7 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (59) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$\%0$] (60) at (2, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$\%0$] (75) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%1$] (76) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%1$] (88) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (89) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (90) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (91) at (0, 2) { };
@@ -102,18 +102,18 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (72) at (4, 11) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (73) at (4, 12) { };
 \node[circle,fill,inner sep=1pt,label=left:$\%0$] (74) at (5, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (77) at (5, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (78) at (5, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (79) at (5, 7) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (80) at (5, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (81) at (5, 8) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (82) at (5, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (83) at (5, 9) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (84) at (5, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (85) at (5, 10) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (86) at (5, 6) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (87) at (5, 11) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (88) at (5, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (76) at (5, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (77) at (5, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (78) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (79) at (5, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (80) at (5, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (81) at (5, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (82) at (5, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (83) at (5, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (84) at (5, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (85) at (5, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (86) at (5, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:$\%0$] (87) at (5, 12) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (95) at (4, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (96) at (4, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:$taut$] (97) at (4, 2) { };
@@ -209,7 +209,6 @@ expression: output
 		\path[->, blue] (1) [bend right] edge  node { } (73);
 		\path[->, blue] (2) [loop right] edge  node { } (2);
 		\path[->, blue] (0) [bend right] edge  node { } (75);
-		\path[->, blue] (0) [bend right] edge  node { } (76);
 		\path[->, blue] (2) [bend right] edge  node { } (46);
 		\path[->, blue] (2) [bend right] edge  node { } (47);
 		\path[->, blue] (2) [bend right] edge  node { } (48);
@@ -221,7 +220,8 @@ expression: output
 		\path[->, blue] (2) [bend right] edge  node { } (54);
 		\path[->, blue] (2) [bend right] edge  node { } (55);
 		\path[->, blue] (2) [bend right] edge  node { } (56);
-		\path[->, blue] (2) [bend right] edge  node { } (88);
+		\path[->, blue] (2) [bend right] edge  node { } (87);
+		\path[->, blue] (0) [bend right] edge  node { } (88);
 		\path[->] (0) edge (0);
 		\path[->] (0) edge (6);
 		\path[->] (6) edge (59);
@@ -307,7 +307,7 @@ expression: output
 		\path[->] (53) edge (55);
 		\path[->] (54) edge (56);
 		\path[->, bend right] (55) edge (54);
-		\path[->] (56) edge (88);
+		\path[->] (56) edge (87);
 
 
                 \end{tikzpicture}

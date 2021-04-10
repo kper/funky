@@ -204,7 +204,7 @@ where
         let mut edges = Vec::new();
 
         let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
-        debug!("Caller facts {:#?}", caller_facts);
+        debug!("Caller facts {:#?}", caller_facts); 
 
         let mut callee_facts_without_globals = state
             .get_facts_at(callee_function, callee_pc)?
@@ -221,6 +221,10 @@ where
         caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
         callee_facts_without_globals.sort_by(|a, b| a.track.cmp(&b.track));
         callee_facts_with_globals.sort_by(|a, b| a.track.cmp(&b.track));
+
+        caller_facts.dedup();
+        callee_facts_without_globals.dedup();
+        callee_facts_with_globals.dedup();
 
         debug!("caller_facts {:#?}", caller_facts);
         debug!("callee_facts {:#?}", callee_facts_without_globals);
