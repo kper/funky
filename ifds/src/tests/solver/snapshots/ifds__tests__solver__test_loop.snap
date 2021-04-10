@@ -3,20 +3,4 @@ source: src/tests/solver/mod.rs
 expression: "format!(\"{:#?}\", sinks)"
 
 ---
-[
-    Taint {
-        variable: "%0",
-        function: "main",
-        pc: 2,
-    },
-    Taint {
-        variable: "%0",
-        function: "main",
-        pc: 0,
-    },
-    Taint {
-        variable: "%0",
-        function: "main",
-        pc: 1,
-    },
-]
+[]
