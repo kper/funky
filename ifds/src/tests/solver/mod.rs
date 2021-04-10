@@ -64,18 +64,88 @@ fn test_intra_reachability() {
     "
     );
 
-    let sinks = solver
-        .all_sinks(
-            &mut graph,
-            &Request {
+    let req = Request {
                 variable: Some("%0".to_string()),
                 function: "test".to_string(),
                 pc: 0,
-            },
+            };
+    let sinks = solver
+        .all_sinks(
+            &mut graph,
+            &req,
         )
         .unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%1".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+}
+
+#[test]
+fn test_kill() {
+    let mut solver = IfdsSolver;
+
+    let name = "test_kill";
+
+    let req = Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define test (result 0) (define %0) {
+            %0 = 1
+            KILL %0
+         };
+    "
+    );
+
+    let req = Request {
+                variable: Some("%0".to_string()),
+                function: "test".to_string(),
+                pc: 0,
+            };
+    let sinks = solver
+        .all_sinks(
+            &mut graph,
+            &req,
+        )
+        .unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    // should not be reachable anymore
+    assert!(!solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%1".to_string()),
+    }).unwrap());
 }
 
 #[test]
@@ -86,7 +156,7 @@ fn test_loop() {
 
     let req = Request {
         function: "main".to_string(),
-        pc: 0,
+        pc: 1,
         variable: Some("%0".to_string()),
     };
 
@@ -105,6 +175,12 @@ fn test_loop() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "main".to_string(),
+        pc: 1,
+        variable: Some("%0".to_string()),
+    }).unwrap());
 }
 
 #[test]
@@ -138,6 +214,18 @@ fn test_functions() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%0".to_string()),
+    }).unwrap());
 }
 
 #[test]
@@ -225,6 +313,31 @@ fn test_globals() {
     let sinks = solver.all_sinks(&mut graph, &req).unwrap();
 
     assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%-1".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 2,
+        variable: Some("%2".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 2,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
 }
 
 #[test]

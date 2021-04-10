@@ -7,11 +7,11 @@ expression: "format!(\"{:#?}\", sinks)"
     Taint {
         variable: "%0",
         function: "test",
-        pc: 1,
+        pc: 0,
     },
     Taint {
         variable: "%0",
         function: "test",
-        pc: 2,
+        pc: 1,
     },
 ]

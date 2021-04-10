@@ -7,9 +7,24 @@ expression: "format!(\"{:#?}\", sinks)"
     Taint {
         variable: "%11",
         function: "0",
+        pc: 17,
+    },
+    Taint {
+        variable: "%12",
+        function: "0",
         pc: 18,
     },
     Taint {
+        variable: "%11",
+        function: "0",
+        pc: 18,
+    },
+    Taint {
+        variable: "%13",
+        function: "0",
+        pc: 19,
+    },
+    Taint {
         variable: "%12",
         function: "0",
         pc: 19,
@@ -25,6 +40,11 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 20,
     },
     Taint {
+        variable: "%2",
+        function: "0",
+        pc: 20,
+    },
+    Taint {
         variable: "%12",
         function: "0",
         pc: 20,
@@ -35,6 +55,11 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 20,
     },
     Taint {
+        variable: "%14",
+        function: "0",
+        pc: 21,
+    },
+    Taint {
         variable: "%13",
         function: "0",
         pc: 21,
@@ -45,14 +70,14 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 21,
     },
     Taint {
-        variable: "%12",
+        variable: "%11",
         function: "0",
         pc: 21,
     },
     Taint {
-        variable: "%11",
+        variable: "%3",
         function: "0",
-        pc: 21,
+        pc: 22,
     },
     Taint {
         variable: "%14",
@@ -173,30 +198,5 @@ expression: "format!(\"{:#?}\", sinks)"
         variable: "%11",
         function: "0",
         pc: 26,
-    },
-    Taint {
-        variable: "%3",
-        function: "0",
-        pc: 27,
-    },
-    Taint {
-        variable: "%14",
-        function: "0",
-        pc: 27,
-    },
-    Taint {
-        variable: "%13",
-        function: "0",
-        pc: 27,
-    },
-    Taint {
-        variable: "%2",
-        function: "0",
-        pc: 27,
-    },
-    Taint {
-        variable: "%11",
-        function: "0",
-        pc: 27,
     },
 ]

@@ -374,7 +374,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                                 .find(|x| {
                                     let mut is_ok = false;
 
-                                    if &x.function == function && x.pc - 1 == *pc {
+                                    if &x.function == function && x.pc == *pc  {
                                         is_ok = true;
                                     }
 
@@ -637,6 +637,9 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         Instruction::Return(dest) => dest.contains(&taint.variable),
         Instruction::Phi(dest, src1, src2) => {
             &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
+        }
+        Instruction::Store(src1, _, src2) => {
+            &taint.variable == src1 || &taint.variable == src2
         }
         _ => false,
     }

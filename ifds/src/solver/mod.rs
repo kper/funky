@@ -1,7 +1,7 @@
 //! The implementation for extracting the taints from the graph.
 
 use crate::icfg::graph::{Edge, Graph};
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 type PC = usize;
 
@@ -26,6 +26,9 @@ pub struct Request {
 pub trait Solver {
     /// Return all sinks of the `req`
     fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>>;
+
+    /// Check if the statement at `req` and the statement `resp` have a taint.
+    fn is_taint(&mut self, graph: &mut Graph, req: &Request, resp: &Request) -> Result<bool>;
 }
 
 impl Solver for IfdsSolver {
@@ -48,12 +51,28 @@ impl Solver for IfdsSolver {
             .filter(|x| !x.var_is_taut)
             .map(|x| Taint {
                 function: x.function.clone(),
-                pc: x.next_pc,
+                pc: x.next_pc.checked_sub(1).unwrap_or(0),
                 variable: x.belongs_to_var.clone(),
             })
             .collect();
 
         Ok(taints)
+    }
+
+    fn is_taint(&mut self, graph: &mut Graph, req: &Request, resp: &Request) -> Result<bool> {
+        let all_sinks = self
+            .all_sinks(graph, req)
+            .context("Cannot compute the sinks")?;
+
+        let var = resp
+            .variable
+            .as_ref()
+            .context("Please specify a variable for the response")?;
+
+        Ok(all_sinks
+            .into_iter()
+            .find(|x| x.function == resp.function && x.pc == resp.pc && &x.variable == var)
+            .is_some())
     }
 }
 
