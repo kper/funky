@@ -413,3 +413,66 @@ fn test_looped_param() {
 
     assert_snapshot!(name, format!("{:#?}", sinks));
 }
+
+#[test]
+fn test_memory() {
+    env_logger::init();
+    let mut solver = IfdsSolver;
+
+    let name = "test_memory";
+
+    let req = Request {
+        function: "0".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define 0 (param %0) (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+            %0 = -12345
+            STORE %0 AT 0 + %0 ALIGN 2 32
+            %4 = 8
+            %5 = LOAD %4 OFFSET 0 ALIGN 0
+            %6 = 8
+            %7 = LOAD %6 OFFSET 0 ALIGN 0
+        };
+    "
+    );
+
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "0".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "0".to_string(),
+        pc: 1,
+        variable: Some("%0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "0".to_string(),
+        pc: 1,
+        variable: Some("mem@0".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "0".to_string(),
+        pc: 3,
+        variable: Some("%5".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "0".to_string(),
+        pc: 5,
+        variable: Some("%7".to_string()),
+    }).unwrap())
+}

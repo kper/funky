@@ -641,6 +641,9 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         Instruction::Store(src1, _, src2) => {
             &taint.variable == src1 || &taint.variable == src2
         }
+        Instruction::Load(dest, _, src) => {
+            &taint.variable == dest || &taint.variable == src
+        }
         _ => false,
     }
 }
