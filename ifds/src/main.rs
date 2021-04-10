@@ -374,7 +374,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                                 .find(|x| {
                                     let mut is_ok = false;
 
-                                    if &x.function == function && x.pc == *pc {
+                                    if &x.function == function && x.pc - 1 == *pc {
                                         is_ok = true;
                                     }
 
