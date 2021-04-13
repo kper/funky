@@ -79,7 +79,11 @@ where
         // Why not dests? Because we don't care about
         // the destination for the function call in
         // `pass_args`
-        if params.contains(&caller_var) || caller_variable.is_taut || caller_variable.is_global {
+        if params.contains(&caller_var)
+            || caller_variable.is_taut
+            || caller_variable.is_global
+            || caller_variable.is_memory
+        {
             // After here, checked that the caller_var is relevant
             let callee_function = program
                 .functions
@@ -112,7 +116,7 @@ where
             // Because we want to jump to them later.
             self.resolve_block_ids(&callee_function, start_pc)?;
 
-            // Filter by variable
+            // Filter by variable type
             let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
 
             // Get the position in the parameters. If it does not exist then
@@ -121,7 +125,7 @@ where
                 .iter()
                 .position(|x| x == caller_var)
                 .map(|x| x + TAUT)
-                .unwrap_or(callee_globals);
+                .unwrap_or(callee_globals); // because, globals are before the parameters
 
             let callee_offset = match caller_variable.is_global {
                 false => callee_globals + pos_in_param, // if not global, than start at normal beginning
@@ -132,11 +136,28 @@ where
                 .get(callee_offset)
                 .context("Cannot find callee's fact")?;
 
+            let mut edges = vec![];
+
+            if caller_variable.is_memory {
+                let memory_edges = self
+                    .pass_args_memory(
+                        &caller_function,
+                        &callee_function,
+                        &caller_variable,
+                        current_pc,
+                        state,
+                    )
+                    .context("Passing memory variables to a called function failed")?;
+
+                edges.extend(memory_edges);
+            }
+
             // Last caller facts
             debug!(
                 "caller {} with current_pc {}",
                 caller_function.name, current_pc
             );
+
             let mut caller_facts = state.get_facts_at(&caller_function.name, current_pc)?;
 
             // Filter by variable
@@ -155,7 +176,6 @@ where
             // %1   -> %1
 
             // Create an edge.
-            let mut edges = vec![];
             edges.push(Edge::Call {
                 from: caller_fact.clone().clone(),
                 to: callee_fact.clone(),
@@ -170,6 +190,53 @@ where
 
             return Ok(vec![]);
         }
+    }
+
+    /// Handle the parameter argument handling for memory variables
+    fn pass_args_memory(
+        &mut self,
+        caller_function: &AstFunction,
+        callee_function: &AstFunction,
+        caller_variable: &Variable,
+        current_pc: usize,
+        state: &mut State,
+    ) -> Result<Vec<Edge>> {
+        let start_pc = 0;
+
+        let caller_facts: Vec<_> = state
+            .get_facts_at(&caller_function.name, current_pc)?
+            .filter(|x| x.var_is_memory && caller_variable.name == x.belongs_to_var)
+            .cloned()
+            .collect();
+
+        let callee_facts: Vec<_> = state
+            .get_facts_at(&callee_function.name, start_pc)?
+            .filter(|x| x.var_is_memory && caller_variable.name == x.belongs_to_var)
+            .cloned()
+            .collect();
+
+        let mut edges = Vec::new();
+        for caller_fact in caller_facts.into_iter() {
+            if let Some(callee_fact) = callee_facts
+                .iter()
+                .find(|x| caller_fact.memory_offset == x.memory_offset)
+            {
+                edges.push(Edge::Call {
+                    from: caller_fact,
+                    to: callee_fact.clone().clone(),
+                });
+            } else {
+                // the variable does not exist, therefore creating it
+                let callee_fact = state.init_memory_fact(&callee_function.name, &caller_fact)?;
+
+                edges.push(Edge::Call {
+                    from: caller_fact,
+                    to: callee_fact.clone().clone(),
+                });
+            }
+        }
+
+        Ok(edges)
     }
 
     /// Computes exit-to-return edges
@@ -204,7 +271,7 @@ where
         let mut edges = Vec::new();
 
         let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
-        debug!("Caller facts {:#?}", caller_facts); 
+        debug!("Caller facts {:#?}", caller_facts);
 
         let mut callee_facts_without_globals = state
             .get_facts_at(callee_function, callee_pc)?
@@ -603,7 +670,6 @@ where
                             debug!("Normal flow {:#?}", f);
                             let to = f.to();
 
-                            //graph.edges.push(f.clone());
                             normal_flows_debug.push(f.clone());
 
                             self.propagate(
@@ -635,7 +701,7 @@ where
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        //graph.edges.extend_from_slice(&normal_flows_debug);
+        graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())

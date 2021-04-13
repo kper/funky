@@ -1,8 +1,8 @@
 use crate::icfg::graph::*;
 use crate::ir::ast::Function as AstFunction;
 
-use crate::{counter::Counter};
-use anyhow::{Context, Result};
+use crate::counter::Counter;
+use anyhow::{bail, Context, Result};
 use std::collections::hash_map::Entry;
 
 use log::debug;
@@ -95,6 +95,42 @@ impl State {
         }
 
         var
+    }
+
+    /// Initialise memory fact from `from_caller` for function `function` and return it.
+    pub fn init_memory_fact(&mut self, function: &String, from_caller: &Fact) -> Result<&Fact> {
+        if let Some(vars) = self.vars.get_mut(function) {
+            vars.push(Variable {
+                name: from_caller.belongs_to_var.clone(),
+                function: function.clone(),
+                is_global: false,
+                is_taut: false,
+                is_memory: true,
+                memory_offset: from_caller.memory_offset.clone(),
+            });
+
+            let fact = Fact {
+                belongs_to_var: from_caller.belongs_to_var.clone(),
+                var_is_global: false,
+                var_is_taut: false,
+                var_is_memory: true,
+                next_pc: 0,
+                track: vars.len() - 1,
+                function: function.clone(),
+                memory_offset: from_caller.memory_offset,
+            };
+
+
+            let init_facts = self
+                .init_facts
+                .get_mut(function)
+                .context("Cannot find init facts")?;
+            init_facts.push(fact.clone());
+
+            return Ok(self.cache_fact(function, fact.clone())?);
+        }
+
+        bail!("Cannot find variable. Function was probably not initialised")
     }
 
     /// Initialise the function.

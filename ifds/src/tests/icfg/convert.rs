@@ -809,3 +809,65 @@ fn test_memory_load() {
     "
     );
 }
+
+#[test]
+fn test_memory_load_different_functions() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load_different_functions",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE %1 AT 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD %1 OFFSET 0 ALIGN 0
+        RETURN %0;
+       };
+    "
+    );
+}
+
+#[test]
+fn test_memory_load_different_functions2() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load_different_functions2",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE %1 AT 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        STORE %1 AT 1 + %0 ALIGN 2 32
+        %3 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD %1 OFFSET 0 ALIGN 0
+        RETURN %0;
+       };
+    "
+    );
+}
+
+
