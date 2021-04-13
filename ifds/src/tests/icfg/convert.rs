@@ -9,12 +9,13 @@ use crate::grammar::*;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, create_dir};
 use std::io::Write;
 
 /// Write the IR to a seperate file. This makes it possible
 /// to run it in the UI.
 fn write_ir(name: &str, ir: &str) {
+    let _ = create_dir("src/tests/icfg/ir_code");
     let mut fs = OpenOptions::new()
         .write(true)
         .create(true)
