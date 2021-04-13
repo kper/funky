@@ -266,7 +266,15 @@ where
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let caller_facts = state.get_facts_at(caller_function, caller_pc + 1)?;
+        let caller_facts = state
+            .get_facts_at(caller_function, caller_pc + 1)?
+            .filter(|x| !x.var_is_memory);
+
+        let caller_facts_memory: Vec<_> = state
+            .get_facts_at(caller_function, caller_pc + 1)?
+            .filter(|x| x.var_is_memory)
+            .cloned()
+            .collect();
 
         let mut edges = Vec::new();
 
@@ -275,13 +283,19 @@ where
 
         let mut callee_facts_without_globals = state
             .get_facts_at(callee_function, callee_pc)?
-            .filter(|x| !x.var_is_global)
+            .filter(|x| !x.var_is_global && !x.var_is_memory)
             .cloned()
             .collect::<Vec<_>>();
 
         let mut callee_facts_with_globals = state
             .get_facts_at(callee_function, callee_pc)?
             .filter(|x| x.var_is_global)
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let callee_facts_with_memory = state
+            .get_facts_at(callee_function, callee_pc)?
+            .filter(|x| x.var_is_memory)
             .cloned()
             .collect::<Vec<_>>();
 
@@ -294,7 +308,12 @@ where
         callee_facts_with_globals.dedup();
 
         debug!("caller_facts {:#?}", caller_facts);
-        debug!("callee_facts {:#?}", callee_facts_without_globals);
+        debug!(
+            "callee_facts without globals {:#?}",
+            callee_facts_without_globals
+        );
+        debug!("callee_facts with globals {:#?}", callee_facts_with_globals);
+        debug!("callee_facts with memory {:#?}", callee_facts_with_memory);
 
         // Generate edges for all dest + taut
         debug!("=> dest {:?}", dest);
@@ -367,6 +386,47 @@ where
                 from: from.clone().clone(),
                 to: to.clone(),
             });
+        }
+
+        // Edges only for memory
+        for from in callee_facts_with_memory.clone().into_iter() {
+            if let Some(caller_fact) = caller_facts_memory
+                .iter()
+                .find(|x| x.belongs_to_var == from.belongs_to_var)
+            {
+                edges.push(Edge::Return {
+                    from: from.clone().clone(),
+                    to: caller_fact.clone(),
+                });
+            } else {
+                state.add_memory_var(
+                    from.belongs_to_var.clone(),
+                    caller_function.clone(),
+                    from.memory_offset.unwrap(),
+                );
+
+                let track = state
+                    .get_track(caller_function, &from.belongs_to_var) //name must match
+                    .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
+
+                let fact = Fact {
+                    belongs_to_var: from.belongs_to_var.clone(),
+                    function: caller_function.clone(),
+                    next_pc: caller_pc + 1,
+                    track,
+                    var_is_global: false,
+                    var_is_taut: false,
+                    var_is_memory: true,
+                    memory_offset: from.memory_offset.clone(),
+                };
+
+                let to = state.cache_fact(caller_function, fact)?;
+
+                edges.push(Edge::Return {
+                    from: from.clone().clone(),
+                    to: to.clone(),
+                });
+            }
         }
 
         Ok(edges)
@@ -637,8 +697,14 @@ where
                         )?;
                     }
                     Instruction::Return(_dest) => {
+                        let new_function = program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d2.function)
+                            .context("Cannot find function")?;
+
                         self.handle_return(
-                            program,
+                            new_function,
                             d2,
                             graph,
                             normal_flows_debug,
@@ -867,9 +933,9 @@ where
         })
     }
 
-    fn handle_return(
+    pub(crate) fn handle_return(
         &mut self,
-        program: &Program,
+        new_function: &AstFunction,
         d2: &Fact,
         graph: &mut Graph,
         normal_flows_debug: &mut Vec<Edge>,
@@ -879,12 +945,6 @@ where
         end_summary: &mut HashMap<(String, usize, String), Vec<Fact>>,
         state: &mut State,
     ) -> Result<(), anyhow::Error> {
-        let new_function = program
-            .functions
-            .iter()
-            .find(|x| x.name == d2.function)
-            .context("Cannot find function")?;
-
         for f in self
             .normal_flow
             .flow(
@@ -913,6 +973,7 @@ where
             )?;
         }
         assert_eq!(d1.function, d2.function);
+        /*
         let first_statement_pc_callee = graph //TODO
             .edges
             .iter()
@@ -920,7 +981,10 @@ where
             .map(|x| x.get_from().next_pc)
             .min()
             .context("Cannot find first statement's pc of callee")
-            .unwrap_or(0);
+            .unwrap_or(0);*/
+
+        let first_statement_pc_callee = state.get_min_pc(&d1.function)?;
+
         if let Some(end_summary) = end_summary.get_mut(&(
             d1.function.clone(),
             first_statement_pc_callee,
@@ -1101,7 +1165,7 @@ where
     /// Creates the control flow of taut facts.
     /// This is the backbone of the program.
     /// It also propagates them to the `path_edge`.
-    fn pacemaker(
+    pub(crate) fn pacemaker(
         &self,
         function: &AstFunction,
         graph: &mut Graph,

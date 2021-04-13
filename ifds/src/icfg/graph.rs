@@ -21,7 +21,7 @@ pub struct Note {
 
 /// A fact is an variable at a given instruction. The instruction is defined
 /// as `next_pc`.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
 pub struct Fact {
     pub belongs_to_var: VarId,
     pub var_is_global: bool,

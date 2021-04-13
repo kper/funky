@@ -29,7 +29,7 @@ pub enum Instruction {
     Const(Dest, f64),
     Assign(Dest, Src),
     Jump(String),
-    Call(String, Vec<Reg>, Regs),
+    Call(String, Regs, Regs),
     Kill(Dest),
     Conditional(Src, Vec<String>),
     Return(Vec<Reg>),

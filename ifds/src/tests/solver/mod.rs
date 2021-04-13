@@ -459,3 +459,47 @@ fn test_memory() {
         variable: Some("%7".to_string()),
     }).unwrap())
 }
+
+#[test]
+fn test_ir_multiple_functions() {
+    let mut solver = IfdsSolver;
+
+    let name = "test_multiple_functions";
+
+    let req = Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let mut graph = ir!(
+        name,
+        req,
+        "
+        define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0)  {
+            RETURN %0;
+        };
+    "
+    );
+
+    let sinks = solver.all_sinks(&mut graph, &req).unwrap();
+
+    assert_snapshot!(name, format!("{:#?}", sinks));
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 1,
+        variable: Some("%1".to_string()),
+    }).unwrap());
+
+    assert!(solver.is_taint(&mut graph, &req, &Request {
+        function: "test".to_string(),
+        pc: 2,
+        variable: Some("%2".to_string()),
+    }).unwrap());
+}

@@ -22,7 +22,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
 
         let instructions = &function.instructions;
 
-        let instruction = instructions.get(pc).context("Cannot find instr")?;
+        let instruction = instructions
+            .get(pc)
+            .context("Cannot find instruction when calculating normal flows")?;
         debug!("Next instruction is {:?} for {}", instruction, variable);
 
         let is_taut = variable == &"taut".to_string();
@@ -567,9 +569,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
-                    .filter(|x| {
-                        x.memory_offset.is_some() || _i == variable
-                    });
+                    .filter(|x| x.memory_offset.is_some() || _i == variable);
 
                 let after = state
                     .get_facts_at(&function.name, pc + 1)?

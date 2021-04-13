@@ -38,6 +38,14 @@ impl State {
         self.functions.get(name).is_some()
     }
 
+    pub fn get_min_pc(&self, function: &String) -> Result<usize> {
+        if let Some(facts) = self.init_facts.get(function) {
+            return Ok(facts.get(0).unwrap().next_pc.checked_sub(1).unwrap_or(0));
+        }
+
+        bail!("Cannot find function")
+    }
+
     /// Saving facts into an internal structure for fast lookup.
     pub fn cache_facts(&mut self, function: &String, facts: Vec<Fact>) -> Result<&[Fact]> {
         match self.facts.entry(function.clone()) {
@@ -119,7 +127,6 @@ impl State {
                 function: function.clone(),
                 memory_offset: from_caller.memory_offset,
             };
-
 
             let init_facts = self
                 .init_facts

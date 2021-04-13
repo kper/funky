@@ -363,6 +363,27 @@ fn test_ir_functions() {
 }
 
 #[test]
+fn test_ir_multiple_functions() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_multiple_functions",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0)  {
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
 fn test_ir_functions_rename_reg() {
     let req = Request {
         variable: None,
@@ -812,6 +833,7 @@ fn test_memory_load() {
 
 #[test]
 fn test_memory_load_different_functions() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),
