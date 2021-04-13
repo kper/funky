@@ -57,11 +57,10 @@ where
     }
 
     /// Computes call-to-start edges
-    fn pass_args(
+    pub(crate) fn pass_args(
         &mut self,
-        program: &Program,
         caller_function: &AstFunction,
-        callee_function: &String,
+        callee_function: &AstFunction,
         params: &Vec<String>,
         graph: &mut Graph,
         current_pc: usize,
@@ -84,18 +83,11 @@ where
             || caller_variable.is_global
             || caller_variable.is_memory
         {
-            // After here, checked that the caller_var is relevant
-            let callee_function = program
-                .functions
-                .iter()
-                .find(|x| &x.name == callee_function)
-                .context("Cannot find function")?;
-
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
             let init_facts = state
-                .init_function(callee_function, start_pc)
+                .init_function(&callee_function, start_pc)
                 .context("Error during function init")?;
 
             self.pacemaker(
@@ -127,9 +119,10 @@ where
                 .map(|x| x + TAUT)
                 .unwrap_or(callee_globals); // because, globals are before the parameters
 
-            let callee_offset = match caller_variable.is_global {
-                false => callee_globals + pos_in_param, // if not global, than start at normal beginning
-                true => pos_in_param,                   //look for the global
+            let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
+                (true, _) => 0,
+                (false, false) => callee_globals + pos_in_param, // if not global, than start at normal beginning
+                (false, true) => pos_in_param,                   //look for the global
             };
 
             let callee_fact = init_facts
@@ -185,7 +178,7 @@ where
         } else {
             debug!(
                 "Caller's variable is not a parameter {} in {:?} for {}",
-                caller_var, params, callee_function
+                caller_var, params, callee_function.name
             );
 
             return Ok(vec![]);
@@ -800,11 +793,16 @@ where
             .find(|x| x.name == d1.function)
             .context("Cannot find function for the caller")?;
 
+        let callee_function = program
+                .functions
+                .iter()
+                .find(|x| &x.name == callee)
+                .context("Cannot find function")?;
+
         let call_edges = self
             .pass_args(
-                program,
                 caller_function,
-                callee,
+                callee_function,
                 params,
                 graph,
                 d2.next_pc,
@@ -834,7 +832,6 @@ where
             )?; //self loop
 
             //Add incoming
-
             if let Some(incoming) = incoming.get_mut(&(
                 d3.to().function.clone(),
                 d3.to().next_pc,
@@ -973,15 +970,6 @@ where
             )?;
         }
         assert_eq!(d1.function, d2.function);
-        /*
-        let first_statement_pc_callee = graph //TODO
-            .edges
-            .iter()
-            .filter(|x| x.get_from().function == d1.function && x.to().function == d1.function)
-            .map(|x| x.get_from().next_pc)
-            .min()
-            .context("Cannot find first statement's pc of callee")
-            .unwrap_or(0);*/
 
         let first_statement_pc_callee = state.get_min_pc(&d1.function)?;
 
