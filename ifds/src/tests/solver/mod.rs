@@ -25,22 +25,6 @@ macro_rules! ir {
     }};
 }
 
-fn vars(sink: &Vec<Taint>) -> Vec<String> {
-    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.variable.clone()).collect();
-    touched_vars.sort_unstable();
-    touched_vars.dedup();
-
-    touched_vars
-}
-
-fn functions(sink: &Vec<Taint>) -> Vec<String> {
-    let mut touched_vars: Vec<_> = sink.iter().map(|x| x.function.clone()).collect();
-    touched_vars.sort_unstable();
-    touched_vars.dedup();
-
-    touched_vars
-}
-
 #[test]
 fn test_intra_reachability() {
     let mut solver = IfdsSolver;
@@ -416,7 +400,6 @@ fn test_looped_param() {
 
 #[test]
 fn test_memory() {
-    env_logger::init();
     let mut solver = IfdsSolver;
 
     let name = "test_memory";

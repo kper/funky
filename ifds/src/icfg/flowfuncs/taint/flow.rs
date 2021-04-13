@@ -558,20 +558,17 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Load(dest, offset, _i) => {
+            Instruction::Load(dest, _offset, _i) => {
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, &dest)?;
-
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, &variable)?;
 
-                // we cannot know which exact variables, because we only
-                // know the `offset`. But, we can eliminate all cases
-                // where the offset is higher, so they can't be meant.
+                // Here happens the overtainting, because we take all
+                // memory variables
                 let before = state
                     .get_facts_at(&function.name, pc)?
                     .into_iter()
                     .filter(|x| {
-                        (x.memory_offset.is_some() && x.memory_offset <= Some(*offset))
-                            || _i == variable
+                        x.memory_offset.is_some() || _i == variable
                     });
 
                 let after = state
