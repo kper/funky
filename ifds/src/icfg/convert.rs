@@ -998,7 +998,7 @@ where
         Ok(())
     }
 
-    fn end_procedure(
+    pub(crate) fn end_procedure(
         &mut self,
         program: &Program,
         graph: &mut Graph,
