@@ -1108,7 +1108,7 @@ where
                             .filter(|x| {
                                 x.to() == d4
                                     && &x.get_from().function == &d4.function
-                                    && x.get_from().next_pc == 0
+                                    //&& x.get_from().next_pc == 0
                             })
                             .cloned()
                             .collect();
