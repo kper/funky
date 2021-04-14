@@ -568,6 +568,7 @@ where
             &mut normal_flows_debug,
             &mut graph,
             state,
+            req.pc
         )?;
 
         Ok(())
@@ -634,6 +635,7 @@ where
         normal_flows_debug: &mut Vec<Edge>,
         graph: &mut Graph,
         state: &mut State,
+        start_pc: usize,
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
@@ -668,9 +670,9 @@ where
                 match n {
                     Instruction::Call(callee, params, dest) => {
                         self.handle_call(
-                            d2,
-                            program,
+                            &program,
                             d1,
+                            d2,
                             callee,
                             params,
                             graph,
@@ -679,12 +681,12 @@ where
                             &mut incoming,
                             &end_summary,
                             function,
-                            instructions,
                             summary_edge,
                             dest,
                             pc,
                             normal_flows_debug,
                             state,
+                            start_pc
                         )?;
                     }
                     Instruction::Return(_dest) => {
@@ -766,9 +768,9 @@ where
 
     fn handle_call(
         &mut self,
-        d2: &Fact,
         program: &Program,
         d1: &Fact,
+        d2: &Fact,
         callee: &String,
         params: &Vec<String>,
         graph: &mut Graph,
@@ -777,12 +779,12 @@ where
         incoming: &mut HashMap<(String, usize, String), Vec<Fact>>,
         end_summary: &HashMap<(String, usize, String), Vec<Fact>>,
         function: &AstFunction,
-        instructions: &Vec<Instruction>,
         summary_edge: &mut Vec<Edge>,
         dest: &Vec<String>,
         pc: usize,
         normal_flows_debug: &mut Vec<Edge>,
         state: &mut State,
+        start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let caller_var = &d2.belongs_to_var;
         let caller_function = &program
@@ -790,6 +792,8 @@ where
             .iter()
             .find(|x| x.name == d1.function)
             .context("Cannot find function for the caller")?;
+
+        let caller_instructions = &caller_function.instructions;
 
         let callee_function = program
             .functions
@@ -878,7 +882,7 @@ where
                         &d4.function,
                         d2.next_pc,
                         d4.next_pc,
-                        &instructions,
+                        caller_instructions,
                         graph,
                         &return_vals,
                         state,
@@ -911,10 +915,12 @@ where
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
             let taut = state
-                .get_taut(&d3.get_from().function)
-                .unwrap()
-                .unwrap()
+                .get_facts_at(&d3.get_from().function, start_pc)
+                .context("Cannot find start facts")?
+                .find(|x| x.var_is_taut)
+                .context("Cannot find tautological start fact")?
                 .clone();
+
             normal_flows_debug.push(d3.clone());
             self.propagate(
                 graph,
@@ -1106,9 +1112,8 @@ where
                         let edges: Vec<_> = path_edge
                             .iter()
                             .filter(|x| {
-                                x.to() == d4
-                                    && &x.get_from().function == &d4.function
-                                    //&& x.get_from().next_pc == 0
+                                x.to() == d4 && &x.get_from().function == &d4.function
+                                //&& x.get_from().next_pc == 0
                             })
                             .cloned()
                             .collect();

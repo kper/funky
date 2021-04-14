@@ -833,7 +833,6 @@ fn test_memory_load() {
 
 #[test]
 fn test_memory_load_different_functions() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),
