@@ -331,7 +331,7 @@ fn test_normal_argument_passing_taut() {
 }
 
 #[test]
-fn test_give_global_variable() {
+fn test_pass_global_variable() {
     let (mut convert, mut graph, mut path_edge, mut worklist, _end_summary, mut normal_flows) =
         setup();
 
@@ -409,6 +409,96 @@ fn test_give_global_variable() {
                 function: "test".to_string(),
                 track: 1,
                 var_is_global: true,
+                ..Default::default()
+            }
+        }]
+    );
+}
+
+#[test]
+fn test_pass_memory() {
+    let (mut convert, mut graph, mut path_edge, mut worklist, _end_summary, mut normal_flows) =
+        setup();
+
+    let mut state = State::default();
+
+    let caller_function = AstFunction {
+        name: "main".to_string(),
+        results_len: 0,
+        definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+        instructions: vec![
+            Instruction::Const("%0".to_string(), 0.0),
+            Instruction::Const("%1".to_string(), 0.0),
+            Instruction::Store("%0".to_string(), 0.0, "%1".to_string()),
+            Instruction::Call("test".to_string(), vec![], vec!["%2".to_string()]),
+        ],
+        ..Default::default()
+    };
+
+    let callee_function = AstFunction {
+        name: "test".to_string(),
+        params: vec![],
+        results_len: 1,
+        definitions: vec!["%0".to_string(), "%1".to_string()],
+        instructions: vec![
+            Instruction::Const("%0".to_string(), 0.0),
+            Instruction::Load("%1".to_string(), 0.0, "%0".to_string()),
+            Instruction::Return(vec!["%1".to_string()]),
+        ],
+    };
+
+    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+
+    let _ = convert
+        .pacemaker(
+            &caller_function,
+            &mut graph,
+            &mut path_edge,
+            &mut worklist,
+            &mut normal_flows,
+            &caller_init_facts,
+            &mut state,
+        )
+        .unwrap();
+    
+    let _ = state.add_memory_var(caller_function.name.clone(), 0.0);
+
+    let foo = Fact {
+        belongs_to_var: "mem@0".to_string(),
+        function: "main".to_string(),
+        next_pc: 1, //this is an edge case
+        track: 2,
+        var_is_memory: true,
+        ..Default::default()
+    };
+
+    let _ = state.cache_fact(&caller_function.name, foo.clone());
+
+    let call_to_start_edges = convert
+        .pass_args(
+            &caller_function,
+            &callee_function,
+            &vec![],
+            &mut graph,
+            1,
+            &"mem@0".to_string(),
+            &mut normal_flows,
+            &mut path_edge,
+            &mut worklist,
+            &mut state,
+        )
+        .unwrap();
+
+    assert_eq!(call_to_start_edges.len(), 1);
+    assert_eq!(
+        call_to_start_edges,
+        vec![Edge::Call {
+            from: foo,
+            to: Fact {
+                belongs_to_var: "mem@0".to_string(),
+                function: "test".to_string(),
+                track: 3,
+                var_is_memory: true,
                 ..Default::default()
             }
         }]

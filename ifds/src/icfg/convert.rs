@@ -143,6 +143,8 @@ where
                     .context("Passing memory variables to a called function failed")?;
 
                 edges.extend(memory_edges);
+
+                return Ok(edges);
             }
 
             // Last caller facts
@@ -392,11 +394,7 @@ where
                     to: caller_fact.clone(),
                 });
             } else {
-                state.add_memory_var(
-                    from.belongs_to_var.clone(),
-                    caller_function.clone(),
-                    from.memory_offset.unwrap(),
-                );
+                state.add_memory_var(caller_function.clone(), from.memory_offset.unwrap());
 
                 let track = state
                     .get_track(caller_function, &from.belongs_to_var) //name must match
@@ -794,10 +792,10 @@ where
             .context("Cannot find function for the caller")?;
 
         let callee_function = program
-                .functions
-                .iter()
-                .find(|x| &x.name == callee)
-                .context("Cannot find function")?;
+            .functions
+            .iter()
+            .find(|x| &x.name == callee)
+            .context("Cannot find function")?;
 
         let call_edges = self
             .pass_args(
