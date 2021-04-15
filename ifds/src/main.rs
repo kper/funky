@@ -711,6 +711,9 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         Instruction::Call(_callee, params, dest) => {
             params.contains(&taint.variable) || dest.contains(&taint.variable)
         }
+        Instruction::CallIndirect(_callee, params, dest) => {
+            params.contains(&taint.variable) || dest.contains(&taint.variable)
+        }
         Instruction::Kill(dest) => &taint.variable == dest,
         Instruction::Conditional(dest, _) => &taint.variable == dest,
         Instruction::Return(dest) => dest.contains(&taint.variable),
