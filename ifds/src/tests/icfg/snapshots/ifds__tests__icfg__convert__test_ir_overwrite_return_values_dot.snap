@@ -16,20 +16,20 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:$taut$] (0) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (3) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (4) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (5) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (6) at (1, 1) { };
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (5) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (1, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Call(mytest, [0], [0])};
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (1) at (3, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (2) at (4, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (7) at (3, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (8) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (9) at (3, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:$taut$] (10) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:$\%0$] (11) at (4, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (4, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (9) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (10) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (11) at (4, 0) { };
 \node[font=\tiny] (note_2) at (1.5, 0.5) {Const(0, 2.0)};
 \node[font=\tiny] (note_3) at (1.5, 1.5) {Const(1, 3.0)};
 \node[font=\tiny] (note_4) at (1.5, 2.5) {Return([1])};

@@ -25,6 +25,10 @@ pub struct State {
 }
 
 impl State {
+    #[allow(dead_code)]
+    /// Get the tautological fact for a function.
+    /// Be careful with this function, because it will not return
+    /// the correct taut if the `start_pc` was not at the first instruction.
     pub fn get_taut(&self, function: &String) -> Result<Option<&Fact>> {
         Ok(self
             .facts

@@ -21,7 +21,7 @@ impl<'a> FactWrapper<'a> {
 pub fn render_to(graph: &Graph, state: &State) -> String {
     let mut str_vars = String::new();
 
-    let mut index = 0;
+    let mut index = 0.0;
     let mut functions: Vec<_> = state.functions.iter().map(|(_, f)| f).collect();
 
     functions.sort_by(|a, b| b.name.cmp(&a.name));
@@ -69,20 +69,22 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
 
         let notes = state.notes.iter().filter(|x| &x.function == function_name);
 
-        let mut vars : Vec<_> = facts.clone().map(|x| &x.get().belongs_to_var).collect();
-        vars.sort_by(|a, b| {
-            b.cmp(a)
-        });
+        let mut vars: Vec<_> = facts.clone().map(|x| &x.get().belongs_to_var).collect();
+        vars.sort_by(|a, b| b.cmp(a));
         vars.dedup();
 
         for fact in facts {
             debug!("Drawing fact");
 
             str_vars.push_str(&format!(
-                "\\node[circle,fill,inner sep=1pt,label=left:${}$] ({}) at ({}, {}) {{ }};\n",
-                fact.get().belongs_to_var.replace("%", "\\%"),
+                "\\node[circle,fill,inner sep=1pt,label=left:{{\\scriptsize ${}$}}] ({}) at ({}, {}) {{ }};\n",
+                fact.get().belongs_to_var.replace("%", "\\%").replace("mem", ""),
                 fact.id,
-                index + vars.iter().position(|x| x == &&fact.get().belongs_to_var).unwrap(),
+                index as f64
+                    + vars
+                        .iter()
+                        .position(|x| x == &&fact.get().belongs_to_var)
+                        .unwrap() as f64,
                 fact.get().next_pc,
             ));
         }
@@ -99,7 +101,7 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
             ));
         }
 
-        index += function.definitions + TAU + 1;
+        index += (function.definitions + TAU + 1) as f64;
     }
 
     let get_fact_id = |fact| {
