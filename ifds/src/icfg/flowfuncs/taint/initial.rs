@@ -266,6 +266,30 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                         }
                     }
                 }
+                Instruction::Load(dest, _offset, _i) => {
+                    let before2 = vec![init_fact.clone()];
+
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
+
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
+                    }
+                }
                 _ => {
                     bail!("Selected instruction is not supported. Please choose the next one.")
                 }
