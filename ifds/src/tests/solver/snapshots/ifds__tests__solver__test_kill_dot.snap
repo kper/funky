@@ -1,0 +1,32 @@
+---
+source: src/tests/solver/mod.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (1, 1) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Kill(0)};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->, blue] (0) [bend right] edge  node { } (1);
+		\path[->, blue] (0) [bend right] edge  node { } (2);
+		\path[->, blue] (0) [bend right] edge  node { } (3);
+
+
+                \end{tikzpicture}
+            \end{document}

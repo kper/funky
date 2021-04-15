@@ -1,0 +1,12 @@
+---
+source: src/tests/solver/mod.rs
+expression: "format!(\"{:#?}\", sinks)"
+
+---
+[
+    Taint {
+        variable: "%0",
+        function: "test",
+        pc: 0,
+    },
+]

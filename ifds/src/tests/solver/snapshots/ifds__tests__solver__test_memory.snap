@@ -1,0 +1,82 @@
+---
+source: src/tests/solver/mod.rs
+expression: "format!(\"{:#?}\", sinks)"
+
+---
+[
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 0,
+    },
+    Taint {
+        variable: "mem@0",
+        function: "0",
+        pc: 1,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 1,
+    },
+    Taint {
+        variable: "mem@0",
+        function: "0",
+        pc: 2,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 2,
+    },
+    Taint {
+        variable: "%5",
+        function: "0",
+        pc: 3,
+    },
+    Taint {
+        variable: "mem@0",
+        function: "0",
+        pc: 3,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 3,
+    },
+    Taint {
+        variable: "%5",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
+        variable: "mem@0",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
+        variable: "%5",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%7",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "mem@0",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 5,
+    },
+]

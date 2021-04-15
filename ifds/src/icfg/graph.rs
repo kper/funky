@@ -1,0 +1,105 @@
+#![allow(dead_code)]
+
+type VarId = String;
+type FunctionName = String;
+
+/// The datastructure for the graph.
+#[derive(Debug, Default)]
+pub struct Graph {
+    pub edges: Vec<Edge>,
+}
+
+/// A helper struct for the graph representation in `tikz`
+/// An instruction is a note in the .tex file because it makes the graph easier to read.
+#[derive(Debug, Clone)]
+pub struct Note {
+    pub id: usize,
+    pub function: String,
+    pub pc: usize,
+    pub note: String,
+}
+
+/// A fact is an variable at a given instruction. The instruction is defined
+/// as `next_pc`.
+#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
+pub struct Fact {
+    pub belongs_to_var: VarId,
+    pub var_is_global: bool,
+    pub var_is_taut: bool,
+    pub var_is_memory: bool,
+    pub next_pc: usize,
+    pub track: usize,
+    pub function: FunctionName,
+    /// if the fact saves a memory variable
+    /// then save the offset.
+    pub memory_offset: Option<f64>,
+}
+
+/// An IFDS representation for a function.
+#[derive(Debug)]
+pub struct Function {
+    pub name: FunctionName,
+    pub definitions: usize,
+    pub return_count: usize,
+}
+
+/// The register which will be used at some point in the module.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Variable {
+    pub name: FunctionName,
+    pub function: FunctionName,
+    /// variable is a global variable
+    pub is_global: bool,
+    /// variable represents the tautological fact
+    pub is_taut: bool,
+    /// variable is a memory variable
+    pub is_memory: bool,
+    /// if variable is a memory variable, then also save
+    /// the memory's offset
+    pub memory_offset: Option<f64>,
+}
+
+/// The datastructure for an edge in the graph.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Edge {
+    Normal { from: Fact, to: Fact, curved: bool },
+    Call { from: Fact, to: Fact },
+    CallToReturn { from: Fact, to: Fact },
+    Return { from: Fact, to: Fact },
+    Path { from: Fact, to: Fact },
+    Summary { from: Fact, to: Fact },
+}
+
+impl Edge {
+    /// Extract `from`'s [`Fact`] from the edge, no matter which variant.
+    pub fn get_from(&self) -> &Fact {
+        match self {
+            Edge::Normal {
+                from,
+                to: _,
+                curved: _,
+            } => from,
+            Edge::Call { from, to: _ } => from,
+            Edge::CallToReturn { from, to: _ } => from,
+            Edge::Return { from, to: _ } => from,
+            Edge::Path { from, to: _ } => from,
+            Edge::Summary { from, to: _ } => from,
+        }
+    }
+
+    /// Extract `to`'s [`Fact`] from the edge, no matter which variant.
+    pub fn to(&self) -> &Fact {
+        match self {
+            Edge::Normal {
+                from: _,
+                to,
+                curved: _,
+            } => to,
+            Edge::Call { from: _, to } => to,
+            Edge::CallToReturn { from: _, to } => to,
+            Edge::Return { from: _, to } => to,
+            Edge::Path { from: _, to } => to,
+            Edge::Summary { from: _, to } => to,
+        }
+    }
+}

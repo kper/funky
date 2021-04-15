@@ -1,0 +1,35 @@
+[package]
+name = "ifds"
+version = "0.1.0"
+authors = ["Kevin Per <kevin.per@protonmail.com>"]
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+env_logger = "0.7"
+log = { version = "*", features = ["release_max_level_off"] }
+structopt = { version = "0.3", default-features = false }
+anyhow = "1.0.32"
+wasm-parser = { path = "./../wasm_parser" }
+validation = { path = "./../validation" }
+funky = { path = "../" }
+lalrpop-util = "0.19.4"
+regex = "1"
+dot = "0.1.4"
+tui = "0.14"
+termion = "1.5"
+
+[dev-dependencies]
+insta = "*"
+tempfile = "*"
+criterion = "0.3"
+
+[build-dependencies]
+lalrpop = "0.19.4"
+
+[profile.release]
+lto = true
+
+[[bench]]
+name = "bench"
+harness = false

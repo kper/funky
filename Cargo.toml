@@ -13,7 +13,7 @@ members = [
 	"custom_display"
 ]
 exclude = [
-	"ide"
+	"ifds"
 ]
 
 [lib]
