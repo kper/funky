@@ -38,10 +38,12 @@ impl State {
             .find(|x| x.var_is_taut))
     }
 
+    /// Checks if the function by the given `name` was defined
     pub fn is_function_defined(&self, name: &String) -> bool {
         self.functions.get(name).is_some()
     }
 
+    /// Finds the fact with lowest `next_pc` and returns it.
     pub fn get_min_pc(&self, function: &String) -> Result<usize> {
         if let Some(facts) = self.init_facts.get(function) {
             return Ok(facts.get(0).unwrap().next_pc.checked_sub(1).unwrap_or(0));
@@ -67,6 +69,8 @@ impl State {
         }
     }
 
+    /// Save the fact in the cache datastructure for the given function.
+    /// Then return the reference to it.
     pub fn cache_fact(&mut self, function: &String, fact: Fact) -> Result<&Fact> {
         let v = vec![fact];
         let res = self.cache_facts(function, v)?;
