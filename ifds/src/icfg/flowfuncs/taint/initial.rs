@@ -1,4 +1,5 @@
 use crate::icfg::flowfuncs::*;
+use anyhow::bail;
 
 pub struct TaintInitialFlowFunction;
 
@@ -234,7 +235,9 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                         }
                     }
                 }
-                _ => {}
+                _ => {
+                    bail!("Selected instruction is not supported. Please choose the next one.")
+                }
             }
 
             break;
