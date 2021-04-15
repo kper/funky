@@ -349,6 +349,15 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
             }
         }
 
+        struct Line<'a> {
+            instruction: Option<&'a Instruction>,
+            pc: usize,
+            is_taint: bool,
+            is_function: bool,
+            line_no: usize,
+            function: &'a str,
+        }
+
         terminal
             .draw(|f| {
                 let size = f.size();
@@ -363,6 +372,76 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                     .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
                     .split(f.size());
 
+                let mut code: Vec<Line> = stateful
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(|(_index, (pc, _line_no, instruction, function))| {
+                        if let Some(instruction) = instruction {
+                            Line {
+                                instruction: Some(instruction),
+                                pc: *pc,
+                                is_taint: false,
+                                is_function: false,
+                                line_no,
+                                function,
+                            }
+                        } else {
+                            Line {
+                                instruction: instruction.clone(),
+                                pc: *pc,
+                                is_taint: false,
+                                is_function: true,
+                                line_no,
+                                function,
+                            }
+                        }
+                    })
+                    .collect();
+
+                for taint in taints.iter() {
+                    let i = code
+                        .iter_mut()
+                        .find(|x| x.function == taint.function.as_str() && x.pc == taint.pc);
+
+                    if let Some(line) = i {
+                        if let Some(instruction) = line.instruction {
+                            if match_taint(instruction, &&taint) {
+                                line.is_taint = true;
+                            }
+                        }
+                    }
+                }
+
+                let items: Vec<ListItem> = code
+                    .iter()
+                    .map(|x| {
+                        if !x.is_function {
+                            if x.is_taint {
+                                ListItem::new(Spans::from(Span::styled(
+                                    format!("{:02}| {:?}", x.pc, x.instruction.unwrap()),
+                                    Style::default()
+                                        .bg(Color::LightRed)
+                                        .add_modifier(Modifier::BOLD),
+                                )))
+                            } else {
+                                ListItem::new(Spans::from(Span::styled(
+                                    format!("{:02}| {:?}", x.pc, x.instruction.unwrap()),
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                )))
+                            }
+                        } else {
+                            ListItem::new(Spans::from(Span::styled(
+                                format!("{:02}| Function {}", x.pc, x.function),
+                                Style::default()
+                                    .bg(Color::LightGreen)
+                                    .add_modifier(Modifier::BOLD),
+                            )))
+                        }
+                    })
+                    .collect();
+
+                /*
                 let items: Vec<ListItem> = stateful
                     .items
                     .iter()
@@ -404,7 +483,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                             )))
                         }
                     })
-                    .collect();
+                    .collect();*/
 
                 let list = List::new(items)
                     .highlight_style(
@@ -638,12 +717,8 @@ fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
         Instruction::Phi(dest, src1, src2) => {
             &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
         }
-        Instruction::Store(src1, _, src2) => {
-            &taint.variable == src1 || &taint.variable == src2
-        }
-        Instruction::Load(dest, _, src) => {
-            &taint.variable == dest || &taint.variable == src
-        }
+        Instruction::Store(src1, _, src2) => &taint.variable == src1 || &taint.variable == src2,
+        Instruction::Load(dest, _, src) => &taint.variable == dest || &taint.variable == src,
         _ => false,
     }
 }
