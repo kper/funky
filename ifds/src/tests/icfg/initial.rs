@@ -675,3 +675,81 @@ fn test_memory_load_initial_flow() {
         normal_flows.get(0)
     );
 }
+
+#[test]
+fn test_memory_store_initial_flow() {
+    let (edges, normal_flows) = flow(
+        1,
+        vec!["%0", "%1"],
+        vec![
+            Instruction::Const("%1".to_string(), 0.0),
+            Instruction::Store("%1".to_string(), 0.0, "%0".to_string()),
+        ],
+    );
+
+    assert_eq!(edges.len(), 2);
+
+    assert_eq!(
+        Some(&Edge::Path {
+            from: Fact {
+                var_is_taut: true,
+                next_pc: 1,
+                belongs_to_var: "taut".to_string(),
+                function: "main".to_string(),
+                ..Default::default()
+            },
+            to: Fact {
+                var_is_taut: true,
+                next_pc: 1,
+                belongs_to_var: "taut".to_string(),
+                function: "main".to_string(),
+                ..Default::default()
+            },
+        }),
+        edges.get(0),
+    );
+    assert_eq!(
+        Some(&Edge::Path {
+            from: Fact {
+                var_is_taut: true,
+                next_pc: 1,
+                belongs_to_var: "taut".to_string(),
+                function: "main".to_string(),
+                ..Default::default()
+            },
+            to: Fact {
+                next_pc: 2,
+                belongs_to_var: "mem@0".to_string(),
+                function: "main".to_string(),
+                track: 3,
+                var_is_memory: true,
+                memory_offset: Some(0.0),
+                ..Default::default()
+            },
+        }),
+        edges.get(1)
+    );
+
+    assert_eq!(
+        Some(&Edge::Normal {
+            from: Fact {
+                var_is_taut: true,
+                next_pc: 1,
+                belongs_to_var: "taut".to_string(),
+                function: "main".to_string(),
+                ..Default::default()
+            },
+            to: Fact {
+                next_pc: 2,
+                belongs_to_var: "mem@0".to_string(),
+                function: "main".to_string(),
+                track: 3,
+                var_is_memory: true,
+                memory_offset: Some(0.0),
+                ..Default::default()
+            },
+            curved: false
+        }),
+        normal_flows.get(0)
+    );
+}
