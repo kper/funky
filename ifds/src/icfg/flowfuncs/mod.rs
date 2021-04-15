@@ -26,7 +26,6 @@ pub trait InitialFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        graph: &mut Graph,
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
@@ -40,7 +39,6 @@ pub trait NormalFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        graph: &mut Graph,
         pc: usize,
         variable: &String,
         block_resolver: &BlockResolver,

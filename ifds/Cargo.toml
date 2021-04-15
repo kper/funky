@@ -23,6 +23,7 @@ termion = "1.5"
 insta = "*"
 tempfile = "*"
 criterion = "0.3"
+pretty_assertions = "*"
 
 [build-dependencies]
 lalrpop = "0.19.4"

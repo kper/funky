@@ -548,7 +548,6 @@ where
         // Compute init flows
         let init_normal_flows = self.init_flow.flow(
             function,
-            graph,
             req.pc,
             &facts,
             &mut normal_flows_debug,
@@ -716,7 +715,6 @@ where
                             .normal_flow
                             .flow(
                                 &new_function,
-                                graph,
                                 d2.next_pc,
                                 &d2.belongs_to_var,
                                 &self.block_resolver,
@@ -948,7 +946,6 @@ where
             .normal_flow
             .flow(
                 &new_function,
-                graph,
                 d2.next_pc,
                 &d2.belongs_to_var,
                 &self.block_resolver,

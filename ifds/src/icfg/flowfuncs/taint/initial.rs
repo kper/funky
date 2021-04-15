@@ -6,7 +6,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        _graph: &mut Graph,
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
@@ -153,7 +152,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     for b in before2.into_iter() {
                         let after2 = state
                             .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .filter(|x| &x.belongs_to_var == reg)
                             .cloned();
 
                         for a in after2 {
@@ -183,7 +182,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     // Because, we would skip one row if not.
                     let after3 = state
                         .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| x.belongs_to_var == "taut".to_string())
+                        .filter(|x| x.var_is_taut)
                         .cloned();
 
                     init_fact = after3.collect::<Vec<_>>().get(0).unwrap().clone();
@@ -191,7 +190,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     for b in before2.into_iter() {
                         let after2 = state
                             .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .filter(|x| x.var_is_taut)
                             .cloned();
 
                         for a in after2 {
