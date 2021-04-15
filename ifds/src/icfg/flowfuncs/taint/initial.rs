@@ -1,4 +1,5 @@
 use crate::icfg::flowfuncs::*;
+use anyhow::bail;
 
 pub struct TaintInitialFlowFunction;
 
@@ -6,7 +7,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
     fn flow(
         &self,
         function: &AstFunction,
-        _graph: &mut Graph,
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
@@ -153,7 +153,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     for b in before2.into_iter() {
                         let after2 = state
                             .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .filter(|x| &x.belongs_to_var == reg)
                             .cloned();
 
                         for a in after2 {
@@ -183,7 +183,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     // Because, we would skip one row if not.
                     let after3 = state
                         .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| x.belongs_to_var == "taut".to_string())
+                        .filter(|x| x.var_is_taut)
                         .cloned();
 
                     init_fact = after3.collect::<Vec<_>>().get(0).unwrap().clone();
@@ -191,7 +191,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     for b in before2.into_iter() {
                         let after2 = state
                             .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| x.belongs_to_var == "taut".to_string())
+                            .filter(|x| x.var_is_taut)
                             .cloned();
 
                         for a in after2 {
@@ -235,7 +235,89 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                         }
                     }
                 }
-                _ => {}
+                Instruction::Call(_callee, _params, dest) => {
+                    for dest_var in dest.iter() {
+                        let before2 = vec![init_fact.clone()];
+
+                        state.add_statement(
+                            function,
+                            format!("{:?}", instruction),
+                            pc + 1,
+                            dest_var,
+                        )?;
+
+                        for b in before2.into_iter() {
+                            let after2 = state
+                                .get_facts_at(&function.name, pc + 1)?
+                                .filter(|x| &x.belongs_to_var == dest_var)
+                                .cloned();
+
+                            for a in after2 {
+                                normal_flows_debug.push(Edge::Normal {
+                                    from: b.clone(),
+                                    to: a.clone(),
+                                    curved: false,
+                                });
+                                edges.push(Edge::Path {
+                                    from: init_fact.clone().clone(),
+                                    to: a.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+                Instruction::Load(dest, _offset, _i) => {
+                    let before2 = vec![init_fact.clone()];
+
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
+
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == dest)
+                            .cloned();
+
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
+                    }
+                }
+                Instruction::Store(_src, offset, _i) => {
+                    let before2 = vec![init_fact.clone()];
+
+                    let mem = state.add_memory_var(function.name.clone(), offset.clone());
+                    state.add_statement(function, format!("{:?}", instruction), pc + 1, &mem.name)?;
+
+                    for b in before2.into_iter() {
+                        let after2 = state
+                            .get_facts_at(&function.name, pc + 1)?
+                            .filter(|x| &x.belongs_to_var == &mem.name)
+                            .cloned();
+
+                        for a in after2 {
+                            normal_flows_debug.push(Edge::Normal {
+                                from: b.clone(),
+                                to: a.clone(),
+                                curved: false,
+                            });
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: a.clone(),
+                            });
+                        }
+                    }
+                }
+                _ => {
+                    bail!("Selected instruction is not supported. Please choose the next one.")
+                }
             }
 
             break;

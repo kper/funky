@@ -548,7 +548,6 @@ where
         // Compute init flows
         let init_normal_flows = self.init_flow.flow(
             function,
-            graph,
             req.pc,
             &facts,
             &mut normal_flows_debug,
@@ -568,7 +567,7 @@ where
             &mut normal_flows_debug,
             &mut graph,
             state,
-            req.pc
+            req.pc,
         )?;
 
         Ok(())
@@ -581,14 +580,12 @@ where
         worklist: &mut VecDeque<Edge>,
         e: Edge,
     ) -> Result<()> {
-        let f = path_edge.iter().find(|x| {
-            x.get_from().belongs_to_var == e.get_from().belongs_to_var
-                && *x.get_from().function == e.get_from().function
-                && x.get_from().next_pc == e.get_from().next_pc
-                && (x.to().belongs_to_var == e.to().belongs_to_var
-                    && x.to().function == e.to().function
-                    && x.to().next_pc == e.to().next_pc)
-        });
+        let from = e.get_from();
+        let to = e.to();
+
+        let f = path_edge
+            .iter()
+            .find(|x| x.get_from() == from && x.to() == to);
 
         if f.is_none() {
             debug!("Propagate {:#?}", e);
@@ -686,7 +683,7 @@ where
                             pc,
                             normal_flows_debug,
                             state,
-                            start_pc
+                            start_pc,
                         )?;
                     }
                     Instruction::Return(_dest) => {
@@ -718,7 +715,6 @@ where
                             .normal_flow
                             .flow(
                                 &new_function,
-                                graph,
                                 d2.next_pc,
                                 &d2.belongs_to_var,
                                 &self.block_resolver,
@@ -950,7 +946,6 @@ where
             .normal_flow
             .flow(
                 &new_function,
-                graph,
                 d2.next_pc,
                 &d2.belongs_to_var,
                 &self.block_resolver,

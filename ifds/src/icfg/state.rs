@@ -278,15 +278,14 @@ impl State {
             instruction, pc, variable, function.name
         );
 
-        let vars = self
+        let mut vars = self
             .vars
             .get(&function.name)
             .context("Cannot get functions's vars")?
-            .clone();
-        let mut vars = vars.iter().enumerate();
+            .iter()
+            .enumerate();
 
         let mut facts = Vec::new();
-
         for (track, var) in vars.find(|x| &x.1.name == variable) {
             debug!("Adding new fact for {}", var.name);
 
