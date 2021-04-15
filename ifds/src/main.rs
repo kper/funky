@@ -354,7 +354,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
             pc: usize,
             is_taint: bool,
             is_function: bool,
-            line_no: usize,
             function: &'a str,
         }
 
@@ -383,7 +382,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                                 pc: *pc,
                                 is_taint: false,
                                 is_function: false,
-                                line_no,
                                 function,
                             }
                         } else {
@@ -392,7 +390,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                                 pc: *pc,
                                 is_taint: false,
                                 is_function: true,
-                                line_no,
                                 function,
                             }
                         }
