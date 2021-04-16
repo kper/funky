@@ -8,6 +8,10 @@ You will find the parser for parsing the binary wasm files in the folder `wasm-p
 
 In addition, I am working on static taint analysis for webassembly. This means you can see which variables have the same value without executing the code.
 
+## Taint Analysis
+
+[![asciicast](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6.svg)](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6)
+
 ## Building
 
 Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `idfs` and execute `cargo build` again.
@@ -19,89 +23,6 @@ Due to a error in cargo, it is not possible to build the taint checker from the 
 ./funky (-h | --help)
 ./funky --version
 ```
-
-## Current core spec coverage
-
-~~~
-                     File	Ok	Fail	%
-         address.json.csv	54	00	100.0%
-           align.json.csv	47	00	100.0%
-   binary-leb128.json.csv	00	00	0.0%
-          binary.json.csv	00	00	0.0%
-           block.json.csv	44	00	100.0%
-              br.json.csv	76	00	100.0%
-           br_if.json.csv	88	00	100.0%
-        br_table.json.csv	146	00	100.0%
-      break-drop.json.csv	03	00	100.0%
-            call.json.csv	69	00	100.0%
-   call_indirect.json.csv	107	00	100.0%
-        comments.json.csv	00	00	0.0%
-           const.json.csv	300	00	100.0%
-     conversions.json.csv	522	00	100.0%
-          custom.json.csv	00	00	0.0%
-            data.json.csv	00	00	0.0%
-            elem.json.csv	00	00	0.0%
-      endianness.json.csv	68	00	100.0%
-         exports.json.csv	02	00	100.0%
-             f32.json.csv	2500	00	100.0%
-     f32_bitwise.json.csv	360	00	100.0%
-         f32_cmp.json.csv	2400	00	100.0%
-             f64.json.csv	2500	00	100.0%
-     f64_bitwise.json.csv	360	00	100.0%
-         f64_cmp.json.csv	2400	00	100.0%
-             fac.json.csv	05	02	71.4%
-     float_exprs.json.csv	776	18	97.7%
-  float_literals.json.csv	83	00	100.0%
-    float_memory.json.csv	36	24	60.0%
-      float_misc.json.csv	440	00	100.0%
-         forward.json.csv	04	00	100.0%
-            func.json.csv	93	00	100.0%
-       func_ptrs.json.csv	00	00	0.0%
-          global.json.csv	45	00	100.0%
-         globals.json.csv	45	00	100.0%
-             i32.json.csv	364	00	100.0%
-             i64.json.csv	374	00	100.0%
-              if.json.csv	93	00	100.0%
-         imports.json.csv	00	00	0.0%
-   inline-module.json.csv	00	00	0.0%
-       int_exprs.json.csv	75	00	100.0%
-    int_literals.json.csv	30	00	100.0%
-          labels.json.csv	25	00	100.0%
-   left-to-right.json.csv	95	00	100.0%
-         linking.json.csv	00	00	0.0%
-            load.json.csv	37	00	100.0%
-       local_get.json.csv	19	00	100.0%
-       local_set.json.csv	19	00	100.0%
-       local_tee.json.csv	55	00	100.0%
-            loop.json.csv	41	00	100.0%
-          memory.json.csv	45	00	100.0%
-     memory_grow.json.csv	30	00	100.0%
-memory_redundancy.json.csv	03	01	75.0%
-     memory_size.json.csv	36	00	100.0%
-     memory_trap.json.csv	05	00	100.0%
-           names.json.csv	00	00	0.0%
-             nop.json.csv	83	00	100.0%
-          return.json.csv	63	00	100.0%
-          select.json.csv	88	00	100.0%
-skip-stack-guard-page.json.csv	00	00	0.0%
-           stack.json.csv	05	00	100.0%
-           start.json.csv	00	00	0.0%
-           store.json.csv	09	00	100.0%
-          switch.json.csv	26	00	100.0%
-           table.json.csv	00	00	0.0%
-           token.json.csv	00	00	0.0%
-           traps.json.csv	00	00	0.0%
-            type.json.csv	00	00	0.0%
-       typecheck.json.csv	00	00	0.0%
-     unreachable.json.csv	05	00	100.0%
-unreached-invalid.json.csv	00	00	0.0%
-          unwind.json.csv	41	00	100.0%
-utf8-custom-section-id.json.csv	00	00	0.0%
-utf8-import-field.json.csv	00	00	0.0%
-utf8-import-module.json.csv	00	00	0.0%
-utf8-invalid-encoding.json.csv	00	00	0.0%
-~~~
-
 ## Run it
 
 ```
@@ -116,4 +37,676 @@ cargo run --bin hustensaft -- ./testsuite/block.0.wasm "break-bare"
 
 ## Wait, there is more
 
-You will find a custom debugger in `debugger`.
+You will find a custom debugger in `debugger` and the taint analysis in the `ifds` folder.
+
+## Current spec coverage
+
+Run `./spec_test.sh`
+
+~~~
+Statistic {
+    file: "select.wast",
+    failed: 0,
+    succeeded: 89,
+    skipped: 0,
+    total: 111,
+    failed_case: None,
+}
+Statistic {
+    file: "f64.wast",
+    failed: 0,
+    succeeded: 2501,
+    skipped: 0,
+    total: 2512,
+    failed_case: None,
+}
+Statistic {
+    file: "unwind.wast",
+    failed: 0,
+    succeeded: 42,
+    skipped: 0,
+    total: 50,
+    failed_case: None,
+}
+Statistic {
+    file: "elem.wast",
+    failed: 0,
+    succeeded: 24,
+    skipped: 0,
+    total: 55,
+    failed_case: None,
+}
+Statistic {
+    file: "align.wast",
+    failed: 0,
+    succeeded: 72,
+    skipped: 0,
+    total: 156,
+    failed_case: None,
+}
+Statistic {
+    file: "skip-stack-guard-page.wast",
+    failed: 0,
+    succeeded: 1,
+    skipped: 0,
+    total: 11,
+    failed_case: None,
+}
+Statistic {
+    file: "store.wast",
+    failed: 0,
+    succeeded: 10,
+    skipped: 0,
+    total: 68,
+    failed_case: None,
+}
+Statistic {
+    file: "local_tee.wast",
+    failed: 0,
+    succeeded: 56,
+    skipped: 0,
+    total: 97,
+    failed_case: None,
+}
+Statistic {
+    file: "br.wast",
+    failed: 0,
+    succeeded: 77,
+    skipped: 0,
+    total: 97,
+    failed_case: None,
+}
+Statistic {
+    file: "f32_cmp.wast",
+    failed: 0,
+    succeeded: 2401,
+    skipped: 0,
+    total: 2407,
+    failed_case: None,
+}
+Statistic {
+    file: "float_memory.wast",
+    failed: 0,
+    succeeded: 66,
+    skipped: 0,
+    total: 90,
+    failed_case: None,
+}
+Statistic {
+    file: "f32.wast",
+    failed: 0,
+    succeeded: 2501,
+    skipped: 0,
+    total: 2512,
+    failed_case: None,
+}
+Statistic {
+    file: "utf8-import-module.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 176,
+    failed_case: None,
+}
+Statistic {
+    file: "float_literals.wast",
+    failed: 0,
+    succeeded: 85,
+    skipped: 0,
+    total: 161,
+    failed_case: None,
+}
+Statistic {
+    file: "utf8-invalid-encoding.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 176,
+    failed_case: None,
+}
+Statistic {
+    file: "stack.wast",
+    failed: 0,
+    succeeded: 7,
+    skipped: 0,
+    total: 7,
+    failed_case: None,
+}
+Statistic {
+    file: "f64_bitwise.wast",
+    failed: 0,
+    succeeded: 361,
+    skipped: 0,
+    total: 364,
+    failed_case: None,
+}
+Statistic {
+    file: "br_table.wast",
+    failed: 0,
+    succeeded: 147,
+    skipped: 0,
+    total: 168,
+    failed_case: None,
+}
+Statistic {
+    file: "func.wast",
+    failed: 0,
+    succeeded: 96,
+    skipped: 0,
+    total: 167,
+    failed_case: None,
+}
+Statistic {
+    file: "comments.wast",
+    failed: 0,
+    succeeded: 4,
+    skipped: 0,
+    total: 4,
+    failed_case: None,
+}
+Statistic {
+    file: "unreachable.wast",
+    failed: 0,
+    succeeded: 6,
+    skipped: 0,
+    total: 64,
+    failed_case: None,
+}
+Statistic {
+    file: "fac.wast",
+    failed: 0,
+    succeeded: 7,
+    skipped: 0,
+    total: 8,
+    failed_case: None,
+}
+Statistic {
+    file: "token.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 2,
+    failed_case: None,
+}
+Statistic {
+    file: "table.wast",
+    failed: 0,
+    succeeded: 7,
+    skipped: 0,
+    total: 19,
+    failed_case: None,
+}
+Statistic {
+    file: "const.wast",
+    failed: 0,
+    succeeded: 702,
+    skipped: 0,
+    total: 778,
+    failed_case: None,
+}
+Statistic {
+    file: "load.wast",
+    failed: 0,
+    succeeded: 38,
+    skipped: 0,
+    total: 97,
+    failed_case: None,
+}
+Statistic {
+    file: "memory_trap.wast",
+    failed: 0,
+    succeeded: 7,
+    skipped: 0,
+    total: 173,
+    failed_case: None,
+}
+Statistic {
+    file: "loop.wast",
+    failed: 0,
+    succeeded: 78,
+    skipped: 0,
+    total: 120,
+    failed_case: None,
+}
+Statistic {
+    file: "i32.wast",
+    failed: 0,
+    succeeded: 365,
+    skipped: 0,
+    total: 458,
+    failed_case: None,
+}
+Statistic {
+    file: "address.wast",
+    failed: 10,
+    succeeded: 200,
+    skipped: 94,
+    total: 260,
+    failed_case: Some(
+        FailedCommand {
+            actuals: [],
+            command: AssertReturn(
+                AssertReturn {
+                    line: 480,
+                    action: Action {
+                        module: None,
+                        field: "32s_good5",
+                        args: [
+                            Argument {
+                                ty: "i32",
+                                value: "65504",
+                            },
+                        ],
+                        ty: Invoke,
+                    },
+                    expected: [
+                        Argument {
+                            ty: "i64",
+                            value: "0",
+                        },
+                    ],
+                },
+            ),
+        },
+    ),
+}
+Statistic {
+    file: "memory_size.wast",
+    failed: 0,
+    succeeded: 40,
+    skipped: 0,
+    total: 42,
+    failed_case: None,
+}
+Statistic {
+    file: "left-to-right.wast",
+    failed: 0,
+    succeeded: 96,
+    skipped: 0,
+    total: 96,
+    failed_case: None,
+}
+Statistic {
+    file: "globals.wast",
+    failed: 0,
+    succeeded: 50,
+    skipped: 0,
+    total: 78,
+    failed_case: None,
+}
+Statistic {
+    file: "switch.wast",
+    failed: 0,
+    succeeded: 27,
+    skipped: 0,
+    total: 28,
+    failed_case: None,
+}
+Statistic {
+    file: "break-drop.wast",
+    failed: 0,
+    succeeded: 4,
+    skipped: 0,
+    total: 4,
+    failed_case: None,
+}
+Statistic {
+    file: "conversions.wast",
+    failed: 0,
+    succeeded: 523,
+    skipped: 0,
+    total: 615,
+    failed_case: None,
+}
+Statistic {
+    file: "imports.wast",
+    failed: 0,
+    succeeded: 1,
+    skipped: 0,
+    total: 149,
+    failed_case: None,
+}
+Statistic {
+    file: "linking.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 118,
+    failed_case: None,
+}
+Statistic {
+    file: "names.wast",
+    failed: 0,
+    succeeded: 484,
+    skipped: 0,
+    total: 486,
+    failed_case: None,
+}
+Statistic {
+    file: "endianness.wast",
+    failed: 0,
+    succeeded: 69,
+    skipped: 0,
+    total: 69,
+    failed_case: None,
+}
+Statistic {
+    file: "traps.wast",
+    failed: 0,
+    succeeded: 4,
+    skipped: 0,
+    total: 36,
+    failed_case: None,
+}
+Statistic {
+    file: "br_if.wast",
+    failed: 0,
+    succeeded: 89,
+    skipped: 0,
+    total: 118,
+    failed_case: None,
+}
+Statistic {
+    file: "utf8-import-field.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 176,
+    failed_case: None,
+}
+Statistic {
+    file: "i64.wast",
+    failed: 0,
+    succeeded: 375,
+    skipped: 0,
+    total: 414,
+    failed_case: None,
+}
+Statistic {
+    file: "local_get.wast",
+    failed: 0,
+    succeeded: 20,
+    skipped: 0,
+    total: 36,
+    failed_case: None,
+}
+Statistic {
+    file: "if.wast",
+    failed: 0,
+    succeeded: 123,
+    skipped: 0,
+    total: 239,
+    failed_case: None,
+}
+Statistic {
+    file: "float_misc.wast",
+    failed: 0,
+    succeeded: 441,
+    skipped: 0,
+    total: 441,
+    failed_case: None,
+}
+Statistic {
+    file: "local_set.wast",
+    failed: 0,
+    succeeded: 20,
+    skipped: 0,
+    total: 53,
+    failed_case: None,
+}
+Statistic {
+    file: "utf8-custom-section-id.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 176,
+    failed_case: None,
+}
+Statistic {
+    file: "call.wast",
+    failed: 0,
+    succeeded: 70,
+    skipped: 0,
+    total: 91,
+    failed_case: None,
+}
+Statistic {
+    file: "f32_bitwise.wast",
+    failed: 0,
+    succeeded: 361,
+    skipped: 0,
+    total: 364,
+    failed_case: None,
+}
+Statistic {
+    file: "unreached-invalid.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 111,
+    failed_case: None,
+}
+Statistic {
+    file: "memory.wast",
+    failed: 0,
+    succeeded: 55,
+    skipped: 0,
+    total: 79,
+    failed_case: None,
+}
+Statistic {
+    file: "float_exprs.wast",
+    failed: 0,
+    succeeded: 890,
+    skipped: 0,
+    total: 900,
+    failed_case: None,
+}
+Statistic {
+    file: "binary.wast",
+    failed: 0,
+    succeeded: 2,
+    skipped: 0,
+    total: 84,
+    failed_case: None,
+}
+Statistic {
+    file: "func_ptrs.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 36,
+    failed_case: None,
+}
+Statistic {
+    file: "int_exprs.wast",
+    failed: 0,
+    succeeded: 94,
+    skipped: 0,
+    total: 108,
+    failed_case: None,
+}
+Statistic {
+    file: "inline-module.wast",
+    failed: 0,
+    succeeded: 1,
+    skipped: 0,
+    total: 1,
+    failed_case: None,
+}
+Statistic {
+    file: "exports.wast",
+    failed: 0,
+    succeeded: 11,
+    skipped: 0,
+    total: 82,
+    failed_case: None,
+}
+Statistic {
+    file: "int_literals.wast",
+    failed: 0,
+    succeeded: 31,
+    skipped: 0,
+    total: 51,
+    failed_case: None,
+}
+Statistic {
+    file: "labels.wast",
+    failed: 0,
+    succeeded: 26,
+    skipped: 0,
+    total: 29,
+    failed_case: None,
+}
+Statistic {
+    file: "typecheck.wast",
+    failed: 0,
+    succeeded: 0,
+    skipped: 0,
+    total: 164,
+    failed_case: None,
+}
+Statistic {
+    file: "return.wast",
+    failed: 0,
+    succeeded: 64,
+    skipped: 0,
+    total: 84,
+    failed_case: None,
+}
+Statistic {
+    file: "custom.wast",
+    failed: 0,
+    succeeded: 3,
+    skipped: 0,
+    total: 10,
+    failed_case: None,
+}
+Statistic {
+    file: "global.wast",
+    failed: 0,
+    succeeded: 50,
+    skipped: 0,
+    total: 81,
+    failed_case: None,
+}
+Statistic {
+    file: "forward.wast",
+    failed: 0,
+    succeeded: 5,
+    skipped: 0,
+    total: 5,
+    failed_case: None,
+}
+Statistic {
+    file: "f64_cmp.wast",
+    failed: 0,
+    succeeded: 2401,
+    skipped: 0,
+    total: 2407,
+    failed_case: None,
+}
+Statistic {
+    file: "type.wast",
+    failed: 0,
+    succeeded: 1,
+    skipped: 0,
+    total: 3,
+    failed_case: None,
+}
+Statistic {
+    file: "memory_redundancy.wast",
+    failed: 0,
+    succeeded: 5,
+    skipped: 0,
+    total: 8,
+    failed_case: None,
+}
+Statistic {
+    file: "memory_grow.wast",
+    failed: 6,
+    succeeded: 76,
+    skipped: 55,
+    total: 94,
+    failed_case: Some(
+        FailedCommand {
+            actuals: [],
+            command: AssertReturn(
+                AssertReturn {
+                    line: 97,
+                    action: Action {
+                        module: None,
+                        field: "check-memory-zero",
+                        args: [
+                            Argument {
+                                ty: "i32",
+                                value: "327680",
+                            },
+                            Argument {
+                                ty: "i32",
+                                value: "393215",
+                            },
+                        ],
+                        ty: Invoke,
+                    },
+                    expected: [
+                        Argument {
+                            ty: "i32",
+                            value: "0",
+                        },
+                    ],
+                },
+            ),
+        },
+    ),
+}
+Statistic {
+    file: "nop.wast",
+    failed: 0,
+    succeeded: 84,
+    skipped: 0,
+    total: 88,
+    failed_case: None,
+}
+Statistic {
+    file: "call_indirect.wast",
+    failed: 0,
+    succeeded: 108,
+    skipped: 0,
+    total: 156,
+    failed_case: None,
+}
+Statistic {
+    file: "block.wast",
+    failed: 0,
+    succeeded: 53,
+    skipped: 0,
+    total: 223,
+    failed_case: None,
+}
+Statistic {
+    file: "binary-leb128.wast",
+    failed: 0,
+    succeeded: 10,
+    skipped: 0,
+    total: 81,
+    failed_case: None,
+}
+Statistic {
+    file: "start.wast",
+    failed: 0,
+    succeeded: 8,
+    skipped: 0,
+    total: 20,
+    failed_case: None,
+}
+Statistic {
+    file: "data.wast",
+    failed: 0,
+    succeeded: 19,
+    skipped: 0,
+    total: 45,
+    failed_case: None,
+}
+0.8310914776393508% total
+~~~

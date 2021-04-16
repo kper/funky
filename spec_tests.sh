@@ -24,4 +24,4 @@ for f in *.wast; do
 done
 cd ..
 
-RUST_MIN_STACK=8388608 cargo run --release --bin test_runner2
+RUST_MIN_STACK=8388608 cargo run --release --bin testrunner2

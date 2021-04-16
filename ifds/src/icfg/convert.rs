@@ -546,13 +546,9 @@ where
         )?;
 
         // Compute init flows
-        let init_normal_flows = self.init_flow.flow(
-            function,
-            req.pc,
-            &facts,
-            &mut normal_flows_debug,
-            state,
-        )?;
+        let init_normal_flows =
+            self.init_flow
+                .flow(function, req.pc, &facts, &mut normal_flows_debug, state)?;
 
         for edge in init_normal_flows.into_iter() {
             self.propagate(graph, &mut path_edge, &mut worklist, edge)?;
@@ -1225,15 +1221,19 @@ where
         }
 
         for edge in edges.into_iter() {
-            self.propagate(
-                graph,
-                path_edge,
-                worklist,
-                Edge::Path {
-                    from: start_taut.clone(),
-                    to: edge.to().clone(),
-                },
-            )?;
+            // Only propagate path if it is after the `start_fact`
+            // This removes the backwards edges which have no use.
+            if edge.to().next_pc >= start_taut.next_pc {
+                self.propagate(
+                    graph,
+                    path_edge,
+                    worklist,
+                    Edge::Path {
+                        from: start_taut.clone(),
+                        to: edge.to().clone(),
+                    },
+                )?;
+            }
         }
 
         Ok(())
