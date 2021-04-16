@@ -8,6 +8,10 @@ You will find the parser for parsing the binary wasm files in the folder `wasm-p
 
 In addition, I am working on static taint analysis for webassembly. This means you can see which variables have the same value without executing the code.
 
+## Taint Analysis
+
+[![asciicast](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6.svg)](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6)
+
 ## Building
 
 Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `idfs` and execute `cargo build` again.
