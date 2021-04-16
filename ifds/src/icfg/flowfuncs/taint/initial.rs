@@ -294,7 +294,12 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     let before2 = vec![init_fact.clone()];
 
                     let mem = state.add_memory_var(function.name.clone(), offset.clone());
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, &mem.name)?;
+                    state.add_statement(
+                        function,
+                        format!("{:?}", instruction),
+                        pc + 1,
+                        &mem.name,
+                    )?;
 
                     for b in before2.into_iter() {
                         let after2 = state
