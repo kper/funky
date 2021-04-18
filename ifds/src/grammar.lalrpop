@@ -67,8 +67,8 @@ pub Instruction : Instruction = {
     <dest:Reg> "=" "op" <src:Reg> => Instruction::Unop(dest, src),
     <dest:Reg> "=" <src1:Reg> "op" <src2:Reg> => Instruction::BinOp(dest, src1, src2),
     <dest:Reg> "=" "phi" <src1:Reg> <src2:Reg> => Instruction::Phi(dest, src1, src2),
-    <dest:Reg> "=" "LOAD" <i:Reg> "OFFSET" <offset:Num> "ALIGN" <align:Num> => Instruction::Load(dest, offset, i),
-    "STORE" <src:Reg> "AT" <offset:Num> "+" <i:Reg> "ALIGN" <align:Num> <size:Num> => Instruction::Store(src, offset, i),
+    <dest:Reg> "=" "LOAD" "OFFSET"  <offset:Num> "+" <i:Reg> "ALIGN" <align:Num> => Instruction::Load(dest, offset, i),
+    "STORE" "FROM" <src:Reg> "OFFSET" <offset:Num> "+" <i:Reg> "ALIGN" <align:Num> <size:Num> => Instruction::Store(src, offset, i),
     "GOTO" <n:Id> => Instruction::Jump(n),
     "IF" <reg:Reg> "THEN" "GOTO" <n:Id> "ELSE" "GOTO" <n2:Id> => {
         Instruction::Conditional(reg, vec![n, n2])

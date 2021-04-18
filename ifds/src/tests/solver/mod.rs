@@ -416,11 +416,11 @@ fn test_memory() {
         "
         define 0 (param %0) (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
             %0 = -12345
-            STORE %0 AT 0 + %0 ALIGN 2 32
+            STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
             %4 = 8
-            %5 = LOAD %4 OFFSET 0 ALIGN 0
+            %5 = LOAD OFFSET 0 + %4 ALIGN 0
             %6 = 8
-            %7 = LOAD %6 OFFSET 0 ALIGN 0
+            %7 = LOAD OFFSET 0 + %6 ALIGN 0
         };
     "
     );

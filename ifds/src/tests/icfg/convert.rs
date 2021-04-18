@@ -83,7 +83,7 @@ fn test_ir_simple_store() {
         req,
         "
          define test (param %0) (result 0) (define %0 %1) {
-            STORE %0 AT 0 + %0 ALIGN 2 32
+            STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
          };
     "
     );
@@ -102,7 +102,7 @@ fn test_ir_simple_load() {
         req,
         "
          define test (param %0) (result 0) (define %0 %1) {
-            %1 = LOAD %0 OFFSET 0 ALIGN 0
+            %1 = LOAD OFFSET 0 + %0 ALIGN 0
          };
     "
     );
@@ -826,16 +826,16 @@ fn test_memory_store() {
         define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
         BLOCK 0
         %1 = -12345
-        STORE %1 AT 0 + %0 ALIGN 2 32
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
         %2 = 8
         %3 = -12345
-        STORE %3 AT 0 + %2 ALIGN 3 64
+        STORE FROM %3 OFFSET 0 + %2 ALIGN 3 64
         %5 = 8
         %6 = -12345
-        STORE %6 AT 0 + %5 ALIGN 2 32
+        STORE FROM %6 OFFSET 0 + %5 ALIGN 2 32
         %7 = 8
         %8 = -12345
-        STORE %8 AT 0 + %7 ALIGN 3 64
+        STORE FROM %8 OFFSET 0 + %7 ALIGN 3 64
         RETURN ;
         };
     "
@@ -857,11 +857,11 @@ fn test_memory_load() {
         BLOCK 0
         %0 = 8
         %1 = -12345
-        STORE %1 AT 0 + %0 ALIGN 2 32
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
         %4 = 8
-        %5 = LOAD %4 OFFSET 0 ALIGN 0
+        %5 = LOAD OFFSET 0 + %4 ALIGN 0
         %6 = 8
-        %7 = LOAD %6 OFFSET 0 ALIGN 0
+        %7 = LOAD OFFSET 0 + %6 ALIGN 0
         KILL %7
         KILL %6
         RETURN ;
@@ -885,14 +885,14 @@ fn test_memory_load_different_functions() {
         BLOCK 0
         %0 = 8
         %1 = -12345
-        STORE %1 AT 0 + %0 ALIGN 2 32
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
         %2 <- CALL 1 ()
         RETURN ;
        }; 
 
        define 1 (result 1) (define %0 %1) {
         %1 = 8
-        %0 = LOAD %1 OFFSET 0 ALIGN 0
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
         RETURN %0;
        };
     "
@@ -914,16 +914,16 @@ fn test_memory_load_different_functions2() {
         BLOCK 0
         %0 = 8
         %1 = -12345
-        STORE %1 AT 0 + %0 ALIGN 2 32
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
         %2 <- CALL 1 ()
-        STORE %1 AT 1 + %0 ALIGN 2 32
+        STORE FROM %1 OFFSET 1 + %0 ALIGN 2 32
         %3 <- CALL 1 ()
         RETURN ;
        }; 
 
        define 1 (result 1) (define %0 %1) {
         %1 = 8
-        %0 = LOAD %1 OFFSET 0 ALIGN 0
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
         RETURN %0;
        };
     "
