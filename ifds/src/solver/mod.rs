@@ -2,6 +2,7 @@
 
 use crate::icfg::graph::{Edge, Graph};
 use anyhow::{Context, Result};
+use std::collections::HashSet;
 
 type PC = usize;
 
@@ -24,11 +25,18 @@ pub struct Request {
 }
 
 pub trait Solver {
-    /// Return all sinks of the `req`
+    /// Get all taints for the graph. The edges must be already computed.
+    /// The result depends on the `req` [`Request`]. Only the requested function and instruction which have
+    /// an higher or equal program counter.
     fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>>;
 
     /// Check if the statement at `req` and the statement `resp` have a taint.
     fn is_taint(&mut self, graph: &mut Graph, req: &Request, resp: &Request) -> Result<bool>;
+
+    /// Return all tainted variables names at any statement for the graph. The edges must be already computed.
+    /// The result depends on the `req` [`Request`]. Only the requested function and instruction which have
+    /// an higher or equal program counter.
+    fn sinks_var<'a>(&mut self, graph: &'a mut Graph, req: &Request) -> Result<HashSet<&'a str>>;
 }
 
 impl Solver for IfdsSolver {
@@ -59,6 +67,28 @@ impl Solver for IfdsSolver {
         Ok(taints)
     }
 
+    fn sinks_var<'a>(&mut self, graph: &'a mut Graph, req: &Request) -> Result<HashSet<&'a str>> {
+        assert!(req.variable.is_some());
+        assert!(req.variable.as_ref().unwrap().starts_with("%"));
+
+        let function = &req.function;
+
+        let taints = graph
+            .edges
+            .iter()
+            .filter(|x| {
+                matches!(x, Edge::Path { .. })
+                    && &x.to().function == function
+                    && x.get_from().next_pc == req.pc
+            })
+            .map(|x| x.to())
+            .filter(|x| !x.var_is_taut)
+            .map(|x| x.belongs_to_var.as_str())
+            .collect::<HashSet<_>>();
+
+        Ok(taints)
+    }
+
     fn is_taint(&mut self, graph: &mut Graph, req: &Request, resp: &Request) -> Result<bool> {
         let all_sinks = self
             .all_sinks(graph, req)
@@ -77,5 +107,8 @@ impl Solver for IfdsSolver {
 }
 
 pub trait GraphReachability {
+    /// Get all taints for the graph. The edges must be already computed.
+    /// The result depends on the `req` [`Request`]. Only the requested function and instruction which have
+    /// an higher or equal program counter.
     fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint>;
 }

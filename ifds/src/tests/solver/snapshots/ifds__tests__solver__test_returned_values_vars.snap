@@ -1,0 +1,14 @@
+---
+source: src/tests/solver/mod.rs
+expression: "format!(\"{:#?}\", vars)"
+
+---
+[
+    "%0",
+    "%1",
+    "%11",
+    "%13",
+    "%15",
+    "%7",
+    "%9",
+]
