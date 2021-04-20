@@ -24,6 +24,7 @@ const TAUT: usize = 1;
 pub struct Convert {}
 
 struct Ctx<'a> {
+    program: &'a Program,
     graph: &'a mut Graph,
     state: &'a mut State,
 }
@@ -40,6 +41,7 @@ impl Convert {
         let mut state = State::default();
 
         let mut ctx = Ctx {
+            program: &prog,
             graph: &mut graph,
             state: &mut state,
         };
@@ -107,6 +109,34 @@ impl Convert {
                 call_resolver,
             )?;
         }
+
+        Ok(())
+    }
+
+    /// A fact has been dynamically added. This method creates all facts to the end.
+    fn create_line<'a>(&mut self, ctx: &mut Ctx<'a>, function: &String, fact: Fact) -> Result<()> {
+        let function = ctx
+            .program
+            .functions
+            .iter()
+            .find(|x| &x.name == function)
+            .context("Cannot find function")?;
+
+        for (pc, _instruction) in function
+            .instructions
+            .iter()
+            .enumerate()
+            .skip(fact.next_pc.checked_sub(1).unwrap_or(0))
+        {
+            let mut new_fact = fact.clone();
+            new_fact.next_pc = pc;
+
+            let _ = ctx.state.cache_fact(&function.name, new_fact)?;
+        }
+
+        let mut new_fact = fact.clone();
+        new_fact.next_pc = function.instructions.len();
+        let _ = ctx.state.cache_fact(&function.name, new_fact)?;
 
         Ok(())
     }
@@ -275,9 +305,10 @@ impl Convert {
                             .context("Cannot find track")?,
                         ..Default::default()
                     };
-                    let to = ctx.state.cache_fact(callee, fact)?;
+                    let to = ctx.state.cache_fact(callee, fact)?.clone();
+                    self.create_line(ctx, callee, to.clone())?;
 
-                    ctx.graph.add_call(global, to.clone())?;
+                    ctx.graph.add_call(global, to)?;
                 }
 
                 let memories = ctx
@@ -303,9 +334,10 @@ impl Convert {
                         memory_offset: var.memory_offset.clone(),
                         ..Default::default()
                     };
-                    let to = ctx.state.cache_fact(callee, fact)?;
+                    let to = ctx.state.cache_fact(callee, fact)?.clone();
+                    self.create_line(ctx, callee, to.clone())?;
 
-                    ctx.graph.add_call(mem, to.clone())?;
+                    ctx.graph.add_call(mem, to)?;
                 }
             }
             Instruction::CallIndirect(callees, params, dests) => {
@@ -349,9 +381,10 @@ impl Convert {
                                 .context("Cannot find track")?,
                             ..Default::default()
                         };
-                        let to = ctx.state.cache_fact(callee, fact)?;
+                        let to = ctx.state.cache_fact(callee, fact)?.clone();
+                        self.create_line(ctx, callee, to.clone())?;
 
-                        ctx.graph.add_call(global, to.clone())?;
+                        ctx.graph.add_call(global, to)?;
                     }
 
                     let memories = ctx
@@ -377,9 +410,10 @@ impl Convert {
                             memory_offset: var.memory_offset.clone(),
                             ..Default::default()
                         };
-                        let to = ctx.state.cache_fact(callee, fact)?;
+                        let to = ctx.state.cache_fact(callee, fact)?.clone();
+                        self.create_line(ctx, callee, to.clone())?;
 
-                        ctx.graph.add_call(mem, to.clone())?;
+                        ctx.graph.add_call(mem, to)?;
                     }
                 }
             }
@@ -444,9 +478,10 @@ impl Convert {
                                     .context("Cannot find track")?,
                                 ..Default::default()
                             };
-                            let to = ctx.state.cache_fact(&incoming.0, fact)?;
+                            let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
+                            self.create_line(ctx, &incoming.0, to.clone())?;
 
-                            ctx.graph.add_return(from.clone(), to.clone())?;
+                            ctx.graph.add_return(from.clone(), to)?;
                         }
                     }
 
@@ -484,9 +519,10 @@ impl Convert {
                                     .context("Cannot find track")?,
                                 ..Default::default()
                             };
-                            let to = ctx.state.cache_fact(&incoming.0, fact)?;
+                            let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
+                            self.create_line(ctx, &incoming.0, to.clone())?;
 
-                            ctx.graph.add_return(from.clone(), to.clone())?;
+                            ctx.graph.add_return(from.clone(), to)?;
                         }
                     }
                 }
@@ -618,9 +654,10 @@ impl Convert {
                                 .context("Cannot find track")?,
                             ..Default::default()
                         };
-                        let to = ctx.state.cache_fact(&function.name, fact)?;
+                        let to = ctx.state.cache_fact(&function.name, fact)?.clone();
+                        self.create_line(ctx, &function.name, to.clone())?;
 
-                        ctx.graph.add_normal(from.clone(), to.clone())?;
+                        ctx.graph.add_normal(from.clone(), to)?;
                     }
                 }
             }
@@ -629,7 +666,7 @@ impl Convert {
                 let out_ = ctx
                     .state
                     .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var == dest);
+                    .filter(|x| &x.belongs_to_var != dest);
 
                 for (from, after) in in_
                     .zip(out_)

@@ -498,3 +498,162 @@ fn test_global_check_order() {
     "
     );
 }
+
+#[test]
+fn test_ir_simple_store() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+
+    ir!(
+        "test_ir_simple_store",
+        req,
+        "
+         define test (param %0) (result 0) (define %0 %1) {
+            STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
+            %0 = 1
+         };
+    "
+    );
+}
+
+#[test]
+fn test_ir_simple_load() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+
+    ir!(
+        "test_ir_simple_load",
+        req,
+        "
+         define test (param %0) (result 0) (define %0 %1) {
+            %1 = LOAD OFFSET 0 + %0 ALIGN 0
+         };
+    "
+    );
+}
+
+#[test]
+fn test_memory_store() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_memory_store",
+        req,
+        "
+        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
+        BLOCK 0
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 = 8
+        %3 = -12345
+        STORE FROM %3 OFFSET 0 + %2 ALIGN 3 64
+        %5 = 8
+        %6 = -12345
+        STORE FROM %6 OFFSET 0 + %5 ALIGN 2 32
+        %7 = 8
+        %8 = -12345
+        STORE FROM %8 OFFSET 0 + %7 ALIGN 3 64
+        RETURN ;
+        };
+    "
+    );
+}
+
+#[test]
+fn test_memory_load() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %4 = 8
+        %5 = LOAD OFFSET 0 + %4 ALIGN 0
+        %6 = 8
+        %7 = LOAD OFFSET 0 + %6 ALIGN 0
+        KILL %7
+        KILL %6
+        RETURN ;
+       }; 
+    "
+    );
+}
+
+#[test]
+fn test_memory_load_different_functions() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load_different_functions",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
+        RETURN %0;
+       };
+    "
+    );
+}
+
+#[test]
+fn test_memory_load_different_functions2() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load_different_functions2",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        STORE FROM %1 OFFSET 1 + %0 ALIGN 2 32
+        %3 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
+        RETURN %0;
+       };
+    "
+    );
+}
+
