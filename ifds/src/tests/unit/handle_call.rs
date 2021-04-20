@@ -1,4 +1,4 @@
-use crate::icfg::convert::ConvertSummary;
+use crate::icfg::convert::{ConvertSummary, Ctx};
 use crate::icfg::flowfuncs::taint::{
     flow::TaintNormalFlowFunction, initial::TaintInitialFlowFunction,
 };
@@ -39,6 +39,11 @@ fn test_normal_argument_passing() {
 
     let mut state = State::default();
 
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
@@ -62,17 +67,16 @@ fn test_normal_argument_passing() {
         instructions: vec![Instruction::Return(vec!["%0".to_string()])],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
@@ -84,20 +88,19 @@ fn test_normal_argument_passing() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, foo.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, foo.clone());
 
     let call_to_start_edges = convert
         .pass_args(
             &caller_function,
             &callee_function,
             &vec!["%0".to_string()],
-            &mut graph,
+            &mut ctx,
             1,
             &"%0".to_string(),
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
-            &mut state,
         )
         .unwrap();
 
@@ -118,10 +121,15 @@ fn test_normal_argument_passing() {
 
 #[test]
 fn test_normal_argument_passing_with_multiple_params() {
-    let (mut convert, mut graph, mut path_edge, mut worklist,  _end_summary, mut normal_flows) =
+    let (mut convert, mut graph, mut path_edge, mut worklist, _end_summary, mut normal_flows) =
         setup();
 
     let mut state = State::default();
+
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
 
     let caller_function = AstFunction {
         name: "main".to_string(),
@@ -146,17 +154,16 @@ fn test_normal_argument_passing_with_multiple_params() {
         instructions: vec![Instruction::Return(vec!["%0".to_string()])],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
@@ -168,7 +175,7 @@ fn test_normal_argument_passing_with_multiple_params() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, foo.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, foo.clone());
 
     let bar = Fact {
         belongs_to_var: "%1".to_string(),
@@ -178,7 +185,7 @@ fn test_normal_argument_passing_with_multiple_params() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, bar.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, bar.clone());
 
     // first param
     {
@@ -187,13 +194,12 @@ fn test_normal_argument_passing_with_multiple_params() {
                 &caller_function,
                 &callee_function,
                 &vec!["%0".to_string(), "%1".to_string()],
-                &mut graph,
+                &mut ctx,
                 1,
                 &"%0".to_string(),
                 &mut normal_flows,
                 &mut path_edge,
                 &mut worklist,
-                &mut state,
             )
             .unwrap();
 
@@ -219,13 +225,12 @@ fn test_normal_argument_passing_with_multiple_params() {
                 &caller_function,
                 &callee_function,
                 &vec!["%0".to_string(), "%1".to_string()],
-                &mut graph,
+                &mut ctx,
                 1,
                 &"%1".to_string(),
                 &mut normal_flows,
                 &mut path_edge,
                 &mut worklist,
-                &mut state,
             )
             .unwrap();
 
@@ -252,6 +257,11 @@ fn test_normal_argument_passing_taut() {
 
     let mut state = State::default();
 
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
@@ -274,17 +284,16 @@ fn test_normal_argument_passing_taut() {
         ],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
@@ -297,20 +306,19 @@ fn test_normal_argument_passing_taut() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, foo.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, foo.clone());
 
     let call_to_start_edges = convert
         .pass_args(
             &caller_function,
             &callee_function,
             &vec!["taut".to_string()],
-            &mut graph,
+            &mut ctx,
             1,
             &"taut".to_string(),
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
-            &mut state,
         )
         .unwrap();
 
@@ -337,13 +345,22 @@ fn test_pass_global_variable() {
 
     let mut state = State::default();
 
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
         definitions: vec!["%-1".to_string(), "%0".to_string()],
         instructions: vec![
             Instruction::Const("%-1".to_string(), 0.0),
-            Instruction::Call("test".to_string(), vec!["%-1".to_string()], vec!["%0".to_string()]),
+            Instruction::Call(
+                "test".to_string(),
+                vec!["%-1".to_string()],
+                vec!["%0".to_string()],
+            ),
         ],
         ..Default::default()
     };
@@ -359,17 +376,16 @@ fn test_pass_global_variable() {
         ],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
@@ -382,20 +398,19 @@ fn test_pass_global_variable() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, foo.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, foo.clone());
 
     let call_to_start_edges = convert
         .pass_args(
             &caller_function,
             &callee_function,
             &vec!["%-1".to_string()],
-            &mut graph,
+            &mut ctx,
             1,
             &"%-1".to_string(),
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
-            &mut state,
         )
         .unwrap();
 
@@ -422,6 +437,11 @@ fn test_pass_memory() {
 
     let mut state = State::default();
 
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
@@ -447,21 +467,20 @@ fn test_pass_memory() {
         ],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
-    
-    let _ = state.add_memory_var(caller_function.name.clone(), 0.0);
+
+    let _ = ctx.state.add_memory_var(caller_function.name.clone(), 0.0);
 
     let foo = Fact {
         belongs_to_var: "mem@0".to_string(),
@@ -472,20 +491,19 @@ fn test_pass_memory() {
         ..Default::default()
     };
 
-    let _ = state.cache_fact(&caller_function.name, foo.clone());
+    let _ = ctx.state.cache_fact(&caller_function.name, foo.clone());
 
     let call_to_start_edges = convert
         .pass_args(
             &caller_function,
             &callee_function,
             &vec![],
-            &mut graph,
+            &mut ctx,
             1,
             &"mem@0".to_string(),
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
-            &mut state,
         )
         .unwrap();
 

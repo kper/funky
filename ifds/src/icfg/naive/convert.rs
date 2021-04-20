@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 /// This module is responsible to parse
 /// the webassembly AST to a graph
 use crate::icfg::graph::*;

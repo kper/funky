@@ -1,4 +1,4 @@
-use crate::icfg::convert::ConvertSummary;
+use crate::icfg::convert::{ConvertSummary, Ctx};
 use crate::icfg::flowfuncs::taint::{
     flow::TaintNormalFlowFunction, initial::TaintInitialFlowFunction,
 };
@@ -37,14 +37,19 @@ fn test_normal_function_call() {
     let (mut convert, mut graph, mut path_edge, mut worklist, mut end_summary, mut normal_flows) =
         setup();
 
+    let mut state = State::default();
+
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let d2 = Fact {
         belongs_to_var: "%0".to_string(),
         function: "test".to_string(),
         next_pc: 0, //this is an edge case
         ..Default::default()
     };
-
-    let mut state = State::default();
 
     let caller_function = AstFunction {
         name: "main".to_string(),
@@ -69,36 +74,39 @@ fn test_normal_function_call() {
         instructions: vec![Instruction::Return(vec!["%0".to_string()])],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
-    let callee_init_facts = state.init_function(&callee_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
+    let callee_init_facts = ctx.state.init_function(&callee_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
     let _ = convert
         .pacemaker(
             &callee_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &callee_init_facts,
-            &mut state,
         )
         .unwrap();
 
-    let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
+    let d2 = ctx
+        .state
+        .cache_fact(&callee_function.name, d2)
+        .unwrap()
+        .clone();
 
-    let init_fact = state
+    let init_fact = ctx
+        .state
         .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
@@ -108,13 +116,12 @@ fn test_normal_function_call() {
         .handle_return(
             &callee_function,
             &d2,
-            &mut graph,
+            &mut ctx,
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
             &init_fact,
             &mut end_summary,
-            &mut state,
         )
         .unwrap();
 
@@ -135,6 +142,13 @@ fn test_return_directly_global() {
     let (mut convert, mut graph, mut path_edge, mut worklist, mut end_summary, mut normal_flows) =
         setup();
 
+    let mut state = State::default();
+
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let d2 = Fact {
         belongs_to_var: "%-1".to_string(),
         function: "test".to_string(),
@@ -142,19 +156,13 @@ fn test_return_directly_global() {
         ..Default::default()
     };
 
-    let mut state = State::default();
-
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
         definitions: vec!["%-1".to_string(), "%0".to_string()],
         instructions: vec![
             Instruction::Const("%-1".to_string(), 0.0),
-            Instruction::Call(
-                "test".to_string(),
-                vec![],
-                vec!["%1".to_string()],
-            ),
+            Instruction::Call("test".to_string(), vec![], vec!["%1".to_string()]),
         ],
         ..Default::default()
     };
@@ -167,36 +175,39 @@ fn test_return_directly_global() {
         instructions: vec![Instruction::Return(vec!["%-1".to_string()])],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
-    let callee_init_facts = state.init_function(&callee_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
+    let callee_init_facts = ctx.state.init_function(&callee_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
     let _ = convert
         .pacemaker(
             &callee_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &callee_init_facts,
-            &mut state,
         )
         .unwrap();
 
-    let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
+    let d2 = ctx
+        .state
+        .cache_fact(&callee_function.name, d2)
+        .unwrap()
+        .clone();
 
-    let init_fact = state
+    let init_fact = ctx
+        .state
         .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
@@ -206,13 +217,12 @@ fn test_return_directly_global() {
         .handle_return(
             &callee_function,
             &d2,
-            &mut graph,
+            &mut ctx,
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
             &init_fact,
             &mut end_summary,
-            &mut state,
         )
         .unwrap();
 
@@ -233,14 +243,19 @@ fn test_return_memory() {
     let (mut convert, mut graph, mut path_edge, mut worklist, mut end_summary, mut normal_flows) =
         setup();
 
+    let mut state = State::default();
+
+    let mut ctx = Ctx {
+        graph: &mut graph,
+        state: &mut state,
+    };
+
     let d2 = Fact {
         belongs_to_var: "%1".to_string(),
         function: "test".to_string(),
         next_pc: 0, //this is an edge case
         ..Default::default()
     };
-
-    let mut state = State::default();
 
     let caller_function = AstFunction {
         name: "main".to_string(),
@@ -266,39 +281,43 @@ fn test_return_memory() {
         instructions: vec![
             Instruction::Const("%0".to_string(), 0.0),
             Instruction::Load("%1".to_string(), 0.0, "%0".to_string()),
-            Instruction::Return(vec!["%1".to_string()])],
+            Instruction::Return(vec!["%1".to_string()]),
+        ],
     };
 
-    let caller_init_facts = state.init_function(&caller_function, 0).unwrap();
-    let callee_init_facts = state.init_function(&callee_function, 0).unwrap();
+    let caller_init_facts = ctx.state.init_function(&caller_function, 0).unwrap();
+    let callee_init_facts = ctx.state.init_function(&callee_function, 0).unwrap();
 
     let _ = convert
         .pacemaker(
             &caller_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &caller_init_facts,
-            &mut state,
         )
         .unwrap();
 
     let _ = convert
         .pacemaker(
             &callee_function,
-            &mut graph,
+            &mut ctx,
             &mut path_edge,
             &mut worklist,
             &mut normal_flows,
             &callee_init_facts,
-            &mut state,
         )
         .unwrap();
 
-    let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
+    let d2 = ctx
+        .state
+        .cache_fact(&callee_function.name, d2)
+        .unwrap()
+        .clone();
 
-    let init_fact = state
+    let init_fact = ctx
+        .state
         .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
@@ -308,13 +327,12 @@ fn test_return_memory() {
         .handle_return(
             &callee_function,
             &d2,
-            &mut graph,
+            &mut ctx,
             &mut normal_flows,
             &mut path_edge,
             &mut worklist,
             &init_fact,
             &mut end_summary,
-            &mut state,
         )
         .unwrap();
 
