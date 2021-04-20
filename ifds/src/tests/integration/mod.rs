@@ -45,6 +45,8 @@ macro_rules! run {
 
         let ir_code = ir.buffer();
 
+        //assert_snapshot!(format!("{}_ir", $name), ir_code);
+
         let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();

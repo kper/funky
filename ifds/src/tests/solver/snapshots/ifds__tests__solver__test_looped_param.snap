@@ -55,12 +55,37 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 3,
     },
     Taint {
+        variable: "%0",
+        function: "0",
+        pc: 3,
+    },
+    Taint {
         variable: "%1",
         function: "0",
         pc: 4,
     },
     Taint {
+        variable: "%11",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
+        variable: "%0",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
         variable: "%1",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%0",
         function: "0",
         pc: 5,
     },

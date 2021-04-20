@@ -99,7 +99,7 @@ fn test_normal_function_call() {
     let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
 
     let init_fact = state
-        .get_taut(&callee_function.name)
+        .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
         .clone();
@@ -197,7 +197,7 @@ fn test_return_directly_global() {
     let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
 
     let init_fact = state
-        .get_taut(&callee_function.name)
+        .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
         .clone();
@@ -299,7 +299,7 @@ fn test_return_memory() {
     let d2 = state.cache_fact(&callee_function.name, d2).unwrap().clone();
 
     let init_fact = state
-        .get_taut(&callee_function.name)
+        .get_taut(&callee_function.name, 0)
         .unwrap()
         .unwrap()
         .clone();

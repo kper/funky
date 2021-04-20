@@ -102,7 +102,7 @@ where
             .context("Pacemaker for pass_args failed")?;
 
             // Create all params
-            state.cache_facts(&callee_function.name, init_facts.clone())?;
+            let _ = state.cache_facts(&callee_function.name, init_facts.clone())?;
 
             // Save all blocks of the `callee_function`.
             // Because we want to jump to them later.
@@ -673,7 +673,6 @@ where
                             worklist,
                             &mut incoming,
                             &end_summary,
-                            function,
                             summary_edge,
                             dest,
                             pc,
@@ -770,7 +769,6 @@ where
         worklist: &mut VecDeque<Edge>,
         incoming: &mut HashMap<(String, usize, String), Vec<Fact>>,
         end_summary: &HashMap<(String, usize, String), Vec<Fact>>,
-        function: &AstFunction,
         summary_edge: &mut Vec<Edge>,
         dest: &Vec<String>,
         pc: usize,
@@ -887,11 +885,11 @@ where
                 }
             }
 
-            debug!("End summary {:#?}", end_summary);
+            debug!("end summary {:#?}", end_summary);
         }
         let call_flow = self.call_flow(
             program,
-            function,
+            caller_function,
             callee,
             params,
             dest,
