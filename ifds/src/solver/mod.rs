@@ -3,10 +3,13 @@
 use crate::icfg::graph::{Edge, Graph};
 use anyhow::{Context, Result};
 use std::collections::HashSet;
+use crate::icfg::state::State;
 
 type PC = usize;
 
 pub struct IfdsSolver;
+
+pub mod bfs;
 
 /// Represents the taints from the execution of the solver.
 #[derive(Debug)]
@@ -110,5 +113,5 @@ pub trait GraphReachability {
     /// Get all taints for the graph. The edges must be already computed.
     /// The result depends on the `req` [`Request`]. Only the requested function and instruction which have
     /// an higher or equal program counter.
-    fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Vec<Taint>;
+    fn all_sinks(&mut self, graph: &mut Graph, state: &State, req: &Request) -> Vec<Taint>;
 }
