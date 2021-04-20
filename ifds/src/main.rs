@@ -27,8 +27,6 @@ use tui::Terminal;
 
 use termion::event::Key;
 
-use std::collections::HashSet;
-
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -309,20 +307,9 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
         let res = convert.visit(&prog, &req);
         let (mut graph, state) = res.expect("Cannot create graph");
 
-        if let Some(ref export_graph) = export_graph {
-            let output = crate::icfg::tikz::render_to(&graph, &state);
+        let taints = solver.all_sinks(&mut graph, &req);
 
-            let mut fs = File::create(export_graph)
-                .context("Cannot write export file")
-                .unwrap();
-            fs.write_all(output.as_bytes())
-                .context("Cannto write file")
-                .unwrap();
-        }
-
-        let taints = solver.sinks_var(&mut graph, &req);
-
-        (state, taints)
+        (graph, state, taints)
     };
 
     let mut input = String::new();
@@ -336,8 +323,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     // clean the screen
     print!("{}[2J", 27 as char);
 
-    //let mut taints: Vec<Taint> = Vec::new();
-    let mut taints_var: HashSet<_> = HashSet::new();
+    let mut taints: Vec<Taint> = Vec::new();
 
     let mut already_computed = false;
     let mut req = None;
@@ -348,17 +334,25 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
         if let Some(ref req) = req {
             if !already_computed {
                 let res = get_taints(req);
-                taints_var = res.1.context("Cannot get taints for ui")?;
+                taints = res.2.context("Cannot get taints for ui")?;
                 already_computed = true;
-                let _ =
-                    udp_socket.send_to(format!("{:#?}", taints_var).as_bytes(), "127.0.0.1:4242");
+                let _ = udp_socket.send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
                 //.context("Cannot send logging information")?;
+
+                if let Some(ref export_graph) = export_graph {
+                    let output = crate::icfg::tikz::render_to(&res.0, &res.1);
+
+                    let mut fs = File::create(export_graph).context("Cannot write export file")?;
+                    fs.write_all(output.as_bytes())
+                        .context("Cannto write file")?;
+                }
             }
         }
 
         struct Line<'a> {
             instruction: Option<&'a Instruction>,
             pc: usize,
+            is_taint: bool,
             is_function: bool,
             function: &'a str,
         }
@@ -377,7 +371,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                     .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
                     .split(f.size());
 
-                let code: Vec<Line> = stateful
+                let mut code: Vec<Line> = stateful
                     .items
                     .iter()
                     .enumerate()
@@ -386,6 +380,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                             Line {
                                 instruction: Some(instruction),
                                 pc: *pc,
+                                is_taint: false,
                                 is_function: false,
                                 function,
                             }
@@ -393,6 +388,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                             Line {
                                 instruction: instruction.clone(),
                                 pc: *pc,
+                                is_taint: false,
                                 is_function: true,
                                 function,
                             }
@@ -400,20 +396,25 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                     })
                     .collect();
 
+                for taint in taints.iter() {
+                    let i = code
+                        .iter_mut()
+                        .find(|x| x.function == taint.function.as_str() && x.pc == taint.pc);
+
+                    if let Some(line) = i {
+                        if let Some(instruction) = line.instruction {
+                            if match_taint(instruction, &&taint) {
+                                line.is_taint = true;
+                            }
+                        }
+                    }
+                }
+
                 let items: Vec<ListItem> = code
                     .iter()
                     .map(|x| {
                         if !x.is_function {
-                            let is_taint = match &req {
-                                Some(req) => {
-                                    x.function == req.function
-                                        && x.pc >= req.pc
-                                        && match_taint(&x.instruction.unwrap(), &taints_var)
-                                }
-                                None => false,
-                            };
-
-                            if is_taint {
+                            if x.is_taint {
                                 ListItem::new(Spans::from(Span::styled(
                                     format!("{:02}| {:?}", x.pc, x.instruction.unwrap()),
                                     Style::default()
@@ -436,6 +437,50 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                         }
                     })
                     .collect();
+
+                /*
+                let items: Vec<ListItem> = stateful
+                    .items
+                    .iter()
+                    .enumerate()
+                    .map(|(_index, (pc, _line_no, instruction, function))| {
+                        if let Some(instruction) = instruction {
+                            if taints
+                                .iter()
+                                .find(|x| {
+                                    let mut is_ok = false;
+
+                                    if &x.function == function && x.pc == *pc  {
+                                        is_ok = true;
+                                    }
+
+                                    is_ok && match_taint(instruction, x)
+                                })
+                                .is_some()
+                            {
+                                ListItem::new(Spans::from(Span::styled(
+                                    format!("{:02}| {:?}", pc, instruction),
+                                    Style::default()
+                                        .bg(Color::LightRed)
+                                        .add_modifier(Modifier::BOLD),
+                                )))
+                            } else {
+                                ListItem::new(Spans::from(Span::styled(
+                                    format!("{:02}| {:?}", pc, instruction),
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                )))
+                            }
+                        } else {
+                            // Display function
+                            ListItem::new(Spans::from(Span::styled(
+                                format!("{:02}| Function {}", pc, function),
+                                Style::default()
+                                    .bg(Color::LightGreen)
+                                    .add_modifier(Modifier::BOLD),
+                            )))
+                        }
+                    })
+                    .collect();*/
 
                 let list = List::new(items)
                     .highlight_style(
@@ -471,10 +516,10 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
             }
         } else if key == Key::Esc {
             input = String::new();
-            taints_var.clear();
+            taints.clear();
         } else if key == Key::Backspace {
             input.pop();
-            taints_var.clear();
+            taints.clear();
         } else if key == Key::Right {
             //let function = get_function_by_index(&prog.functions, stateful.current);
             let entry = get_variable_by_index(&line_annoted_code, stateful.current);
@@ -652,42 +697,30 @@ fn get_variable_by_index(
 }
 
 // check if the taint touches the instruction, then returns `true`.
-fn match_taint(instruction: &Instruction, taints: &HashSet<String>) -> bool {
-    let relevant_vars = match instruction {
-        Instruction::Unop(dest, src) => vec![dest, src],
+fn match_taint(instruction: &Instruction, taint: &&Taint) -> bool {
+    match instruction {
+        Instruction::Unop(dest, src) => &taint.variable == dest || &taint.variable == src,
         Instruction::BinOp(dest, src1, src2) => {
-            vec![dest, src1, src2]
+            &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
         }
-        Instruction::Const(dest, _) => vec![dest],
-        Instruction::Assign(dest, src) => vec![dest, src],
+        Instruction::Const(dest, _) => &taint.variable == dest,
+        Instruction::Assign(dest, src) => &taint.variable == dest || &taint.variable == src,
         Instruction::Call(_callee, params, dest) => {
-            let mut x: Vec<_> = params.iter().collect();
-            x.extend(dest);
-            x
+            params.contains(&taint.variable) || dest.contains(&taint.variable)
         }
         Instruction::CallIndirect(_callee, params, dest) => {
-            let mut x: Vec<_> = params.iter().collect();
-            x.extend(dest);
-            x
+            params.contains(&taint.variable) || dest.contains(&taint.variable)
         }
-        Instruction::Kill(dest) => vec![dest],
-        Instruction::Conditional(dest, _) => vec![dest],
-        Instruction::Return(dest) => dest.iter().collect(),
+        Instruction::Kill(dest) => &taint.variable == dest,
+        Instruction::Conditional(dest, _) => &taint.variable == dest,
+        Instruction::Return(dest) => dest.contains(&taint.variable),
         Instruction::Phi(dest, src1, src2) => {
-            vec![dest, src1, src2]
+            &taint.variable == dest || &taint.variable == src1 || &taint.variable == src2
         }
-        Instruction::Store(src1, _, src2) => vec![src1, src2],
-        Instruction::Load(dest, _, src) => vec![dest, src],
-        _ => vec![],
-    };
-
-    for i in relevant_vars {
-        if taints.contains(i) {
-            return true;
-        }
+        Instruction::Store(src1, _, src2) => &taint.variable == src1 || &taint.variable == src2,
+        Instruction::Load(dest, _, src) => &taint.variable == dest || &taint.variable == src,
+        _ => false,
     }
-
-    false
 }
 
 fn setup_logging() -> UdpSocket {
