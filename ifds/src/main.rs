@@ -407,6 +407,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                             let is_taint = match &req {
                                 Some(req) => {
                                     x.function == req.function
+                                        && x.pc >= req.pc
                                         && match_taint(&x.instruction.unwrap(), &taints_var)
                                 }
                                 None => false,
