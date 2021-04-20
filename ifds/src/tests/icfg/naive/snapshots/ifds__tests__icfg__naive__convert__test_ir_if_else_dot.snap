@@ -1,0 +1,153 @@
+---
+source: src/tests/icfg/naive/convert.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (1) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (2) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (5) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (6) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (7) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (9) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (10) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (11) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (12) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (13) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (14) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (15) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (16) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (17) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (18) at (1, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (19) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (20) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (21) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (22) at (2, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (23) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (24) at (0, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (25) at (3, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (26) at (2, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (27) at (1, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (28) at (0, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (29) at (3, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (30) at (2, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (31) at (0, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (32) at (0, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (33) at (3, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (34) at (2, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (35) at (1, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (36) at (0, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (37) at (2, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (38) at (1, 11) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (39) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (40) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (41) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (42) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (43) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (44) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (45) at (2, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (46) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (47) at (0, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (48) at (3, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (49) at (2, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (50) at (1, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (51) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (52) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (53) at (2, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (54) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (55) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (56) at (3, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (57) at (1, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (58) at (2, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (59) at (0, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (60) at (3, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (61) at (2, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (62) at (1, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (63) at (0, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (64) at (3, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (65) at (2, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (66) at (1, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (67) at (0, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (68) at (3, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (69) at (2, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (70) at (1, 9) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (71) at (0, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (72) at (3, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (73) at (2, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (74) at (1, 10) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (75) at (0, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (76) at (2, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (77) at (1, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (78) at (3, 12) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
+\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [1, 2])};
+\node[font=\tiny] (note_3) at (-1.5, 3.5) {Block(1)};
+\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(1, 2.0)};
+\node[font=\tiny] (note_5) at (-1.5, 5.5) {Const(2, 3.0)};
+\node[font=\tiny] (note_6) at (-1.5, 6.5) {Jump(3)};
+\node[font=\tiny] (note_7) at (-1.5, 7.5) {Block(2)};
+\node[font=\tiny] (note_8) at (-1.5, 8.5) {Const(2, 4.0)};
+\node[font=\tiny] (note_9) at (-1.5, 9.5) {Jump(3)};
+\node[font=\tiny] (note_10) at (-1.5, 10.5) {Block(3)};
+\node[font=\tiny] (note_11) at (-1.5, 11.5) {Assign(0, 2)};
+		\path[->] (0) edge (4);
+		\path[->] (1) edge (6);
+		\path[->] (2) edge (7);
+		\path[->] (0) edge (5);
+		\path[->, bend right] (4) edge (43);
+		\path[->, bend right] (5) edge (44);
+		\path[->, bend right] (6) edge (45);
+		\path[->, bend right] (7) edge (46);
+		\path[->, bend right] (4) edge (47);
+		\path[->, bend right] (5) edge (48);
+		\path[->, bend right] (6) edge (49);
+		\path[->, bend right] (7) edge (50);
+		\path[->] (4) edge (43);
+		\path[->] (5) edge (44);
+		\path[->] (6) edge (45);
+		\path[->] (7) edge (46);
+		\path[->] (16) edge (20);
+		\path[->] (17) edge (21);
+		\path[->] (18) edge (57);
+		\path[->] (16) edge (22);
+		\path[->] (20) edge (24);
+		\path[->] (21) edge (25);
+		\path[->] (22) edge (26);
+		\path[->] (20) edge (27);
+		\path[->, bend right] (24) edge (63);
+		\path[->, bend right] (25) edge (64);
+		\path[->, bend right] (26) edge (65);
+		\path[->, bend right] (27) edge (66);
+		\path[->] (28) edge (32);
+		\path[->] (29) edge (33);
+		\path[->] (30) edge (34);
+		\path[->] (28) edge (35);
+		\path[->, bend right] (32) edge (63);
+		\path[->, bend right] (33) edge (64);
+		\path[->, bend right] (34) edge (65);
+		\path[->, bend right] (35) edge (66);
+		\path[->] (36) edge (75);
+		\path[->] (37) edge (76);
+		\path[->] (38) edge (77);
+		\path[->] (38) edge (78);
+
+
+                \end{tikzpicture}
+            \end{document}

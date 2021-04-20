@@ -385,4 +385,41 @@ impl State {
 
         Ok(())
     }
+
+    /// Add a statement with the instruction with a note [`Note`].
+    /// The notes has the instruction as content, which makes it easier to read in the
+    /// `tikz` representation.
+    /// THIS METHOD IS FOR THE NAIVE IMPLEMENTATION.
+    pub fn add_statement_with_note_naive(
+        &mut self,
+        function: &AstFunction,
+        instruction: String,
+        pc: usize,
+        variable: &String,
+    ) -> Result<()> {
+        self.add_statement(function, instruction.clone(), pc + 1, variable)
+            .context("While add statement with note")?;
+
+        let mut vars = self
+            .vars
+            .get(&function.name)
+            .context("Cannot get functions's vars")?
+            .iter()
+            .enumerate();
+
+        if let Some((_track, var)) = vars.find(|x| &x.1.name == variable) {
+            debug!("Adding new fact for {}", var.name);
+
+            if var.is_taut && pc < function.instructions.len() {
+                self.notes.push(Note {
+                    id: self.note_counter.get(),
+                    function: function.name.clone(),
+                    pc,
+                    note: instruction.clone(),
+                });
+            }
+        }
+
+        Ok(())
+    }
 }

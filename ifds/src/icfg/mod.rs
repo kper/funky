@@ -11,3 +11,7 @@ pub mod flowfuncs;
 
 /// Keeps node information about the program
 pub mod state;
+
+/// The naive implementation for IFDS.
+/// This is just a reference implementation for benchmarking.
+pub mod naive;

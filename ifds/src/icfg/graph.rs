@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use anyhow::Result;
+
 type VarId = String;
 type FunctionName = String;
 
@@ -7,6 +9,38 @@ type FunctionName = String;
 #[derive(Debug, Default)]
 pub struct Graph {
     pub edges: Vec<Edge>,
+}
+
+impl Graph {
+    /// Adding a normal edge to the graph
+    pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Normal {
+            curved: false,
+            from,
+            to,
+        });
+
+        Ok(())
+    }
+
+    /// Adding a normal edge to the graph, which is curved.
+    /// The curving indicates that it is a jump.
+    pub fn add_normal_curved(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Normal {
+            curved: true,
+            from,
+            to,
+        });
+
+        Ok(())
+    }
+
+    /// Adding a call-to-return edge between the given facts.
+    pub fn add_call_to_return_edge(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::CallToReturn { from, to });
+
+        Ok(())
+    }
 }
 
 /// A helper struct for the graph representation in `tikz`
