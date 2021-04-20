@@ -10,10 +10,11 @@ use log::debug;
 use std::collections::HashMap;
 
 type FunctionName = String;
+type PC = usize;
 
 #[derive(Debug, Default)]
 pub struct State {
-    facts: HashMap<FunctionName, Vec<Fact>>,
+    facts: HashMap<FunctionName, HashMap<PC, Vec<Fact>>>,
     pub vars: HashMap<FunctionName, Vec<Variable>>,
     pub functions: HashMap<FunctionName, Function>,
     /// `init_facts` is a helper struct for getting the initial facts
@@ -29,13 +30,14 @@ impl State {
     /// Get the tautological fact for a function.
     /// Be careful with this function, because it will not return
     /// the correct taut if the `start_pc` was not at the first instruction.
-    pub fn get_taut(&self, function: &String) -> Result<Option<&Fact>> {
+    pub fn get_taut(&self, function: &String, start_pc: usize) -> Result<Option<&Fact>> {
         Ok(self
             .facts
             .get(function)
             .context("Cannot find function")?
-            .iter()
-            .find(|x| x.var_is_taut))
+            .values()
+            .flatten()
+            .find(|x| x.var_is_taut && x.next_pc == start_pc))
     }
 
     /// Checks if the function by the given `name` was defined
@@ -46,35 +48,74 @@ impl State {
     /// Finds the fact with lowest `next_pc` and returns it.
     pub fn get_min_pc(&self, function: &String) -> Result<usize> {
         if let Some(facts) = self.init_facts.get(function) {
-            return Ok(facts.get(0).unwrap().next_pc.checked_sub(1).unwrap_or(0));
+            if let Some(fact) = facts.get(0) {
+                return Ok(fact.next_pc.checked_sub(1).unwrap_or(0));
+            } else {
+                bail!("Function has an empty set of initial facts.");
+            }
         }
 
         bail!("Cannot find function")
     }
 
     /// Saving facts into an internal structure for fast lookup.
-    pub fn cache_facts(&mut self, function: &String, facts: Vec<Fact>) -> Result<&[Fact]> {
-        match self.facts.entry(function.clone()) {
-            Entry::Occupied(entry) => {
-                let saver = entry.into_mut();
-                let len1 = saver.len();
-                saver.extend_from_slice(facts.as_slice());
-                let len2 = saver.len();
+    /// It is required that every fact has the **same** `next_pc` [`Fact`].
+    /// Returns the corresponding inserted facts.
+    pub fn cache_facts(
+        &mut self,
+        function: &String,
+        facts: Vec<Fact>,
+    ) -> Result<impl Iterator<Item = &Fact>> {
+        if facts.len() == 0 {
+            bail!("Cannot have empty facts");
+        }
 
-                return Ok(&saver[len1..len2]);
+        let pc = facts.get(0).context("no fact")?.next_pc;
+
+        match self.facts.entry(function.clone()) {
+            Entry::Occupied(mut entry) => {
+                let entry = entry.get_mut().entry(pc);
+
+                // Check entry for pc
+                match entry {
+                    Entry::Occupied(entry) => {
+                        // There are already entries for given PC
+                        let saver = entry.into_mut();
+
+                        for fact in facts.iter() {
+                            if !saver.contains(fact) {
+                                saver.push(fact.clone());
+                            }
+                        }
+                    }
+                    Entry::Vacant(entry) => {
+                        // No entry for given PC, but function exists
+                        entry.insert(facts.clone());
+                    }
+                }
             }
             Entry::Vacant(entry) => {
-                return Ok(entry.insert(facts));
+                let mut inner = HashMap::default();
+                inner.insert(pc, facts.clone());
+
+                entry.insert(inner);
             }
         }
+
+        Ok(self.get_facts_at(function, pc)?.filter(move |x| {
+            facts
+                .iter()
+                .find(|y| x.belongs_to_var == y.belongs_to_var)
+                .is_some()
+        }))
     }
 
     /// Save the fact in the cache datastructure for the given function.
     /// Then return the reference to it.
     pub fn cache_fact(&mut self, function: &String, fact: Fact) -> Result<&Fact> {
-        let v = vec![fact];
-        let res = self.cache_facts(function, v)?;
-        Ok(&res[0])
+        let v = vec![fact.clone()];
+        let res: Vec<_> = self.cache_facts(function, v)?.collect();
+        Ok(res.get(0).context("Cannot get fact")?)
     }
 
     fn init_function_def(&mut self, function: &AstFunction) -> Result<()> {
@@ -226,7 +267,6 @@ impl State {
                 memory_offset: var.memory_offset,
             };
 
-            //self.facts.push(fact.clone());
             facts.push(fact);
 
             index += 1;
@@ -245,8 +285,10 @@ impl State {
             .facts
             .get(function)
             .context("Cannot find function")?
+            .get(&pc)
+            .context("Cannot find fact for pc")?
             .iter()
-            .filter(move |x| x.next_pc == pc))
+            .filter(move |x| x.next_pc == pc)) //TODO remove this line
     }
 
     /// Get the track by given name and function.
@@ -301,7 +343,9 @@ impl State {
             });
         }
 
-        self.cache_facts(&function.name, facts)?;
+        if facts.len() > 0 {
+            let _ = self.cache_facts(&function.name, facts)?;
+        }
 
         Ok(())
     }

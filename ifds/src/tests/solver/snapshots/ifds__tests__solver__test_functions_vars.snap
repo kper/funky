@@ -1,0 +1,8 @@
+---
+source: src/tests/solver/mod.rs
+expression: "format!(\"{:#?}\", vars)"
+
+---
+[
+    "%0",
+]

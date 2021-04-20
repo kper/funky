@@ -808,7 +808,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "STORE {} AT {} + {} ALIGN {} {}",
+                        "STORE FROM {} OFFSET {} + {} ALIGN {} {}",
                         c, arg.offset, i, arg.align, 32
                     )
                     .unwrap();
@@ -820,7 +820,7 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "STORE {} AT {} + {} ALIGN {} {}",
+                        "STORE FROM {} OFFSET {} + {} ALIGN {} {}",
                         c, arg.offset, i, arg.align, 64
                     )
                     .unwrap();
@@ -843,10 +843,10 @@ impl IR {
 
                     writeln!(
                         function_buffer,
-                        "{} = LOAD {} OFFSET {} ALIGN {}",
+                        "{} = LOAD OFFSET {} + {} ALIGN {}",
                         self.symbol_table.new_reg()?,
-                        c,
                         arg.offset,
+                        c,
                         arg.align
                     )
                     .unwrap();
