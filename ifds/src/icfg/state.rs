@@ -154,6 +154,28 @@ impl State {
         var
     }
 
+    /// Add a global  variable to the graph's variables
+    pub fn add_global_var(&mut self, function: String, var: String) -> Variable {
+        let var = Variable {
+            function: function.clone(),
+            is_global: true,
+            is_memory: false,
+            is_taut: false,
+            name: var,
+            memory_offset: None,
+        };
+
+        if let Some(vars) = self.vars.get_mut(&function) {
+            if !vars.contains(&var) {
+                vars.push(var.clone());
+            }
+        } else {
+            self.vars.insert(function, vec![var.clone()]);
+        }
+
+        var
+    }
+
     /// Initialise memory fact from `from_caller` for function `function` and return it.
     pub fn init_memory_fact(&mut self, function: &String, from_caller: &Fact) -> Result<&Fact> {
         if let Some(vars) = self.vars.get_mut(function) {

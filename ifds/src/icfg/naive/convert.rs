@@ -198,7 +198,7 @@ impl Convert {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
-            Instruction::Call(_, params, dests) => {
+            Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {
                     !params.contains(&x.belongs_to_var) || !dests.contains(&x.belongs_to_var)
@@ -213,8 +213,79 @@ impl Convert {
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
+
+                // Call edges
+
+                let in_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| params.contains(&x.belongs_to_var));
+
+                let out_ = ctx.state.get_facts_at(&callee, 0)?;
+
+                for (from, after) in in_
+                    .zip(out_)
+                    .map(|(from, after)| (from.clone(), after.clone()))
+                {
+                    ctx.graph.add_call(from.clone(), after.clone())?;
+                }
+
+                let globals = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| x.var_is_global)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for global in globals.into_iter() {
+                    let var = ctx
+                        .state
+                        .add_global_var(callee.clone(), global.belongs_to_var.clone());
+                    let fact = Fact {
+                        belongs_to_var: global.belongs_to_var.clone(),
+                        function: callee.clone(),
+                        var_is_global: true,
+                        next_pc: 0,
+                        track: ctx
+                            .state
+                            .get_track(&callee, &var.name)
+                            .context("Cannot find track")?,
+                        ..Default::default()
+                    };
+                    let to = ctx.state.cache_fact(callee, fact)?;
+
+                    ctx.graph.add_call(global, to.clone())?;
+                }
+
+                let memories = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| x.var_is_memory)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for mem in memories.into_iter() {
+                    let var = ctx
+                        .state
+                        .add_memory_var(callee.clone(), mem.memory_offset.unwrap());
+                    let fact = Fact {
+                        belongs_to_var: mem.belongs_to_var.clone(),
+                        function: callee.clone(),
+                        var_is_memory: true,
+                        next_pc: 0,
+                        track: ctx
+                            .state
+                            .get_track(&callee, &var.name)
+                            .context("Cannot find track")?,
+                        memory_offset: var.memory_offset.clone(),
+                        ..Default::default()
+                    };
+                    let to = ctx.state.cache_fact(callee, fact)?;
+
+                    ctx.graph.add_call(mem, to.clone())?;
+                }
             }
-            Instruction::CallIndirect(_, params, dests) => {
+            Instruction::CallIndirect(callees, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {
                     !params.contains(&x.belongs_to_var) || !dests.contains(&x.belongs_to_var)
@@ -229,7 +300,67 @@ impl Convert {
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
+
+                // Call edges
+
+                for callee in callees {
+                    let globals = ctx
+                        .state
+                        .get_facts_at(&function.name, pc)?
+                        .filter(|x| x.var_is_global)
+                        .cloned()
+                        .collect::<Vec<_>>();
+
+                    for global in globals.into_iter() {
+                        let var = ctx
+                            .state
+                            .add_global_var(callee.clone(), global.belongs_to_var.clone());
+                        let fact = Fact {
+                            belongs_to_var: global.belongs_to_var.clone(),
+                            function: callee.clone(),
+                            var_is_global: true,
+                            next_pc: 0,
+                            track: ctx
+                                .state
+                                .get_track(&callee, &var.name)
+                                .context("Cannot find track")?,
+                            ..Default::default()
+                        };
+                        let to = ctx.state.cache_fact(callee, fact)?;
+
+                        ctx.graph.add_call(global, to.clone())?;
+                    }
+
+                    let memories = ctx
+                        .state
+                        .get_facts_at(&function.name, pc)?
+                        .filter(|x| x.var_is_memory)
+                        .cloned()
+                        .collect::<Vec<_>>();
+
+                    for mem in memories.into_iter() {
+                        let var = ctx
+                            .state
+                            .add_memory_var(callee.clone(), mem.memory_offset.unwrap());
+                        let fact = Fact {
+                            belongs_to_var: mem.belongs_to_var.clone(),
+                            function: callee.clone(),
+                            var_is_memory: true,
+                            next_pc: 0,
+                            track: ctx
+                                .state
+                                .get_track(&callee, &var.name)
+                                .context("Cannot find track")?,
+                            memory_offset: var.memory_offset.clone(),
+                            ..Default::default()
+                        };
+                        let to = ctx.state.cache_fact(callee, fact)?;
+
+                        ctx.graph.add_call(mem, to.clone())?;
+                    }
+                }
             }
+            Instruction::Return(_) => {}
             Instruction::Jump(num) => {
                 if let Some(jump_to_block) =
                     block_resolver.get(&(function.name.clone(), num.clone()))
@@ -247,7 +378,7 @@ impl Convert {
                     bail!("Cannot find block to jump to");
                 }
             }
-            Instruction::Conditional(src, jumps) => {
+            Instruction::Conditional(_src, jumps) => {
                 for num in jumps.iter() {
                     if let Some(jump_to_block) =
                         block_resolver.get(&(function.name.clone(), num.clone()))
@@ -308,7 +439,9 @@ impl Convert {
                     }
                 }
             }
-            _ => unimplemented!(),
+            _ => {
+                panic!("Instruction {:?} not implemented", instruction);
+            }
         }
 
         Ok(())

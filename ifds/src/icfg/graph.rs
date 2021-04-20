@@ -41,6 +41,20 @@ impl Graph {
 
         Ok(())
     }
+
+    /// Adding a call edge between the given facts.
+    pub fn add_call(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Call { from, to });
+
+        Ok(())
+    }
+
+    /// Adding a return edge between the given facts.
+    pub fn add_return(&mut self, from: Fact, to: Fact) -> Result<()> {
+        self.edges.push(Edge::Return { from, to });
+
+        Ok(())
+    }
 }
 
 /// A helper struct for the graph representation in `tikz`
