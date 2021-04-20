@@ -342,3 +342,159 @@ fn test_ir_table() {
         "
     );
 }
+
+#[test]
+fn test_global_get_and_set() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_get_and_set",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        %1 = %-1
+        %-2 = %1
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_set() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_set",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-1 %0 %1) {
+            %0 = 1
+            %-1 = %0
+            %1 <- CALL 1()
+        };
+
+        define 1 (param) (result 1) (define %-1 %0) {
+            %0 = %-1
+            RETURN %0;
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_get_and_set_multiple_functions() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_get_and_set_multiple_functions",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        %1 = %-1
+        %-2 = %1
+        %2 = 1
+        %0 <- CALL 1 (%2)
+        %1 <- CALL 2 ()
+        };
+
+        define 1 (param %0) (result 1) (define %-2 %0) {
+        %0 = %-2
+        RETURN %0;
+        };
+
+        define 2 (result 1) (define %-2 %0) {
+        %0 = 1
+        %-2 = 1
+        RETURN %0;
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_call() {
+    let req = Request {
+        variable: None,
+        function: "1".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_call",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        BLOCK 0
+        %1 = %0
+        %-1 = %1
+        RETURN ;
+        };
+        define 1 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        BLOCK 1
+        %1 = 1
+        CALL 0(%1)
+        %2 = %0
+        %-2 = %2
+        RETURN ;
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_writes() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_globals_writes",
+        req,
+        "
+        define test (result 0) (define %-1 %0 %2) {
+            %0 = 1
+            %-1 = %0 
+            %2 <- CALL mytest()
+        };
+        define mytest (param) (result 1) (define %-1 %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN %-1;
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_check_order() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_globals_check_order",
+        req,
+        "
+        define test (result 0) (define %-2 %-1 %0 %2) {
+            %0 = 1
+            %-1 = %0 
+            %2 <- CALL mytest()
+        };
+        define mytest (param) (result 1) (define %-2 %-1 %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN %-1;
+        };
+    "
+    );
+}
