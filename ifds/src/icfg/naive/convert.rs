@@ -569,6 +569,93 @@ impl Convert {
                     }
                 }
             }
+            Instruction::Store(src, offset, variable) => {
+                let in_ = ctx.state.get_facts_at(&function.name, pc)?;
+                let out_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| !(x.var_is_memory && x.memory_offset == Some(*offset)));
+
+                for (from, after) in in_
+                    .zip(out_)
+                    .map(|(from, after)| (from.clone(), after.clone()))
+                {
+                    ctx.graph.add_normal(from.clone(), after.clone())?;
+                }
+
+                // Create
+
+                let in_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == src || &x.belongs_to_var == variable)
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for from in in_ {
+                    let var = ctx
+                        .state
+                        .add_memory_var(function.name.clone(), offset.clone());
+
+                    let out_ = ctx
+                        .state
+                        .get_facts_at(&function.name, pc + 1)?
+                        .find(|x| x.belongs_to_var == var.name && x.var_is_memory)
+                        .cloned();
+
+                    if let Some(to) = out_ {
+                        ctx.graph.add_normal(from.clone(), to.clone())?;
+                    } else {
+                        let fact = Fact {
+                            belongs_to_var: var.name.clone(),
+                            function: function.name.clone(),
+                            var_is_memory: true,
+                            memory_offset: var.memory_offset.clone(),
+                            next_pc: pc + 1,
+                            track: ctx
+                                .state
+                                .get_track(&function.name, &var.name)
+                                .context("Cannot find track")?,
+                            ..Default::default()
+                        };
+                        let to = ctx.state.cache_fact(&function.name, fact)?;
+
+                        ctx.graph.add_normal(from.clone(), to.clone())?;
+                    }
+                }
+            }
+            Instruction::Load(dest, _offset, src) => {
+                let in_ = ctx.state.get_facts_at(&function.name, pc)?;
+                let out_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == dest);
+
+                for (from, after) in in_
+                    .zip(out_)
+                    .map(|(from, after)| (from.clone(), after.clone()))
+                {
+                    ctx.graph.add_normal(from.clone(), after.clone())?;
+                }
+
+                // Assigment
+
+                let in_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == src);
+                let out_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc + 1)?
+                    .filter(|x| &x.belongs_to_var == dest);
+
+                for (from, after) in in_
+                    .zip(out_)
+                    .map(|(from, after)| (from.clone(), after.clone()))
+                {
+                    ctx.graph.add_normal(from.clone(), after.clone())?;
+                }
+            }
             _ => {
                 panic!("Instruction {:?} not implemented", instruction);
             }
