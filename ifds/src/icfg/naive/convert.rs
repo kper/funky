@@ -5,19 +5,12 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
-use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
-use std::collections::VecDeque;
-use tui::widgets::Block;
-
-use log::debug;
 
 use std::collections::HashMap;
 
-use crate::icfg::flowfuncs::{BlockResolver, InitialFlowFunction, NormalFlowFunction};
+use crate::icfg::flowfuncs::{BlockResolver};
 use crate::ir::ast::Program;
-
-const TAUT: usize = 1;
 
 /// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug, Default)]

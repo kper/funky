@@ -1,13 +1,12 @@
 use crate::icfg::naive::convert::Convert;
 use crate::icfg::tikz::render_to;
-use crate::solver::Request;
 use insta::assert_snapshot;
 use log::error;
 
 use crate::grammar::*;
 
 macro_rules! ir {
-    ($name:expr, $req:expr, $ir:expr) => {
+    ($name:expr, $ir:expr) => {
         let mut convert = Convert::default();
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
@@ -34,15 +33,8 @@ macro_rules! ir {
 
 #[test]
 fn test_ir_const() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-
     ir!(
         "test_ir_const",
-        req,
         "
          define test (result 0) (define %0) {
             %0 = 1
@@ -51,18 +43,10 @@ fn test_ir_const() {
     );
 }
 
-
 #[test]
 fn test_ir_double_const() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-
     ir!(
         "test_ir_double_const",
-        req,
         "
          define test (result 0) (define %0 %1) {
             %0 = 1
@@ -74,14 +58,8 @@ fn test_ir_double_const() {
 
 #[test]
 fn test_ir_double_assign() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_double_assign",
-        req,
         "
          define test (result 0) (define %0 %1 %2){
             %0 = 1
@@ -95,14 +73,8 @@ fn test_ir_double_assign() {
 
 #[test]
 fn test_ir_double_assign_with_params() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 2,
-    };
     ir!(
         "test_ir_double_const_with_params",
-        req,
         "
          define test (param %0) (result 0) (define %0 %1 %2){
             %1 = 1
@@ -115,14 +87,8 @@ fn test_ir_double_assign_with_params() {
 
 #[test]
 fn test_ir_chain_assign() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_chain_assign",
-        req,
         "
          define test (result 0) (define %0 %1 %2 %3){
             %0 = 1
@@ -136,14 +102,8 @@ fn test_ir_chain_assign() {
 
 #[test]
 fn test_ir_unop() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_unop",
-        req,
         "define test (result 0) (define %0 %1) {
             %0 = 1
             %1 = op %0
@@ -154,14 +114,8 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_binop",
-        req,
         "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = 1
@@ -173,14 +127,8 @@ fn test_ir_binop() {
 
 #[test]
 fn test_ir_binop_offset() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 1,
-    };
     ir!(
         "test_ir_binop_offset",
-        req,
         "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = 1
@@ -192,14 +140,8 @@ fn test_ir_binop_offset() {
 
 #[test]
 fn test_ir_phi() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_phi",
-        req,
         "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = 1
@@ -210,14 +152,8 @@ fn test_ir_phi() {
 
 #[test]
 fn test_ir_killing_op() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_killing_op",
-        req,
         "define test (result 0) (define %0 %1 %2)  {
             %0 = 1
             %1 = 1
@@ -230,14 +166,8 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_block() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_block",
-        req,
         "define test (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
@@ -250,14 +180,8 @@ fn test_ir_block() {
 
 #[test]
 fn test_ir_if_else() {
-    let req = Request {
-        variable: None,
-        function: "main".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_if_else",
-        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -278,14 +202,8 @@ fn test_ir_if_else() {
 
 #[test]
 fn test_ir_if() {
-    let req = Request {
-        variable: None,
-        function: "main".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_if",
-        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -299,14 +217,8 @@ fn test_ir_if() {
 
 #[test]
 fn test_ir_loop() {
-    let req = Request {
-        variable: None,
-        function: "main".to_string(),
-        pc: 2,
-    };
     ir!(
         "test_ir_loop",
-        req,
         "define main (result 0) (define %0 %1) {
             BLOCK 0
             %0 = 1
@@ -319,14 +231,8 @@ fn test_ir_loop() {
 
 #[test]
 fn test_ir_table() {
-    let req = Request {
-        variable: None,
-        function: "main".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_table",
-        req,
         "define main (result 0) (define %0 %1 %2) {
             BLOCK 0
             %0 = 1
@@ -345,14 +251,8 @@ fn test_ir_table() {
 
 #[test]
 fn test_global_get_and_set() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_global_get_and_set",
-        req,
         "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         %1 = %-1
@@ -364,14 +264,8 @@ fn test_global_get_and_set() {
 
 #[test]
 fn test_global_set() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_global_set",
-        req,
         "
         define 0 (param %0) (result 0) (define %-1 %0 %1) {
             %0 = 1
@@ -389,14 +283,8 @@ fn test_global_set() {
 
 #[test]
 fn test_global_get_and_set_multiple_functions() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_global_get_and_set_multiple_functions",
-        req,
         "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
         %1 = %-1
@@ -422,14 +310,8 @@ fn test_global_get_and_set_multiple_functions() {
 
 #[test]
 fn test_global_call() {
-    let req = Request {
-        variable: None,
-        function: "1".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_global_call",
-        req,
         "
         define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
         BLOCK 0
@@ -451,14 +333,8 @@ fn test_global_call() {
 
 #[test]
 fn test_global_writes() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_globals_writes",
-        req,
         "
         define test (result 0) (define %-1 %0 %2) {
             %0 = 1
@@ -476,14 +352,8 @@ fn test_global_writes() {
 
 #[test]
 fn test_global_check_order() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_globals_check_order",
-        req,
         "
         define test (result 0) (define %-2 %-1 %0 %2) {
             %0 = 1
@@ -501,16 +371,8 @@ fn test_global_check_order() {
 
 #[test]
 fn test_ir_simple_store() {
-    env_logger::init();
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-
     ir!(
         "test_ir_simple_store",
-        req,
         "
          define test (param %0) (result 0) (define %0 %1) {
             STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
@@ -522,15 +384,8 @@ fn test_ir_simple_store() {
 
 #[test]
 fn test_ir_simple_load() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-
     ir!(
         "test_ir_simple_load",
-        req,
         "
          define test (param %0) (result 0) (define %0 %1) {
             %1 = LOAD OFFSET 0 + %0 ALIGN 0
@@ -541,14 +396,8 @@ fn test_ir_simple_load() {
 
 #[test]
 fn test_memory_store() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 0,
-    };
     ir!(
         "test_ir_memory_store",
-        req,
         "
         define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
         BLOCK 0
@@ -571,14 +420,8 @@ fn test_memory_store() {
 
 #[test]
 fn test_memory_load() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 2,
-    };
     ir!(
         "test_ir_memory_load",
-        req,
         "
        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
         BLOCK 0
@@ -599,14 +442,8 @@ fn test_memory_load() {
 
 #[test]
 fn test_memory_load_different_functions() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 2,
-    };
     ir!(
         "test_ir_memory_load_different_functions",
-        req,
         "
        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
         BLOCK 0
@@ -628,14 +465,8 @@ fn test_memory_load_different_functions() {
 
 #[test]
 fn test_memory_load_different_functions2() {
-    let req = Request {
-        variable: None,
-        function: "0".to_string(),
-        pc: 2,
-    };
     ir!(
         "test_ir_memory_load_different_functions2",
-        req,
         "
        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
         BLOCK 0
@@ -656,4 +487,3 @@ fn test_memory_load_different_functions2() {
     "
     );
 }
-
