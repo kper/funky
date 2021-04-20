@@ -5,9 +5,9 @@ use std::collections::VecDeque;
 
 use log::debug;
 
-pub struct BFS;
+pub struct Bfs;
 
-impl GraphReachability for BFS {
+impl GraphReachability for Bfs {
     fn all_sinks(&mut self, graph: &mut Graph, state: &State, req: &Request) -> Vec<Taint> {
         let mut queue: VecDeque<&Fact> = VecDeque::new();
         let mut seen = Vec::new();
@@ -15,7 +15,7 @@ impl GraphReachability for BFS {
         if let Some(start) = state
             .get_facts_at(&req.function, req.pc)
             .unwrap()
-            .find(|x| x.belongs_to_var == req.variable.unwrap())
+            .find(|x| &x.belongs_to_var == req.variable.as_ref().unwrap())
         {
             debug!("Adding start {:#?}", start);
             queue.push_back(start);
