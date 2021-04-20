@@ -153,7 +153,6 @@ impl Convert {
                 for (from, after) in in_
                     .zip(out_)
                     .filter(|(from, to)| &from.belongs_to_var != dest && &to.belongs_to_var != dest)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -178,7 +177,6 @@ impl Convert {
                 for (from, after) in in_
                     .zip(out_)
                     .filter(|(from, to)| &from.belongs_to_var != dest && &to.belongs_to_var != dest)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -203,7 +201,6 @@ impl Convert {
                 for (from, after) in in_
                     .zip(out_)
                     .filter(|(from, to)| &from.belongs_to_var != dest && &to.belongs_to_var != dest)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -241,7 +238,6 @@ impl Convert {
                 for (from, after) in in_
                     .zip(out_)
                     .filter(|(from, to)| &from.belongs_to_var != dest && &to.belongs_to_var != dest)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -257,7 +253,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -273,7 +268,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_call(from.clone(), after.clone())?;
                 }
@@ -346,7 +340,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -418,7 +411,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -435,7 +427,6 @@ impl Convert {
 
                     for (from, after) in in_
                         .zip(out_)
-                        .map(|(from, after)| (from.clone(), after.clone()))
                     {
                         ctx.graph.add_return(from.clone(), after.clone())?;
                     }
@@ -531,7 +522,6 @@ impl Convert {
 
                     for (from, after) in in_
                         .zip(out_)
-                        .map(|(from, after)| (from.clone(), after.clone()))
                     {
                         ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                     }
@@ -549,7 +539,6 @@ impl Convert {
 
                         for (from, after) in in_
                             .zip(out_)
-                            .map(|(from, after)| (from.clone(), after.clone()))
                         {
                             ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                         }
@@ -565,7 +554,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -576,7 +564,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -591,7 +578,6 @@ impl Convert {
 
                         for (from, after) in in_
                             .zip(out_)
-                            .map(|(from, after)| (from.clone(), after.clone()))
                         {
                             ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                         }
@@ -609,7 +595,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -665,7 +650,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
@@ -683,7 +667,6 @@ impl Convert {
 
                 for (from, after) in in_
                     .zip(out_)
-                    .map(|(from, after)| (from.clone(), after.clone()))
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
