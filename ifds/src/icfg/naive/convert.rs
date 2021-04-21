@@ -645,9 +645,6 @@ impl Convert {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
-            _ => {
-                panic!("Instruction {:?} not implemented", instruction);
-            }
         }
 
         Ok(())

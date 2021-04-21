@@ -13,7 +13,7 @@ impl GraphReachability for Bfs {
         let mut seen = Vec::new();
 
         if let Some(start) = state
-            .get_facts_at(&req.function, req.pc)
+            .get_facts_at(&req.function, req.pc + 1)
             .unwrap()
             .find(|x| &x.belongs_to_var == req.variable.as_ref().unwrap())
         {

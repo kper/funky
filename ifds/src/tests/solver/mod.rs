@@ -9,6 +9,8 @@ use crate::grammar::*;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
+mod naive;
+
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {{
         let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);

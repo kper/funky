@@ -1,0 +1,12 @@
+---
+source: src/tests/solver/naive.rs
+expression: "format!(\"{:#?}\", sinks)"
+
+---
+[
+    Taint {
+        variable: "%11",
+        function: "0",
+        pc: 17,
+    },
+]

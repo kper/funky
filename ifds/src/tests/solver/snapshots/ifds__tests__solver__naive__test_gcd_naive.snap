@@ -1,0 +1,317 @@
+---
+source: src/tests/solver/naive.rs
+expression: "format!(\"{:#?}\", sinks)"
+
+---
+[
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 3,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 4,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 5,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 12,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 12,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 6,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 7,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 7,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 7,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 13,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 7,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 8,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 14,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 8,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 8,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 14,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 8,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 9,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 15,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 9,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 9,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 15,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 9,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 10,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 16,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 10,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 10,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 16,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 10,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 25,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 17,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 25,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 25,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 17,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 25,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 26,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 18,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 26,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 26,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 18,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 26,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 27,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 19,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 27,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 27,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 19,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 27,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 20,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 20,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 21,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 21,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 22,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 22,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 23,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 23,
+    },
+    Taint {
+        variable: "%4",
+        function: "0",
+        pc: 24,
+    },
+    Taint {
+        variable: "%6",
+        function: "0",
+        pc: 24,
+    },
+]
