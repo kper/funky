@@ -1,0 +1,28 @@
+---
+source: src/tests/icfg/naive/convert.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (1, 1) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
+		\path[->] (0) edge (1);
+		\path[->] (0) edge (2);
+
+
+                \end{tikzpicture}
+            \end{document}

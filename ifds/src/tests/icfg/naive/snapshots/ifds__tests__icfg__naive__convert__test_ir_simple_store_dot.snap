@@ -1,0 +1,47 @@
+---
+source: src/tests/icfg/naive/convert.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (1) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (2) at (2, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (5) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (6) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (8) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (9) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (10) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (11) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (12) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (13) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (14) at (3, 2) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Store(0, 0.0, 0)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
+		\path[->] (0) edge (4);
+		\path[->] (1) edge (8);
+		\path[->] (2) edge (5);
+		\path[->] (1) edge (6);
+		\path[->] (4) edge (11);
+		\path[->] (5) edge (12);
+		\path[->] (6) edge (13);
+		\path[->] (4) edge (14);
+
+
+                \end{tikzpicture}
+            \end{document}

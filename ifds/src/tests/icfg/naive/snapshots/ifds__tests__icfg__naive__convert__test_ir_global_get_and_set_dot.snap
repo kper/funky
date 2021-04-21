@@ -1,0 +1,53 @@
+---
+source: src/tests/icfg/naive/convert.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (1) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (2) at (4, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (2, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (4) at (4, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (5) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (6) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (8) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (9) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (10) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (11) at (4, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (12) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (13) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (14) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (15) at (4, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (16) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (17) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (18) at (3, 2) { };
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Assign(1, -1)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(-2, 1)};
+		\path[->] (0) edge (5);
+		\path[->] (1) edge (10);
+		\path[->] (2) edge (6);
+		\path[->] (3) edge (7);
+		\path[->] (2) edge (8);
+		\path[->] (5) edge (14);
+		\path[->] (6) edge (15);
+		\path[->] (7) edge (16);
+		\path[->] (8) edge (17);
+		\path[->] (8) edge (18);
+
+
+                \end{tikzpicture}
+            \end{document}
