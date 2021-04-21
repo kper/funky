@@ -11,7 +11,7 @@ use anyhow::{bail, Context, Result};
 
 use std::collections::HashMap;
 
-use crate::icfg::flowfuncs::{BlockResolver};
+use crate::icfg::flowfuncs::BlockResolver;
 use crate::ir::ast::Program;
 
 /// Central datastructure for the computation of the IFDS problem.
@@ -146,7 +146,7 @@ impl Convert {
         call_resolver: &mut CallResolver,
     ) -> Result<()> {
         match instruction {
-            Instruction::Const(dest, _num) => {
+            Instruction::Const(dest, _) | Instruction::Unknown(dest) => {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?;
 
@@ -251,9 +251,7 @@ impl Convert {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?.filter(fi);
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?.filter(fi);
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
@@ -266,9 +264,7 @@ impl Convert {
 
                 let out_ = ctx.state.get_facts_at(&callee, 0)?;
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_call(from.clone(), after.clone())?;
                 }
 
@@ -338,9 +334,7 @@ impl Convert {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?.filter(fi);
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?.filter(fi);
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
@@ -409,9 +403,7 @@ impl Convert {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?;
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
@@ -425,9 +417,7 @@ impl Convert {
                         .get_facts_at(&incoming.0, incoming.1 + 1)?
                         .filter(|x| incoming.2.contains(&x.belongs_to_var) || x.var_is_taut);
 
-                    for (from, after) in in_
-                        .zip(out_)
-                    {
+                    for (from, after) in in_.zip(out_) {
                         ctx.graph.add_return(from.clone(), after.clone())?;
                     }
 
@@ -520,9 +510,7 @@ impl Convert {
                     let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                     let out_ = ctx.state.get_facts_at(&function.name, *jump_to_block)?;
 
-                    for (from, after) in in_
-                        .zip(out_)
-                    {
+                    for (from, after) in in_.zip(out_) {
                         ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                     }
                 } else {
@@ -537,9 +525,7 @@ impl Convert {
                         let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                         let out_ = ctx.state.get_facts_at(&function.name, *jump_to_block)?;
 
-                        for (from, after) in in_
-                            .zip(out_)
-                        {
+                        for (from, after) in in_.zip(out_) {
                             ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                         }
                     } else {
@@ -552,9 +538,7 @@ impl Convert {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?;
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
@@ -562,9 +546,7 @@ impl Convert {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?;
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
@@ -576,9 +558,7 @@ impl Convert {
                         let in_ = ctx.state.get_facts_at(&function.name, pc)?;
                         let out_ = ctx.state.get_facts_at(&function.name, *jump_to_block)?;
 
-                        for (from, after) in in_
-                            .zip(out_)
-                        {
+                        for (from, after) in in_.zip(out_) {
                             ctx.graph.add_normal_curved(from.clone(), after.clone())?;
                         }
                     } else {
@@ -593,9 +573,7 @@ impl Convert {
                     .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| !(x.var_is_memory && x.memory_offset == Some(*offset)));
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
@@ -648,9 +626,7 @@ impl Convert {
                     .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var != dest);
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
@@ -665,9 +641,7 @@ impl Convert {
                     .get_facts_at(&function.name, pc + 1)?
                     .filter(|x| &x.belongs_to_var == dest);
 
-                for (from, after) in in_
-                    .zip(out_)
-                {
+                for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }

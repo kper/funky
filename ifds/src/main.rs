@@ -8,15 +8,14 @@ use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
+use crate::icfg::naive::convert::Convert;
 use crate::icfg::convert::ConvertSummary;
+use crate::{solver::bfs::*, solver::*};
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
 use std::fs::File;
 use std::io::{Read, Write};
-
-//use crate::solver::bfs::*;
-use crate::solver::*;
 
 use crate::grammar::*;
 
@@ -102,6 +101,20 @@ enum Opt {
         #[structopt(short)]
         var: String,
     },
+    Naive {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
+        #[structopt(short)]
+        function: String,
+        #[structopt(short)]
+        pc: usize,
+        #[structopt(short)]
+        var: String,
+    },
 }
 
 fn main() {
@@ -173,6 +186,22 @@ fn main() {
             var,
         } => {
             if let Err(err) = run(file, ir, export_graph, function, pc, var) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Naive {
+            file,
+            ir,
+            export_graph,
+            function,
+            pc,
+            var,
+        } => {
+            if let Err(err) = naive(file, ir, export_graph, function, pc, var) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -438,50 +467,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                     })
                     .collect();
 
-                /*
-                let items: Vec<ListItem> = stateful
-                    .items
-                    .iter()
-                    .enumerate()
-                    .map(|(_index, (pc, _line_no, instruction, function))| {
-                        if let Some(instruction) = instruction {
-                            if taints
-                                .iter()
-                                .find(|x| {
-                                    let mut is_ok = false;
-
-                                    if &x.function == function && x.pc == *pc  {
-                                        is_ok = true;
-                                    }
-
-                                    is_ok && match_taint(instruction, x)
-                                })
-                                .is_some()
-                            {
-                                ListItem::new(Spans::from(Span::styled(
-                                    format!("{:02}| {:?}", pc, instruction),
-                                    Style::default()
-                                        .bg(Color::LightRed)
-                                        .add_modifier(Modifier::BOLD),
-                                )))
-                            } else {
-                                ListItem::new(Spans::from(Span::styled(
-                                    format!("{:02}| {:?}", pc, instruction),
-                                    Style::default().add_modifier(Modifier::ITALIC),
-                                )))
-                            }
-                        } else {
-                            // Display function
-                            ListItem::new(Spans::from(Span::styled(
-                                format!("{:02}| Function {}", pc, function),
-                                Style::default()
-                                    .bg(Color::LightGreen)
-                                    .add_modifier(Modifier::BOLD),
-                            )))
-                        }
-                    })
-                    .collect();*/
-
                 let list = List::new(items)
                     .highlight_style(
                         Style::default()
@@ -653,6 +638,68 @@ fn run(
     let res = get_taints(&req);
     let state = res.1;
     let taints = res.2.context("Cannot get taints for ui")?;
+
+    println!("{:#?}", taints);
+
+    if let Some(ref export_graph) = export_graph {
+        let output = crate::icfg::tikz::render_to(&res.0, &state);
+
+        let mut fs = File::create(export_graph).context("Cannot write export file")?;
+        fs.write_all(output.as_bytes())
+            .context("Cannto write file")?;
+    }
+
+    Ok(())
+}
+
+fn naive(
+    file: PathBuf,
+    is_ir: bool,
+    export_graph: Option<PathBuf>,
+    function: String,
+    pc: usize,
+    var: String,
+) -> Result<()> {
+    let mut convert = Convert::default();
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = Bfs;
+        let (mut graph, state) = convert.visit(&prog).unwrap();
+
+        let taints = solver.all_sinks(&mut graph, &state, &req);
+
+        (graph, state, taints)
+    };
+
+    let req = Request {
+        function,
+        pc,
+        variable: Some(var),
+    };
+
+    let res = get_taints(&req);
+    let state = res.1;
+    let taints = res.2;
 
     println!("{:#?}", taints);
 
