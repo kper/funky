@@ -309,8 +309,8 @@ impl State {
             .context("Cannot find function")?
             .get(&pc)
             .context("Cannot find fact for pc")?
-            .iter()
-            .filter(move |x| x.next_pc == pc)) //TODO remove this line
+            .iter())
+            //.filter(move |x| x.next_pc == pc)) //TODO remove this line
     }
 
     /// Get the track by given name and function.
