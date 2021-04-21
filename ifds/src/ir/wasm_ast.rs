@@ -998,12 +998,13 @@ impl IR {
                 | OP_I64_TRUNC_SAT_F32_U
                 | OP_I64_TRUNC_SAT_F64_S
                 | OP_I64_TRUNC_SAT_F64_U => {
+                    let reg = self.symbol_table.peek()?;
                     writeln!(
                         function_buffer,
                         "{} = {} {}",
                         self.symbol_table.new_reg()?,
                         "op",
-                        self.symbol_table.peek_offset(2)?, // TODO Check why `2`
+                        reg
                     )
                     .unwrap();
                 }

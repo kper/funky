@@ -105,7 +105,7 @@ enum Opt {
 }
 
 fn main() {
-    //env_logger::init();
+    env_logger::init();
     let opt = Opt::from_args();
     debug!("{:?}", opt);
 
