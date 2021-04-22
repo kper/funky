@@ -8,7 +8,7 @@ use crate::grammar::*;
 
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {
-        let mut convert = OriginalConvert::new();
+        let mut convert = OriginalConvert::default();
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 
@@ -136,8 +136,6 @@ fn test_ir_functions_rename_reg() {
 
 #[test]
 fn test_ir_return_values() {
-    env_logger::init();
-
     let req = Request {
         variable: None,
         function: "test".to_string(),

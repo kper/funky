@@ -21,13 +21,10 @@ pub(crate) struct Ctx<'a> {
 }
 
 /// Central datastructure for the computation of the IFDS problem.
-pub struct OriginalConvert {}
+#[derive(Debug, Default)]
+pub struct OriginalConvert;
 
 impl OriginalConvert {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     /// Computes a graph by a given program and `req` ([`Request`]).
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {

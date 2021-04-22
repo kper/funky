@@ -10,6 +10,7 @@ use wasm_parser::{parse, read_wasm};
 
 use crate::icfg::naive::convert::Convert;
 use crate::icfg::convert::FastConvert;
+use crate::icfg::orig::convert::OriginalConvert;
 use crate::{solver::bfs::*, solver::*};
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
@@ -115,6 +116,20 @@ enum Opt {
         #[structopt(short)]
         var: String,
     },
+    Orig {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
+        #[structopt(short)]
+        function: String,
+        #[structopt(short)]
+        pc: usize,
+        #[structopt(short)]
+        var: String,
+    },
 }
 
 fn main() {
@@ -202,6 +217,22 @@ fn main() {
             var,
         } => {
             if let Err(err) = naive(file, ir, export_graph, function, pc, var) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Orig {
+            file,
+            ir,
+            export_graph,
+            function,
+            pc,
+            var,
+        } => {
+            if let Err(err) = orig(file, ir, export_graph, function, pc, var) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -687,6 +718,69 @@ fn naive(
         let (mut graph, state) = convert.visit(&prog).unwrap();
 
         let taints = solver.all_sinks(&mut graph, &state, &req);
+
+        (graph, state, taints)
+    };
+
+    let req = Request {
+        function,
+        pc,
+        variable: Some(var),
+    };
+
+    let res = get_taints(&req);
+    let state = res.1;
+    let taints = res.2;
+
+    println!("{:#?}", taints);
+
+    if let Some(ref export_graph) = export_graph {
+        let output = crate::icfg::tikz::render_to(&res.0, &state);
+
+        let mut fs = File::create(export_graph).context("Cannot write export file")?;
+        fs.write_all(output.as_bytes())
+            .context("Cannto write file")?;
+    }
+
+    Ok(())
+}
+
+fn orig(
+    file: PathBuf,
+    is_ir: bool,
+    export_graph: Option<PathBuf>,
+    function: String,
+    pc: usize,
+    var: String,
+) -> Result<()> {
+    let mut convert = OriginalConvert::default();
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = IfdsSolver;
+
+        let (mut graph, state) = convert.visit(&prog, req).unwrap();
+
+        let taints = solver.all_sinks(&mut graph, req);
 
         (graph, state, taints)
     };
