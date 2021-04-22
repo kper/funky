@@ -120,16 +120,14 @@ impl OriginalConvert {
     fn forward<'a>(
         &mut self,
         program: &Program,
-        function: &AstFunction,
+        _function: &AstFunction,
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
-        summary_edge: &mut Vec<Edge>,
+        summary: &mut Vec<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         ctx: &mut Ctx<'a>,
         start_pc: usize,
     ) -> Result<()> {
-        let mut summary: Vec<Edge> = Vec::new();
-
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
@@ -272,7 +270,6 @@ impl OriginalConvert {
                 struct CallMeta<'a> {
                     caller: &'a String,
                     instruction: &'a Instruction,
-                    pc: usize,
                 }
 
                 let all_instruction = program
@@ -282,11 +279,10 @@ impl OriginalConvert {
                     .map(|(caller, instructions)| {
                         let mut v = Vec::with_capacity(instructions.len());
 
-                        for (pc, i) in instructions.iter().enumerate() {
+                        for (_pc, i) in instructions.iter().enumerate() {
                             v.push(CallMeta {
                                 caller,
                                 instruction: i,
-                                pc,
                             });
                         }
 
@@ -299,14 +295,14 @@ impl OriginalConvert {
                         let caller = meta.caller;
                         let x = meta.instruction;
                         if let Instruction::Call(callee, params, dest) = &x {
-                            return Some((caller, callee, params, dest, pc));
+                            return Some((caller, callee, params, dest));
                         }
 
                         None
                     })
-                    .filter(|(_, callee, _, _, _)| callee == &&d1.function);
+                    .filter(|(_, callee, _, _)| callee == &&d1.function);
 
-                for (caller, callee, _params, _dest, _pc) in callers {
+                for (caller, callee, _params, _dest) in callers {
                     assert_eq!(callee, &d1.function);
 
                     let d4 = ctx
@@ -353,7 +349,7 @@ impl OriginalConvert {
                                 })
                                 .is_none()
                             {
-                                let mut ret = d4.clone();
+                                let ret = d4.clone();
                                 summary.push(Edge::Summary {
                                     from: d4.clone(),
                                     to: ret.clone(),
