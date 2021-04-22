@@ -25,7 +25,7 @@ pub(crate) struct Ctx<'a> {
 
 /// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug)]
-pub struct ConvertSummary<I, F>
+pub struct FastConvert<I, F>
 where
     I: InitialFlowFunction,
     F: NormalFlowFunction,
@@ -36,7 +36,7 @@ where
     normal_flow: F,
 }
 
-impl<I, F> ConvertSummary<I, F>
+impl<I, F> FastConvert<I, F>
 where
     I: InitialFlowFunction,
     F: NormalFlowFunction,

@@ -1,5 +1,5 @@
 use ifds::grammar::*;
-use ifds::icfg::convert::ConvertSummary;
+use ifds::icfg::convert::FastConvert;
 use ifds::icfg::naive::convert::Convert;
 use ifds::{ir::ast::Program, solver::bfs::*, solver::*};
 
@@ -36,7 +36,7 @@ macro_rules! wasm {
 }
 
 fn bench(
-    convert: &mut ConvertSummary<TaintInitialFlowFunction, TaintNormalFlowFunction>,
+    convert: &mut FastConvert<TaintInitialFlowFunction, TaintNormalFlowFunction>,
     prog: &Program,
     req: &Request,
 ) {
@@ -78,7 +78,7 @@ fn bench_fib(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -122,7 +122,7 @@ fn bench_fac(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -165,7 +165,7 @@ fn bench_logic(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -208,7 +208,7 @@ fn bench_gcd(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {

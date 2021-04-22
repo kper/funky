@@ -1,4 +1,4 @@
-use crate::icfg::convert::ConvertSummary;
+use crate::icfg::convert::FastConvert;
 use crate::icfg::tikz::render_to;
 use crate::solver::Request;
 use insta::assert_snapshot;
@@ -26,7 +26,7 @@ fn write_ir(name: &str, ir: &str) {
 
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {
-        let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+        let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 

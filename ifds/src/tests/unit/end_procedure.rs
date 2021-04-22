@@ -1,4 +1,4 @@
-use crate::icfg::convert::{ConvertSummary, Ctx};
+use crate::icfg::convert::{FastConvert, Ctx};
 use crate::icfg::flowfuncs::taint::{
     flow::TaintNormalFlowFunction, initial::TaintInitialFlowFunction,
 };
@@ -17,7 +17,7 @@ type EndSummary = HashMap<(String, usize, String), Vec<Fact>>;
 type Incoming = HashMap<(String, usize, String), Vec<Fact>>;
 
 fn setup() -> (
-    ConvertSummary<TaintInitialFlowFunction, TaintNormalFlowFunction>,
+    FastConvert<TaintInitialFlowFunction, TaintNormalFlowFunction>,
     Graph,
     PathEdges,
     Worklist,
@@ -25,7 +25,7 @@ fn setup() -> (
     NormalFlows,
 ) {
     (
-        ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction),
+        FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction),
         Graph::default(),
         PathEdges::new(),
         Worklist::new(),

@@ -9,7 +9,7 @@ use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
 use crate::icfg::naive::convert::Convert;
-use crate::icfg::convert::ConvertSummary;
+use crate::icfg::convert::FastConvert;
 use crate::{solver::bfs::*, solver::*};
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
@@ -236,7 +236,7 @@ fn ir(file: PathBuf) -> Result<IR> {
 }
 
 fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
-    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -283,7 +283,7 @@ struct InstructionList<'a> {
 }
 
 fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
-    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -525,7 +525,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
 }
 
 fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
-    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
@@ -596,7 +596,7 @@ fn run(
     pc: usize,
     var: String,
 ) -> Result<()> {
-    let mut convert = ConvertSummary::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     let buffer = match is_ir {
         false => {
