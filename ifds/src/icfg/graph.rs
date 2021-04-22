@@ -150,4 +150,38 @@ impl Edge {
             Edge::Summary { from: _, to } => to,
         }
     }
+
+    /// Checks if edge is a normal edge
+    pub fn is_normal(&self) -> bool {
+        match self {
+            Edge::Normal {
+                from: _,
+                to:_,
+                curved: _,
+            } => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if edge is a call edge
+    pub fn is_call(&self) -> bool {
+        match self {
+            Edge::Call {
+                from: _,
+                to: _,
+            } => true,
+            _ => false,
+        }
+    }
+
+    /// Checks if edge is a return edge
+    pub fn is_return(&self) -> bool {
+        match self {
+            Edge::Return {
+                from: _,
+                to: _,
+            } => true,
+            _ => false,
+        }
+    }
 }

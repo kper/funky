@@ -14,6 +14,8 @@ use std::collections::HashMap;
 use crate::icfg::flowfuncs::BlockResolver;
 use crate::ir::ast::Program;
 
+use std::collections::hash_map::Entry;
+
 /// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug, Default)]
 pub struct Convert {}
@@ -28,7 +30,7 @@ type Function = String;
 type PC = usize;
 type CallerFunction = String;
 
-type CallResolver = HashMap<Function, (CallerFunction, PC, Vec<String>)>;
+type CallResolver = HashMap<Function, Vec<(CallerFunction, PC, Vec<String>)>>;
 
 impl Convert {
     pub fn visit(&mut self, prog: &Program) -> Result<(Graph, State)> {
@@ -68,13 +70,28 @@ impl Convert {
                 }
 
                 if let Instruction::Call(callee, _, dest) = instruction {
-                    call_resolver.insert(callee.clone(), (function.name.clone(), pc, dest.clone()));
+                    match call_resolver.entry(callee.clone()) {
+                        Entry::Occupied(mut entry) => {
+                            let entry = entry.get_mut();
+                            entry.push((function.name.clone(), pc, dest.clone()));
+                        }
+                        Entry::Vacant(entry) => {
+                            entry.insert(vec![(function.name.clone(), pc, dest.clone())]);
+                        }
+                    }
                 }
 
                 if let Instruction::CallIndirect(callees, _, dest) = instruction {
                     for callee in callees {
-                        call_resolver
-                            .insert(callee.clone(), (function.name.clone(), pc, dest.clone()));
+                        match call_resolver.entry(callee.clone()) {
+                            Entry::Occupied(mut entry) => {
+                                let entry = entry.get_mut();
+                                entry.push((function.name.clone(), pc, dest.clone()));
+                            }
+                            Entry::Vacant(entry) => {
+                                entry.insert(vec![(function.name.clone(), pc, dest.clone())]);
+                            }
+                        }
                     }
                 }
             }
@@ -260,7 +277,7 @@ impl Convert {
                 let in_ = ctx
                     .state
                     .get_facts_at(&function.name, pc)?
-                    .filter(|x| params.contains(&x.belongs_to_var));
+                    .filter(|x| params.contains(&x.belongs_to_var) || x.var_is_taut);
 
                 let out_ = ctx.state.get_facts_at(&callee, 0)?;
 
@@ -408,97 +425,105 @@ impl Convert {
                 }
 
                 if let Some(incoming) = call_resolver.get(&function.name) {
-                    let in_ = ctx
-                        .state
-                        .get_facts_at(&function.name, pc)?
-                        .filter(|x| src.contains(&x.belongs_to_var) || x.var_is_taut);
-                    let out_ = ctx
-                        .state
-                        .get_facts_at(&incoming.0, incoming.1 + 1)?
-                        .filter(|x| incoming.2.contains(&x.belongs_to_var) || x.var_is_taut);
-
-                    for (from, after) in in_.zip(out_) {
-                        ctx.graph.add_return(from.clone(), after.clone())?;
-                    }
-
-                    // Globals
-
-                    let in_ = ctx
-                        .state
-                        .get_facts_at(&function.name, pc)?
-                        .filter(|x| x.var_is_global)
-                        .cloned()
-                        .collect::<Vec<_>>();
-
-                    for from in in_ {
+                    for incoming in incoming.iter() {
+                        let in_ = ctx
+                            .state
+                            .get_facts_at(&function.name, pc)?
+                            .filter(|x| src.contains(&x.belongs_to_var) || x.var_is_taut);
                         let out_ = ctx
                             .state
                             .get_facts_at(&incoming.0, incoming.1 + 1)?
-                            .find(|x| x.var_is_global && x.belongs_to_var == from.belongs_to_var);
+                            .filter(|x| incoming.2.contains(&x.belongs_to_var) || x.var_is_taut);
 
-                        if let Some(after) = out_ {
+                        for (from, after) in in_.zip(out_) {
                             ctx.graph.add_return(from.clone(), after.clone())?;
-                        } else {
-                            // create it
-                            let var = ctx
-                                .state
-                                .add_global_var(incoming.0.clone(), from.belongs_to_var.clone());
-                            let fact = Fact {
-                                belongs_to_var: from.belongs_to_var.clone(),
-                                function: incoming.0.clone(),
-                                var_is_global: true,
-                                next_pc: incoming.1 + 1,
-                                track: ctx
-                                    .state
-                                    .get_track(&incoming.0, &var.name)
-                                    .context("Cannot find track")?,
-                                ..Default::default()
-                            };
-                            let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
-                            self.create_line(ctx, &incoming.0, to.clone())?;
-
-                            ctx.graph.add_return(from.clone(), to)?;
                         }
-                    }
 
-                    // Memories
+                        // Globals
 
-                    let in_ = ctx
-                        .state
-                        .get_facts_at(&function.name, pc)?
-                        .filter(|x| x.var_is_memory)
-                        .cloned()
-                        .collect::<Vec<_>>();
-
-                    for from in in_ {
-                        let out_ = ctx
+                        let in_ = ctx
                             .state
-                            .get_facts_at(&incoming.0, incoming.1 + 1)?
-                            .find(|x| x.var_is_memory && x.belongs_to_var == from.belongs_to_var);
+                            .get_facts_at(&function.name, pc)?
+                            .filter(|x| x.var_is_global)
+                            .cloned()
+                            .collect::<Vec<_>>();
 
-                        if let Some(after) = out_ {
-                            ctx.graph.add_return(from.clone(), after.clone())?;
-                        } else {
-                            // create it
-                            let var = ctx
-                                .state
-                                .add_memory_var(incoming.0.clone(), from.memory_offset.unwrap());
-                            let fact = Fact {
-                                belongs_to_var: from.belongs_to_var.clone(),
-                                function: incoming.0.clone(),
-                                var_is_memory: true,
-                                memory_offset: var.memory_offset.clone(),
-                                next_pc: incoming.1 + 1,
-                                track: ctx
-                                    .state
-                                    .get_track(&incoming.0, &var.name)
-                                    .context("Cannot find track")?,
-                                ..Default::default()
-                            };
-                            let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
-                            self.create_line(ctx, &incoming.0, to.clone())?;
+                        for from in in_ {
+                            let out_ =
+                                ctx.state
+                                    .get_facts_at(&incoming.0, incoming.1 + 1)?
+                                    .find(|x| {
+                                        x.var_is_global && x.belongs_to_var == from.belongs_to_var
+                                    });
 
-                            ctx.graph.add_return(from.clone(), to)?;
+                            if let Some(after) = out_ {
+                                ctx.graph.add_return(from.clone(), after.clone())?;
+                            } else {
+                                // create it
+                                let var = ctx.state.add_global_var(
+                                    incoming.0.clone(),
+                                    from.belongs_to_var.clone(),
+                                );
+                                let fact = Fact {
+                                    belongs_to_var: from.belongs_to_var.clone(),
+                                    function: incoming.0.clone(),
+                                    var_is_global: true,
+                                    next_pc: incoming.1 + 1,
+                                    track: ctx
+                                        .state
+                                        .get_track(&incoming.0, &var.name)
+                                        .context("Cannot find track")?,
+                                    ..Default::default()
+                                };
+                                let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
+                                self.create_line(ctx, &incoming.0, to.clone())?;
+
+                                ctx.graph.add_return(from.clone(), to)?;
+                            }
+                        }
+
+                        // Memories
+
+                        let in_ = ctx
+                            .state
+                            .get_facts_at(&function.name, pc)?
+                            .filter(|x| x.var_is_memory)
+                            .cloned()
+                            .collect::<Vec<_>>();
+
+                        for from in in_ {
+                            let out_ =
+                                ctx.state
+                                    .get_facts_at(&incoming.0, incoming.1 + 1)?
+                                    .find(|x| {
+                                        x.var_is_memory && x.belongs_to_var == from.belongs_to_var
+                                    });
+
+                            if let Some(after) = out_ {
+                                ctx.graph.add_return(from.clone(), after.clone())?;
+                            } else {
+                                // create it
+                                let var = ctx.state.add_memory_var(
+                                    incoming.0.clone(),
+                                    from.memory_offset.unwrap(),
+                                );
+                                let fact = Fact {
+                                    belongs_to_var: from.belongs_to_var.clone(),
+                                    function: incoming.0.clone(),
+                                    var_is_memory: true,
+                                    memory_offset: var.memory_offset.clone(),
+                                    next_pc: incoming.1 + 1,
+                                    track: ctx
+                                        .state
+                                        .get_track(&incoming.0, &var.name)
+                                        .context("Cannot find track")?,
+                                    ..Default::default()
+                                };
+                                let to = ctx.state.cache_fact(&incoming.0, fact)?.clone();
+                                self.create_line(ctx, &incoming.0, to.clone())?;
+
+                                ctx.graph.add_return(from.clone(), to)?;
+                            }
                         }
                     }
                 }
