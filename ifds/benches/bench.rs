@@ -1,6 +1,7 @@
 use ifds::grammar::*;
 use ifds::icfg::convert::FastConvert;
 use ifds::icfg::naive::convert::Convert;
+use ifds::icfg::orig::convert::OriginalConvert;
 use ifds::{ir::ast::Program, solver::bfs::*, solver::*};
 
 use funky::engine::module::ModuleInstance;
@@ -52,6 +53,16 @@ fn bench_naive(convert: &mut Convert, prog: &Program, req: &Request) {
     solver.all_sinks(&mut graph, &state, &req);
 }
 
+fn bench_orig(
+    convert: &mut OriginalConvert,
+    prog: &Program,
+    req: &Request,
+) {
+    let mut solver = IfdsSolver;
+    let (mut graph, _state) = convert.visit(&prog, req).unwrap();
+    solver.all_sinks(&mut graph, req).unwrap();
+}
+
 fn bench_fib(c: &mut Criterion) {
     let name = "fib";
     let mut group = c.benchmark_group("Fibonacci");
@@ -89,6 +100,20 @@ fn bench_fib(c: &mut Criterion) {
 
         group.bench_function(&format!("{}_func_{}_fast", name, &function.name), |b| {
             b.iter(|| bench(&mut convert_fast, &prog, &req))
+        });
+    }
+
+    let mut orig_convert = OriginalConvert::default();
+
+    for function in prog.functions.iter() {
+        let req = Request {
+            variable: Some("%0".to_string()),
+            function: function.name.clone(),
+            pc: 0,
+        };
+
+        group.bench_function(&format!("{}_func_{}_orig", name, &function.name), |b| {
+            b.iter(|| bench_orig(&mut orig_convert, &prog, &req))
         });
     }
 
@@ -136,6 +161,20 @@ fn bench_fac(c: &mut Criterion) {
         });
     }
 
+    let mut orig_convert = OriginalConvert::default();
+
+    for function in prog.functions.iter() {
+        let req = Request {
+            variable: Some("%0".to_string()),
+            function: function.name.clone(),
+            pc: 0,
+        };
+
+        group.bench_function(&format!("{}_func_{}_orig", name, &function.name), |b| {
+            b.iter(|| bench_orig(&mut orig_convert, &prog, &req))
+        });
+    }
+
     group.finish();
 }
 
@@ -179,6 +218,20 @@ fn bench_logic(c: &mut Criterion) {
         });
     }
 
+    let mut orig_convert = OriginalConvert::default();
+
+    for function in prog.functions.iter() {
+        let req = Request {
+            variable: Some("%0".to_string()),
+            function: function.name.clone(),
+            pc: 0,
+        };
+
+        group.bench_function(&format!("{}_func_{}_orig", name, &function.name), |b| {
+            b.iter(|| bench(&mut orig_convert, &prog, &req))
+        });
+    }
+
     group.finish();
 }
 
@@ -219,6 +272,20 @@ fn bench_gcd(c: &mut Criterion) {
 
         group.bench_function(&format!("{}_func_{}_fast", name, &function.name), |b| {
             b.iter(|| bench(&mut convert_fast, &prog, &req))
+        });
+    }
+
+    let mut orig_convert = OriginalConvert::default();
+
+    for function in prog.functions.iter() {
+        let req = Request {
+            variable: Some("%0".to_string()),
+            function: function.name.clone(),
+            pc: 0,
+        };
+
+        group.bench_function(&format!("{}_func_{}_orig", name, &function.name), |b| {
+            b.iter(|| bench_orig(&mut orig_convert, &prog, &req))
         });
     }
 
