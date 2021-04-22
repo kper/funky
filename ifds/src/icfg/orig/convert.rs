@@ -17,6 +17,7 @@ use crate::icfg::naive::convert::Convert as NaiveConvert;
 
 pub(crate) struct Ctx<'a> {
     pub graph: &'a mut Graph,
+    pub new_graph: &'a mut Graph,
     pub state: &'a mut State,
 }
 
@@ -33,14 +34,18 @@ impl OriginalConvert {
             .visit(prog)
             .context("Naive fact generation failed")?;
 
+
+        let mut new_graph = Graph::default();
+
         let mut ctx = Ctx {
             graph: &mut graph,
             state: &mut state,
+            new_graph: &mut new_graph,
         };
 
         self.tabulate(&mut ctx, prog, req)?;
 
-        Ok((graph, state))
+        Ok((new_graph, state))
     }
 
     fn tabulate<'a>(&mut self, ctx: &mut Ctx<'a>, prog: &Program, req: &Request) -> Result<()> {
@@ -67,7 +72,7 @@ impl OriginalConvert {
 
         // self loop for taut
         self.propagate(
-            &mut ctx.graph,
+            &mut ctx.new_graph,
             &mut path_edge,
             &mut worklist,
             Edge::Path {
@@ -182,7 +187,7 @@ impl OriginalConvert {
                         for f in flow_edges.into_iter() {
                             let to = f.to();
                             self.propagate(
-                                &mut ctx.graph,
+                                &mut ctx.new_graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -213,7 +218,7 @@ impl OriginalConvert {
                             assert_eq!(d1.function, to.function);
 
                             self.propagate(
-                                &mut ctx.graph,
+                                &mut ctx.new_graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -250,7 +255,7 @@ impl OriginalConvert {
                             normal_flows_debug.push(f.clone());
 
                             self.propagate(
-                                &mut ctx.graph,
+                                &mut ctx.new_graph,
                                 path_edge,
                                 worklist,
                                 Edge::Path {
@@ -379,7 +384,7 @@ impl OriginalConvert {
                                         .clone();
 
                                     self.propagate(
-                                        &mut ctx.graph,
+                                        &mut ctx.new_graph,
                                         path_edge,
                                         worklist,
                                         Edge::Path {
