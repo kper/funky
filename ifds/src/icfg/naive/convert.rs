@@ -262,7 +262,7 @@ impl Convert {
             Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {
-                    !params.contains(&x.belongs_to_var) || !dests.contains(&x.belongs_to_var)
+                    !params.contains(&x.belongs_to_var) && !dests.contains(&x.belongs_to_var)
                 };
 
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?.filter(fi);
@@ -345,7 +345,7 @@ impl Convert {
             Instruction::CallIndirect(callees, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {
-                    !params.contains(&x.belongs_to_var) || !dests.contains(&x.belongs_to_var)
+                    !params.contains(&x.belongs_to_var) && !dests.contains(&x.belongs_to_var)
                 };
 
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?.filter(fi);

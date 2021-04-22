@@ -5,18 +5,13 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
-use crate::{counter::Counter, solver::Request};
-use anyhow::{bail, Context, Result};
+use crate::solver::Request;
+use anyhow::{Context, Result};
 use std::collections::VecDeque;
 
 use log::debug;
 
-use std::collections::HashMap;
-
-use crate::icfg::flowfuncs::{BlockResolver, InitialFlowFunction, NormalFlowFunction};
 use crate::ir::ast::Program;
-
-const TAUT: usize = 1;
 
 use crate::icfg::naive::convert::Convert as NaiveConvert;
 
@@ -26,13 +21,11 @@ pub(crate) struct Ctx<'a> {
 }
 
 /// Central datastructure for the computation of the IFDS problem.
-pub struct OriginalConvert {
-}
+pub struct OriginalConvert {}
 
 impl OriginalConvert {
     pub fn new() -> Self {
-        Self {
-        }
+        Self {}
     }
 
     /// Computes a graph by a given program and `req` ([`Request`]).
