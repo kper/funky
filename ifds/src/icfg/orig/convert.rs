@@ -180,9 +180,7 @@ impl OriginalConvert {
                                     && x.get_from().next_pc == d2.next_pc
                                     && x.to().function == callee_function.name
                                     && x.to().next_pc == 0
-                            })
-                            .cloned()
-                            .collect::<Vec<_>>();
+                            });
 
                         for f in flow_edges.into_iter() {
                             let to = f.to();
@@ -210,9 +208,7 @@ impl OriginalConvert {
                                     //&& x.to().belongs_to_var == x.get_from().belongs_to_var
                                     && x.to().next_pc == x.get_from().next_pc + 1
                             })
-                            .map(|x| x.to())
-                            .cloned()
-                            .collect::<Vec<_>>();
+                            .map(|x| x.to());
 
                         for to in flow_edges.into_iter() {
                             assert_eq!(d1.function, to.function);
@@ -244,9 +240,7 @@ impl OriginalConvert {
                                 x.get_from().function == new_function.name
                                     && x.get_from().belongs_to_var == d2.belongs_to_var
                                     && x.get_from().next_pc == d2.next_pc
-                            })
-                            .cloned()
-                            .collect::<Vec<_>>();
+                            });
 
                         for f in flow_edges.into_iter() {
                             debug!("Normal flow {:#?}", f);
@@ -318,9 +312,7 @@ impl OriginalConvert {
                                 && x.to().belongs_to_var == d1.belongs_to_var
                                 && x.to().next_pc == d1.next_pc
                         })
-                        .map(|x| x.get_from())
-                        .cloned()
-                        .collect::<Vec<_>>();
+                        .map(|x| x.get_from());
 
                     for d4 in d4.into_iter() {
                         let d5 = ctx
@@ -335,11 +327,9 @@ impl OriginalConvert {
                                     && &x.to().function == &d4.function
                                 // && x.to().next_pc == pc + 1
                             })
-                            .map(|x| x.to())
-                            .cloned()
-                            .collect::<Vec<_>>();
+                            .map(|x| x.to());
 
-                        for d5 in d5.iter() {
+                        for d5 in d5 {
                             if summary
                                 .iter()
                                 .find(|x| {
@@ -368,9 +358,7 @@ impl OriginalConvert {
                                             && x.to().belongs_to_var == d4.belongs_to_var
                                             && x.to().next_pc == d4.next_pc
                                     })
-                                    .map(|x| x.get_from())
-                                    .cloned()
-                                    .collect::<Vec<_>>();
+                                    .map(|x| x.get_from());
 
                                 for d3 in edges {
                                     let mut ret = ret.clone();
