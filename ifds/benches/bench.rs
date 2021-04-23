@@ -48,7 +48,7 @@ fn bench(
 
 fn bench_naive(convert: &mut Convert, prog: &Program, req: &Request) {
     let mut solver = Bfs;
-    let (mut graph, state) = convert.visit(&prog).unwrap();
+    let (mut graph, state, _) = convert.visit(&prog).unwrap();
 
     solver.all_sinks(&mut graph, &state, &req);
 }

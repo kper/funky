@@ -715,7 +715,7 @@ fn naive(
 
     let mut get_taints = |req: &Request| {
         let mut solver = Bfs;
-        let (mut graph, state) = convert.visit(&prog).unwrap();
+        let (mut graph, state, _) = convert.visit(&prog).unwrap();
 
         let taints = solver.all_sinks(&mut graph, &state, &req);
 

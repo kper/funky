@@ -14,11 +14,17 @@ use log::debug;
 use crate::ir::ast::Program;
 
 use crate::icfg::naive::convert::Convert as NaiveConvert;
+use std::collections::HashMap;
 
+type CallerFunction = String;
+type PC = usize;
+type Function = String;
+type CallResolver = HashMap<Function, Vec<(CallerFunction, PC, Vec<String>)>>;
 pub(crate) struct Ctx<'a> {
     pub graph: &'a mut Graph,
     pub new_graph: &'a mut Graph,
     pub state: &'a mut State,
+    pub call_resolver: &'a CallResolver,
 }
 
 /// Central datastructure for the computation of the IFDS problem.
@@ -30,10 +36,9 @@ impl OriginalConvert {
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {
         let mut fact_gen = NaiveConvert::default();
-        let (mut graph, mut state) = fact_gen
+        let (mut graph, mut state, call_resolver) = fact_gen
             .visit(prog)
             .context("Naive fact generation failed")?;
-
 
         let mut new_graph = Graph::default();
 
@@ -41,6 +46,7 @@ impl OriginalConvert {
             graph: &mut graph,
             state: &mut state,
             new_graph: &mut new_graph,
+            call_resolver: &call_resolver,
         };
 
         self.tabulate(&mut ctx, prog, req)?;
@@ -170,17 +176,13 @@ impl OriginalConvert {
                             .find(|x| &x.name == callee)
                             .unwrap();
 
-                        let flow_edges = ctx
-                            .graph
-                            .edges
-                            .iter()
-                            .filter(|x| {
-                                x.get_from().function == caller_function.name
-                                    && x.get_from().belongs_to_var == d2.belongs_to_var
-                                    && x.get_from().next_pc == d2.next_pc
-                                    && x.to().function == callee_function.name
-                                    && x.to().next_pc == 0
-                            });
+                        let flow_edges = ctx.graph.edges.iter().filter(|x| {
+                            x.get_from().function == caller_function.name
+                                && x.get_from().belongs_to_var == d2.belongs_to_var
+                                && x.get_from().next_pc == d2.next_pc
+                                && x.to().function == callee_function.name
+                                && x.to().next_pc == 0
+                        });
 
                         for f in flow_edges.into_iter() {
                             let to = f.to();
@@ -231,16 +233,16 @@ impl OriginalConvert {
                             .find(|x| x.name == d2.function)
                             .unwrap();
 
-                        let flow_edges = ctx
-                            .graph
-                            .edges
-                            .iter()
-                            .filter(|x| x.is_normal())
-                            .filter(|x| {
-                                x.get_from().function == new_function.name
-                                    && x.get_from().belongs_to_var == d2.belongs_to_var
-                                    && x.get_from().next_pc == d2.next_pc
-                            });
+                        let flow_edges =
+                            ctx.graph
+                                .edges
+                                .iter()
+                                .filter(|x| x.is_normal())
+                                .filter(|x| {
+                                    x.get_from().function == new_function.name
+                                        && x.get_from().belongs_to_var == d2.belongs_to_var
+                                        && x.get_from().next_pc == d2.next_pc
+                                });
 
                         for f in flow_edges.into_iter() {
                             debug!("Normal flow {:#?}", f);
@@ -263,123 +265,94 @@ impl OriginalConvert {
             } else {
                 // end procedure
 
-                struct CallMeta<'a> {
-                    caller: &'a String,
-                    instruction: &'a Instruction,
-                }
-
-                let all_instruction = program
-                    .functions
-                    .iter()
-                    .map(|x| (&x.name, &x.instructions))
-                    .map(|(caller, instructions)| {
-                        let mut v = Vec::with_capacity(instructions.len());
-
-                        for (_pc, i) in instructions.iter().enumerate() {
-                            v.push(CallMeta {
-                                caller,
-                                instruction: i,
-                            });
-                        }
-
-                        v
-                    })
-                    .flatten();
-
-                let callers = all_instruction
-                    .filter_map(|meta| {
-                        let caller = meta.caller;
-                        let x = meta.instruction;
-                        if let Instruction::Call(callee, params, dest) = &x {
-                            return Some((caller, callee, params, dest));
-                        }
-
-                        None
-                    })
-                    .filter(|(_, callee, _, _)| callee == &&d1.function);
-
-                for (caller, callee, _params, _dest) in callers {
-                    assert_eq!(callee, &d1.function);
-
-                    let d4 = ctx
-                        .graph
-                        .edges
+                if let Some(callers) = ctx.call_resolver.get(&d1.function) {
+                    let callers = callers
                         .iter()
-                        .filter(|x| x.is_call())
-                        .filter(|x| {
-                            &x.get_from().function == caller
-                                && x.to().function == d1.function
-                                && x.to().belongs_to_var == d1.belongs_to_var
-                                && x.to().next_pc == d1.next_pc
-                        })
-                        .map(|x| x.get_from());
+                        .map(|(caller, _pc, _dests)| (caller, &d1.function));
 
-                    for d4 in d4.into_iter() {
-                        let d5 = ctx
+                    for (caller, callee) in callers {
+                        assert_eq!(callee, &d1.function);
+
+                        let d4 = ctx
                             .graph
                             .edges
                             .iter()
-                            .filter(|x| x.is_return())
+                            .filter(|x| x.is_call())
                             .filter(|x| {
-                                x.get_from().belongs_to_var == d2.belongs_to_var
+                                &x.get_from().function == caller
+                                    && x.to().function == d1.function
+                                    && x.to().belongs_to_var == d1.belongs_to_var
+                                    && x.to().next_pc == d1.next_pc
+                            })
+                            .map(|x| x.get_from());
+
+                        for d4 in d4.into_iter() {
+                            let d5 = ctx
+                                .graph
+                                .edges
+                                .iter()
+                                .filter(|x| x.is_return())
+                                .filter(|x| {
+                                    x.get_from().belongs_to_var == d2.belongs_to_var
                                     && x.get_from().function == d2.function
                                     && x.get_from().next_pc == d2.next_pc - 1 //because applied before
                                     && &x.to().function == &d4.function
-                                // && x.to().next_pc == pc + 1
-                            })
-                            .map(|x| x.to());
-
-                        for d5 in d5 {
-                            if summary
-                                .iter()
-                                .find(|x| {
-                                    &x.get_from().function == caller
-                                        && x.get_from().belongs_to_var == d4.belongs_to_var
-                                        && &x.to().function == caller
-                                        && x.to().next_pc == x.get_from().next_pc + 1
-                                        && x.to().belongs_to_var == d5.belongs_to_var
+                                    // && x.to().next_pc == pc + 1
                                 })
-                                .is_none()
-                            {
-                                let ret = d4.clone();
-                                summary.push(Edge::Summary {
-                                    from: d4.clone(),
-                                    to: ret.clone(),
-                                });
+                                .map(|x| x.to());
 
-                                let edges = ctx
-                                    .graph
-                                    .edges
+                            for d5 in d5 {
+                                if summary
                                     .iter()
-                                    .filter(|x| {
+                                    .find(|x| {
                                         &x.get_from().function == caller
+                                            && x.get_from().belongs_to_var == d4.belongs_to_var
                                             && &x.to().function == caller
-                                            && x.get_from().next_pc == start_pc
-                                            && x.to().belongs_to_var == d4.belongs_to_var
-                                            && x.to().next_pc == d4.next_pc
+                                            && x.to().next_pc == x.get_from().next_pc + 1
+                                            && x.to().belongs_to_var == d5.belongs_to_var
                                     })
-                                    .map(|x| x.get_from());
+                                    .is_none()
+                                {
+                                    let ret = d4.clone();
+                                    summary.push(Edge::Summary {
+                                        from: d4.clone(),
+                                        to: ret.clone(),
+                                    });
 
-                                for d3 in edges {
-                                    let mut ret = ret.clone();
-                                    ret.belongs_to_var = d5.belongs_to_var.clone();
+                                    let edges = ctx
+                                        .graph
+                                        .edges
+                                        .iter()
+                                        .filter(|x| {
+                                            &x.get_from().function == caller
+                                                && &x.to().function == caller
+                                                && x.get_from().next_pc == start_pc
+                                                && x.to().belongs_to_var == d4.belongs_to_var
+                                                && x.to().next_pc == d4.next_pc
+                                        })
+                                        .map(|x| x.get_from());
 
-                                    let init = ctx
-                                        .state
-                                        .get_facts_at(caller, 0)?
-                                        .find(|x| x.belongs_to_var == d3.belongs_to_var)
-                                        .context("Cannot find fact")?
-                                        .clone();
+                                    for d3 in edges {
+                                        let mut ret = ret.clone();
+                                        ret.belongs_to_var = d5.belongs_to_var.clone();
 
-                                    self.propagate(
-                                        &mut ctx.new_graph,
-                                        path_edge,
-                                        worklist,
-                                        Edge::Path {
-                                            from: init,
-                                            to: ret,
-                                        },
-                                    )?;
+                                        let init = ctx
+                                            .state
+                                            .get_facts_at(caller, 0)?
+                                            .find(|x| x.belongs_to_var == d3.belongs_to_var)
+                                            .context("Cannot find fact")?
+                                            .clone();
+
+                                        self.propagate(
+                                            &mut ctx.new_graph,
+                                            path_edge,
+                                            worklist,
+                                            Edge::Path {
+                                                from: init,
+                                                to: ret,
+                                            },
+                                        )?;
+                                    }
                                 }
                             }
                         }

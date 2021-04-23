@@ -33,7 +33,7 @@ type CallerFunction = String;
 type CallResolver = HashMap<Function, Vec<(CallerFunction, PC, Vec<String>)>>;
 
 impl Convert {
-    pub fn visit(&mut self, prog: &Program) -> Result<(Graph, State)> {
+    pub fn visit(&mut self, prog: &Program) -> Result<(Graph, State, CallResolver)> {
         let mut graph = Graph::default();
         let mut state = State::default();
 
@@ -101,7 +101,7 @@ impl Convert {
             self.once_func(&mut ctx, function, &mut block_resolver, &mut call_resolver)?;
         }
 
-        Ok((graph, state))
+        Ok((graph, state, call_resolver))
     }
 
     fn once_func<'a>(

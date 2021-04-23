@@ -23,7 +23,7 @@ macro_rules! ir {
 
         //write_ir($name, $ir);
 
-        let (graph, state) = res.unwrap();
+        let (graph, state, _) = res.unwrap();
 
         let output = render_to(&graph, &state);
 
