@@ -228,7 +228,7 @@ fn bench_logic(c: &mut Criterion) {
         };
 
         group.bench_function(&format!("{}_func_{}_orig", name, &function.name), |b| {
-            b.iter(|| bench(&mut orig_convert, &prog, &req))
+            b.iter(|| bench_orig(&mut orig_convert, &prog, &req))
         });
     }
 
