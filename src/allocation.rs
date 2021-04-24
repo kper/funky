@@ -99,27 +99,31 @@ fn allocate_functions(
 
     debug!("functions extracted {:#?}", ty);
 
-    for (code_index, t) in ty.iter().enumerate() {
+    for (code_index, t) in ty.iter().chain(imports.iter()).enumerate() {
         debug!("Function {} with ty {:#?}", code_index, t);
         // Allocate function
 
         {
             let borrow = &mod_instance;
-            let fbody = match borrow.fn_types.get(**t as usize) {
-                Some(fbody) => fbody,
+            let fn_sig = match borrow.fn_types.get(**t as usize) {
+                Some(sig) => sig,
                 None => {
                     return Err(anyhow!("{} function type is not defined", t));
                 }
             };
 
             let fcode = match borrow.code.get(code_index as usize) {
-                Some(fcode) => fcode,
+                Some(fcode) => fcode.clone(),
                 None => {
-                    return Err(anyhow!("{} code is not defined", t));
+                    // Return empty body for imports
+                    FunctionBody {
+                        locals: Vec::new(),
+                        code: Vec::new(),
+                    }
                 }
             };
 
-            store.allocate_func_instance(fbody.clone(), fcode.clone());
+            store.allocate_func_instance(fn_sig.clone(), fcode);
         }
 
         mod_instance
@@ -127,9 +131,10 @@ fn allocate_functions(
             .push(FuncAddr::new(store.count_functions() as u32 - 1));
     }
 
+    /*
     for func in imports {
        mod_instance.funcaddrs.push(FuncAddr::new(*func));
-    }
+    }*/
 
     Ok(())
 }
