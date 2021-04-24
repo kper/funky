@@ -120,10 +120,11 @@ impl IR {
         self.init_globals(engine)
             .context("Error occured during global initialization")?;
 
-        for function in engine.store.funcs.iter() {
+        for (i, function) in engine.store.funcs.iter().enumerate() {
             debug!("Visiting function");
 
-            self.visit_function(function, engine)?;
+            self.visit_function(function, engine)
+                .with_context(|| format!("Visiting function {} failed", i))?;
             self.symbol_table.clear();
         }
 
@@ -272,9 +273,7 @@ impl IR {
         old_state: &Option<Reg>,
         function_buffer: &mut String,
     ) -> Result<()> {
-        for var in self.symbol_table.vars.iter_mut().rev().skip(arity)
-        //TODO add_parameters for loops
-        {
+        for var in self.symbol_table.vars.iter_mut().rev().skip(arity) {
             // we must offset parameters
             if var.val().context("Trying to kill a non normal reg")?
                 <= old_state.as_ref().map(|x| x.val().unwrap()).unwrap_or(0)
@@ -459,7 +458,8 @@ impl IR {
                         engine,
                         function_buffer,
                         params_count,
-                    )?;
+                    )
+                    .context("Block failed")?;
 
                     self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
@@ -500,7 +500,8 @@ impl IR {
                         &engine,
                         function_buffer,
                         params_count,
-                    )?;
+                    )
+                    .context("Loop failed")?;
 
                     blocks.pop();
 
@@ -546,7 +547,8 @@ impl IR {
                         engine,
                         function_buffer,
                         params_count,
-                    )?;
+                    )
+                    .context("Conditional failed")?;
                     self.exit_block(arity as usize, &current_reg, function_buffer)?;
                     blocks.pop();
 
@@ -599,7 +601,8 @@ impl IR {
                         engine,
                         function_buffer,
                         params_count,
-                    )?;
+                    )
+                    .context("first branch of conditional failed")?;
                     self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
                     writeln!(function_buffer, "GOTO {}", done_name,).unwrap();
@@ -621,7 +624,8 @@ impl IR {
                         engine,
                         function_buffer,
                         params_count,
-                    )?;
+                    )
+                    .context("second branch of conditional failed")?;
                     self.exit_block(arity as usize, &current_reg, function_buffer)?;
 
                     blocks.pop();
@@ -861,13 +865,24 @@ impl IR {
                     .unwrap();
                 }
                 OP_CALL(func) => {
+                    debug!("Function index is {:?}", func);
                     let addr = engine.module.lookup_function_addr(*func)?;
+                    debug!("Function addr is {:?}", addr);
                     let instance = engine.store.get_func_instance(&addr)?;
+
+                    debug!("instance {:?}", instance.ty);
 
                     let num_params = instance.ty.param_types.len();
                     let num_results = instance.ty.return_types.len();
 
                     let mut param_regs = Vec::new();
+
+                    debug!("Function expects {} parameters", num_params);
+                    debug!("Function has {} result variable(s)", num_results);
+                    debug!(
+                        "Currently are {} variables alive",
+                        self.symbol_table.count_alive_vars()
+                    );
 
                     for i in 0..num_params {
                         param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
@@ -1023,13 +1038,16 @@ impl IR {
                 | OP_F32_ADD | OP_F32_SUB | OP_F32_MUL | OP_F32_DIV | OP_F64_ADD | OP_F64_SUB
                 | OP_F64_MUL | OP_F64_DIV | OP_F32_MIN | OP_F32_MAX | OP_F32_COPYSIGN
                 | OP_F64_MIN | OP_F64_MAX | OP_F64_COPYSIGN => {
+                    let v1 = self.symbol_table.peek_offset(0)?.clone();
+                    let v2 = self.symbol_table.peek_offset(1)?.clone();
+
                     writeln!(
                         function_buffer,
                         "{} = {} {} {}",
                         self.symbol_table.new_reg()?,
-                        self.symbol_table.peek_offset(1)?,
+                        v1,
                         "op",
-                        self.symbol_table.peek_offset(2)?
+                        v2
                     )
                     .unwrap();
                 }

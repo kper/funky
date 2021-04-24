@@ -261,7 +261,7 @@ fn ir(file: PathBuf) -> Result<IR> {
 
     let mut ir = IR::new();
 
-    ir.visit(&engine).unwrap();
+    ir.visit(&engine).context("Generating IR failed")?;
 
     Ok(ir)
 }
