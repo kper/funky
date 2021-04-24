@@ -365,8 +365,6 @@ pub(crate) fn parse_instr<'a, 'b>(
         _ => panic!("unknown instruction {}", instr[0]),
     };
 
-    debug!("instr {:?}", expr);
-
     Ok((i, expr))
 }
 
@@ -387,8 +385,6 @@ fn take_block<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8]
         i = w;
         instructions.push(ii);
     }
-
-    debug!("instructions {:#?}", instructions);
 
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);
@@ -414,8 +410,6 @@ fn take_loop<'a, 'b>(i: &'b [u8], counter: &'a mut Counter) -> IResult<&'b [u8],
         i = w;
         instructions.push(ii);
     }
-
-    debug!("instructions {:#?}", instructions);
 
     let (i, e) = take(1u8)(i)?; //0x0B
     assert_eq!(e, END_INSTR);

@@ -52,8 +52,6 @@ pub fn parse(content: Vec<u8>) -> Result<Module> {
 }
 
 fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
-    debug!("START {:?}", i);
-
     let (i, magic) = take_until_magic_number(i)?;
 
     assert_eq!(MAGIC_NUMBER, magic);
@@ -68,8 +66,6 @@ fn parse_module(i: &[u8]) -> IResult<&[u8], Vec<Section>> {
 }
 
 fn parse_section(i: &[u8]) -> IResult<&[u8], Section> {
-    debug!("parse_section {:?}", i);
-
     let (i, n) = take(1u8)(i)?;
     let (i, size) = take_leb_u32(i)?;
     let mut counter = Counter::default();
@@ -283,7 +279,7 @@ fn take_local(i: &[u8]) -> IResult<&[u8], LocalEntry> {
 
     let (i, n) = take_leb_u32(i)?;
     debug!("local n {:?}", n);
-    debug!("local i {:?}", i);
+    //debug!("local i {:?}", i);
     let (i, t) = take_valtype(i)?;
 
     Ok((i, LocalEntry { count: n, ty: t }))
