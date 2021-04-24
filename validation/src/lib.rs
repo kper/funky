@@ -30,8 +30,10 @@ struct Context<'a> {
 
 pub fn validate(module: &Module) -> Result<()> {
     let types = get_types(&module);
-    let functions: Vec<Result<_>> = get_funcs(&module)
+    let (mod_ty, import_ty) = get_funcs(&module);
+    let functions: Vec<Result<_>> = mod_ty
         .iter()
+        .chain(import_ty.iter())
         .map(|w| get_ty_of_function(&types, **w as usize))
         .collect();
 

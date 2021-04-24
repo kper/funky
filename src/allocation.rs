@@ -95,12 +95,12 @@ fn allocate_functions(
     debug!("allocate function");
 
     // Gets all functions and imports
-    let ty = validation::extract::get_funcs(&m);
+    let (ty, imports) = validation::extract::get_funcs(&m);
 
     debug!("functions extracted {:#?}", ty);
 
     for (code_index, t) in ty.iter().enumerate() {
-        debug!("Function {:#?}", t);
+        debug!("Function {} with ty {:#?}", code_index, t);
         // Allocate function
 
         {
@@ -125,6 +125,10 @@ fn allocate_functions(
         mod_instance
             .funcaddrs
             .push(FuncAddr::new(store.count_functions() as u32 - 1));
+    }
+
+    for func in imports {
+       mod_instance.funcaddrs.push(FuncAddr::new(*func));
     }
 
     Ok(())

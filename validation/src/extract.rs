@@ -84,7 +84,7 @@ pub fn get_data(module: &Module) -> Vec<&DataSegment> {
     ty
 }
 
-pub fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
+pub fn get_funcs(module: &Module) -> (Vec<&FuncIdx>, Vec<&FuncIdx>) {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -116,11 +116,11 @@ pub fn get_funcs(module: &Module) -> Vec<&FuncIdx> {
         .flatten()
         .collect();
 
-    let mut all = Vec::with_capacity(ty.len() + imported.len());
-    all.extend(ty);
-    all.extend(imported);
+    //let mut all = Vec::with_capacity(ty.len() + imported.len());
+    //all.extend(ty);
+    //all.extend(imported);
 
-    all
+    (ty, imported)
 }
 
 pub fn get_defined_tables(module: &Module) -> Vec<&TableType> {

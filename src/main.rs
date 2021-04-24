@@ -89,7 +89,6 @@ fn main() {
 
     let mut engine = e.unwrap();
 
-    info!("Invoking function {:?}", 0);
     let inv_args = parse_args(args.arg_args);
 
     if let Err(err) = engine.invoke_exported_function_by_name(&args.arg_function, inv_args) {
