@@ -23,7 +23,7 @@ pub enum Reg {
 }
 
 impl Reg {
-   pub fn val(&self) -> Result<isize> {
+    pub fn val(&self) -> Result<isize> {
         Ok(match *self {
             Reg::Normal(x) => x as isize,
             Reg::Global(x) => x,
@@ -130,5 +130,60 @@ impl SymbolTable {
         }
 
         bail!("Variable {:?} was not found", reg);
+    }
+
+    /// Returns how many variables are alive
+    pub fn count_alive_vars(&self) -> usize {
+        self.vars.iter().filter(|x| !x.is_killed).count()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_symbol_table_peek_offset() {
+        let mut sym_table = SymbolTable::default();
+
+        let mut regs = Vec::new();
+        for _i in 0..10 {
+            regs.push(sym_table.new_reg().unwrap());
+        }
+
+        for i in regs.iter().rev().take(9) {
+            sym_table.kill(i).unwrap();
+        }
+
+        assert_eq!(1, sym_table.vars.iter().filter(|x| !x.is_killed).count());
+        assert_eq!(9, sym_table.vars.iter().filter(|x| x.is_killed).count());
+
+        assert_eq!(&Reg::Normal(0), sym_table.peek_offset(0).unwrap());
+        assert_eq!(
+            &sym_table.peek().unwrap(),
+            sym_table.peek_offset(0).unwrap()
+        );
+        assert!(sym_table.peek_offset(1).is_err());
+    }
+
+    #[test]
+    fn test_symbol_table_multiple_peek_offset() {
+        let mut sym_table = SymbolTable::default();
+
+        let mut regs = Vec::new();
+        for _i in 0..10 {
+            regs.push(sym_table.new_reg().unwrap());
+        }
+
+        for i in regs.iter().rev().take(3) {
+            sym_table.kill(i).unwrap();
+        }
+
+        assert_eq!(7, sym_table.vars.iter().filter(|x| !x.is_killed).count());
+        assert_eq!(3, sym_table.vars.iter().filter(|x| x.is_killed).count());
+
+        assert_eq!(&Reg::Normal(6), sym_table.peek_offset(0).unwrap());
+        assert_eq!(&Reg::Normal(5), sym_table.peek_offset(1).unwrap());
+        assert_eq!(&Reg::Normal(4), sym_table.peek_offset(2).unwrap());
     }
 }
