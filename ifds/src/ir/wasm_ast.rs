@@ -121,7 +121,7 @@ impl IR {
             .context("Error occured during global initialization")?;
 
         for (i, function) in engine.store.funcs.iter().enumerate() {
-            debug!("Visiting function");
+            debug!("Visiting function {}", i);
 
             self.visit_function(function, engine)
                 .with_context(|| format!("Visiting function {} failed", i))?;
@@ -146,8 +146,8 @@ impl IR {
 
         let mut params = Vec::new();
 
-        debug!("Signature {:?}", inst.ty.param_types);
-        debug!("Body code {:?}", inst.code.locals);
+        //debug!("Signature {:?}", inst.ty.param_types);
+        //debug!("Body code {:?}", inst.code.locals);
 
         for (i, _) in inst.ty.param_types.iter().enumerate() {
             let var = self.symbol_table.new_reg()?;
@@ -195,7 +195,8 @@ impl IR {
             engine,
             &mut body,
             inst.ty.param_types.len(),
-        )?;
+        )
+        .context("Visiting body of function failed")?;
 
         let nums = ((self.globals.len() as isize * -1)..(self.symbol_table.len() as isize))
             .map(|x| format!("%{}", x))
@@ -249,7 +250,8 @@ impl IR {
             engine,
             function_buffer,
             params_count,
-        )?;
+        )
+        .with_context(|| format!("Visit of instruction wrapper failed for {}", function_index))?;
 
         {
             // Add last return
