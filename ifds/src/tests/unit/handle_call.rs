@@ -1,9 +1,9 @@
-use crate::icfg::tabulation::fast::{TabulationFast, Ctx};
 use crate::icfg::flowfuncs::taint::{
     flow::TaintNormalFlowFunction, initial::TaintInitialFlowFunction,
 };
 use crate::icfg::graph::*;
 use crate::icfg::state::State;
+use crate::icfg::tabulation::fast::{Ctx, TabulationFast};
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
@@ -482,7 +482,7 @@ fn test_pass_memory() {
         )
         .unwrap();
 
-    let _ = ctx.state.add_memory_var(caller_function.name.clone(), 0.0);
+    let _ = ctx.state.add_memory_var(caller_function.name.clone(), 0);
 
     let foo = Fact {
         belongs_to_var: "mem@0".to_string(),

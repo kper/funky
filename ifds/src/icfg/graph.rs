@@ -1,17 +1,27 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use itertools::Itertools;
 
 type VarId = String;
 type FunctionName = String;
 
 /// The datastructure for the graph.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Graph {
     pub edges: Vec<Edge>,
 }
 
 impl Graph {
+    /// Get all facts
+    pub fn flatten(&self) -> impl Iterator<Item = &Fact> {
+        self.edges
+            .iter()
+            .map(|x| x.get_from())
+            .chain(self.edges.iter().map(|x| x.to()))
+            .unique()
+    }
+
     /// Adding a normal edge to the graph
     pub fn add_normal(&mut self, from: Fact, to: Fact) -> Result<()> {
         self.edges.push(Edge::Normal {
@@ -69,7 +79,7 @@ pub struct Note {
 
 /// A fact is an variable at a given instruction. The instruction is defined
 /// as `next_pc`.
-#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Default, Eq, Hash)]
 pub struct Fact {
     pub belongs_to_var: VarId,
     pub var_is_global: bool,
@@ -82,7 +92,7 @@ pub struct Fact {
     pub function: FunctionName,
     /// if the fact saves a memory variable
     /// then save the offset.
-    pub memory_offset: Option<f64>,
+    pub memory_offset: Option<usize>,
 }
 
 impl Fact {
@@ -123,7 +133,7 @@ pub struct Variable {
     pub is_memory: bool,
     /// if variable is a memory variable, then also save
     /// the memory's offset
-    pub memory_offset: Option<f64>,
+    pub memory_offset: Option<usize>,
 }
 
 /// The datastructure for an edge in the graph.
@@ -175,7 +185,7 @@ impl Edge {
         match self {
             Edge::Normal {
                 from: _,
-                to:_,
+                to: _,
                 curved: _,
             } => true,
             _ => false,
@@ -185,10 +195,7 @@ impl Edge {
     /// Checks if edge is a call edge
     pub fn is_call(&self) -> bool {
         match self {
-            Edge::Call {
-                from: _,
-                to: _,
-            } => true,
+            Edge::Call { from: _, to: _ } => true,
             _ => false,
         }
     }
@@ -196,10 +203,7 @@ impl Edge {
     /// Checks if edge is a return edge
     pub fn is_return(&self) -> bool {
         match self {
-            Edge::Return {
-                from: _,
-                to: _,
-            } => true,
+            Edge::Return { from: _, to: _ } => true,
             _ => false,
         }
     }

@@ -132,7 +132,7 @@ impl State {
     }
 
     /// Add a memory variable to the graph's variables
-    pub fn add_memory_var(&mut self, function: String, offset: f64) -> Variable {
+    pub fn add_memory_var(&mut self, function: String, offset: usize) -> Variable {
         let name = format!("{}@{}", "mem", offset);
         let var = Variable {
             function: function.clone(),

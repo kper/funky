@@ -471,7 +471,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                 }
             }
             Instruction::Store(src, offset, i) if variable == src || variable == i => {
-                let mem_var = state.add_memory_var(function.name.clone(), *offset);
+                let mem_var = state.add_memory_var(function.name.clone(), *offset as usize);
 
                 state.add_statement(
                     function,

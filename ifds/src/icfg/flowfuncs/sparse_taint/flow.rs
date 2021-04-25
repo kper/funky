@@ -49,7 +49,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .demand(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
-                for var in after_var.iter() {
+                for var in after_var.into_iter() {
                     edges.push(Edge::Normal {
                         from: before.clone(),
                         to: var.clone(),
@@ -58,22 +58,12 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                 }
             }
             Instruction::Assign(dest, src) => {
-                /*
-                let before = ctx
-                    .state
-                    .get_facts_at(&function.name, pc)
-                    .context("Cannot find taut's fact")?
-                    .filter(|x| &x.belongs_to_var == src)
-                    .collect::<Vec<_>>()
-                    .get(0)
-                    .context("Cannot find taut")?
-                    .clone()
-                    .clone();
-                    */
-
                 let before = defuse
                     .src_before(ctx, &function, src, pc)
-                    .context("Cannot find var's fact")?;
+                    .context("Cannot find var's fact")?
+                    .into_iter()
+                    .map(|x| x.clone())
+                    .collect::<Vec<_>>();
 
                 let after_var = defuse
                     .demand(ctx, &function, dest, pc)
@@ -83,7 +73,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     for var in after_var.iter() {
                         edges.push(Edge::Normal {
                             from: b.clone(),
-                            to: var.clone(),
+                            to: var.clone().clone(),
                             curved: false,
                         });
                     }

@@ -476,6 +476,7 @@ dependencies = [
  "env_logger",
  "funky",
  "insta",
+ "itertools 0.10.0",
  "lalrpop",
  "lalrpop-util",
  "log",

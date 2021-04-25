@@ -596,7 +596,7 @@ impl TabulationNaive {
                 let out_ = ctx
                     .state
                     .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| !(x.var_is_memory && x.memory_offset == Some(*offset)));
+                    .filter(|x| !(x.var_is_memory && x.memory_offset == Some(*offset as usize)));
 
                 for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
@@ -614,7 +614,7 @@ impl TabulationNaive {
                 for from in in_ {
                     let var = ctx
                         .state
-                        .add_memory_var(function.name.clone(), offset.clone());
+                        .add_memory_var(function.name.clone(), offset.clone() as usize);
 
                     let out_ = ctx
                         .state

@@ -84,7 +84,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .cache(ctx, &function, dest, pc)
+                            .demand(ctx, &function, dest, pc)
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter().take(1) {
@@ -128,7 +128,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             }
 
                             let after_var = defuse
-                                .cache(ctx, &function, dest, pc)
+                                .demand(ctx, &function, dest, pc)
                                 .context("Cannot find var's fact")?;
 
                             for var in after_var.into_iter().take(1) {
@@ -173,10 +173,10 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
 
                         let mem = ctx
                             .state
-                            .add_memory_var(function.name.clone(), offset.clone());
+                            .add_memory_var(function.name.clone(), offset.clone() as usize);
 
                         let after_var = defuse
-                            .cache(ctx, &function, &mem.name, pc)
+                            .demand(ctx, &function, &mem.name, pc)
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter().take(1) {
@@ -219,7 +219,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .cache(ctx, &function, &"taut".to_string(), pc)
+                            .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter().take(1) {

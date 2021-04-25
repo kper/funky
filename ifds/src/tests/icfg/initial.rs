@@ -748,7 +748,7 @@ fn test_memory_store_initial_flow() {
                 function: "main".to_string(),
                 track: 3,
                 var_is_memory: true,
-                memory_offset: Some(0.0),
+                memory_offset: Some(0),
                 ..Default::default()
             },
         }),
@@ -771,7 +771,7 @@ fn test_memory_store_initial_flow() {
                 function: "main".to_string(),
                 track: 3,
                 var_is_memory: true,
-                memory_offset: Some(0.0),
+                memory_offset: Some(0),
                 ..Default::default()
             },
             curved: false

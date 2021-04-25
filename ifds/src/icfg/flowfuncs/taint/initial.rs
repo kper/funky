@@ -156,7 +156,7 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Store(_src, offset, _i) => {
                     let before2 = vec![init_fact.clone()];
 
-                    let mem = state.add_memory_var(function.name.clone(), offset.clone());
+                    let mem = state.add_memory_var(function.name.clone(), offset.clone() as usize);
                     state.add_statement(
                         function,
                         format!("{:?}", instruction),

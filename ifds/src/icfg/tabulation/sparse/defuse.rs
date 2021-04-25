@@ -15,12 +15,12 @@ type StartPC = usize;
 
 #[derive(Debug, Default)]
 pub struct DefUseChain {
-    inner: HashMap<(Function, Var), (StartPC, Vec<Fact>)>,
+    inner: HashMap<(Function, Var), (StartPC, Graph)>,
 }
 
 impl DefUseChain {
-    /// Get the facts
-    pub fn get_facts_at(&self, function: &String, var: &String) -> Option<&Vec<Fact>> {
+    /// Get the DefUseChain for function and variable
+    pub fn get_graph(&self, function: &String, var: &String) -> Option<&Graph> {
         self.inner
             .get(&(function.clone(), var.clone()))
             .map(|(_, x)| x)
@@ -34,12 +34,21 @@ impl DefUseChain {
         var: &String,
         pc: usize,
     ) -> Result<Vec<Fact>> {
-        let facts = self.cache(ctx, function, var, pc)?;
+        let graph = self.cache(ctx, function, var, pc)?;
 
-        let x: Vec<_> = facts
+        let facts = graph
+            .flatten()
             .into_iter()
             .filter(|x| x.next_pc > pc)
-            .take(1)
+            .collect::<Vec<_>>();
+
+        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(0);
+
+        // Get all next nodes, because there might be multiple
+        let x: Vec<_> = facts
+            .into_iter()
+            .filter(|x| x.next_pc == next_pc)
+            .map(|x| x.clone())
             .collect();
 
         Ok(x)
@@ -54,17 +63,24 @@ impl DefUseChain {
         pc: usize,
     ) -> Result<Vec<Fact>> {
         let facts = self
-            .get_facts_at(&function.name, var)
-            .map(|facts| {
-                facts
+            .get_graph(&function.name, var)
+            .map(|graph| {
+                graph
+                    .flatten()
                     .into_iter()
                     .filter(|x| x.next_pc == pc)
                     .map(|x| x.clone())
-                    .collect()
+                    .collect::<Vec<_>>()
             })
             .unwrap_or(Vec::new());
 
         Ok(facts)
+    }
+
+    fn get_start_pc(&self, function: &AstFunction, var: &String) -> Option<usize> {
+        self.inner
+            .get(&(function.name.clone(), var.clone()))
+            .map(|(pc, _)| *pc)
     }
 
     /// Build the defuse chain for the instruction
@@ -76,7 +92,7 @@ impl DefUseChain {
         function: &AstFunction,
         var: &String,
         pc: usize,
-    ) -> Result<Vec<Fact>> {
+    ) -> Result<&Graph> {
         let var = ctx
             .state
             .get_var(&function.name, var)
@@ -84,18 +100,24 @@ impl DefUseChain {
             .clone();
 
         // already exists
+
         if self
             .inner
             .contains_key(&(function.name.clone(), var.name.clone()))
         {
-            let (start_pc, x) = self
-                .inner
-                .get(&(function.name.clone(), var.name.clone()))
-                .context("Cannot find chained facts")?;
+            let start_pc = self
+                .get_start_pc(function, &var.name)
+                .context("Cannot get start_pc")?;
 
             // If `pc` is lower than `start_pc`, then delete and continue
-            if pc >= *start_pc {
-                return Ok(x.clone());
+            if pc >= start_pc {
+                let x = self
+                    .inner
+                    .get(&(function.name.clone(), var.name.clone()))
+                    .map(|(_, x)| x)
+                    .context("Cannot get graph")?;
+
+                return Ok(x);
             } else {
                 self.inner
                     .remove(&(function.name.clone(), var.name.clone()));
@@ -116,7 +138,7 @@ impl DefUseChain {
             .context("Cannot find track of var")?;
 
         let mut facts = Vec::new();
-        
+
         // Add entry fact
         let x = ctx.state.cache_fact(
             &function.name,
@@ -135,9 +157,10 @@ impl DefUseChain {
 
             debug!("Creating fact with pc {} and next_pc {}", pc, next_pc);
 
-            let x = ctx
-                .state
-                .cache_fact(&function.name, Fact::from_var(&var, *pc, next_pc, track))?;
+            /*let x = ctx
+            .state
+            .cache_fact(&function.name, )?; //TODO remove*/
+            let x = Fact::from_var(&var, *pc, next_pc, track);
             facts.push(x.clone());
 
             i += 1;
@@ -145,26 +168,51 @@ impl DefUseChain {
 
         // Add last fact for the end of the procedure
 
-        let x = ctx.state.cache_fact(
-            &function.name,
-            Fact::from_var(
-                &var,
-                function.instructions.len() - 1,
-                function.instructions.len(),
-                track,
-            ),
-        )?;
+        let x = Fact::from_var(
+            &var,
+            function.instructions.len(),
+            function.instructions.len(),
+            track,
+        );
         facts.push(x.clone());
 
+        let graph = self.build_graph(facts).context("Building graph failed")?;
+
         // end
+        {
+            self.inner
+                .insert((function.name.clone(), var.name.clone()), (pc, graph));
+        }
 
-        self.inner
-            .insert((function.name.clone(), var.name.clone()), (pc, facts));
-
-        self.inner
+        let (_, ref graph) = self
+            .inner
             .get(&(function.name.clone(), var.name.clone()))
-            .context("Cannot find chained facts")
-            .map(|x| x.1.clone())
+            .context("Cannot find chained facts")?;
+
+        Ok(graph)
+    }
+
+    /// Build the intraprocedural cached graph
+    fn build_graph(&self, facts: Vec<Fact>) -> Result<Graph> {
+        let mut graph = Graph::default();
+
+        if facts.len() > 0 {
+            let first = facts.first().unwrap(); //invariant
+            let last = facts.last().unwrap(); //invariant
+            let mut node = first.clone();
+
+            for i in 0..(facts.len() - 1) {
+                let fact = facts.get(i + 1).context("Cannot find fact")?;
+                debug!("Cached {} -> {}", node.pc, fact.pc);
+                graph.add_normal(node.clone(), fact.clone())?;
+                node = fact.clone();
+            }
+
+            debug!("Cached {} -> {}", node.pc, last.pc);
+            graph.add_normal(node, last.clone())?;
+        }
+
+        Ok(graph)
     }
 
     fn is_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
@@ -273,7 +321,10 @@ mod test {
         let mut chain = DefUseChain::default();
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), pc)
-            .unwrap();
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
         assert_eq!(4, facts.len());
         assert_eq!(3, facts.get(1).unwrap().next_pc);
         assert_eq!(4, facts.get(2).unwrap().next_pc);
@@ -317,7 +368,9 @@ mod test {
         let mut chain = DefUseChain::default();
         let facts = chain
             .cache(&mut ctx, &function, &"%1".to_string(), pc)
-            .unwrap();
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
         assert_eq!(4, facts.len());
         assert_eq!(4, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
@@ -361,12 +414,16 @@ mod test {
         let mut chain = DefUseChain::default();
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), pc)
-            .unwrap();
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
         assert_eq!(3, facts.len());
 
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), 0)
-            .unwrap();
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
         assert_eq!(4, facts.len());
     }
 }
