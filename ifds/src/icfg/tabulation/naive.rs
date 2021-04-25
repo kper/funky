@@ -18,7 +18,7 @@ use std::collections::hash_map::Entry;
 
 /// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug, Default)]
-pub struct TabulationNaive {}
+pub struct TabulationNaive;
 
 struct Ctx<'a> {
     program: &'a Program,

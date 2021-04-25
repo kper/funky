@@ -7,3 +7,6 @@ pub mod orig;
 
 /// Implementation of the algorithm with the practial extensions;
 pub mod fast;
+
+/// Implementation of the sparsed algorithm;
+pub mod sparse;
