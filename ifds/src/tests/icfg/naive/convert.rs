@@ -1,4 +1,4 @@
-use crate::icfg::naive::convert::Convert;
+use crate::icfg::tabulation::naive::TabulationNaive;
 use crate::icfg::tikz::render_to;
 use insta::assert_snapshot;
 use log::error;
@@ -7,7 +7,7 @@ use crate::grammar::*;
 
 macro_rules! ir {
     ($name:expr, $ir:expr) => {
-        let mut convert = Convert::default();
+        let mut convert = TabulationNaive::default();
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 

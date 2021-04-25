@@ -6,7 +6,7 @@ use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
 use crate::grammar::*;
-use crate::icfg::convert::FastConvert;
+use crate::icfg::tabulation::fast::TabulationFast;
 use crate::icfg::tikz::render_to;
 use crate::solver::Request;
 
@@ -47,7 +47,7 @@ macro_rules! run {
 
         //assert_snapshot!(format!("{}_ir", $name), ir_code);
 
-        let mut convert = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+        let mut convert = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let prog = ProgramParser::new().parse(&ir_code).unwrap();
 

@@ -1,4 +1,4 @@
-use crate::icfg::convert::{FastConvert, Ctx};
+use crate::icfg::tabulation::fast::{TabulationFast, Ctx};
 use crate::icfg::flowfuncs::taint::{
     flow::TaintNormalFlowFunction, initial::TaintInitialFlowFunction,
 };
@@ -15,7 +15,7 @@ type Worklist = VecDeque<Edge>;
 type EndSummary = HashMap<(String, usize, String), Vec<Fact>>;
 
 fn setup() -> (
-    FastConvert<TaintInitialFlowFunction, TaintNormalFlowFunction>,
+    TabulationFast<TaintInitialFlowFunction, TaintNormalFlowFunction>,
     Graph,
     PathEdges,
     Worklist,
@@ -23,7 +23,7 @@ fn setup() -> (
     NormalFlows,
 ) {
     (
-        FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction),
+        TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction),
         Graph::default(),
         PathEdges::new(),
         Worklist::new(),

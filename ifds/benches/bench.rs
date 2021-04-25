@@ -1,7 +1,7 @@
 use ifds::grammar::*;
-use ifds::icfg::convert::FastConvert;
-use ifds::icfg::naive::convert::Convert;
-use ifds::icfg::orig::convert::OriginalConvert;
+use ifds::icfg::tabulation::fast::TabulationFast;
+use ifds::icfg::tabulation::naive::TabulationNaive;
+use ifds::icfg::tabulation::orig::TabulationOriginal;
 use ifds::{ir::ast::Program, solver::bfs::*, solver::*};
 
 use funky::engine::module::ModuleInstance;
@@ -37,7 +37,7 @@ macro_rules! wasm {
 }
 
 fn bench(
-    convert: &mut FastConvert<TaintInitialFlowFunction, TaintNormalFlowFunction>,
+    convert: &mut TabulationFast<TaintInitialFlowFunction, TaintNormalFlowFunction>,
     prog: &Program,
     req: &Request,
 ) {
@@ -46,7 +46,7 @@ fn bench(
     solver.all_sinks(&mut graph, req).unwrap();
 }
 
-fn bench_naive(convert: &mut Convert, prog: &Program, req: &Request) {
+fn bench_naive(convert: &mut TabulationNaive, prog: &Program, req: &Request) {
     let mut solver = Bfs;
     let (mut graph, state, _) = convert.visit(&prog).unwrap();
 
@@ -54,7 +54,7 @@ fn bench_naive(convert: &mut Convert, prog: &Program, req: &Request) {
 }
 
 fn bench_orig(
-    convert: &mut OriginalConvert,
+    convert: &mut TabulationOriginal,
     prog: &Program,
     req: &Request,
 ) {
@@ -74,7 +74,7 @@ fn bench_fib(c: &mut Criterion) {
 
     let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
-    let mut convert = Convert::default();
+    let mut convert = TabulationNaive::default();
 
     // Naive
     for function in prog.functions.iter() {
@@ -89,7 +89,7 @@ fn bench_fib(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -103,7 +103,7 @@ fn bench_fib(c: &mut Criterion) {
         });
     }
 
-    let mut orig_convert = OriginalConvert::default();
+    let mut orig_convert = TabulationOriginal::default();
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -132,7 +132,7 @@ fn bench_fac(c: &mut Criterion) {
 
     let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
-    let mut convert = Convert::default();
+    let mut convert = TabulationNaive::default();
 
     // Naive
     for function in prog.functions.iter() {
@@ -147,7 +147,7 @@ fn bench_fac(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -161,7 +161,7 @@ fn bench_fac(c: &mut Criterion) {
         });
     }
 
-    let mut orig_convert = OriginalConvert::default();
+    let mut orig_convert = TabulationOriginal::default();
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -189,7 +189,7 @@ fn bench_logic(c: &mut Criterion) {
 
     let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
-    let mut convert = Convert::default();
+    let mut convert = TabulationNaive::default();
 
     // Naive
     for function in prog.functions.iter() {
@@ -204,7 +204,7 @@ fn bench_logic(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -218,7 +218,7 @@ fn bench_logic(c: &mut Criterion) {
         });
     }
 
-    let mut orig_convert = OriginalConvert::default();
+    let mut orig_convert = TabulationOriginal::default();
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -246,7 +246,7 @@ fn bench_gcd(c: &mut Criterion) {
 
     let prog = ProgramParser::new().parse(&ir.buffer()).unwrap();
 
-    let mut convert = Convert::default();
+    let mut convert = TabulationNaive::default();
 
     // Naive
     for function in prog.functions.iter() {
@@ -261,7 +261,7 @@ fn bench_gcd(c: &mut Criterion) {
         );
     }
 
-    let mut convert_fast = FastConvert::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert_fast = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
     for function in prog.functions.iter() {
         let req = Request {
@@ -275,7 +275,7 @@ fn bench_gcd(c: &mut Criterion) {
         });
     }
 
-    let mut orig_convert = OriginalConvert::default();
+    let mut orig_convert = TabulationOriginal::default();
 
     for function in prog.functions.iter() {
         let req = Request {
