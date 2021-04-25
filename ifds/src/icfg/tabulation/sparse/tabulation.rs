@@ -570,11 +570,11 @@ where
 
         // Compute init flows
         let init_normal_flows = self.init_flow.flow(
+            ctx,
             function,
             req.pc,
             &facts,
             &mut normal_flows_debug,
-            &mut ctx.state,
             &mut self.defuse,
         )?;
 
@@ -775,7 +775,7 @@ where
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        //graph.edges.extend_from_slice(&normal_flows_debug);
+        ctx.graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())

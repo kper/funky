@@ -49,13 +49,13 @@ pub trait NormalFlowFunction {
 }
 
 pub trait SparseInitialFlowFunction {
-    fn flow(
+    fn flow<'a>(
         &self,
+        ctx: &mut crate::icfg::tabulation::sparse::Ctx<'a>,
         function: &AstFunction,
         pc: usize,
         init_facts: &Vec<Fact>,
         normal_flows_debug: &mut Vec<Edge>,
-        state: &mut State,
         defuse: &mut DefUseChain,
     ) -> Result<Vec<Edge>>;
 }

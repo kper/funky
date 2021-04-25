@@ -36,44 +36,27 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 &"taut".to_string(),
             )?;
 
-            let _after2 = state
+            let _after = state
                 .get_facts_at(&function.name, pc)?
-                .filter(|x| x.belongs_to_var == "taut".to_string())
+                .filter(|x| x.var_is_taut)
                 .collect::<Vec<_>>();
 
-            let after2 = _after2.get(0).unwrap();
+            let after = _after.get(0).unwrap();
 
             edges.push(Edge::Path {
                 from: init_fact.clone().clone(),
-                to: after2.clone().clone(),
+                to: after.clone().clone(),
             });
 
             match instruction {
-                Instruction::Const(reg, _) => {
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
-
-                    let before2 = vec![init_fact.clone()];
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == reg || x.var_is_taut)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
-                        }
-                    }
-                }
-                Instruction::Assign(dest, _src) => {
+                Instruction::Const(dest, _) |
+                Instruction::Assign(dest, _)
+                | Instruction::Unop(dest, _)
+                | Instruction::BinOp(dest, _, _)
+                | Instruction::Conditional(dest, _)
+                | Instruction::Phi(dest, _, _) |
+                 Instruction::Load(dest, _, _) 
+                => {
                     let before2 = vec![init_fact.clone()];
 
                     state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
@@ -82,78 +65,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                         let after2 = state
                             .get_facts_at(&function.name, pc + 1)?
                             .filter(|x| &x.belongs_to_var == dest)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
-                        }
-                    }
-                }
-                Instruction::Unop(dest, _src) => {
-                    let before2 = vec![init_fact.clone()];
-
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == dest)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
-                        }
-                    }
-                }
-                Instruction::BinOp(dest, _src, _src2) => {
-                    let before2 = vec![init_fact.clone()];
-
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == dest)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
-                        }
-                    }
-                }
-                Instruction::Conditional(reg, _) => {
-                    let before2 = vec![init_fact.clone()];
-
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, reg)?;
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == reg)
                             .cloned();
 
                         for a in after2 {
@@ -211,30 +122,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
 
                     continue;
                 }
-                Instruction::Phi(dest, _src1, _src2) => {
-                    let before2 = vec![init_fact.clone()];
-
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == dest)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
-                        }
-                    }
-                }
                 Instruction::Call(_callee, _params, dest) => {
                     for dest_var in dest.iter() {
                         let before2 = vec![init_fact.clone()];
@@ -263,30 +150,6 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                                     to: a.clone(),
                                 });
                             }
-                        }
-                    }
-                }
-                Instruction::Load(dest, _offset, _i) => {
-                    let before2 = vec![init_fact.clone()];
-
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
-
-                    for b in before2.into_iter() {
-                        let after2 = state
-                            .get_facts_at(&function.name, pc + 1)?
-                            .filter(|x| &x.belongs_to_var == dest)
-                            .cloned();
-
-                        for a in after2 {
-                            normal_flows_debug.push(Edge::Normal {
-                                from: b.clone(),
-                                to: a.clone(),
-                                curved: false,
-                            });
-                            edges.push(Edge::Path {
-                                from: init_fact.clone().clone(),
-                                to: a.clone(),
-                            });
                         }
                     }
                 }
@@ -323,7 +186,12 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                 Instruction::Return(_dests) => {
                     let before2 = vec![init_fact.clone()];
 
-                    state.add_statement(function, format!("{:?}", instruction), pc + 1, &"taut".to_string())?;
+                    state.add_statement(
+                        function,
+                        format!("{:?}", instruction),
+                        pc + 1,
+                        &"taut".to_string(),
+                    )?;
 
                     for b in before2.into_iter() {
                         let after2 = state
@@ -345,7 +213,10 @@ impl InitialFlowFunction for TaintInitialFlowFunction {
                     }
                 }
                 _ => {
-                    bail!("Selected instruction {:?} is not supported. Please choose the next one.", instruction)
+                    bail!(
+                        "Selected instruction {:?} is not supported. Please choose the next one.",
+                        instruction
+                    )
                 }
             }
 

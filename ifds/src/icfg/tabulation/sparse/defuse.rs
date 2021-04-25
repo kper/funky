@@ -18,6 +18,29 @@ pub struct DefUseChain {
 }
 
 impl DefUseChain {
+    /// Get the facts
+    pub fn get_facts_at(
+        &self,
+        function: &String,
+        var: &String,
+        start_pc: usize,
+    ) -> Option<&Vec<Fact>> {
+        self.inner.get(&(function.clone(), var.clone(), start_pc))
+    }
+
+    /// Get the facts after given `pc`
+    pub fn get_facts_at_after_pc(
+        &self,
+        function: &String,
+        var: &String,
+        start_pc: usize,
+        pc: usize,
+    ) -> Option<Vec<&Fact>> {
+        self.inner
+            .get(&(function.clone(), var.clone(), start_pc))
+            .map(|x| x.iter().filter(|x| x.next_pc >= pc).collect::<Vec<_>>())
+    }
+
     /// Build the defuse chain for the instruction
     /// The precondition is that the function must be already initialized.
     /// Because we need the track of the given variable `var`.
@@ -25,9 +48,15 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &Variable,
+        var: &String,
         pc: usize,
     ) -> Result<Vec<Fact>> {
+        let var = ctx
+            .state
+            .get_var(&function.name, var)
+            .context("Variable is not defined in the state")?
+            .clone();
+
         // already exists, therefore returning
         if self
             .inner
@@ -45,7 +74,7 @@ impl DefUseChain {
             .iter()
             .enumerate()
             .skip(pc) //TODO maybe start from the start, because recursion?
-            .filter(|(_, x)| self.is_used(&var.name, x));
+            .filter(|(_, x)| self.is_used(&var, x));
 
         let track = ctx
             .state
@@ -56,7 +85,7 @@ impl DefUseChain {
         for (pc, _instruction) in instructions {
             let x = ctx
                 .state
-                .cache_fact(&function.name, Fact::from_var(var, pc, track))?;
+                .cache_fact(&function.name, Fact::from_var(&var, pc + 1, track))?;
             facts.push(x.clone());
         }
 
@@ -64,7 +93,7 @@ impl DefUseChain {
 
         let x = ctx.state.cache_fact(
             &function.name,
-            Fact::from_var(var, function.instructions.len(), track),
+            Fact::from_var(&var, function.instructions.len(), track),
         )?;
         facts.push(x.clone());
 
@@ -79,7 +108,20 @@ impl DefUseChain {
             .map(|x| x.clone())
     }
 
-    fn is_used(&self, var: &Var, instruction: &Instruction) -> bool {
+    fn is_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
+        if variable.is_memory {
+            // We cannot check memory vars by name, because they might differ
+            // But by semantics, every memory should be considered
+            return self.is_used_mem(variable, instruction);
+        }
+
+        if variable.is_taut {
+            // Like mem
+
+            return self.is_used_taut(variable, instruction);
+        }
+
+        let var = &variable.name;
         match instruction {
             Instruction::Unop(dest, src) => var == dest || var == src,
             Instruction::BinOp(dest, src1, src2) => var == dest || var == src1 || var == src2,
@@ -95,6 +137,41 @@ impl DefUseChain {
             Instruction::Phi(dest, src1, src2) => var == dest || var == src1 || var == src2,
             Instruction::Store(src1, _, src2) => var == src1 || var == src2,
             Instruction::Load(dest, _, src) => var == dest || var == src,
+            _ => false,
+        }
+    }
+
+    fn is_used_mem(&self, _variable: &Variable, instruction: &Instruction) -> bool {
+        macro_rules! is_mem {
+            ($e:ident) => {
+                $e.starts_with("mem")
+            };
+        }
+
+        match instruction {
+            Instruction::Unop(dest, src) => is_mem!(dest) || is_mem!(src),
+            Instruction::BinOp(dest, src1, src2) => is_mem!(dest) || is_mem!(src1) || is_mem!(src2),
+            Instruction::Const(dest, _) => is_mem!(dest),
+            Instruction::Assign(dest, src) => is_mem!(dest) || is_mem!(src),
+            Instruction::Call(_callee, params, dest) => {
+                params.iter().any(|x| is_mem!(x)) || dest.iter().any(|x| is_mem!(x))
+            }
+            Instruction::CallIndirect(_callee, params, dest) => {
+                params.iter().any(|x| is_mem!(x)) || dest.iter().any(|x| is_mem!(x))
+            }
+            Instruction::Kill(dest) => is_mem!(dest),
+            Instruction::Conditional(dest, _) => is_mem!(dest),
+            Instruction::Return(dest) => dest.iter().any(|x| is_mem!(x)),
+            Instruction::Phi(dest, src1, src2) => is_mem!(dest) || is_mem!(src1) || is_mem!(src2),
+            Instruction::Store(src1, _, src2) => is_mem!(src1) || is_mem!(src2),
+            Instruction::Load(dest, _, src) => is_mem!(dest) || is_mem!(src),
+            _ => false,
+        }
+    }
+
+    fn is_used_taut(&self, _variable: &Variable, instruction: &Instruction) -> bool {
+        match instruction {
+            Instruction::Const(_dest, _) => true,
             _ => false,
         }
     }
@@ -136,20 +213,11 @@ mod test {
 
         let mut chain = DefUseChain::default();
         let facts = chain
-            .cache(
-                &mut ctx,
-                &function,
-                &Variable {
-                    name: "%0".to_string(),
-                    function: func_name.clone(),
-                    ..Default::default()
-                },
-                pc,
-            )
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
             .unwrap();
         assert_eq!(3, facts.len());
-        assert_eq!(0, facts.get(0).unwrap().next_pc);
-        assert_eq!(3, facts.get(1).unwrap().next_pc);
+        assert_eq!(1, facts.get(0).unwrap().next_pc);
+        assert_eq!(4, facts.get(1).unwrap().next_pc);
     }
 
     #[test]
@@ -183,20 +251,11 @@ mod test {
 
         let mut chain = DefUseChain::default();
         let facts = chain
-            .cache(
-                &mut ctx,
-                &function,
-                &Variable {
-                    name: "%1".to_string(),
-                    function: func_name.clone(),
-                    ..Default::default()
-                },
-                pc,
-            )
+            .cache(&mut ctx, &function, &"%1".to_string(), pc)
             .unwrap();
         assert_eq!(3, facts.len());
-        assert_eq!(1, facts.get(0).unwrap().next_pc);
-        assert_eq!(4, facts.get(1).unwrap().next_pc);
+        assert_eq!(2, facts.get(0).unwrap().next_pc);
+        assert_eq!(5, facts.get(1).unwrap().next_pc);
     }
 
     #[test]
@@ -230,30 +289,12 @@ mod test {
 
         let mut chain = DefUseChain::default();
         let facts = chain
-            .cache(
-                &mut ctx,
-                &function,
-                &Variable {
-                    name: "%0".to_string(),
-                    function: func_name.clone(),
-                    ..Default::default()
-                },
-                pc,
-            )
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
             .unwrap();
         assert_eq!(2, facts.len());
 
         let facts = chain
-            .cache(
-                &mut ctx,
-                &function,
-                &Variable {
-                    name: "%0".to_string(),
-                    function: func_name.clone(),
-                    ..Default::default()
-                },
-                0,
-            )
+            .cache(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
         assert_eq!(3, facts.len());
     }

@@ -13,6 +13,6 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         state: &mut State,
         defuse: &mut DefUseChain,
     ) -> Result<Vec<Edge>> {
-        todo!()
+        Ok(Vec::new())
     }
 }

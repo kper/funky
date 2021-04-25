@@ -33,8 +33,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (14) at (0, 12) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (15) at (0, 13) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (16) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (17) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (18) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (17) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (18) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (19) at (1, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (20) at (2, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (21) at (1, 4) { };
@@ -77,8 +77,8 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (14);
 		\path[->, blue] (0) [bend right] edge  node { } (15);
 		\path[->, blue] (1) [loop right] edge  node { } (1);
+		\path[->, blue] (1) [bend right] edge  node { } (17);
 		\path[->, blue] (1) [bend right] edge  node { } (4);
-		\path[->, blue] (1) [bend right] edge  node { } (18);
 		\path[->, blue] (1) [bend right] edge  node { } (19);
 		\path[->, blue] (1) [bend right] edge  node { } (20);
 		\path[->, blue] (1) [bend right] edge  node { } (21);

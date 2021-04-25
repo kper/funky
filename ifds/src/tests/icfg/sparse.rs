@@ -54,3 +54,63 @@ fn test_ir_const() {
     "
     );
 }
+
+#[test]
+fn test_ir_double_assign() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_double_const",
+        req,
+        "
+         define test (result 0) (define %0 %1 %2){
+            %0 = 1
+            %1 = 1
+            %2 = %0
+            %2 = %1
+         };
+    "
+    );
+}
+
+
+#[test]
+fn test_ir_simple_store() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+
+    ir!(
+        "test_ir_simple_store",
+        req,
+        "
+         define test (param %0) (result 0) (define %0 %1) {
+            STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
+         };
+    "
+    );
+}
+
+#[test]
+fn test_ir_simple_load() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+
+    ir!(
+        "test_ir_simple_load",
+        req,
+        "
+         define test (param %0) (result 0) (define %0 %1) {
+            %1 = LOAD OFFSET 0 + %0 ALIGN 0
+         };
+    "
+    );
+}
