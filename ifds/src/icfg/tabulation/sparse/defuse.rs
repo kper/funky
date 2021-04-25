@@ -47,17 +47,28 @@ impl DefUseChain {
             .skip(pc) //TODO maybe start from the start, because recursion?
             .filter(|(_, x)| self.is_used(&var.name, x));
 
+        let track = ctx
+            .state
+            .get_track(&function.name, &var.name)
+            .context("Cannot find track of var")?;
+
         let mut facts = Vec::new();
         for (pc, _instruction) in instructions {
-            let track = ctx
-                .state
-                .get_track(&function.name, &var.name)
-                .context("Cannot find track of var")?;
             let x = ctx
                 .state
                 .cache_fact(&function.name, Fact::from_var(var, pc, track))?;
             facts.push(x.clone());
         }
+
+        // Add last fact for the end of the procedure
+
+        let x = ctx.state.cache_fact(
+            &function.name,
+            Fact::from_var(var, function.instructions.len(), track),
+        )?;
+        facts.push(x.clone());
+
+        // end
 
         self.inner
             .insert((function.name.clone(), var.name.clone(), pc), facts);
@@ -136,7 +147,7 @@ mod test {
                 pc,
             )
             .unwrap();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
         assert_eq!(0, facts.get(0).unwrap().next_pc);
         assert_eq!(3, facts.get(1).unwrap().next_pc);
     }
@@ -183,7 +194,7 @@ mod test {
                 pc,
             )
             .unwrap();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
         assert_eq!(1, facts.get(0).unwrap().next_pc);
         assert_eq!(4, facts.get(1).unwrap().next_pc);
     }
@@ -230,7 +241,7 @@ mod test {
                 pc,
             )
             .unwrap();
-        assert_eq!(1, facts.len());
+        assert_eq!(2, facts.len());
 
         let facts = chain
             .cache(
@@ -244,6 +255,6 @@ mod test {
                 0,
             )
             .unwrap();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
     }
 }
