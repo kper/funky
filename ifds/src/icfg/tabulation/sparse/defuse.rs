@@ -4,6 +4,7 @@ use crate::icfg::graph::*;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 use anyhow::{Context, Result};
+use log::debug;
 use std::collections::HashMap;
 
 use crate::icfg::tabulation::sparse::Ctx;
@@ -14,31 +15,56 @@ type StartPC = usize;
 
 #[derive(Debug, Default)]
 pub struct DefUseChain {
-    inner: HashMap<(Function, Var, StartPC), Vec<Fact>>,
+    inner: HashMap<(Function, Var), (StartPC, Vec<Fact>)>,
 }
 
 impl DefUseChain {
     /// Get the facts
-    pub fn get_facts_at(
-        &self,
-        function: &String,
-        var: &String,
-        start_pc: usize,
-    ) -> Option<&Vec<Fact>> {
-        self.inner.get(&(function.clone(), var.clone(), start_pc))
+    pub fn get_facts_at(&self, function: &String, var: &String) -> Option<&Vec<Fact>> {
+        self.inner
+            .get(&(function.clone(), var.clone()))
+            .map(|(_, x)| x)
     }
 
-    /// Get the facts after given `pc`
-    pub fn get_facts_at_after_pc(
-        &self,
-        function: &String,
+    /// Cache and get next
+    pub fn demand<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
         var: &String,
-        start_pc: usize,
         pc: usize,
-    ) -> Option<Vec<&Fact>> {
-        self.inner
-            .get(&(function.clone(), var.clone(), start_pc))
-            .map(|x| x.iter().filter(|x| x.next_pc >= pc).collect::<Vec<_>>())
+    ) -> Result<Vec<Fact>> {
+        let facts = self.cache(ctx, function, var, pc)?;
+
+        let x: Vec<_> = facts
+            .into_iter()
+            .filter(|x| x.next_pc > pc)
+            .take(1)
+            .collect();
+
+        Ok(x)
+    }
+
+    // nodes which point to (var, pc)
+    pub fn src_before<'a>(
+        &mut self,
+        _ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<Vec<Fact>> {
+        let facts = self
+            .get_facts_at(&function.name, var)
+            .map(|facts| {
+                facts
+                    .into_iter()
+                    .filter(|x| x.next_pc == pc)
+                    .map(|x| x.clone())
+                    .collect()
+            })
+            .unwrap_or(Vec::new());
+
+        Ok(facts)
     }
 
     /// Build the defuse chain for the instruction
@@ -57,24 +83,32 @@ impl DefUseChain {
             .context("Variable is not defined in the state")?
             .clone();
 
-        // already exists, therefore returning
+        // already exists
         if self
             .inner
-            .contains_key(&(function.name.clone(), var.name.clone(), pc))
+            .contains_key(&(function.name.clone(), var.name.clone()))
         {
-            return self
+            let (start_pc, x) = self
                 .inner
-                .get(&(function.name.clone(), var.name.clone(), pc))
-                .context("Cannot find chained facts")
-                .map(|x| x.clone());
+                .get(&(function.name.clone(), var.name.clone()))
+                .context("Cannot find chained facts")?;
+
+            // If `pc` is lower than `start_pc`, then delete and continue
+            if pc >= *start_pc {
+                return Ok(x.clone());
+            } else {
+                self.inner
+                    .remove(&(function.name.clone(), var.name.clone()));
+            }
         }
 
         let instructions = function
             .instructions
             .iter()
             .enumerate()
-            .skip(pc) //TODO maybe start from the start, because recursion?
-            .filter(|(_, x)| self.is_used(&var, x));
+            .skip(pc)
+            .filter(|(_, x)| self.is_used(&var, x))
+            .collect::<Vec<_>>();
 
         let track = ctx
             .state
@@ -82,30 +116,55 @@ impl DefUseChain {
             .context("Cannot find track of var")?;
 
         let mut facts = Vec::new();
-        for (pc, _instruction) in instructions {
+        
+        // Add entry fact
+        let x = ctx.state.cache_fact(
+            &function.name,
+            Fact::from_var(
+                &var,
+                0,
+                instructions.get(0).map(|x| x.0).unwrap_or(0),
+                track,
+            ),
+        )?;
+        facts.push(x.clone());
+
+        let mut i = 0;
+        for (pc, _instruction) in instructions.iter() {
+            let next_pc = instructions.get(i + 1).map(|x| x.0).unwrap_or(pc + 1);
+
+            debug!("Creating fact with pc {} and next_pc {}", pc, next_pc);
+
             let x = ctx
                 .state
-                .cache_fact(&function.name, Fact::from_var(&var, pc + 1, track))?;
+                .cache_fact(&function.name, Fact::from_var(&var, *pc, next_pc, track))?;
             facts.push(x.clone());
+
+            i += 1;
         }
 
         // Add last fact for the end of the procedure
 
         let x = ctx.state.cache_fact(
             &function.name,
-            Fact::from_var(&var, function.instructions.len(), track),
+            Fact::from_var(
+                &var,
+                function.instructions.len() - 1,
+                function.instructions.len(),
+                track,
+            ),
         )?;
         facts.push(x.clone());
 
         // end
 
         self.inner
-            .insert((function.name.clone(), var.name.clone(), pc), facts);
+            .insert((function.name.clone(), var.name.clone()), (pc, facts));
 
         self.inner
-            .get(&(function.name.clone(), var.name.clone(), pc))
+            .get(&(function.name.clone(), var.name.clone()))
             .context("Cannot find chained facts")
-            .map(|x| x.clone())
+            .map(|x| x.1.clone())
     }
 
     fn is_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
@@ -215,9 +274,15 @@ mod test {
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), pc)
             .unwrap();
-        assert_eq!(3, facts.len());
-        assert_eq!(1, facts.get(0).unwrap().next_pc);
-        assert_eq!(4, facts.get(1).unwrap().next_pc);
+        assert_eq!(4, facts.len());
+        assert_eq!(3, facts.get(1).unwrap().next_pc);
+        assert_eq!(4, facts.get(2).unwrap().next_pc);
+
+        let before = chain
+            .src_before(&mut ctx, &function, &"%0".to_string(), 3)
+            .unwrap();
+        assert_eq!(1, before.len());
+        assert_eq!(3, before.get(0).unwrap().next_pc);
     }
 
     #[test]
@@ -253,9 +318,15 @@ mod test {
         let facts = chain
             .cache(&mut ctx, &function, &"%1".to_string(), pc)
             .unwrap();
-        assert_eq!(3, facts.len());
-        assert_eq!(2, facts.get(0).unwrap().next_pc);
-        assert_eq!(5, facts.get(1).unwrap().next_pc);
+        assert_eq!(4, facts.len());
+        assert_eq!(4, facts.get(1).unwrap().next_pc);
+        assert_eq!(5, facts.get(2).unwrap().next_pc);
+
+        let before = chain
+            .src_before(&mut ctx, &function, &"%1".to_string(), 1)
+            .unwrap();
+        assert_eq!(1, before.len());
+        assert_eq!(1, before.get(0).unwrap().next_pc)
     }
 
     #[test]
@@ -291,11 +362,11 @@ mod test {
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), pc)
             .unwrap();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
 
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(3, facts.len());
+        assert_eq!(4, facts.len());
     }
 }

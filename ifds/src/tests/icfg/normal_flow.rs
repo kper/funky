@@ -164,6 +164,7 @@ fn test_unop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%1".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -185,6 +186,7 @@ fn test_unop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -206,6 +208,7 @@ fn test_binop_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "taut".to_string(),
+                pc: (pc as usize).checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 track: 0,
                 var_is_taut: true,
@@ -218,6 +221,7 @@ fn test_binop_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "%0".to_string(),
+                pc: (pc as usize).checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 track: 1,
                 function: MAIN_FUNCTION.to_string(),
@@ -243,6 +247,7 @@ fn test_binop_initial_flow() {
     assert_eq!(
         Some(&Edge::Normal {
             from: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -250,6 +255,7 @@ fn test_binop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -264,6 +270,7 @@ fn test_binop_initial_flow() {
     assert_eq!(
         Some(&Edge::Normal {
             from: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -271,6 +278,7 @@ fn test_binop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -292,6 +300,7 @@ fn test_phi_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "taut".to_string(),
+                pc: (pc as usize).checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 track: 0,
                 var_is_taut: true,
@@ -304,6 +313,7 @@ fn test_phi_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "%0".to_string(),
+                pc: (pc as usize).checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 track: 1,
                 function: MAIN_FUNCTION.to_string(),
@@ -329,6 +339,7 @@ fn test_phi_initial_flow() {
     assert_eq!(
         Some(&Edge::Normal {
             from: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -336,6 +347,7 @@ fn test_phi_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -350,6 +362,7 @@ fn test_phi_initial_flow() {
     assert_eq!(
         Some(&Edge::Normal {
             from: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),
@@ -357,6 +370,7 @@ fn test_phi_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%0".to_string(),
                 function: MAIN_FUNCTION.to_string(),

@@ -75,6 +75,8 @@ pub struct Fact {
     pub var_is_global: bool,
     pub var_is_taut: bool,
     pub var_is_memory: bool,
+    pub pc: usize,
+    /// determine what the next pc is
     pub next_pc: usize,
     pub track: usize,
     pub function: FunctionName,
@@ -85,11 +87,12 @@ pub struct Fact {
 
 impl Fact {
     /// Build a new fact from a given variable
-    pub fn from_var(var: &Variable, pc: usize, track: usize) -> Fact {
+    pub fn from_var(var: &Variable, pc: usize, next_pc: usize, track: usize) -> Fact {
         Fact {
             belongs_to_var: var.name.clone(),
             function: var.function.clone(),
-            next_pc: pc,
+            pc,
+            next_pc,
             track,
             memory_offset: var.memory_offset.clone(),
             var_is_global: var.is_global,

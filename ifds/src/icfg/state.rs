@@ -193,6 +193,7 @@ impl State {
                 var_is_global: false,
                 var_is_taut: false,
                 var_is_memory: true,
+                pc: 0,
                 next_pc: 0,
                 track: vars.len() - 1,
                 function: function.clone(),
@@ -283,6 +284,7 @@ impl State {
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
                 var_is_memory: var.is_memory,
+                pc: pc.checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 track: index,
                 function: function.name.clone(),
@@ -360,6 +362,7 @@ impl State {
                 var_is_memory: var.is_memory,
                 track,
                 function: function.name.clone(),
+                pc: pc.checked_sub(1).unwrap_or(0),
                 next_pc: pc,
                 memory_offset: var.memory_offset,
             });

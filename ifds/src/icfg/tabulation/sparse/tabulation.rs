@@ -366,6 +366,7 @@ where
                 let fact = Fact {
                     belongs_to_var: to_reg.clone(),
                     function: caller_function.clone(),
+                    pc: caller_pc,
                     next_pc: caller_pc + 1,
                     track,
                     var_is_global: false,
@@ -395,6 +396,7 @@ where
             let fact = Fact {
                 belongs_to_var: from.belongs_to_var.clone(),
                 function: caller_function.clone(),
+                pc: caller_pc,
                 next_pc: caller_pc + 1,
                 track,
                 var_is_global: true,
@@ -433,6 +435,7 @@ where
                 let fact = Fact {
                     belongs_to_var: from.belongs_to_var.clone(),
                     function: caller_function.clone(),
+                    pc: caller_pc,
                     next_pc: caller_pc + 1,
                     track,
                     var_is_global: false,
@@ -733,11 +736,11 @@ where
                         for f in self
                             .normal_flow
                             .flow(
+                                ctx,
                                 &new_function,
                                 d2.next_pc,
                                 &d2.belongs_to_var,
                                 &self.block_resolver,
-                                &mut ctx.state,
                                 &mut self.defuse,
                             )?
                             .iter()
@@ -900,7 +903,7 @@ where
                     )? {
                         summary_edge.push(Edge::Summary {
                             from: d2.clone(),
-                            to: d5.get_from().clone(),
+                            to: d5.to().clone(),
                         });
                     }
                 }
@@ -959,11 +962,11 @@ where
         for f in self
             .normal_flow
             .flow(
+                ctx,
                 &new_function,
                 d2.next_pc,
                 &d2.belongs_to_var,
                 &self.block_resolver,
-                &mut ctx.state,
                 &mut self.defuse,
             )?
             .iter()
@@ -1137,6 +1140,7 @@ where
 
                             // Take the old and replace it with new var.
                             let new_return_site_d5 = Fact {
+                                pc: d3.next_pc,
                                 next_pc: d3.next_pc + 1,
                                 belongs_to_var: d5.belongs_to_var.clone(),
                                 function: d3.function.clone(),

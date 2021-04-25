@@ -124,6 +124,7 @@ fn test_assign_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%1".to_string(),
                 function: "main".to_string(),
@@ -144,6 +145,7 @@ fn test_assign_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%1".to_string(),
                 function: "main".to_string(),
@@ -198,6 +200,7 @@ fn test_unop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%1".to_string(),
                 function: "main".to_string(),
@@ -218,6 +221,7 @@ fn test_unop_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%1".to_string(),
                 function: "main".to_string(),
@@ -248,6 +252,7 @@ fn test_binop_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -255,6 +260,7 @@ fn test_binop_initial_flow() {
             },
             to: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -267,12 +273,14 @@ fn test_binop_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -287,12 +295,14 @@ fn test_binop_initial_flow() {
         Some(&Edge::Normal {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -348,6 +358,7 @@ fn test_conditional_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: "main".to_string(),
@@ -368,6 +379,7 @@ fn test_conditional_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "%0".to_string(),
                 function: "main".to_string(),
@@ -398,6 +410,7 @@ fn test_phi_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -405,6 +418,7 @@ fn test_phi_initial_flow() {
             },
             to: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -417,12 +431,14 @@ fn test_phi_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -437,12 +453,14 @@ fn test_phi_initial_flow() {
         Some(&Edge::Normal {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -473,6 +491,7 @@ fn test_block_instruction_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -480,6 +499,7 @@ fn test_block_instruction_initial_flow() {
             },
             to: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
@@ -492,12 +512,14 @@ fn test_block_instruction_initial_flow() {
         Some(&Edge::Path {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -512,12 +534,14 @@ fn test_block_instruction_initial_flow() {
         Some(&Edge::Normal {
             from: Fact {
                 var_is_taut: true,
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "taut".to_string(),
                 function: "main".to_string(),
                 ..Default::default()
             },
             to: Fact {
+                pc: 2,
                 next_pc: 3,
                 belongs_to_var: "%2".to_string(),
                 function: "main".to_string(),
@@ -718,6 +742,7 @@ fn test_memory_store_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "mem@0".to_string(),
                 function: "main".to_string(),
@@ -740,6 +765,7 @@ fn test_memory_store_initial_flow() {
                 ..Default::default()
             },
             to: Fact {
+                pc: 1,
                 next_pc: 2,
                 belongs_to_var: "mem@0".to_string(),
                 function: "main".to_string(),

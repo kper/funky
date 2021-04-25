@@ -63,13 +63,13 @@ pub trait SparseInitialFlowFunction {
 /// Those flow functions keep propagating only the relevant
 /// edges. Not relevant ones will be killed.
 pub trait SparseNormalFlowFunction {
-    fn flow(
+    fn flow<'a>(
         &self,
+        ctx: &mut crate::icfg::tabulation::sparse::Ctx<'a>,
         function: &AstFunction,
         pc: usize,
         variable: &String,
         block_resolver: &BlockResolver,
-        state: &mut State,
         defuse: &mut DefUseChain,
     ) -> Result<Vec<Edge>>;
 }

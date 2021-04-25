@@ -9,6 +9,8 @@ use crate::ir::ast::Instruction;
 
 use std::collections::{HashMap, VecDeque};
 
+use pretty_assertions::assert_eq;
+
 type PathEdges = Vec<Edge>;
 type NormalFlows = Vec<Edge>;
 type Worklist = VecDeque<Edge>;
@@ -509,7 +511,6 @@ fn test_pass_memory() {
 
     assert_eq!(call_to_start_edges.len(), 1);
     assert_eq!(
-        call_to_start_edges,
         vec![Edge::Call {
             from: foo,
             to: Fact {
@@ -519,6 +520,7 @@ fn test_pass_memory() {
                 var_is_memory: true,
                 ..Default::default()
             }
-        }]
+        }],
+        call_to_start_edges,
     );
 }
