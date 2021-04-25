@@ -6,12 +6,15 @@ use log::error;
 
 use crate::grammar::*;
 
-//use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
-//use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
+use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
 
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {
-        let mut convert = TabulationSparse::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+        let mut convert = TabulationSparse::new(
+            SparseTaintInitialFlowFunction,
+            SparseTaintNormalFlowFunction,
+        );
 
         let prog = ProgramParser::new().parse(&$ir).unwrap();
 

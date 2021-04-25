@@ -83,6 +83,22 @@ pub struct Fact {
     pub memory_offset: Option<f64>,
 }
 
+impl Fact {
+    /// Build a new fact from a given variable
+    pub fn from_var(var: &Variable, pc: usize, track: usize) -> Fact {
+        Fact {
+            belongs_to_var: var.name.clone(),
+            function: var.function.clone(),
+            next_pc: pc,
+            track,
+            memory_offset: var.memory_offset.clone(),
+            var_is_global: var.is_global,
+            var_is_taut: var.is_taut,
+            var_is_memory: var.is_memory,
+        }
+    }
+}
+
 /// An IFDS representation for a function.
 #[derive(Debug)]
 pub struct Function {
@@ -92,7 +108,7 @@ pub struct Function {
 }
 
 /// The register which will be used at some point in the module.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Variable {
     pub name: FunctionName,
     pub function: FunctionName,

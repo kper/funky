@@ -7,8 +7,10 @@ pub use crate::ir::ast::Instruction;
 pub use anyhow::{Result, Context};
 pub use log::debug;
 use crate::icfg::state::State;
+use crate::icfg::tabulation::sparse::defuse::DefUseChain;
 
 pub mod taint;
+pub mod sparse_taint;
 
 type FunctionName = String;
 type BlockNum = String;
@@ -43,5 +45,31 @@ pub trait NormalFlowFunction {
         variable: &String,
         block_resolver: &BlockResolver,
         state: &mut State,
+    ) -> Result<Vec<Edge>>;
+}
+
+pub trait SparseInitialFlowFunction {
+    fn flow(
+        &self,
+        function: &AstFunction,
+        pc: usize,
+        init_facts: &Vec<Fact>,
+        normal_flows_debug: &mut Vec<Edge>,
+        state: &mut State,
+        defuse: &mut DefUseChain,
+    ) -> Result<Vec<Edge>>;
+}
+
+/// Those flow functions keep propagating only the relevant
+/// edges. Not relevant ones will be killed.
+pub trait SparseNormalFlowFunction {
+    fn flow(
+        &self,
+        function: &AstFunction,
+        pc: usize,
+        variable: &String,
+        block_resolver: &BlockResolver,
+        state: &mut State,
+        defuse: &mut DefUseChain,
     ) -> Result<Vec<Edge>>;
 }
