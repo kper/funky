@@ -103,28 +103,26 @@ fn allocate_functions(
         debug!("Function {} with ty {:#?}", code_index, t);
         // Allocate function
 
-        {
-            let borrow = &mod_instance;
-            let fn_sig = match borrow.fn_types.get(**t as usize) {
-                Some(sig) => sig,
-                None => {
-                    return Err(anyhow!("{} function type is not defined", t));
-                }
-            };
+        let borrow = &mod_instance;
+        let fn_sig = match borrow.fn_types.get(**t as usize) {
+            Some(sig) => sig,
+            None => {
+                return Err(anyhow!("{} function type is not defined", t));
+            }
+        };
 
-            let fcode = match borrow.code.get(code_index as usize) {
-                Some(fcode) => fcode.clone(),
-                None => {
-                    // Return empty body for imports
-                    FunctionBody {
-                        locals: Vec::new(),
-                        code: Vec::new(),
-                    }
+        let fcode = match borrow.code.get(code_index as usize) {
+            Some(fcode) => fcode.clone(),
+            None => {
+                // Return empty body for imports
+                FunctionBody {
+                    locals: Vec::new(),
+                    code: Vec::new(),
                 }
-            };
+            }
+        };
 
-            store.allocate_func_instance(fn_sig.clone(), fcode);
-        }
+        store.allocate_func_instance(fn_sig.clone(), fcode);
 
         mod_instance
             .funcaddrs
@@ -252,11 +250,7 @@ fn allocate_globals(
     Ok(())
 }
 
-fn allocate_exports(
-    m: &Module,
-    mod_instance: &mut ModuleInstance,
-    _store: &mut Store,
-) {
+fn allocate_exports(m: &Module, mod_instance: &mut ModuleInstance, _store: &mut Store) {
     debug!("allocate exports");
 
     // Gets all exports
