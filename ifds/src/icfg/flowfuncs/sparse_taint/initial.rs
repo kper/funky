@@ -67,7 +67,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .demand_current(ctx, &function, dest, pc)
+                            .get_next(ctx, &function, dest, pc)
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
@@ -216,8 +216,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let mut applied = var.clone();
-                            applied.pc += 1;
+                            let applied = var.apply(); 
 
                             assert!(applied.pc <= applied.next_pc);
                             normal_flows_debug.push(Edge::Normal {

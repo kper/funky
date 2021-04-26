@@ -71,5 +71,5 @@ pub trait SparseNormalFlowFunction {
         variable: &String,
         block_resolver: &BlockResolver,
         defuse: &mut DefUseChain,
-    ) -> Result<Vec<Edge>>;
+    ) -> Result<Vec<Fact>>;
 }
