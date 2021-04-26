@@ -110,6 +110,12 @@ impl Fact {
             var_is_memory: var.is_memory,
         }
     }
+
+    pub fn apply(&self) -> Fact {
+        let mut x = self.clone();
+        x.pc += 1;
+        x
+    }
 }
 
 /// An IFDS representation for a function.

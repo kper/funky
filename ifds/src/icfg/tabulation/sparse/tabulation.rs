@@ -719,7 +719,7 @@ where
             let d1 = edge.get_from();
             let d2 = edge.to();
 
-            let pc = edge.to().next_pc;
+            let pc = edge.to().pc;
             debug!("Instruction pointer is {}", pc);
 
             let instructions = &program
@@ -845,150 +845,7 @@ where
         normal_flows_debug: &mut Vec<Edge>,
         start_pc: usize,
     ) -> Result<(), anyhow::Error> {
-        let caller_var = &d2.belongs_to_var;
-        let caller_function = &program
-            .functions
-            .iter()
-            .find(|x| x.name == d1.function)
-            .context("Cannot find function for the caller")?;
-
-        let caller_instructions = &caller_function.instructions;
-
-        let callee_function = program
-            .functions
-            .iter()
-            .find(|x| &x.name == callee)
-            .context("Cannot find function")?;
-
-        let call_edges = self
-            .pass_args(
-                caller_function,
-                callee_function,
-                params,
-                ctx,
-                d2.next_pc,
-                caller_var,
-                normal_flows_debug,
-                path_edge,
-                worklist,
-            )
-            .with_context(|| {
-                format!(
-                    "Error occured during `pass_args` for function {} at {}",
-                    callee, pc
-                )
-            })?;
-        for d3 in call_edges.into_iter() {
-            debug!("d3 {:#?}", d3);
-
-            self.propagate(
-                &mut ctx.graph,
-                path_edge,
-                worklist,
-                Edge::Path {
-                    from: d3.to().clone(),
-                    to: d3.to().clone(),
-                },
-            )?; //self loop
-
-            //Add incoming
-            if let Some(incoming) = incoming.get_mut(&(
-                d3.to().function.clone(),
-                d3.to().next_pc,
-                d3.to().belongs_to_var.clone(),
-            )) {
-                if !incoming.contains(&d2) {
-                    incoming.push(d2.clone());
-                }
-            } else {
-                incoming.insert(
-                    (
-                        d3.to().function.clone(),
-                        d3.to().next_pc,
-                        d3.to().belongs_to_var.clone(),
-                    ),
-                    vec![d2.clone()],
-                );
-            }
-
-            debug!("Incoming in call {:#?}", incoming);
-            debug!("end summary {:#?}", end_summary);
-
-            if let Some(end_summary) = end_summary.get(&(
-                d3.to().function.clone(),
-                d3.to().next_pc,
-                d3.to().belongs_to_var.clone(),
-            )) {
-                for d4 in end_summary.iter() {
-                    debug!("d4 {:#?}", d4);
-
-                    let return_vals = &program
-                        .functions
-                        .iter()
-                        .find(|x| x.name == d2.function)
-                        .context("Cannot find function")?
-                        .instructions
-                        .get(d2.next_pc - 1)
-                        .map(|x| match x {
-                            Instruction::Return(x) => x.clone(),
-                            _ => Vec::new(),
-                        })
-                        .unwrap_or(Vec::new());
-
-                    for d5 in self.return_val(
-                        &d2.function,
-                        &d4.function,
-                        d2.next_pc,
-                        d4.next_pc,
-                        caller_instructions,
-                        ctx,
-                        &return_vals,
-                    )? {
-                        summary_edge.push(Edge::Summary {
-                            from: d2.clone(),
-                            to: d5.to().clone(),
-                        });
-                    }
-                }
-            }
-
-            debug!("end summary {:#?}", end_summary);
-        }
-        let call_flow = self.call_flow(
-            program,
-            caller_function,
-            callee,
-            params,
-            dest,
-            ctx,
-            pc,
-            &d2.belongs_to_var,
-        )?;
-        let return_sites = summary_edge.iter().filter(|x| {
-            x.get_from().belongs_to_var == d2.belongs_to_var
-                && x.get_from().next_pc == d2.next_pc
-                && x.to().next_pc == d2.next_pc + 1
-        });
-        Ok(for d3 in call_flow.iter().chain(return_sites) {
-            let taut = self
-                .defuse
-                .get_facts_at(&d3.get_from().function, &"taut".to_string(), start_pc)
-                .context("Cannot find tautological start fact")?
-                .get(0)
-                .context("Cannot get fact")?
-                .clone();
-
-            normal_flows_debug.push(d3.clone());
-            self.propagate(
-                &mut ctx.graph,
-                path_edge,
-                worklist,
-                Edge::Path {
-                    from: taut.clone(),
-                    to: d3.to().clone(),
-                },
-            )?; // adding edges to return site of caller from d1
-        })
+        Ok(())
     }
 
     pub(crate) fn handle_return<'a>(
@@ -1002,68 +859,6 @@ where
         d1: &Fact,
         end_summary: &mut HashMap<(String, usize, String), Vec<Fact>>,
     ) -> Result<(), anyhow::Error> {
-        for f in self
-            .normal_flow
-            .flow(
-                ctx,
-                &new_function,
-                d2.next_pc,
-                &d2.belongs_to_var,
-                &self.block_resolver,
-                &mut self.defuse,
-            )?
-            .iter()
-        {
-            debug!("Normal flow {:#?}", f);
-            let to = f.to();
-
-            normal_flows_debug.push(f.clone());
-
-            self.propagate(
-                &mut ctx.graph,
-                path_edge,
-                worklist,
-                Edge::Path {
-                    from: d1.clone(),
-                    to: to.clone(),
-                },
-            )?;
-        }
-        assert_eq!(d1.function, d2.function);
-
-        let first_statement_pc_callee = self
-            .defuse
-            .get_start_pc_by_name(&d1.function, &d1.belongs_to_var)
-            .context("Cannot find min pc")?;
-
-        if let Some(end_summary) = end_summary.get_mut(&(
-            d1.function.clone(),
-            first_statement_pc_callee,
-            d1.belongs_to_var.clone(),
-        )) {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
-                .context("Cannot get facts")?
-                .into_iter()
-                .map(|x| x.clone());
-
-            end_summary.extend(facts);
-        } else {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
-                .context("Cannot get facts")?
-                .into_iter()
-                .map(|x| x.clone())
-                .collect::<Vec<_>>();
-
-            end_summary.insert(
-                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
-                facts,
-            );
-        }
-        debug!("End Summary {:#?}", end_summary);
         Ok(())
     }
 
@@ -1079,145 +874,6 @@ where
         path_edge: &mut Vec<Edge>,
         worklist: &mut VecDeque<Edge>,
     ) -> Result<()> {
-        // this is E_p
-        debug!("=> Reached end of procedure");
-
-        if d1.function != d2.function {
-            debug!("=> From and End of the edge are not the same function. Therefore aborting.");
-            return Ok(());
-        }
-
-        // Summary
-        if let Some(end_summary) =
-            end_summary.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
-        {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
-                .context("Cannot get facts")?
-                .into_iter()
-                .map(|x| x.clone())
-                .collect::<Vec<_>>();
-
-            end_summary.extend(facts);
-        } else {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
-                .context("Cannot get facts")?
-                .into_iter()
-                .map(|x| x.clone())
-                .collect::<Vec<_>>();
-            end_summary.insert(
-                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
-                facts,
-            );
-        }
-
-        debug!("End Summary {:#?}", end_summary);
-
-        // Incoming has as key the beginning of procedure
-        // The values are the callers of the procedure.
-        if let Some(incoming) =
-            incoming.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
-        {
-            debug!("Incoming {:#?}", incoming);
-            for d4 in incoming {
-                debug!("Computing return to fact to {:#?}", d4);
-
-                let instructions = &program
-                    .functions
-                    .iter()
-                    .find(|x| x.name == d4.function)
-                    .context("Cannot find function")?
-                    .instructions;
-
-                let return_vals = &program
-                    .functions
-                    .iter()
-                    .find(|x| x.name == d2.function)
-                    .context("Cannot find function")?
-                    .instructions
-                    .get(d2.next_pc - 1)
-                    .map(|x| match x {
-                        Instruction::Return(x) => x.clone(),
-                        _ => Vec::new(),
-                    })
-                    .unwrap_or(Vec::new());
-
-                // Use only `d4`'s var
-                let ret_vals = self.return_val(
-                    &d4.function,
-                    &d2.function,
-                    d4.next_pc,
-                    d2.next_pc,
-                    &instructions,
-                    ctx,
-                    return_vals,
-                )?;
-
-                let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
-
-                debug!("Exit-To-Return edges are {:#?}", ret_vals);
-
-                for d5 in ret_vals.into_iter() {
-                    debug!("Handling var {:#?}", d5);
-
-                    debug!("summary_edge {:#?}", summary_edge);
-                    if summary_edge
-                        .iter()
-                        .find(|x| x.get_from() == d4 && x.to() == d5)
-                        .is_none()
-                    {
-                        summary_edge.push(Edge::Summary {
-                            from: d4.clone(),
-                            to: d5.clone().clone(),
-                        });
-
-                        // Get all path edges
-                        // from `d3` to `d4`
-                        let edges: Vec<_> = path_edge
-                            .iter()
-                            .filter(|x| {
-                                x.to() == d4 && &x.get_from().function == &d4.function
-                                //&& x.get_from().next_pc == 0
-                            })
-                            .cloned()
-                            .collect();
-
-                        for d3 in edges.into_iter() {
-                            // here d5 should be var of caller
-                            let root = d3.get_from();
-                            let d3 = d3.to();
-
-                            // Take the old and replace it with new var.
-                            let new_return_site_d5 = Fact {
-                                pc: d3.next_pc,
-                                next_pc: d3.next_pc + 1,
-                                belongs_to_var: d5.belongs_to_var.clone(),
-                                function: d3.function.clone(),
-                                var_is_global: d5.var_is_global,
-                                var_is_taut: d5.var_is_taut,
-                                track: d5.track,
-                                memory_offset: d5.memory_offset,
-                                var_is_memory: d5.var_is_memory,
-                            };
-
-                            self.propagate(
-                                &mut ctx.graph,
-                                path_edge,
-                                worklist,
-                                Edge::Path {
-                                    from: root.clone(),
-                                    to: new_return_site_d5,
-                                },
-                            )?;
-                        }
-                    }
-                }
-            }
-        }
-
         Ok(())
     }
 
@@ -1279,6 +935,36 @@ where
         let facts = ctx
             .state
             .get_facts_at(&function.name, function.instructions.len())?
+            .filter(|x| x.belongs_to_var == "taut".to_string())
+            .collect::<Vec<_>>();
+
+        let taut = facts.get(0).context("Expected only taut")?.clone();
+        debug_assert!(taut.var_is_taut);
+
+        if let Some(last_taut) = &last_taut {
+            edges.push(Edge::Normal {
+                from: last_taut.clone(),
+                to: taut.clone(),
+                curved: false,
+            });
+            normal_flows_debug.push(Edge::Normal {
+                from: last_taut.clone(),
+                to: taut.clone(),
+                curved: false,
+            });
+        }
+
+        last_taut = Some(taut.clone());
+
+        ctx.state.add_statement_with_note(
+            function,
+            "end".to_string(),
+            function.instructions.len() + 1,
+            &"taut".to_string(),
+        )?;
+        let facts = ctx
+            .state
+            .get_facts_at(&function.name, function.instructions.len() + 1)?
             .filter(|x| x.belongs_to_var == "taut".to_string())
             .collect::<Vec<_>>();
 

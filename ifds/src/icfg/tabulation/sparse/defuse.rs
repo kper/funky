@@ -56,7 +56,7 @@ impl DefUseChain {
             .filter(|x| x.pc > pc && not_entry_fact(x))
             .collect::<Vec<_>>();
 
-        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(0);
+        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(function.instructions.len());
 
         // Get all next nodes, because there might be multiple
         let x: Vec<_> = facts
@@ -83,18 +83,20 @@ impl DefUseChain {
             .flatten()
             .into_iter()
             .filter(|x| x.pc == pc && not_entry_fact(x))
+            .map(|x| x.clone())
             .collect::<Vec<_>>();
 
-        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(0);
+        //let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(facts.len());
 
+        /* 
         // Get all next nodes, because there might be multiple
         let x: Vec<_> = facts
             .into_iter()
             .filter(|x| x.next_pc == next_pc)
             .map(|x| x.clone())
-            .collect();
+            .collect();*/
 
-        Ok(x)
+        Ok(facts)
     }
 
     // nodes which point to (var, pc)
@@ -342,6 +344,70 @@ mod test {
     use crate::icfg::state::State;
     use crate::ir::ast::Program;
     use insta::assert_debug_snapshot as assert_snapshot;
+
+    #[test]
+    fn test_building_scfg() {
+        /*
+            0 - %0 = 1
+            1 - %1 = 1
+            2 - %2 = %0 op %1
+            3 - %2 = %1 op %0   
+
+            %0:
+                0 -> 2
+                2 -> 3
+
+            %1:
+                0 -> 1
+                1 -> 2
+                2 -> 3
+        */
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Const("%1".to_string(), 1.0),
+                Instruction::BinOp("%2".to_string(), "%0".to_string(), "%1".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_defuse_reg_0_scfg", facts);
+
+        let facts = chain
+            .cache(&mut ctx, &function, &"%1".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_defuse_reg_1_scfg", facts);
+    }
 
     #[test]
     fn testing_caching_first_var() {

@@ -23,7 +23,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
         let offset = 0;
         let instructions = &function.instructions;
 
-        let  init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
+        let init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
 
         debug!("init fact is {:#?}", init_fact);
 
@@ -71,15 +71,19 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
+                            let mut applied = var;
+                            applied.pc += 1;
+
+                            assert!(applied.pc <= applied.next_pc);
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
-                                to: var.clone(),
+                                to: applied.clone(),
                                 curved: false,
                             });
 
                             edges.push(Edge::Path {
                                 from: init_fact.clone().clone(),
-                                to: var.clone(),
+                                to: applied.clone(),
                             });
                         }
                     }
@@ -114,15 +118,20 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                                 .context("Cannot find var's fact")?;
 
                             for var in after_var.into_iter() {
+                                let mut applied = var.clone();
+                                applied.pc += 1;
+
+                                assert!(applied.pc <= applied.next_pc);
+
                                 normal_flows_debug.push(Edge::Normal {
                                     from: b.clone(),
-                                    to: var.clone(),
+                                    to: applied.clone(),
                                     curved: false,
                                 });
 
                                 edges.push(Edge::Path {
                                     from: init_fact.clone().clone(),
-                                    to: var.clone(),
+                                    to: applied.clone(),
                                 });
                             }
                         }
@@ -161,15 +170,19 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
+                            let mut applied = var.clone();
+                            applied.pc += 1;
+
+                            assert!(applied.pc <= applied.next_pc);
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
-                                to: var.clone(),
+                                to: applied.clone(),
                                 curved: false,
                             });
 
                             edges.push(Edge::Path {
                                 from: init_fact.clone().clone(),
-                                to: var.clone(),
+                                to: applied.clone(),
                             });
                         }
                     }
@@ -203,6 +216,10 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
+                            let mut applied = var.clone();
+                            applied.pc += 1;
+
+                            assert!(applied.pc <= applied.next_pc);
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: var.clone(),

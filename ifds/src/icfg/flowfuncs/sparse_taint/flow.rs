@@ -3,6 +3,29 @@ use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
 
 pub struct SparseTaintNormalFlowFunction;
 
+impl SparseTaintNormalFlowFunction {
+    pub fn identity<'a>(
+        &self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        fact: &Fact,
+        defuse: &mut DefUseChain,
+        edges: &mut Vec<Edge>,
+    ) -> Result<()> {
+        let after = defuse.demand(ctx, function, &fact.belongs_to_var, fact.pc)?;
+
+        for to in after {
+            edges.push(Edge::Normal {
+                from: fact.clone(),
+                to: to,
+                curved: false,
+            });
+        }
+
+        Ok(())
+    }
+}
+
 impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
     fn flow<'a>(
         &self,
@@ -22,9 +45,15 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
 
         let instructions = &function.instructions;
 
-        let instruction = instructions
-            .get(pc)
-            .context("Cannot find instruction when calculating normal flows")?;
+        let instruction = instructions.get(pc);
+
+        if instruction.is_none() {
+            debug!("Instruction is none");
+            return Ok(Vec::new());
+        }
+
+        let instruction = instruction.unwrap();
+
         debug!("Next instruction is {:?} for {}", instruction, variable);
 
         let is_taut = variable == &"taut".to_string();
@@ -42,7 +71,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             Instruction::BinOp(dest, _, _) if dest == variable || is_taut => {
                 //kill
             }
-            Instruction::Kill(reg) if reg == variable || is_taut=> {
+            Instruction::Kill(reg) if reg == variable || is_taut => {
                 //kill
             }
             Instruction::Phi(dest, _, _) if dest == variable || is_taut => {
@@ -51,7 +80,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             Instruction::Unknown(reg) if reg == variable || is_taut => {
                 //kill
             }
-            Instruction::Const(dest, _) | Instruction::Unknown(dest) => {
+            Instruction::Const(dest, _) | Instruction::Unknown(dest) if dest.contains(variable) => {
                 let before = ctx
                     .state
                     .get_facts_at(&function.name, pc)
@@ -64,7 +93,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .clone();
 
                 let after_var = defuse
-                    .demand_current(ctx, &function, dest, pc)
+                    .demand(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
                 for var in after_var.into_iter() {
@@ -83,11 +112,17 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .map(|x| x.clone())
                     .collect::<Vec<_>>();
 
+                debug!("Before {:#?}", before);
+
                 let after_var = defuse
-                    .demand_current(ctx, &function, dest, pc)
+                    .demand(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
+                debug!("After {:#?}", after_var);
+
                 for b in before {
+                    let mut b = b.clone();
+                    b.pc += 1;
                     for var in after_var.iter() {
                         edges.push(Edge::Normal {
                             from: b.clone(),
@@ -120,8 +155,19 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .demand_current(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
-                for b in before.into_iter().chain(before2) {
+                debug!("after {:#?}", after_var);
+
+                for b in before.iter().chain(before2.iter()) {
+                    // Propagate sources
+                    self.identity(ctx, function, b, defuse, &mut edges)?;
+
+                    // New edge
+
+                    let mut b = b.apply();
+
                     for var in after_var.iter() {
+                        let mut var = var.apply();
+
                         edges.push(Edge::Normal {
                             from: b.clone(),
                             to: var.clone().clone(),
@@ -145,10 +191,12 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                         .collect::<Vec<_>>();
 
                     let after = defuse
-                        .demand_current(ctx, function, variable, jump_to_pc)
+                        .demand(ctx, function, variable, jump_to_pc)
                         .context("Cannot get facts")?;
 
                     for b in before.into_iter() {
+                        let mut b = b.clone();
+                        b.pc += 1;
                         for var in after.iter() {
                             edges.push(Edge::Normal {
                                 from: b.clone(),
