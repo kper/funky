@@ -30,14 +30,14 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
             let instruction = instructions.get(pc).context("Cannot find instr")?;
             debug!("Next instruction is {:?}", instruction);
 
-            ctx.state.add_statement(
+            /*ctx.state.add_statement(
                 function,
                 format!("{:?}", instruction),
                 pc,
                 &"taut".to_string(),
-            )?;
+            )?;*/
 
-            let _after = ctx
+            /*let _after = ctx
                 .state
                 .get_facts_at(&function.name, pc)?
                 .filter(|x| x.var_is_taut)
@@ -48,7 +48,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
             edges.push(Edge::Path {
                 from: init_fact.clone().clone(),
                 to: after.clone().clone(),
-            });
+            });*/
 
             match instruction {
                 Instruction::Const(dest, _)
@@ -65,9 +65,8 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         // The tautological fact was built by the `pacemaker`
                         // and will not be sparsely propagated.
 
-                        let after_taut = ctx
-                            .state
-                            .get_facts_at(&function.name, pc + 1)
+                        let after_taut = defuse
+                            .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find taut's fact")?;
 
                         for taut in after_taut.into_iter().take(1) {
@@ -109,10 +108,9 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             // The tautological fact was built by the `pacemaker`
                             // and will not be sparsely propagated.
 
-                            let after_taut = ctx
-                                .state
-                                .get_facts_at(&function.name, pc + 1)
-                                .context("Cannot find taut's fact")?;
+                            let after_taut = defuse
+                            .demand(ctx, &function, &"taut".to_string(), pc)
+                            .context("Cannot find taut's fact")?;
 
                             for taut in after_taut.into_iter().take(1) {
                                 normal_flows_debug.push(Edge::Normal {
@@ -153,9 +151,8 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         // The tautological fact was built by the `pacemaker`
                         // and will not be sparsely propagated.
 
-                        let after_taut = ctx
-                            .state
-                            .get_facts_at(&function.name, pc + 1)
+                        let after_taut = defuse
+                            .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find taut's fact")?;
 
                         for taut in after_taut.into_iter().take(1) {
@@ -200,9 +197,8 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         // The tautological fact was built by the `pacemaker`
                         // and will not be sparsely propagated.
 
-                        let after_taut = ctx
-                            .state
-                            .get_facts_at(&function.name, pc + 1)
+                        let after_taut = defuse
+                            .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find taut's fact")?;
 
                         for taut in after_taut.into_iter().take(1) {
@@ -237,6 +233,9 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     }
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
+                    offset += 1;
+
+                    continue;
                     unimplemented!()
                 }
                 _ => {}

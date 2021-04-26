@@ -26,6 +26,18 @@ impl DefUseChain {
             .map(|(_, x)| x)
     }
 
+    /// Get the facts in the graph.
+    pub fn get_facts_at(&self, function: &String, var: &String, pc: usize) -> Result<Vec<&Fact>> {
+        let graph = self.get_graph(function, var).context("Cannot find graph")?;
+        let facts = graph
+            .flatten()
+            .into_iter()
+            .filter(|x| x.pc == pc)
+            .collect::<Vec<_>>();
+
+        Ok(facts)
+    }
+
     /// Cache and get next
     pub fn demand<'a>(
         &mut self,
@@ -77,9 +89,13 @@ impl DefUseChain {
         Ok(facts)
     }
 
-    fn get_start_pc(&self, function: &AstFunction, var: &String) -> Option<usize> {
+    pub fn get_start_pc(&self, function: &AstFunction, var: &String) -> Option<usize> {
+        self.get_start_pc_by_name(&function.name, var)
+    }
+
+    pub fn get_start_pc_by_name(&self, function: &String, var: &String) -> Option<usize> {
         self.inner
-            .get(&(function.name.clone(), var.clone()))
+            .get(&(function.clone(), var.clone()))
             .map(|(pc, _)| *pc)
     }
 
@@ -288,6 +304,7 @@ impl DefUseChain {
 mod test {
     use super::*;
     use crate::icfg::state::State;
+    use crate::ir::ast::Program;
 
     #[test]
     fn testing_caching_first_var() {
@@ -311,6 +328,9 @@ mod test {
         let mut ctx = Ctx {
             graph: &mut graph,
             state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
         };
 
         let pc = 0;
@@ -358,6 +378,9 @@ mod test {
         let mut ctx = Ctx {
             graph: &mut graph,
             state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
         };
 
         let pc = 0;
@@ -404,6 +427,9 @@ mod test {
         let mut ctx = Ctx {
             graph: &mut graph,
             state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
         };
 
         let pc = 2;

@@ -25,6 +25,7 @@ const TAUT: usize = 1;
 pub struct Ctx<'a> {
     pub graph: &'a mut Graph,
     pub state: &'a mut State,
+    pub prog: &'a Program,
 }
 
 /// Central datastructure for the computation of the IFDS problem.
@@ -65,6 +66,7 @@ where
         let mut ctx = Ctx {
             graph: &mut graph,
             state: &mut state,
+            prog: &prog,
         };
 
         self.tabulate(&mut ctx, prog, req)?;
@@ -118,9 +120,14 @@ where
             .context("Pacemaker for pass_args failed")?;
 
             // Create all params
-            let _ = ctx
-                .state
-                .cache_facts(&callee_function.name, init_facts.clone())?;
+            /*let _ = ctx
+            .state
+            .cache_facts(&callee_function.name, init_facts.clone())?;*/
+
+            for fact in init_facts.iter() {
+                self.defuse
+                    .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
+            }
 
             // Save all blocks of the `callee_function`.
             // Because we want to jump to them later.
@@ -171,10 +178,13 @@ where
                 caller_function.name, current_pc
             );
 
-            let mut caller_facts = ctx.state.get_facts_at(&caller_function.name, current_pc)?;
+            let mut caller_facts =
+                self.defuse
+                    .get_facts_at(&caller_function.name, caller_var, current_pc)?;
 
             // Filter by variable
             let caller_fact = caller_facts
+                .into_iter() //TODO I can remove that
                 .find(|x| &x.belongs_to_var == caller_var)
                 .with_context(|| {
                     format!(
@@ -256,9 +266,17 @@ where
         Ok(edges)
     }
 
+    fn get_function_by_name<'a>(
+        &self,
+        ctx: &mut Ctx<'a>,
+        function: &String,
+    ) -> Option<&'a AstFunction> {
+        ctx.prog.functions.iter().find(|x| &x.name == function)
+    }
+
     /// Computes exit-to-return edges
     fn return_val<'a>(
-        &self,
+        &mut self,
         caller_function: &String, //d4
         callee_function: &String, //d2
         caller_pc: usize,         //d4
@@ -375,11 +393,17 @@ where
                     var_is_memory: from.var_is_memory,
                 };
 
-                let to = ctx.state.cache_fact(caller_function, fact)?;
+                let caller_function_ast = self
+                    .get_function_by_name(ctx, caller_function)
+                    .context("Cannot get function")?;
+
+                let _ =
+                    self.defuse
+                        .cache(ctx, caller_function_ast, &fact.belongs_to_var, caller_pc)?;
 
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
-                    to: to.clone(),
+                    to: fact,
                 });
             }
         }
@@ -405,11 +429,19 @@ where
                 memory_offset: None,
             };
 
-            let to = ctx.state.cache_fact(caller_function, fact)?;
+            let caller_function_ast = self
+                .get_function_by_name(ctx, caller_function)
+                .context("Cannot get function")?;
+
+            let _ = self
+                .defuse
+                .cache(ctx, caller_function_ast, &fact.belongs_to_var, caller_pc)?;
+
+            //let to = ctx.state.cache_fact(caller_function, fact)?;
 
             edges.push(Edge::Return {
                 from: from.clone().clone(),
-                to: to.clone(),
+                to: fact,
             });
         }
 
@@ -444,11 +476,19 @@ where
                     memory_offset: from.memory_offset.clone(),
                 };
 
-                let to = ctx.state.cache_fact(caller_function, fact)?;
+                let caller_function_ast = self
+                    .get_function_by_name(ctx, caller_function)
+                    .context("Cannot get function")?;
+
+                let _ =
+                    self.defuse
+                        .cache(ctx, caller_function_ast, &fact.belongs_to_var, caller_pc)?;
+
+                //let to = ctx.state.cache_fact(caller_function, fact)?;
 
                 edges.push(Edge::Return {
                     from: from.clone().clone(),
-                    to: to.clone(),
+                    to: fact,
                 });
             }
         }
@@ -483,11 +523,14 @@ where
             .collect();
         debug!("Facts before statement {}", before.len());
 
-        let after = ctx.state.get_facts_at(&caller_function.name, pc)?; //clone
+        let after = self
+            .defuse
+            .get_facts_at(&caller_function.name, caller, pc)?;
 
         // Create a copy of `before`, but eliminate all not needed facts
         // and advance `next_pc`
         let after: Vec<_> = after
+            .into_iter()
             .filter(|x| !x.var_is_taut)
             .filter(|x| !x.var_is_global)
             .filter(|x| !dests.contains(&x.belongs_to_var))
@@ -512,7 +555,7 @@ where
 
             if let Some(b) = b {
                 // Save the new fact because it is relevant
-                ctx.state.cache_fact(&b.function, b.clone())?;
+                //ctx.state.cache_fact(&b.function, b.clone())?;
                 edges.push(Edge::CallToReturn {
                     from: fact.clone(),
                     to: b.clone(),
@@ -927,12 +970,12 @@ where
                 && x.to().next_pc == d2.next_pc + 1
         });
         Ok(for d3 in call_flow.iter().chain(return_sites) {
-            let taut = ctx
-                .state
-                .get_facts_at(&d3.get_from().function, start_pc)
-                .context("Cannot find start facts")?
-                .find(|x| x.var_is_taut)
+            let taut = self
+                .defuse
+                .get_facts_at(&d3.get_from().function, &"taut".to_string(), start_pc)
                 .context("Cannot find tautological start fact")?
+                .get(0)
+                .context("Cannot get fact")?
                 .clone();
 
             normal_flows_debug.push(d3.clone());
@@ -941,7 +984,7 @@ where
                 path_edge,
                 worklist,
                 Edge::Path {
-                    from: taut,
+                    from: taut.clone(),
                     to: d3.to().clone(),
                 },
             )?; // adding edges to return site of caller from d1
@@ -988,28 +1031,33 @@ where
         }
         assert_eq!(d1.function, d2.function);
 
-        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
+        let first_statement_pc_callee = self
+            .defuse
+            .get_start_pc_by_name(&d1.function, &d1.belongs_to_var)
+            .context("Cannot find min pc")?;
 
         if let Some(end_summary) = end_summary.get_mut(&(
             d1.function.clone(),
             first_statement_pc_callee,
             d1.belongs_to_var.clone(),
         )) {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
+            let facts = self
+                .defuse
+                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
+                .context("Cannot get facts")?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone());
+
             end_summary.extend(facts);
         } else {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
+            let facts = self
+                .defuse
+                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
+                .context("Cannot get facts")?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
                 .map(|x| x.clone())
-                .collect();
+                .collect::<Vec<_>>();
+
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
                 facts,
@@ -1043,19 +1091,23 @@ where
         if let Some(end_summary) =
             end_summary.get_mut(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
         {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .map(|x| x.clone());
+            let facts = self
+                .defuse
+                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
+                .context("Cannot get facts")?
+                .into_iter()
+                .map(|x| x.clone())
+                .collect::<Vec<_>>();
+
             end_summary.extend(facts);
         } else {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+            let facts = self
+                .defuse
+                .get_facts_at(&d2.function, &d2.belongs_to_var, d2.next_pc)
+                .context("Cannot get facts")?
+                .into_iter()
                 .map(|x| x.clone())
-                .collect();
+                .collect::<Vec<_>>();
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
                 facts,

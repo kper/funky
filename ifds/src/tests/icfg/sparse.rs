@@ -57,7 +57,6 @@ fn test_ir_const() {
 
 #[test]
 fn test_ir_double_assign() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -80,6 +79,7 @@ fn test_ir_double_assign() {
 
 #[test]
 fn test_ir_simple_store() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
