@@ -33,7 +33,25 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             Instruction::Const(reg, _) if reg == variable => {
                 //kill
             }
-            Instruction::Const(dest, _) => {
+            Instruction::Assign(dest, _) if dest == variable => {
+                //kill
+            }
+            Instruction::Unop(dest, _) if dest == variable => {
+                //kill
+            }
+            Instruction::BinOp(dest, _, _) if dest == variable => {
+                //kill
+            }
+            Instruction::Kill(reg) if reg == variable => {
+                //kill
+            }
+            Instruction::Phi(dest, _, _) if dest == variable => {
+                //kill
+            }
+            Instruction::Unknown(reg) if reg == variable => {
+                //kill
+            }
+            Instruction::Const(dest, _) | Instruction::Unknown(dest) => {
                 let before = ctx
                     .state
                     .get_facts_at(&function.name, pc)
@@ -57,7 +75,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Assign(dest, src) => {
+            Instruction::Assign(dest, src) | Instruction::Unop(dest ,src) => {
                 let before = defuse
                     .src_before(ctx, &function, src, pc)
                     .context("Cannot find var's fact")?
@@ -70,6 +88,35 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .context("Cannot find var's fact")?;
 
                 for b in before {
+                    for var in after_var.iter() {
+                        edges.push(Edge::Normal {
+                            from: b.clone(),
+                            to: var.clone().clone(),
+                            curved: false,
+                        });
+                    }
+                }
+            }
+            Instruction::BinOp(dest, src1, src2) | Instruction::Phi(dest ,src1, src2) => {
+                let before = defuse
+                    .src_before(ctx, &function, src1, pc)
+                    .context("Cannot find var's fact")?
+                    .into_iter()
+                    .map(|x| x.clone())
+                    .collect::<Vec<_>>();
+
+                let before2 = defuse
+                    .src_before(ctx, &function, src2, pc)
+                    .context("Cannot find var's fact")?
+                    .into_iter()
+                    .map(|x| x.clone())
+                    .collect::<Vec<_>>();
+
+                let after_var = defuse
+                    .demand(ctx, &function, dest, pc)
+                    .context("Cannot find var's fact")?;
+
+                for b in before.into_iter().chain(before2) {
                     for var in after_var.iter() {
                         edges.push(Edge::Normal {
                             from: b.clone(),
