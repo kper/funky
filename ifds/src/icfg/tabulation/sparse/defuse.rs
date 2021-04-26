@@ -48,59 +48,37 @@ impl DefUseChain {
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let not_entry_fact = |x: &&Fact| x.pc != x.next_pc;
-
-        let facts = graph
+        let x = graph
             .flatten()
             .into_iter()
-            .filter(|x| x.pc > pc && not_entry_fact(x))
-            .collect::<Vec<_>>();
-
-        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(function.instructions.len());
-
-        // Get all next nodes, because there might be multiple
-        let x: Vec<_> = facts
-            .into_iter()
-            .filter(|x| x.next_pc == next_pc)
+            .filter(|x| x.pc > pc)
             .map(|x| x.clone())
-            .collect();
+            .collect::<Vec<_>>();
 
         Ok(x)
     }
 
-    pub fn demand_current<'a>(
+    pub fn get_next<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
         var: &String,
-        pc: usize,
+        old_pc: usize,
     ) -> Result<Vec<Fact>> {
-        let graph = self.cache(ctx, function, var, pc)?;
-
-        let not_entry_fact = |x: &&Fact| x.pc != x.next_pc;
+        let graph = self.cache(ctx, function, var, old_pc)?;
 
         let facts = graph
             .flatten()
             .into_iter()
-            .filter(|x| x.pc == pc && not_entry_fact(x))
+            .filter(|x| x.pc == old_pc)
             .map(|x| x.clone())
             .collect::<Vec<_>>();
-
-        //let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(facts.len());
-
-        /* 
-        // Get all next nodes, because there might be multiple
-        let x: Vec<_> = facts
-            .into_iter()
-            .filter(|x| x.next_pc == next_pc)
-            .map(|x| x.clone())
-            .collect();*/
 
         Ok(facts)
     }
 
     // nodes which point to (var, pc)
-    pub fn src_before<'a>(
+    pub fn points_to<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
@@ -109,8 +87,9 @@ impl DefUseChain {
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let facts = graph
-            .flatten()
+        let all_facts = graph.flatten().collect::<Vec<_>>();
+
+        let facts = all_facts
             .into_iter()
             .filter(|x| x.next_pc <= pc)
             .collect::<Vec<_>>();
@@ -178,6 +157,7 @@ impl DefUseChain {
             }
         }
 
+        /*
         let instructions = function
             .instructions
             .iter()
@@ -185,54 +165,38 @@ impl DefUseChain {
             .skip(pc)
             .filter(|(_, x)| self.is_used(&var, x))
             .collect::<Vec<_>>();
+            */
 
         let track = ctx
             .state
             .get_track(&function.name, &var.name)
             .context("Cannot find track of var")?;
 
+        let instructions = function.instructions.iter().enumerate();
+        let mut graph = Graph::default();
+
         let mut facts = Vec::new();
-
-        // Add entry fact
-        let x = ctx.state.cache_fact(
-            &function.name,
-            Fact::from_var(
-                &var,
-                0,
-                instructions.get(0).map(|x| x.0).unwrap_or(0),
-                track,
-            ),
-        )?;
-        facts.push(x.clone());
-
-        let mut i = 0;
-        for (pc, _instruction) in instructions.iter() {
-            let next_pc = instructions
-                .get(i + 1)
-                .map(|x| x.0)
-                .unwrap_or(function.instructions.len());
-
-            debug!("Creating fact with pc {} and next_pc {}", pc, next_pc);
-
-            let x = Fact::from_var(&var, *pc, next_pc, track);
-            facts.push(x.clone());
-
-            i += 1;
-        }
-
-        // Add last fact for the end of the procedure
-
-        let x = Fact::from_var(
+        let _ = self.build_next(
             &var,
+            track,
+            &mut facts,
             function.instructions.len(),
-            function.instructions.len() + 1, //maybe Option?
+            instructions.skip(pc),
+            &mut graph,
+            false,
+        )?;
+
+        let init = Fact::from_var(
+            &var,
+            0,
+            facts
+                .last()
+                .map(|x| x.pc)
+                .unwrap_or(function.instructions.len()),
             track,
         );
-        facts.push(x.clone());
+        graph.add_normal(init, facts.last().context("Cannot get last fact")?.clone())?;
 
-        let graph = self.build_graph(facts).context("Building graph failed")?;
-
-        // end
         {
             self.inner
                 .insert((function.name.clone(), var.name.clone()), (pc, graph));
@@ -246,30 +210,76 @@ impl DefUseChain {
         Ok(graph)
     }
 
-    /// Build the intraprocedural cached graph
-    fn build_graph(&self, facts: Vec<Fact>) -> Result<Graph> {
-        let mut graph = Graph::default();
+    /// Recursive function for constructing graph
+    fn build_next<'a>(
+        &'a self,
+        var: &Variable,
+        track: usize,
+        facts: &mut Vec<Fact>,
+        max_len: usize,
+        mut instructions: impl Iterator<Item = (usize, &'a Instruction)>,
+        graph: &mut Graph,
+        init_def: bool,
+    ) -> Result<Fact> {
+        let instruction = instructions.next();
 
-        if facts.len() > 0 {
-            let first = facts.first().unwrap(); //invariant
-            let last = facts.last().unwrap(); //invariant
-            let mut node = first.clone();
+        if let Some((pc, instruction)) = instruction {
+            let is_lhs = self.is_lhs_used(&var, instruction);
+            let is_rhs = self.is_rhs_used(&var, instruction);
 
-            for i in 0..(facts.len() - 1) {
-                let fact = facts.get(i + 1).context("Cannot find fact")?;
-                debug!("Cached {} -> {}", node.pc, fact.pc);
-                graph.add_normal(node.clone(), fact.clone())?;
-                node = fact.clone();
+            if !is_lhs || !init_def {
+                let next_fact =
+                    self.build_next(var, track, facts, max_len, instructions, graph, true)?;
+                if is_rhs {
+                    let x = Fact::from_var(&var, pc, next_fact.pc, track);
+                    facts.push(x.clone());
+
+                    graph.add_normal(x.clone(), next_fact)?;
+
+                    return Ok(x);
+                } else {
+                    return Ok(next_fact);
+                }
+            } else {
+                let next_fact =
+                    self.build_next(var, track, facts, max_len, instructions, graph, init_def)?;
+                let x = Fact::from_var(&var, pc, next_fact.pc, track);
+                facts.push(x.clone());
+                graph.add_normal(x.clone(), next_fact)?;
+                return Ok(x); //redefinition, therefore not tainting anymore
             }
-
-            debug!("Cached {} -> {}", node.pc, last.pc);
-            graph.add_normal(node, last.clone())?;
+        } else {
+            // Create end
+            let x = Fact::from_var(&var, max_len, max_len, track);
+            facts.push(x.clone());
+            return Ok(x);
         }
-
-        Ok(graph)
     }
 
+    fn is_lhs_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
+        let var = &variable.name;
+
+        match instruction {
+            Instruction::Const(dest, _) if dest == var => true,
+            Instruction::Assign(dest, _src) if dest == var => true,
+            Instruction::BinOp(dest, _, _) if dest == var => true,
+            _ => false,
+        }
+    }
+
+    fn is_rhs_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
+        let var = &variable.name;
+
+        match instruction {
+            Instruction::Assign(_dest, src) if src == var => true,
+            Instruction::BinOp(_, src1, src2) if src1 == var || src2 == var => true,
+            _ => false,
+        }
+    }
+
+    /*
     fn is_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
+        /*
         if variable.is_memory {
             // We cannot check memory vars by name, because they might differ
             // But by semantics, every memory should be considered
@@ -280,14 +290,16 @@ impl DefUseChain {
             // Like mem
 
             return self.is_used_taut(variable, instruction);
-        }
+        }*/
 
         let var = &variable.name;
         match instruction {
-            Instruction::Unop(dest, src) => var == dest || var == src,
-            Instruction::BinOp(dest, src1, src2) => var == dest || var == src1 || var == src2,
-            Instruction::Const(dest, _) => var == dest,
-            Instruction::Assign(dest, src) => var == dest || var == src,
+            Instruction::Unop(dest, _src) if var == dest => false,
+            Instruction::Unop(_dest, src) if var == src => true,
+            Instruction::BinOp(dest, _src1, _src2) if dest == var => false,
+            Instruction::BinOp(_dest, src1, src2) if src1 == var || src2 == var => true,
+            Instruction::Const(dest, _) => false,
+            Instruction::Assign(dest, src) if var == dest=> var == dest || var == src,
             Instruction::Call(_callee, params, dest) => params.contains(var) || dest.contains(var),
             Instruction::CallIndirect(_callee, params, dest) => {
                 params.contains(var) || dest.contains(var)
@@ -300,7 +312,7 @@ impl DefUseChain {
             Instruction::Load(dest, _, src) => var == dest || var == src,
             _ => false,
         }
-    }
+    }*/
 
     fn is_used_mem(&self, _variable: &Variable, instruction: &Instruction) -> bool {
         macro_rules! is_mem {
@@ -351,7 +363,7 @@ mod test {
             0 - %0 = 1
             1 - %1 = 1
             2 - %2 = %0 op %1
-            3 - %2 = %1 op %0   
+            3 - %2 = %1 op %0
 
             %0:
                 0 -> 2
@@ -450,12 +462,12 @@ mod test {
 
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
-        assert_eq!(4, facts.len());
+        assert_eq!(3, facts.len());
         assert_eq!(3, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
-            .src_before(&mut ctx, &function, &"%0".to_string(), 3)
+            .points_to(&mut ctx, &function, &"%0".to_string(), 3)
             .unwrap();
         assert_eq!(1, before.len());
         assert_eq!(3, before.get(0).unwrap().next_pc);
@@ -463,7 +475,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(1, after.len());
+        assert_eq!(2, after.len());
         assert_eq!(3, after.get(0).unwrap().pc);
         assert_eq!(5, after.get(0).unwrap().next_pc);
     }
@@ -511,10 +523,10 @@ mod test {
 
         assert_eq!(4, facts.len());
         assert_eq!(4, facts.get(1).unwrap().next_pc);
-        assert_eq!(5, facts.get(2).unwrap().next_pc);
+        assert_eq!(1, facts.get(2).unwrap().next_pc);
 
         let before = chain
-            .src_before(&mut ctx, &function, &"%1".to_string(), 1)
+            .points_to(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
         assert_eq!(1, before.len());
         assert_eq!(1, before.get(0).unwrap().next_pc);
@@ -522,7 +534,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(1, after.len());
+        assert_eq!(2, after.len());
         assert_eq!(4, after.get(0).unwrap().pc);
         assert_eq!(5, after.get(0).unwrap().next_pc);
     }
