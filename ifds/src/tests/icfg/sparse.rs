@@ -235,7 +235,7 @@ fn test_ir_if_else() {
     let req = Request {
         variable: None,
         function: "main".to_string(),
-        pc: 0,
+        pc: 1,
     };
     ir!(
         "test_ir_if_else",
@@ -263,7 +263,7 @@ fn test_ir_if() {
     let req = Request {
         variable: None,
         function: "main".to_string(),
-        pc: 0,
+        pc: 1,
     };
     ir!(
         "test_ir_if",
@@ -284,7 +284,7 @@ fn test_ir_loop() {
     let req = Request {
         variable: None,
         function: "main".to_string(),
-        pc: 2,
+        pc: 1,
     };
     ir!(
         "test_ir_loop",
@@ -304,7 +304,7 @@ fn test_ir_table() {
     let req = Request {
         variable: None,
         function: "main".to_string(),
-        pc: 0,
+        pc: 1,
     };
     ir!(
         "test_ir_table",

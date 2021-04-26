@@ -48,10 +48,41 @@ impl DefUseChain {
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, pc)?;
 
+        let not_entry_fact = |x: &&Fact| x.pc != x.next_pc;
+
         let facts = graph
             .flatten()
             .into_iter()
-            .filter(|x| x.next_pc > pc)
+            .filter(|x| x.pc > pc && not_entry_fact(x))
+            .collect::<Vec<_>>();
+
+        let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(0);
+
+        // Get all next nodes, because there might be multiple
+        let x: Vec<_> = facts
+            .into_iter()
+            .filter(|x| x.next_pc == next_pc)
+            .map(|x| x.clone())
+            .collect();
+
+        Ok(x)
+    }
+
+    pub fn demand_current<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<Vec<Fact>> {
+        let graph = self.cache(ctx, function, var, pc)?;
+
+        let not_entry_fact = |x: &&Fact| x.pc != x.next_pc;
+
+        let facts = graph
+            .flatten()
+            .into_iter()
+            .filter(|x| x.pc == pc && not_entry_fact(x))
             .collect::<Vec<_>>();
 
         let next_pc = facts.iter().map(|x| x.next_pc).min().unwrap_or(0);
@@ -69,24 +100,29 @@ impl DefUseChain {
     // nodes which point to (var, pc)
     pub fn src_before<'a>(
         &mut self,
-        _ctx: &mut Ctx<'a>,
+        ctx: &mut Ctx<'a>,
         function: &AstFunction,
         var: &String,
         pc: usize,
     ) -> Result<Vec<Fact>> {
-        let facts = self
-            .get_graph(&function.name, var)
-            .map(|graph| {
-                graph
-                    .flatten()
-                    .into_iter()
-                    .filter(|x| x.next_pc == pc)
-                    .map(|x| x.clone())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or(Vec::new());
+        let graph = self.cache(ctx, function, var, pc)?;
 
-        Ok(facts)
+        let facts = graph
+            .flatten()
+            .into_iter()
+            .filter(|x| x.next_pc <= pc)
+            .collect::<Vec<_>>();
+
+        let next_pc = facts.iter().map(|x| x.next_pc).max().unwrap_or(0);
+
+        // Get all next nodes, because there might be multiple
+        let x: Vec<_> = facts
+            .into_iter()
+            .filter(|x| x.next_pc == next_pc)
+            .map(|x| x.clone())
+            .collect();
+
+        Ok(x)
     }
 
     pub fn get_start_pc(&self, function: &AstFunction, var: &String) -> Option<usize> {
@@ -169,13 +205,13 @@ impl DefUseChain {
 
         let mut i = 0;
         for (pc, _instruction) in instructions.iter() {
-            let next_pc = instructions.get(i + 1).map(|x| x.0).unwrap_or(pc + 1);
+            let next_pc = instructions
+                .get(i + 1)
+                .map(|x| x.0)
+                .unwrap_or(function.instructions.len());
 
             debug!("Creating fact with pc {} and next_pc {}", pc, next_pc);
 
-            /*let x = ctx
-            .state
-            .cache_fact(&function.name, )?; //TODO remove*/
             let x = Fact::from_var(&var, *pc, next_pc, track);
             facts.push(x.clone());
 
@@ -187,7 +223,7 @@ impl DefUseChain {
         let x = Fact::from_var(
             &var,
             function.instructions.len(),
-            function.instructions.len(),
+            function.instructions.len() + 1, //maybe Option?
             track,
         );
         facts.push(x.clone());
@@ -347,13 +383,20 @@ mod test {
 
         assert_eq!(4, facts.len());
         assert_eq!(3, facts.get(1).unwrap().next_pc);
-        assert_eq!(4, facts.get(2).unwrap().next_pc);
+        assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
             .src_before(&mut ctx, &function, &"%0".to_string(), 3)
             .unwrap();
         assert_eq!(1, before.len());
         assert_eq!(3, before.get(0).unwrap().next_pc);
+
+        let after = chain
+            .demand(&mut ctx, &function, &"%0".to_string(), 0)
+            .unwrap();
+        assert_eq!(1, after.len());
+        assert_eq!(3, after.get(0).unwrap().pc);
+        assert_eq!(5, after.get(0).unwrap().next_pc);
     }
 
     #[test]
@@ -402,7 +445,14 @@ mod test {
             .src_before(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
         assert_eq!(1, before.len());
-        assert_eq!(1, before.get(0).unwrap().next_pc)
+        assert_eq!(1, before.get(0).unwrap().next_pc);
+
+        let after = chain
+            .demand(&mut ctx, &function, &"%1".to_string(), 1)
+            .unwrap();
+        assert_eq!(1, after.len());
+        assert_eq!(4, after.get(0).unwrap().pc);
+        assert_eq!(5, after.get(0).unwrap().next_pc);
     }
 
     #[test]

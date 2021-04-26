@@ -20,35 +20,17 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
         // We need the offset, because not every
         // instruction is taintable. For example BLOCK and JUMP
         // have no registers. That's why skip to the next one.
-        let mut offset = 0;
+        let offset = 0;
         let instructions = &function.instructions;
 
-        let mut init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
+        let  init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
+
+        debug!("init fact is {:#?}", init_fact);
 
         loop {
             let pc = pc + offset;
             let instruction = instructions.get(pc).context("Cannot find instr")?;
             debug!("Next instruction is {:?}", instruction);
-
-            /*ctx.state.add_statement(
-                function,
-                format!("{:?}", instruction),
-                pc,
-                &"taut".to_string(),
-            )?;*/
-
-            /*let _after = ctx
-                .state
-                .get_facts_at(&function.name, pc)?
-                .filter(|x| x.var_is_taut)
-                .collect::<Vec<_>>();
-
-            let after = _after.get(0).unwrap();
-
-            edges.push(Edge::Path {
-                from: init_fact.clone().clone(),
-                to: after.clone().clone(),
-            });*/
 
             match instruction {
                 Instruction::Const(dest, _)
@@ -66,10 +48,12 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         // and will not be sparsely propagated.
 
                         let after_taut = defuse
-                            .demand(ctx, &function, &"taut".to_string(), pc)
+                            .demand(ctx, &function, &"taut".to_string(), b.pc)
                             .context("Cannot find taut's fact")?;
 
-                        for taut in after_taut.into_iter().take(1) {
+                        debug!("Next taut is {:#?}", after_taut);
+
+                        for taut in after_taut.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: taut.clone(),
@@ -83,10 +67,10 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .demand(ctx, &function, dest, pc)
+                            .demand_current(ctx, &function, dest, pc)
                             .context("Cannot find var's fact")?;
 
-                        for var in after_var.into_iter().take(1) {
+                        for var in after_var.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: var.clone(),
@@ -109,10 +93,10 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             // and will not be sparsely propagated.
 
                             let after_taut = defuse
-                            .demand(ctx, &function, &"taut".to_string(), pc)
-                            .context("Cannot find taut's fact")?;
+                                .demand(ctx, &function, &"taut".to_string(), pc)
+                                .context("Cannot find taut's fact")?;
 
-                            for taut in after_taut.into_iter().take(1) {
+                            for taut in after_taut.into_iter() {
                                 normal_flows_debug.push(Edge::Normal {
                                     from: b.clone(),
                                     to: taut.clone(),
@@ -129,7 +113,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                                 .demand(ctx, &function, dest, pc)
                                 .context("Cannot find var's fact")?;
 
-                            for var in after_var.into_iter().take(1) {
+                            for var in after_var.into_iter() {
                                 normal_flows_debug.push(Edge::Normal {
                                     from: b.clone(),
                                     to: var.clone(),
@@ -155,7 +139,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find taut's fact")?;
 
-                        for taut in after_taut.into_iter().take(1) {
+                        for taut in after_taut.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: taut.clone(),
@@ -176,7 +160,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .demand(ctx, &function, &mem.name, pc)
                             .context("Cannot find var's fact")?;
 
-                        for var in after_var.into_iter().take(1) {
+                        for var in after_var.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: var.clone(),
@@ -201,7 +185,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find taut's fact")?;
 
-                        for taut in after_taut.into_iter().take(1) {
+                        for taut in after_taut.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: taut.clone(),
@@ -218,7 +202,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .demand(ctx, &function, &"taut".to_string(), pc)
                             .context("Cannot find var's fact")?;
 
-                        for var in after_var.into_iter().take(1) {
+                        for var in after_var.into_iter() {
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: var.clone(),
@@ -233,10 +217,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     }
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
-                    offset += 1;
-
-                    continue;
-                    unimplemented!()
+                    panic!("Block or Jump as first instruction is not supported");
                 }
                 _ => {}
             }

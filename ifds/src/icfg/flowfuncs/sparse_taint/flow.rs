@@ -30,25 +30,25 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         let is_taut = variable == &"taut".to_string();
 
         match instruction {
-            Instruction::Const(reg, _) if reg == variable => {
+            Instruction::Const(reg, _) if reg == variable || is_taut => {
                 //kill
             }
-            Instruction::Assign(dest, _) if dest == variable => {
+            Instruction::Assign(dest, _) if dest == variable || is_taut => {
                 //kill
             }
-            Instruction::Unop(dest, _) if dest == variable => {
+            Instruction::Unop(dest, _) if dest == variable || is_taut => {
                 //kill
             }
-            Instruction::BinOp(dest, _, _) if dest == variable => {
+            Instruction::BinOp(dest, _, _) if dest == variable || is_taut => {
                 //kill
             }
-            Instruction::Kill(reg) if reg == variable => {
+            Instruction::Kill(reg) if reg == variable || is_taut=> {
                 //kill
             }
-            Instruction::Phi(dest, _, _) if dest == variable => {
+            Instruction::Phi(dest, _, _) if dest == variable || is_taut => {
                 //kill
             }
-            Instruction::Unknown(reg) if reg == variable => {
+            Instruction::Unknown(reg) if reg == variable || is_taut => {
                 //kill
             }
             Instruction::Const(dest, _) | Instruction::Unknown(dest) => {
@@ -64,7 +64,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .clone();
 
                 let after_var = defuse
-                    .demand(ctx, &function, dest, pc)
+                    .demand_current(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
                 for var in after_var.into_iter() {
@@ -75,7 +75,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Assign(dest, src) | Instruction::Unop(dest ,src) => {
+            Instruction::Assign(dest, src) | Instruction::Unop(dest, src) => {
                 let before = defuse
                     .src_before(ctx, &function, src, pc)
                     .context("Cannot find var's fact")?
@@ -84,7 +84,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .collect::<Vec<_>>();
 
                 let after_var = defuse
-                    .demand(ctx, &function, dest, pc)
+                    .demand_current(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
                 for b in before {
@@ -97,13 +97,15 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     }
                 }
             }
-            Instruction::BinOp(dest, src1, src2) | Instruction::Phi(dest ,src1, src2) => {
+            Instruction::BinOp(dest, src1, src2) | Instruction::Phi(dest, src1, src2) => {
                 let before = defuse
                     .src_before(ctx, &function, src1, pc)
                     .context("Cannot find var's fact")?
                     .into_iter()
                     .map(|x| x.clone())
                     .collect::<Vec<_>>();
+
+                debug!("before {:#?}", before);
 
                 let before2 = defuse
                     .src_before(ctx, &function, src2, pc)
@@ -112,8 +114,10 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .map(|x| x.clone())
                     .collect::<Vec<_>>();
 
+                debug!("before2 {:#?}", before2);
+
                 let after_var = defuse
-                    .demand(ctx, &function, dest, pc)
+                    .demand_current(ctx, &function, dest, pc)
                     .context("Cannot find var's fact")?;
 
                 for b in before.into_iter().chain(before2) {
@@ -123,6 +127,35 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                             to: var.clone().clone(),
                             curved: false,
                         });
+                    }
+                }
+            }
+            Instruction::Conditional(_, jumps) => {
+                for block in jumps.iter() {
+                    let jump_to_pc = block_resolver
+                        .get(&(function.name.clone(), block.clone()))
+                        .with_context(|| format!("Cannot find block to jump to {}", block))?
+                        .clone();
+
+                    let before = defuse
+                        .src_before(ctx, &function, variable, pc)
+                        .context("Cannot get facts")?
+                        .into_iter()
+                        .map(|x| x.clone())
+                        .collect::<Vec<_>>();
+
+                    let after = defuse
+                        .demand_current(ctx, function, variable, jump_to_pc)
+                        .context("Cannot get facts")?;
+
+                    for b in before.into_iter() {
+                        for var in after.iter() {
+                            edges.push(Edge::Normal {
+                                from: b.clone(),
+                                to: var.clone().clone(),
+                                curved: true,
+                            });
+                        }
                     }
                 }
             }
