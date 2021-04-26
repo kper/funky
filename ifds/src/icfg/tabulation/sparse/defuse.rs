@@ -341,6 +341,7 @@ mod test {
     use super::*;
     use crate::icfg::state::State;
     use crate::ir::ast::Program;
+    use insta::assert_debug_snapshot as assert_snapshot;
 
     #[test]
     fn testing_caching_first_var() {
@@ -380,6 +381,8 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
+
+        assert_snapshot!("defuse_reg_0_scfg", facts);
 
         assert_eq!(4, facts.len());
         assert_eq!(3, facts.get(1).unwrap().next_pc);
@@ -437,6 +440,9 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
+
+        assert_snapshot!("defuse_reg_1_scfg", facts);
+
         assert_eq!(4, facts.len());
         assert_eq!(4, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
