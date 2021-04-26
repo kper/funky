@@ -79,7 +79,6 @@ fn test_ir_double_assign() {
 
 #[test]
 fn test_ir_simple_store() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -113,5 +112,215 @@ fn test_ir_simple_load() {
             %1 = LOAD OFFSET 0 + %0 ALIGN 0
          };
     "
+    );
+}
+
+#[test]
+fn test_ir_chain_assign() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_chain_assign",
+        req,
+        "
+         define test (result 0) (define %0 %1 %2 %3){
+            %0 = 1
+            %1 = 1
+            %2 = %0
+            %3 = %2
+         };
+    "
+    );
+}
+
+#[test]
+fn test_ir_unop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_unop",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 = op %0
+            %1 = op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_binop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_binop",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = %0 op %1
+            %2 = %1 op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_binop_offset() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_binop_offset",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = %0 op %1
+            %2 = %1 op %0   
+        };"
+    );
+}
+
+#[test]
+fn test_ir_phi() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_phi",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 1
+            %2 = phi %0 %1
+        };"
+    );
+}
+
+#[test]
+fn test_ir_killing_op() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_killing_op",
+        req,
+        "define test (result 0) (define %0 %1 %2)  {
+            %0 = 1
+            %1 = 1
+            KILL %0
+            KILL %1
+            %2 = 1
+        };"
+    );
+}
+
+#[test]
+fn test_ir_if_else() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_if_else",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            %0 = %2
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_if() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_if",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 0
+            %1 = 2
+            %2 = 3
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_loop() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_loop",
+        req,
+        "define main (result 0) (define %0 %1) {
+            BLOCK 0
+            %0 = 1
+            %1 = 2
+            GOTO 0 
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_table() {
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_table",
+        req,
+        "define main (result 0) (define %0 %1 %2) {
+            BLOCK 0
+            %0 = 1
+            %1 = 2
+            %2 = 3
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            BLOCK 2
+            %2 = 4
+            TABLE GOTO 0 1 2 ELSE GOTO 2
+        };
+        "
     );
 }
