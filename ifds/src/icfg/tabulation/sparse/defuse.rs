@@ -271,8 +271,8 @@ impl DefUseChain {
         let get_relevant_instructions =
             |instructions: Vec<SCFG>, mut is_defined: bool, max_level: usize| {
                 let mut relevant_instructions = Vec::new();
+                let mut overwritten = false;
 
-                let inner_max_level = instructions.len();
                 for instruction in instructions.into_iter() {
                     match instruction {
                         SCFG::Instruction(_pc, ref inner_instruction) => {
@@ -284,6 +284,7 @@ impl DefUseChain {
                                     is_defined = true;
                                     relevant_instructions.push(instruction.clone());
                                 } else {
+                                    overwritten = true;
                                     break;
                                 }
                             } else {
@@ -298,7 +299,7 @@ impl DefUseChain {
                     }
                 }
 
-                if is_top_level {
+                if is_top_level && !overwritten {
                     relevant_instructions.push(SCFG::Return(max_level));
                 }
 
@@ -812,9 +813,8 @@ mod test {
 
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
-        assert_eq!(3, facts.len());
-        assert_eq!(5, facts.get(1).unwrap().next_pc);
-        assert_eq!(5, facts.get(2).unwrap().next_pc);
+        assert_eq!(2, facts.len());
+        assert_eq!(0, facts.get(0).unwrap().next_pc);
 
         let before = chain
             .points_to(&mut ctx, &function, &"%0".to_string(), 3)
@@ -825,9 +825,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(1, after.len());
-        assert_eq!(5, after.get(0).unwrap().pc);
-        assert_eq!(5, after.get(0).unwrap().next_pc);
+        assert_eq!(0, after.len());
     }
 
     #[test]
@@ -872,9 +870,8 @@ mod test {
 
         assert_snapshot!("defuse_reg_1_scfg", facts);
 
-        assert_eq!(3, facts.len());
+        assert_eq!(2, facts.len());
         assert_eq!(5, facts.get(1).unwrap().next_pc);
-        assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
             .points_to(&mut ctx, &function, &"%1".to_string(), 1)
@@ -885,9 +882,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(1, after.len());
-        assert_eq!(5, after.get(0).unwrap().pc);
-        assert_eq!(5, after.get(0).unwrap().next_pc);
+        assert_eq!(0, after.len());
     }
 
     #[test]
@@ -929,13 +924,13 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(3, facts.len());
+        assert_eq!(2, facts.len());
 
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(3, facts.len());
+        assert_eq!(2, facts.len());
     }
 }

@@ -237,9 +237,9 @@ fn test_ir_killing_op() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_if_else() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "main".to_string(),
@@ -248,7 +248,7 @@ fn test_ir_if_else() {
     ir!(
         "test_ir_if_else",
         req,
-        "define main (result 0) (define %0 %1 %2) {
+        "define main (result 0) (define %0 %1 %2 %3) {
             BLOCK 0
             %0 = 1
             IF %1 THEN GOTO 1 ELSE GOTO 2 
@@ -260,7 +260,7 @@ fn test_ir_if_else() {
             %2 = 4
             GOTO 3
             BLOCK 3
-            %0 = %2
+            %3 = %2
         };
         "
     );

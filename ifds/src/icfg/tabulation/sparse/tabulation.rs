@@ -585,7 +585,7 @@ where
             return Ok(());
         }
 
-        let facts = ctx.state.init_function(&function, req.pc)?; 
+        let facts = ctx.state.init_function(&function, req.pc)?;
 
         debug!("Initial facts {:?}", facts);
 
@@ -615,6 +615,9 @@ where
             &mut normal_flows_debug,
             &facts,
         )?;
+
+        // Save all blocks from the beginning.
+        self.resolve_block_ids(ctx, &function, 0)?;
 
         // Compute init flows
         let init_normal_flows = self.init_flow.flow(
@@ -672,7 +675,12 @@ where
     /// Iterates over all instructions and remembers the pc of a
     /// BLOCK declaration. Then saves it into `block_resolver`.
     /// Those values will be used for JUMP instructions.
-    fn resolve_block_ids<'a>(&mut self, ctx: &mut Ctx<'a>, function: &AstFunction, start_pc: usize) -> Result<()> {
+    fn resolve_block_ids<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        start_pc: usize,
+    ) -> Result<()> {
         for (pc, instruction) in function
             .instructions
             .iter()
@@ -707,9 +715,6 @@ where
     ) -> Result<()> {
         let mut end_summary: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
-
-        // Save all blocks from the beginning.
-        self.resolve_block_ids(ctx, &function, 0)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
@@ -908,7 +913,7 @@ where
             function.instructions.len(),
             &"taut".to_string(),
         )?;
-        
+
         Ok(())
     }
 }
