@@ -776,7 +776,7 @@ where
                             .iter()
                             .find(|x| x.name == d2.function)
                             .unwrap();
-                        for f in self
+                        for d3 in self
                             .normal_flow
                             .flow(
                                 ctx,
@@ -788,10 +788,7 @@ where
                             )?
                             .iter()
                         {
-                            debug!("Normal flow {:#?}", f);
-                            let to = f.to();
-
-                            normal_flows_debug.push(f.clone());
+                            debug!("d3 is {:#?}", d3);
 
                             self.propagate(
                                 &mut ctx.graph,
@@ -799,7 +796,7 @@ where
                                 worklist,
                                 Edge::Path {
                                     from: d1.clone(),
-                                    to: to.clone(),
+                                    to: d3.clone(),
                                 },
                             )?;
                         }
@@ -889,10 +886,10 @@ where
         normal_flows_debug: &mut Vec<Edge>,
         init_facts: &Vec<Fact>,
     ) -> Result<(), anyhow::Error> {
-        let mut edges = Vec::new();
+        //let mut edges = Vec::new();
 
-        let start_taut = init_facts.get(0).context("Cannot find taut")?;
-        let mut last_taut: Option<Fact> = Some(start_taut.clone());
+        //let start_taut = init_facts.get(0).context("Cannot find taut")?;
+        //let mut last_taut: Option<Fact> = Some(start_taut.clone());
 
         for (i, instruction) in function.instructions.iter().enumerate() {
             ctx.state.add_statement_with_note(
@@ -901,7 +898,7 @@ where
                 i,
                 &"taut".to_string(),
             )?;
-            let facts = ctx
+            /*let facts = ctx
                 .state
                 .get_facts_at(&function.name, i)?
                 .filter(|x| x.belongs_to_var == "taut".to_string())
@@ -922,10 +919,10 @@ where
                 });
             }
 
-            last_taut = Some(taut.clone());
+            last_taut = Some(taut.clone());*/
         }
 
-        //end
+        /* 
         ctx.state.add_statement_with_note(
             function,
             "end".to_string(),
@@ -999,6 +996,7 @@ where
                 )?;
             }
         }
+        */
 
         Ok(())
     }
