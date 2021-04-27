@@ -213,7 +213,8 @@ impl DefUseChain {
 
         debug!("scfg {:#?}", scfg);
 
-        let graph = self.build_graph(
+        let mut graph = Graph::default();
+        self.build_graph(
             function,
             &scfg,
             &ctx.block_resolver,
@@ -222,6 +223,8 @@ impl DefUseChain {
             track,
             pc,
             false,
+            true,
+            &mut graph,
         )?;
 
         {
@@ -252,177 +255,6 @@ impl DefUseChain {
         instructions.take(take)
     }
 
-    fn build_cond<'a>(
-        &'a self,
-        var: &Variable,
-        track: usize,
-        facts: &mut Vec<Fact>,
-        max_len: usize,
-        instructions: impl Iterator<Item = (usize, &'a Instruction)>,
-        graph: &mut Graph,
-        mut is_defined: bool,
-        function: &AstFunction,
-        block_resolver: &BlockResolver,
-        jumps: &Vec<String>,
-        pc: usize,
-    ) -> Result<Vec<Fact>> {
-        let after_cond = jumps
-            .last()
-            .unwrap()
-            .parse::<usize>()
-            .context("Jump is not a number")?
-            + 1;
-        let end_cond_pc = block_resolver
-            .get(&(function.name.clone(), format!("{}", after_cond)))
-            .context("Cannot find the end of the conditional")?;
-
-        let after_first_block = jumps
-            .get(1)
-            .unwrap()
-            .parse::<usize>()
-            .context("Jump is not a number")?
-            - 1; //last instruction of the first_block
-        let last_pc_first_block = block_resolver
-            .get(&(function.name.clone(), format!("{}", after_first_block)))
-            .context("Cannot find the end of the first block")?;
-
-        let last_pc_second_block = end_cond_pc - 1; //last instruction of the second block
-
-        let first_branch = self.take_branch(function, pc + 1, *last_pc_first_block);
-        let first_branch = self.build_next(
-            var,
-            track,
-            facts,
-            end_cond_pc - last_pc_first_block,
-            first_branch,
-            graph,
-            is_defined,
-            function,
-            block_resolver,
-        )?;
-
-        let second_branch = self.take_branch(function, pc + 1, last_pc_second_block);
-        let second_branch = self.build_next(
-            var,
-            track,
-            facts,
-            end_cond_pc - last_pc_second_block,
-            second_branch,
-            graph,
-            is_defined,
-            function,
-            block_resolver,
-        )?;
-
-        Ok(first_branch
-            .into_iter()
-            .chain(second_branch)
-            .collect::<Vec<_>>())
-    }
-
-    /// Recursive function for constructing graph
-    fn build_next<'a>(
-        &'a self,
-        var: &Variable,
-        track: usize,
-        facts: &mut Vec<Fact>,
-        max_len: usize,
-        mut instructions: impl Iterator<Item = (usize, &'a Instruction)>,
-        graph: &mut Graph,
-        mut is_defined: bool,
-        function: &AstFunction,
-        block_resolver: &BlockResolver,
-    ) -> Result<Vec<Fact>> {
-        let instruction = instructions.next();
-
-        if let Some((pc, instruction)) = instruction {
-            let is_lhs = self.is_lhs_used(&var, instruction);
-            let is_rhs = self.is_rhs_used(&var, instruction);
-
-            let build_next_facts = |is_defined| match instruction {
-                Instruction::Conditional(_, jumps) => {
-                    if jumps.len() == 2 {
-                        let x = self.build_cond(
-                            var,
-                            track,
-                            facts,
-                            max_len,
-                            function.instructions.iter().enumerate().skip(pc),
-                            graph,
-                            is_defined,
-                            function,
-                            block_resolver,
-                            jumps,
-                            pc,
-                        );
-
-                        x
-                    } else {
-                        unimplemented!()
-                    }
-                }
-                _ => self.build_next(
-                    var,
-                    track,
-                    facts,
-                    max_len,
-                    instructions,
-                    graph,
-                    is_defined,
-                    function,
-                    block_resolver,
-                ),
-            };
-
-            if !is_lhs {
-                // Not redefined
-                // Normal usage
-
-                let next_facts = build_next_facts(is_defined)?;
-                if is_rhs {
-                    // Also on the right side.
-                    let mut y = Vec::new();
-                    for next_fact in next_facts {
-                        let x = Fact::from_var(&var, pc, next_fact.pc, track);
-                        facts.push(x.clone());
-
-                        graph.add_normal(x.clone(), next_fact)?;
-                        y.push(x.clone());
-                    }
-
-                    return Ok(y);
-                } else {
-                    return Ok(next_facts);
-                }
-            } else if is_lhs && !is_defined {
-                // Defined on the left side
-                is_defined = true;
-
-                let next_facts = build_next_facts(is_defined)?;
-                let mut y = Vec::new();
-                for next_fact in next_facts {
-                    let x = Fact::from_var(&var, pc, next_fact.pc, track);
-                    facts.push(x.clone());
-
-                    graph.add_normal(x.clone(), next_fact)?;
-                    y.push(x.clone());
-                }
-
-                return Ok(y);
-            } else {
-                // if is_lhs && is_defined
-                // Defined on the left side, but was already initialized
-                let next_facts = build_next_facts(is_defined)?;
-                return Ok(next_facts); //redefinition, therefore not tainting anymore
-            }
-        } else {
-            // Create end
-            let x = Fact::from_var(&var, max_len, max_len, track);
-            facts.push(x.clone());
-            return Ok(vec![x]);
-        }
-    }
-
     fn build_graph<'a>(
         &'a self,
         function: &AstFunction,
@@ -433,45 +265,48 @@ impl DefUseChain {
         track: usize,
         start_pc: usize,
         is_defined: bool,
-    ) -> Result<Graph> {
-        let mut graph = Graph::default();
+        is_top_level: bool,
+        graph: &mut Graph,
+    ) -> Result<Fact> {
+        let get_relevant_instructions =
+            |instructions: Vec<SCFG>, mut is_defined: bool, max_level: usize| {
+                let mut relevant_instructions = Vec::new();
 
-        let get_relevant_instructions = |instructions: Vec<SCFG>, mut is_defined: bool| {
-            let mut relevant_instructions = Vec::new();
+                let inner_max_level = instructions.len();
+                for instruction in instructions.into_iter() {
+                    match instruction {
+                        SCFG::Instruction(_pc, ref inner_instruction) => {
+                            let is_lhs = self.is_lhs_used(&var, &inner_instruction);
+                            let is_rhs = self.is_rhs_used(&var, &inner_instruction);
 
-            let max_len = instructions.len();
-            for instruction in instructions.into_iter() {
-                match instruction {
-                    SCFG::Instruction(_pc, ref inner_instruction) => {
-                        let is_lhs = self.is_lhs_used(&var, &inner_instruction);
-                        let is_rhs = self.is_rhs_used(&var, &inner_instruction);
-
-                        if is_lhs {
-                            if !is_defined {
-                                is_defined = true;
-                                relevant_instructions.push(instruction.clone());
+                            if is_lhs {
+                                if !is_defined {
+                                    is_defined = true;
+                                    relevant_instructions.push(instruction.clone());
+                                } else {
+                                    break;
+                                }
                             } else {
-                                break;
-                            }
-                        } else {
-                            if is_rhs {
-                                relevant_instructions.push(instruction.clone());
+                                if is_rhs {
+                                    relevant_instructions.push(instruction.clone());
+                                }
                             }
                         }
-                    }
-                    _ => {
-                        relevant_instructions.push(instruction.clone());
+                        _ => {
+                            relevant_instructions.push(instruction.clone());
+                        }
                     }
                 }
-            }
 
-            relevant_instructions.push(SCFG::Return(max_len));
+                if is_top_level {
+                    relevant_instructions.push(SCFG::Return(max_level));
+                }
 
-            (is_defined, relevant_instructions)
-        };
+                (is_defined, relevant_instructions)
+            };
 
         let (is_defined, relevant_instructions) =
-            get_relevant_instructions(instructions.clone(), is_defined);
+            get_relevant_instructions(instructions.clone(), is_defined, max_len);
 
         debug!("rel {} {:#?}", var.name, relevant_instructions);
 
@@ -495,10 +330,46 @@ impl DefUseChain {
                         .map(|x| x.get_pc())
                         .unwrap_or(max_len);
 
-                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+                    let x = Fact::from_var(var, *pc, next, track);
+                    graph.add_normal(node.clone(), x.clone())?;
+                    node = x;
+                }
+                SCFG::Conditional(pc, _instruction, block1, block2) => {
+                    let next = relevant_instructions
+                        .get(i + 1)
+                        .map(|x| x.get_pc())
+                        .unwrap_or(max_len);
+
+                    let _res1 = self.build_graph(
+                        function,
+                        block1,
+                        block_resolver,
+                        next,
+                        var,
+                        track,
+                        0,
+                        is_defined,
+                        false,
+                        graph,
+                    )?;
+
+                    let _res2 = self.build_graph(
+                        function,
+                        block2,
+                        block_resolver,
+                        next,
+                        var,
+                        track,
+                        0,
+                        is_defined,
+                        false,
+                        graph,
+                    )?;
 
                     let x = Fact::from_var(var, *pc, next, track);
                     graph.add_normal(node.clone(), x.clone())?;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+
                     node = x;
                 }
                 SCFG::Return(pc) => {
@@ -514,7 +385,7 @@ impl DefUseChain {
             i += 1;
         }
 
-        Ok(graph)
+        Ok(node)
     }
 
     fn build_next2<'a>(
@@ -524,8 +395,12 @@ impl DefUseChain {
         block_resolver: &BlockResolver,
     ) -> Result<Vec<SCFG>> {
         let mut main = Vec::new();
-        for (pc, instruction) in instructions {
-            match instruction {
+        let mut i = 0;
+        while i < instructions.len() {
+            let ref_instruction = instructions.get(i).context("Cannot find instruction")?;
+            let (pc, inner_instruction) = ref_instruction;
+            debug!("Instruction {:?}", inner_instruction);
+            match inner_instruction {
                 Instruction::Conditional(_, jumps) if jumps.len() == 2 => {
                     let after_cond = jumps
                         .last()
@@ -577,13 +452,20 @@ impl DefUseChain {
                         self.build_next2(function, second_branch, block_resolver)?;
 
                     main.push(SCFG::Conditional(
-                        pc,
-                        instruction.clone(),
+                        *pc,
+                        inner_instruction.clone().clone(),
                         first_branch,
                         second_branch,
                     ));
+
+                    i = *end_cond_pc + 1; //skip all conditionals
+                    debug!("Setting i to {}", i);
                 }
-                _ => main.push(SCFG::Instruction(pc, instruction.clone())),
+                _ => {
+                    main.push(SCFG::Instruction(*pc, inner_instruction.clone().clone()));
+                    i += 1;
+                    debug!("Setting i to {}", i);
+                }
             }
         }
 
@@ -682,7 +564,6 @@ mod test {
 
     #[test]
     fn test_building_conditional_scfg() {
-        env_logger::init();
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
