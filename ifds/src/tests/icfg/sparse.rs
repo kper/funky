@@ -238,8 +238,33 @@ fn test_ir_killing_op() {
 }
 
 #[test]
+fn test_ir_if_else_binop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_if_else_binop",
+        req,
+        "define test (result 0) (define %0 %1 %2 %3) {
+            %0 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = %0
+            %2 = 3
+            GOTO 3
+            BLOCK 2
+            %1 = 1
+            GOTO 3
+            BLOCK 3
+            %3 = %1 op %0   
+        };"
+    );
+}
+
+#[test]
 fn test_ir_if_else() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "main".to_string(),

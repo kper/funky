@@ -63,6 +63,10 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
                 nodes.extend(x.into_iter());
             }
+            Instruction::Assign(dest, _) => {
+                let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+                nodes.extend(x.into_iter());
+            }
             _ => {}
         }
         let nodes = nodes
