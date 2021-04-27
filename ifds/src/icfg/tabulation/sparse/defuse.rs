@@ -17,6 +17,11 @@ type StartPC = usize;
 pub struct DefUseChain {
     inner: HashMap<(Function, Var), (StartPC, Graph)>,
 }
+#[derive(Debug)]
+enum SCFG {
+    Instruction(usize, Instruction),
+    Conditional(usize, Instruction, Vec<SCFG>, Vec<SCFG>),
+}
 
 impl DefUseChain {
     /// Get the DefUseChain for function and variable
@@ -193,8 +198,16 @@ impl DefUseChain {
         let instructions = function.instructions.iter().enumerate();
         let mut graph = Graph::default();
 
-        let mut facts = Vec::new();
-        let ret = self.build_next(
+        let scfg = self.build_next2(
+            function,
+            instructions.collect(),
+            &ctx.block_resolver,
+        )?;
+
+        debug!("scfg {:#?}", scfg);
+
+        let facts: Vec<Fact> = Vec::new();
+        /*let ret = self.build_next(
             &var,
             track,
             &mut facts,
@@ -207,14 +220,9 @@ impl DefUseChain {
         )?;
 
         for to in ret {
-            let init = Fact::from_var(
-                &var,
-                pc,
-                to.pc,
-                track,
-            );
+            let init = Fact::from_var(&var, pc, to.pc, track);
             graph.add_normal(init, facts.last().context("Cannot get last fact")?.clone())?;
-        }
+        }*/
 
         {
             self.inner
@@ -415,6 +423,75 @@ impl DefUseChain {
         }
     }
 
+    fn build_next2<'a>(
+        &'a self,
+        function: &AstFunction,
+        instructions: Vec<(usize, &Instruction)>,
+        block_resolver: &BlockResolver,
+    ) -> Result<Vec<SCFG>> {
+        let mut main = Vec::new();
+        for (pc, instruction) in instructions {
+            match instruction {
+                Instruction::Conditional(_, jumps) if jumps.len() == 2 => {
+                    let after_cond = jumps
+                        .last()
+                        .unwrap()
+                        .parse::<usize>()
+                        .context("Jump is not a number")?
+                        + 1;
+                    let end_cond_pc = block_resolver
+                        .get(&(function.name.clone(), format!("{}", after_cond)))
+                        .context("Cannot find the end of the conditional")?;
+
+                    let after_first_block = jumps
+                        .get(1)
+                        .unwrap()
+                        .parse::<usize>()
+                        .context("Jump is not a number")?
+                        - 1; //last instruction of the first_block
+                    let last_pc_first_block = block_resolver
+                        .get(&(function.name.clone(), format!("{}", after_first_block)))
+                        .context("Cannot find the end of the first block")?;
+
+                    let second_block_id = jumps
+                        .get(1)
+                        .unwrap()
+                        .parse::<usize>()
+                        .context("Jump is not a number")?;
+                        
+                    let first_pc_second_block = block_resolver
+                        .get(&(function.name.clone(), format!("{}", second_block_id)))
+                        .context("Cannot find the end of the second block")?;
+
+                    let first_branch = self
+                        .take_branch(function, pc + 2, last_pc_first_block - pc)
+                        .collect::<Vec<_>>();
+                    debug!("first {:#?}", first_branch);
+                    assert_eq!(last_pc_first_block - pc, first_branch.len());
+                    let second_branch = self
+                        .take_branch(function, first_pc_second_block + 1, end_cond_pc - first_pc_second_block - 1)
+                        .collect::<Vec<_>>();
+                    debug!("second {:#?}", second_branch);
+                    assert_eq!(end_cond_pc - first_pc_second_block - 1, second_branch.len());
+
+                    let first_branch = self.build_next2(function, first_branch, block_resolver)?;
+                    let second_branch =
+                        self.build_next2(function, second_branch, block_resolver)?;
+
+                    main.push(SCFG::Conditional(
+                        pc,
+                        instruction.clone(),
+                        first_branch,
+                        second_branch,
+                    ));
+                }
+                _ => main.push(SCFG::Instruction(pc, instruction.clone())),
+            }
+        }
+
+        Ok(main)
+    }
+
     fn is_lhs_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
         let var = &variable.name;
 
@@ -479,7 +556,11 @@ mod test {
     use crate::ir::ast::Program;
     use insta::assert_debug_snapshot as assert_snapshot;
 
-    fn resolve_block_ids<'a>(ctx: &mut Ctx<'a>, function: &AstFunction, start_pc: usize) -> Result<()> {
+    fn resolve_block_ids<'a>(
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        start_pc: usize,
+    ) -> Result<()> {
         for (pc, instruction) in function
             .instructions
             .iter()
@@ -516,6 +597,7 @@ mod test {
                 Instruction::BinOp("%2".to_string(), "%0".to_string(), "%1".to_string()),
                 Instruction::Block("1".to_string()),
                 Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
                 Instruction::Block("2".to_string()),
                 Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
             ],
@@ -538,7 +620,7 @@ mod test {
 
         // fullfilling precondition of `chain.cache()`
         ctx.state.init_function(&function, pc).unwrap();
-        resolve_block_ids(&mut ctx, &function, pc);
+        resolve_block_ids(&mut ctx, &function, pc).unwrap();
 
         let mut chain = DefUseChain::default();
         let facts = chain
