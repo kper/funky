@@ -58,6 +58,26 @@ impl DefUseChain {
         Ok(x)
     }
 
+    /// Cache and get next
+    pub fn demand_inclusive<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<Vec<Fact>> {
+        let graph = self.cache(ctx, function, var, pc)?;
+
+        let x = graph
+            .flatten()
+            .into_iter()
+            .filter(|x| x.pc >= pc)
+            .map(|x| x.clone())
+            .collect::<Vec<_>>();
+
+        Ok(x)
+    }
+
     pub fn get_next<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
