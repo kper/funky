@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::icfg::graph::*;
+use crate::icfg::{flowfuncs::BlockResolver, graph::*};
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 use anyhow::{Context, Result};
@@ -69,9 +69,7 @@ impl DefUseChain {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let xx = graph
-            .flatten()
-            .collect::<Vec<_>>();
+        let xx = graph.flatten().collect::<Vec<_>>();
 
         debug!("xx {:#?}", xx);
 
@@ -196,7 +194,7 @@ impl DefUseChain {
         let mut graph = Graph::default();
 
         let mut facts = Vec::new();
-        let _ = self.build_next(
+        let ret = self.build_next(
             &var,
             track,
             &mut facts,
@@ -204,18 +202,19 @@ impl DefUseChain {
             instructions.skip(pc.checked_sub(1).unwrap_or(0)),
             &mut graph,
             false,
+            function,
+            &ctx.block_resolver,
         )?;
 
-        let init = Fact::from_var(
-            &var,
-            pc,
-            facts
-                .last()
-                .map(|x| x.pc)
-                .unwrap_or(function.instructions.len()),
-            track,
-        );
-        graph.add_normal(init, facts.last().context("Cannot get last fact")?.clone())?;
+        for to in ret {
+            let init = Fact::from_var(
+                &var,
+                pc,
+                to.pc,
+                track,
+            );
+            graph.add_normal(init, facts.last().context("Cannot get last fact")?.clone())?;
+        }
 
         {
             self.inner
@@ -230,6 +229,89 @@ impl DefUseChain {
         Ok(graph)
     }
 
+    fn take_branch<'a>(
+        &self,
+        function: &'a AstFunction,
+        skip: usize,
+        take: usize,
+    ) -> impl Iterator<Item = (usize, &'a Instruction)> {
+        let mut instructions = function.instructions.iter().enumerate();
+
+        for _ in 0..skip {
+            instructions.next();
+        }
+
+        instructions.take(take)
+    }
+
+    fn build_cond<'a>(
+        &'a self,
+        var: &Variable,
+        track: usize,
+        facts: &mut Vec<Fact>,
+        max_len: usize,
+        instructions: impl Iterator<Item = (usize, &'a Instruction)>,
+        graph: &mut Graph,
+        mut is_defined: bool,
+        function: &AstFunction,
+        block_resolver: &BlockResolver,
+        jumps: &Vec<String>,
+        pc: usize,
+    ) -> Result<Vec<Fact>> {
+        let after_cond = jumps
+            .last()
+            .unwrap()
+            .parse::<usize>()
+            .context("Jump is not a number")?
+            + 1;
+        let end_cond_pc = block_resolver
+            .get(&(function.name.clone(), format!("{}", after_cond)))
+            .context("Cannot find the end of the conditional")?;
+
+        let after_first_block = jumps
+            .get(1)
+            .unwrap()
+            .parse::<usize>()
+            .context("Jump is not a number")?
+            - 1; //last instruction of the first_block
+        let last_pc_first_block = block_resolver
+            .get(&(function.name.clone(), format!("{}", after_first_block)))
+            .context("Cannot find the end of the first block")?;
+
+        let last_pc_second_block = end_cond_pc - 1; //last instruction of the second block
+
+        let first_branch = self.take_branch(function, pc + 1, *last_pc_first_block);
+        let first_branch = self.build_next(
+            var,
+            track,
+            facts,
+            end_cond_pc - last_pc_first_block,
+            first_branch,
+            graph,
+            is_defined,
+            function,
+            block_resolver,
+        )?;
+
+        let second_branch = self.take_branch(function, pc + 1, last_pc_second_block);
+        let second_branch = self.build_next(
+            var,
+            track,
+            facts,
+            end_cond_pc - last_pc_second_block,
+            second_branch,
+            graph,
+            is_defined,
+            function,
+            block_resolver,
+        )?;
+
+        Ok(first_branch
+            .into_iter()
+            .chain(second_branch)
+            .collect::<Vec<_>>())
+    }
+
     /// Recursive function for constructing graph
     fn build_next<'a>(
         &'a self,
@@ -240,52 +322,96 @@ impl DefUseChain {
         mut instructions: impl Iterator<Item = (usize, &'a Instruction)>,
         graph: &mut Graph,
         mut is_defined: bool,
-    ) -> Result<Fact> {
+        function: &AstFunction,
+        block_resolver: &BlockResolver,
+    ) -> Result<Vec<Fact>> {
         let instruction = instructions.next();
 
         if let Some((pc, instruction)) = instruction {
             let is_lhs = self.is_lhs_used(&var, instruction);
             let is_rhs = self.is_rhs_used(&var, instruction);
 
+            let build_next_facts = |is_defined| match instruction {
+                Instruction::Conditional(_, jumps) => {
+                    if jumps.len() == 2 {
+                        let x = self.build_cond(
+                            var,
+                            track,
+                            facts,
+                            max_len,
+                            function.instructions.iter().enumerate().skip(pc),
+                            graph,
+                            is_defined,
+                            function,
+                            block_resolver,
+                            jumps,
+                            pc,
+                        );
+
+                        x
+                    } else {
+                        unimplemented!()
+                    }
+                }
+                _ => self.build_next(
+                    var,
+                    track,
+                    facts,
+                    max_len,
+                    instructions,
+                    graph,
+                    is_defined,
+                    function,
+                    block_resolver,
+                ),
+            };
+
             if !is_lhs {
                 // Not redefined
                 // Normal usage
 
-                let next_fact =
-                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
+                let next_facts = build_next_facts(is_defined)?;
                 if is_rhs {
                     // Also on the right side.
+                    let mut y = Vec::new();
+                    for next_fact in next_facts {
+                        let x = Fact::from_var(&var, pc, next_fact.pc, track);
+                        facts.push(x.clone());
+
+                        graph.add_normal(x.clone(), next_fact)?;
+                        y.push(x.clone());
+                    }
+
+                    return Ok(y);
+                } else {
+                    return Ok(next_facts);
+                }
+            } else if is_lhs && !is_defined {
+                // Defined on the left side
+                is_defined = true;
+
+                let next_facts = build_next_facts(is_defined)?;
+                let mut y = Vec::new();
+                for next_fact in next_facts {
                     let x = Fact::from_var(&var, pc, next_fact.pc, track);
                     facts.push(x.clone());
 
                     graph.add_normal(x.clone(), next_fact)?;
-
-                    return Ok(x);
-                } else {
-                    return Ok(next_fact);
+                    y.push(x.clone());
                 }
-            } else if is_lhs && !is_defined{
-                // Defined on the left side
-                is_defined = true;
 
-                let next_fact =
-                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
-                let x = Fact::from_var(&var, pc, next_fact.pc, track);
-                facts.push(x.clone());
-                graph.add_normal(x.clone(), next_fact)?;
-                return Ok(x); //redefinition, therefore not tainting anymore
-            }
-            else { // if is_lhs && is_defined
+                return Ok(y);
+            } else {
+                // if is_lhs && is_defined
                 // Defined on the left side, but was already initialized
-                let next_fact =
-                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
-                return Ok(next_fact); //redefinition, therefore not tainting anymore
+                let next_facts = build_next_facts(is_defined)?;
+                return Ok(next_facts); //redefinition, therefore not tainting anymore
             }
         } else {
             // Create end
             let x = Fact::from_var(&var, max_len, max_len, track);
             facts.push(x.clone());
-            return Ok(x);
+            return Ok(vec![x]);
         }
     }
 
@@ -309,43 +435,6 @@ impl DefUseChain {
             _ => false,
         }
     }
-
-    /*
-    fn is_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
-        /*
-        if variable.is_memory {
-            // We cannot check memory vars by name, because they might differ
-            // But by semantics, every memory should be considered
-            return self.is_used_mem(variable, instruction);
-        }
-
-        if variable.is_taut {
-            // Like mem
-
-            return self.is_used_taut(variable, instruction);
-        }*/
-
-        let var = &variable.name;
-        match instruction {
-            Instruction::Unop(dest, _src) if var == dest => false,
-            Instruction::Unop(_dest, src) if var == src => true,
-            Instruction::BinOp(dest, _src1, _src2) if dest == var => false,
-            Instruction::BinOp(_dest, src1, src2) if src1 == var || src2 == var => true,
-            Instruction::Const(dest, _) => false,
-            Instruction::Assign(dest, src) if var == dest=> var == dest || var == src,
-            Instruction::Call(_callee, params, dest) => params.contains(var) || dest.contains(var),
-            Instruction::CallIndirect(_callee, params, dest) => {
-                params.contains(var) || dest.contains(var)
-            }
-            Instruction::Kill(dest) => var == dest,
-            Instruction::Conditional(dest, _) => var == dest,
-            Instruction::Return(dest) => dest.contains(var),
-            Instruction::Phi(dest, src1, src2) => var == dest || var == src1 || var == src2,
-            Instruction::Store(src1, _, src2) => var == src1 || var == src2,
-            Instruction::Load(dest, _, src) => var == dest || var == src,
-            _ => false,
-        }
-    }*/
 
     fn is_used_mem(&self, _variable: &Variable, instruction: &Instruction) -> bool {
         macro_rules! is_mem {
@@ -389,6 +478,77 @@ mod test {
     use crate::icfg::state::State;
     use crate::ir::ast::Program;
     use insta::assert_debug_snapshot as assert_snapshot;
+
+    fn resolve_block_ids<'a>(ctx: &mut Ctx<'a>, function: &AstFunction, start_pc: usize) -> Result<()> {
+        for (pc, instruction) in function
+            .instructions
+            .iter()
+            .enumerate()
+            .skip(start_pc)
+            .filter(|x| matches!(x.1, Instruction::Block(_)))
+        {
+            match instruction {
+                Instruction::Block(block) => {
+                    ctx.block_resolver
+                        .insert((function.name.clone(), block.clone()), pc);
+                }
+                _ => {
+                    panic!("")
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_building_conditional_scfg() {
+        env_logger::init();
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Const("%1".to_string(), 1.0),
+                Instruction::Conditional("%1".to_string(), vec!["0".to_string(), "1".to_string()]),
+                Instruction::Block("0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%0".to_string(), "%1".to_string()),
+                Instruction::Block("1".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::Block("2".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+            block_resolver: HashMap::default(),
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+        resolve_block_ids(&mut ctx, &function, pc);
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_conditional_defuse_reg_0_scfg", facts);
+    }
 
     #[test]
     fn test_building_scfg() {
@@ -508,7 +668,6 @@ mod test {
 
     #[test]
     fn test_building_scfg3() {
-        env_logger::init();
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
