@@ -161,7 +161,6 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -175,25 +174,6 @@ fn test_ir_binop() {
             %1 = 1
             %2 = %0 op %1
             %3 = %1 op %0   
-        };"
-    );
-}
-
-#[test]
-fn test_ir_binop_double() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-    ir!(
-        "test_ir_binop_double",
-        req,
-        "define test (result 0) (define %0 %1 %2 %3) {
-            %0 = 1
-            %1 = 1
-            %2 = %0 op %1
-            %2 = %1 op %0   
         };"
     );
 }

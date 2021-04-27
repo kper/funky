@@ -21,6 +21,7 @@ pub struct DefUseChain {
 enum SCFG {
     Instruction(usize, Instruction),
     Conditional(usize, Instruction, Vec<SCFG>, Vec<SCFG>),
+    Return(usize),
 }
 
 impl SCFG {
@@ -28,6 +29,7 @@ impl SCFG {
         match self {
             SCFG::Conditional(pc, ..) => *pc,
             SCFG::Instruction(pc, ..) => *pc,
+            SCFG::Return(pc, ..) => *pc,
         }
     }
 }
@@ -434,11 +436,10 @@ impl DefUseChain {
     ) -> Result<Graph> {
         let mut graph = Graph::default();
 
-        
-
         let get_relevant_instructions = |instructions: Vec<SCFG>, mut is_defined: bool| {
             let mut relevant_instructions = Vec::new();
 
+            let max_len = instructions.len();
             for instruction in instructions.into_iter() {
                 match instruction {
                     SCFG::Instruction(_pc, ref inner_instruction) => {
@@ -464,31 +465,46 @@ impl DefUseChain {
                 }
             }
 
+            relevant_instructions.push(SCFG::Return(max_len));
+
             (is_defined, relevant_instructions)
         };
 
-        let (is_defined, relevant_instructions) = get_relevant_instructions(instructions.clone(), is_defined);
+        let (is_defined, relevant_instructions) =
+            get_relevant_instructions(instructions.clone(), is_defined);
 
-        debug!("rel {:#?}", relevant_instructions);
+        debug!("rel {} {:#?}", var.name, relevant_instructions);
 
         let first = Fact::from_var(
             var,
             start_pc,
-            relevant_instructions.first().map(|x| x.get_pc()).unwrap_or(max_len),
+            relevant_instructions
+                .first()
+                .map(|x| x.get_pc())
+                .unwrap_or(max_len),
             track,
         );
         let mut node = first.clone();
         let mut i = 0;
 
-        for instruction in relevant_instructions {
+        for instruction in relevant_instructions.iter() {
             match instruction {
-                SCFG::Instruction(pc, instruction) => {
-                    let next = instructions
+                SCFG::Instruction(pc, _instruction) => {
+                    let next = relevant_instructions
                         .get(i + 1)
                         .map(|x| x.get_pc())
-                        .unwrap_or(max_len + 1);
+                        .unwrap_or(max_len);
 
-                    let x = Fact::from_var(var, pc, next, track);
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+
+                    let x = Fact::from_var(var, *pc, next, track);
+                    graph.add_normal(node.clone(), x.clone())?;
+                    node = x;
+                }
+                SCFG::Return(pc) => {
+                    let next = pc;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+                    let x = Fact::from_var(var, *pc, *next, track);
                     graph.add_normal(node.clone(), x.clone())?;
                     node = x;
                 }
@@ -716,7 +732,6 @@ mod test {
 
     #[test]
     fn test_building_scfg() {
-        env_logger::init();
         /*
             0 - %0 = 1
             1 - %1 = 1
@@ -917,7 +932,7 @@ mod test {
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
         assert_eq!(3, facts.len());
-        assert_eq!(0, facts.get(1).unwrap().next_pc);
+        assert_eq!(5, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
@@ -977,7 +992,7 @@ mod test {
         assert_snapshot!("defuse_reg_1_scfg", facts);
 
         assert_eq!(3, facts.len());
-        assert_eq!(1, facts.get(1).unwrap().next_pc);
+        assert_eq!(5, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain

@@ -1,5 +1,4 @@
 use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
-use anyhow::bail;
 
 pub struct SparseTaintInitialFlowFunction;
 

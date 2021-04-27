@@ -97,6 +97,7 @@ mod test {
             %2 = %0 op %1
             %3 = %1 op %0
         */
+
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
@@ -124,7 +125,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
-            block_resolver: HashMap::default()
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -136,17 +137,11 @@ mod test {
 
         let sparse = SparseTaintNormalFlowFunction;
 
-        let edges = sparse
-            .flow(
-                &mut ctx,
-                &function,
-                2,
-                &"%0".to_string(),
-                &mut defuse,
-            )
+        let facts = sparse
+            .flow(&mut ctx, &function, 2, &"%0".to_string(), &mut defuse)
             .unwrap();
 
-        assert_eq!(2, edges.len());
+        assert_eq!(4, facts.len());
 
         let cmp_facts: Vec<Fact> = vec![
             Fact {
@@ -154,7 +149,7 @@ mod test {
                 var_is_global: false,
                 var_is_taut: false,
                 var_is_memory: false,
-                pc: 3,
+                pc: 4,
                 next_pc: 4,
                 track: 1,
                 function: "main".to_string(),
@@ -171,7 +166,29 @@ mod test {
                 function: "main".to_string(),
                 memory_offset: None,
             },
+            Fact {
+                belongs_to_var: "%2".to_string(),
+                var_is_global: false,
+                var_is_taut: false,
+                var_is_memory: false,
+                pc: 3,
+                next_pc: 4,
+                track: 3,
+                function: "main".to_string(),
+                memory_offset: None,
+            },
+            Fact {
+                belongs_to_var: "%2".to_string(),
+                var_is_global: false,
+                var_is_taut: false,
+                var_is_memory: false,
+                pc: 4,
+                next_pc: 4,
+                track: 3,
+                function: "main".to_string(),
+                memory_offset: None,
+            },
         ];
-        assert_eq!(cmp_facts, edges);
+        assert_eq!(cmp_facts, facts);
     }
 }
