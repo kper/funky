@@ -71,10 +71,8 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let mut applied = var;
-                            applied.pc += 1;
+                            let applied = var.apply();
 
-                            assert!(applied.pc <= applied.next_pc);
                             normal_flows_debug.push(Edge::Normal {
                                 from: b.clone(),
                                 to: applied.clone(),

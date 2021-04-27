@@ -1,0 +1,40 @@
+---
+source: src/icfg/tabulation/sparse/defuse.rs
+expression: facts
+
+---
+[
+    Fact {
+        belongs_to_var: "%2",
+        var_is_global: false,
+        var_is_taut: false,
+        var_is_memory: false,
+        pc: 2,
+        next_pc: 4,
+        track: 3,
+        function: "main",
+        memory_offset: None,
+    },
+    Fact {
+        belongs_to_var: "%2",
+        var_is_global: false,
+        var_is_taut: false,
+        var_is_memory: false,
+        pc: 0,
+        next_pc: 2,
+        track: 3,
+        function: "main",
+        memory_offset: None,
+    },
+    Fact {
+        belongs_to_var: "%2",
+        var_is_global: false,
+        var_is_taut: false,
+        var_is_memory: false,
+        pc: 4,
+        next_pc: 4,
+        track: 3,
+        function: "main",
+        memory_offset: None,
+    },
+]

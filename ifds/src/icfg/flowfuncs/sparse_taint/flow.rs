@@ -57,9 +57,25 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         debug!("Next instruction is {:?} for {}", instruction, variable);
         let is_taut = variable == &"taut".to_string();
 
-        let nodes = defuse.demand(ctx, function, variable, pc)?;
+        let mut nodes = defuse.demand(ctx, function, variable, pc)?;
 
-        // Apply here function instead
+        match instruction {
+            Instruction::BinOp(dest, _, _) => {
+                let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+                nodes.extend(x.into_iter());
+            }
+            _ => {}
+        }
+        let mut nodes = nodes
+            .into_iter()
+            .filter_map(|x| {
+                if x.pc != x.next_pc {
+                    Some(x.apply())
+                } else {
+                    Some(x)
+                }
+            })
+            .collect::<Vec<_>>();
 
         facts.extend(nodes.into_iter());
 

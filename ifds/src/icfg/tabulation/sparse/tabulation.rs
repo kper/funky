@@ -585,7 +585,9 @@ where
             return Ok(());
         }
 
-        let facts = ctx.state.init_function(&function, req.pc)?;
+        let facts = ctx.state.init_function(&function, req.pc)?; 
+
+        debug!("Initial facts {:?}", facts);
 
         let mut path_edge = Vec::new();
         let mut worklist = VecDeque::new();
@@ -625,6 +627,7 @@ where
         )?;
 
         for edge in init_normal_flows.into_iter() {
+            debug!("Propagating initial fact");
             self.propagate(&mut ctx.graph, &mut path_edge, &mut worklist, edge)?;
         }
 
@@ -719,7 +722,7 @@ where
             let d1 = edge.get_from();
             let d2 = edge.to();
 
-            let pc = edge.to().pc;
+            let pc = edge.to().next_pc;
             debug!("Instruction pointer is {}", pc);
 
             let instructions = &program
@@ -898,106 +901,15 @@ where
                 i,
                 &"taut".to_string(),
             )?;
-            /*let facts = ctx
-                .state
-                .get_facts_at(&function.name, i)?
-                .filter(|x| x.belongs_to_var == "taut".to_string())
-                .collect::<Vec<_>>();
-            let taut = facts.get(0).context("Expected only taut")?.clone();
-            debug_assert!(taut.var_is_taut);
-
-            if let Some(last_taut) = last_taut {
-                edges.push(Edge::Normal {
-                    from: last_taut.clone(),
-                    to: taut.clone(),
-                    curved: false,
-                });
-                normal_flows_debug.push(Edge::Normal {
-                    from: last_taut.clone(),
-                    to: taut.clone(),
-                    curved: false,
-                });
-            }
-
-            last_taut = Some(taut.clone());*/
         }
 
-        /* 
         ctx.state.add_statement_with_note(
             function,
             "end".to_string(),
             function.instructions.len(),
             &"taut".to_string(),
         )?;
-        let facts = ctx
-            .state
-            .get_facts_at(&function.name, function.instructions.len())?
-            .filter(|x| x.belongs_to_var == "taut".to_string())
-            .collect::<Vec<_>>();
-
-        let taut = facts.get(0).context("Expected only taut")?.clone();
-        debug_assert!(taut.var_is_taut);
-
-        if let Some(last_taut) = &last_taut {
-            edges.push(Edge::Normal {
-                from: last_taut.clone(),
-                to: taut.clone(),
-                curved: false,
-            });
-            normal_flows_debug.push(Edge::Normal {
-                from: last_taut.clone(),
-                to: taut.clone(),
-                curved: false,
-            });
-        }
-
-        last_taut = Some(taut.clone());
-
-        ctx.state.add_statement_with_note(
-            function,
-            "end".to_string(),
-            function.instructions.len() + 1,
-            &"taut".to_string(),
-        )?;
-        let facts = ctx
-            .state
-            .get_facts_at(&function.name, function.instructions.len() + 1)?
-            .filter(|x| x.belongs_to_var == "taut".to_string())
-            .collect::<Vec<_>>();
-
-        let taut = facts.get(0).context("Expected only taut")?.clone();
-        debug_assert!(taut.var_is_taut);
-
-        if let Some(last_taut) = last_taut {
-            edges.push(Edge::Normal {
-                from: last_taut.clone(),
-                to: taut.clone(),
-                curved: false,
-            });
-            normal_flows_debug.push(Edge::Normal {
-                from: last_taut.clone(),
-                to: taut.clone(),
-                curved: false,
-            });
-        }
-
-        for edge in edges.into_iter() {
-            // Only propagate path if it is after the `start_fact`
-            // This removes the backwards edges which have no use.
-            if edge.to().next_pc >= start_taut.next_pc {
-                self.propagate(
-                    &mut ctx.graph,
-                    path_edge,
-                    worklist,
-                    Edge::Path {
-                        from: start_taut.clone(),
-                        to: edge.to().clone(),
-                    },
-                )?;
-            }
-        }
-        */
-
+        
         Ok(())
     }
 }

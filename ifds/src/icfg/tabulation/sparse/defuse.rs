@@ -66,12 +66,21 @@ impl DefUseChain {
         var: &String,
         pc: usize,
     ) -> Result<Vec<Fact>> {
+        debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let x = graph
+        let xx = graph
             .flatten()
+            .collect::<Vec<_>>();
+
+        debug!("xx {:#?}", xx);
+
+        // entry fact has a loop
+        let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == pc && x.next_pc == pc;
+
+        let x = xx
             .into_iter()
-            .filter(|x| x.pc >= pc)
+            .filter(|x| x.pc >= pc && !is_entry(x))
             .map(|x| x.clone())
             .collect::<Vec<_>>();
 
@@ -163,7 +172,8 @@ impl DefUseChain {
                 .context("Cannot get start_pc")?;
 
             // If `pc` is lower than `start_pc`, then delete and continue
-            if pc >= start_pc {
+            if pc > start_pc {
+                debug!("Cached.");
                 let x = self
                     .inner
                     .get(&(function.name.clone(), var.name.clone()))
@@ -172,20 +182,11 @@ impl DefUseChain {
 
                 return Ok(x);
             } else {
+                debug!("Cache is old. Removing");
                 self.inner
                     .remove(&(function.name.clone(), var.name.clone()));
             }
         }
-
-        /*
-        let instructions = function
-            .instructions
-            .iter()
-            .enumerate()
-            .skip(pc)
-            .filter(|(_, x)| self.is_used(&var, x))
-            .collect::<Vec<_>>();
-            */
 
         let track = ctx
             .state
@@ -201,14 +202,14 @@ impl DefUseChain {
             track,
             &mut facts,
             function.instructions.len(),
-            instructions.skip(pc),
+            instructions.skip(pc.checked_sub(1).unwrap_or(0)),
             &mut graph,
             false,
         )?;
 
         let init = Fact::from_var(
             &var,
-            0,
+            pc,
             facts
                 .last()
                 .map(|x| x.pc)
@@ -239,7 +240,7 @@ impl DefUseChain {
         max_len: usize,
         mut instructions: impl Iterator<Item = (usize, &'a Instruction)>,
         graph: &mut Graph,
-        init_def: bool,
+        mut is_defined: bool,
     ) -> Result<Fact> {
         let instruction = instructions.next();
 
@@ -247,10 +248,14 @@ impl DefUseChain {
             let is_lhs = self.is_lhs_used(&var, instruction);
             let is_rhs = self.is_rhs_used(&var, instruction);
 
-            if !is_lhs || !init_def {
+            if !is_lhs {
+                // Not redefined
+                // Normal usage
+
                 let next_fact =
-                    self.build_next(var, track, facts, max_len, instructions, graph, true)?;
+                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
                 if is_rhs {
+                    // Also on the right side.
                     let x = Fact::from_var(&var, pc, next_fact.pc, track);
                     facts.push(x.clone());
 
@@ -260,13 +265,22 @@ impl DefUseChain {
                 } else {
                     return Ok(next_fact);
                 }
-            } else {
+            } else if is_lhs && !is_defined{
+                // Defined on the left side
+                is_defined = true;
+
                 let next_fact =
-                    self.build_next(var, track, facts, max_len, instructions, graph, init_def)?;
+                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
                 let x = Fact::from_var(&var, pc, next_fact.pc, track);
                 facts.push(x.clone());
                 graph.add_normal(x.clone(), next_fact)?;
                 return Ok(x); //redefinition, therefore not tainting anymore
+            }
+            else { // if is_lhs && is_defined
+                // Defined on the left side, but was already initialized
+                let next_fact =
+                    self.build_next(var, track, facts, max_len, instructions, graph, is_defined)?;
+                return Ok(next_fact); //redefinition, therefore not tainting anymore
             }
         } else {
             // Create end
@@ -439,6 +453,100 @@ mod test {
             .collect::<Vec<_>>();
 
         assert_snapshot!("building_defuse_reg_1_scfg", facts);
+
+        let facts = chain
+            .cache(&mut ctx, &function, &"%2".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_defuse_reg_2_scfg", facts);
+    }
+
+    #[test]
+    fn test_building_scfg2() {
+        env_logger::init();
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Const("%1".to_string(), 1.0),
+                Instruction::BinOp("%2".to_string(), "%0".to_string(), "%1".to_string()),
+                Instruction::BinOp("%3".to_string(), "%1".to_string(), "%0".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+
+        let facts = chain
+            .cache(&mut ctx, &function, &"%2".to_string(), 2)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_defuse2_reg_2_scfg_pc_2", facts);
+    }
+
+    #[test]
+    fn test_building_scfg3() {
+        env_logger::init();
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Const("%1".to_string(), 1.0),
+                Instruction::BinOp("%2".to_string(), "%0".to_string(), "%1".to_string()),
+                Instruction::BinOp("%3".to_string(), "%1".to_string(), "%0".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+
+        let facts = chain
+            .cache(&mut ctx, &function, &"%2".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_defuse3_reg_2_scfg_pc_0", facts);
     }
 
     #[test]
