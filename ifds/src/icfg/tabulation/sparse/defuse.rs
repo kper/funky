@@ -162,7 +162,6 @@ impl DefUseChain {
             .clone();
 
         // already exists
-
         if self
             .inner
             .contains_key(&(function.name.clone(), var.name.clone()))
@@ -430,6 +429,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -465,7 +465,6 @@ mod test {
 
     #[test]
     fn test_building_scfg2() {
-        env_logger::init();
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
@@ -488,6 +487,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -531,6 +531,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -574,6 +575,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -591,20 +593,20 @@ mod test {
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
         assert_eq!(3, facts.len());
-        assert_eq!(3, facts.get(1).unwrap().next_pc);
+        assert_eq!(0, facts.get(1).unwrap().next_pc);
         assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
             .points_to(&mut ctx, &function, &"%0".to_string(), 3)
             .unwrap();
         assert_eq!(1, before.len());
-        assert_eq!(3, before.get(0).unwrap().next_pc);
+        assert_eq!(0, before.get(0).unwrap().next_pc);
 
         let after = chain
             .demand(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(2, after.len());
-        assert_eq!(3, after.get(0).unwrap().pc);
+        assert_eq!(1, after.len());
+        assert_eq!(5, after.get(0).unwrap().pc);
         assert_eq!(5, after.get(0).unwrap().next_pc);
     }
 
@@ -633,6 +635,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 0;
@@ -649,9 +652,9 @@ mod test {
 
         assert_snapshot!("defuse_reg_1_scfg", facts);
 
-        assert_eq!(4, facts.len());
-        assert_eq!(4, facts.get(1).unwrap().next_pc);
-        assert_eq!(1, facts.get(2).unwrap().next_pc);
+        assert_eq!(3, facts.len());
+        assert_eq!(1, facts.get(1).unwrap().next_pc);
+        assert_eq!(5, facts.get(2).unwrap().next_pc);
 
         let before = chain
             .points_to(&mut ctx, &function, &"%1".to_string(), 1)
@@ -662,8 +665,8 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(2, after.len());
-        assert_eq!(4, after.get(0).unwrap().pc);
+        assert_eq!(1, after.len());
+        assert_eq!(5, after.get(0).unwrap().pc);
         assert_eq!(5, after.get(0).unwrap().next_pc);
     }
 
@@ -692,6 +695,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default(),
         };
 
         let pc = 2;
@@ -712,6 +716,6 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(4, facts.len());
+        assert_eq!(3, facts.len());
     }
 }

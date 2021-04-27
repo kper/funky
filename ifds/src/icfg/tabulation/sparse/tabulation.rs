@@ -26,6 +26,7 @@ pub struct Ctx<'a> {
     pub graph: &'a mut Graph,
     pub state: &'a mut State,
     pub prog: &'a Program,
+    pub block_resolver: BlockResolver,
 }
 
 /// Central datastructure for the computation of the IFDS problem.
@@ -36,7 +37,6 @@ where
     F: SparseNormalFlowFunction,
 {
     block_counter: Counter,
-    block_resolver: BlockResolver,
     init_flow: I,
     normal_flow: F,
     defuse: DefUseChain,
@@ -50,7 +50,6 @@ where
     pub fn new(init_flow: I, flow: F) -> Self {
         Self {
             block_counter: Counter::default(),
-            block_resolver: HashMap::new(),
             init_flow,
             normal_flow: flow,
             defuse: DefUseChain::default(),
@@ -67,6 +66,7 @@ where
             graph: &mut graph,
             state: &mut state,
             prog: &prog,
+            block_resolver: HashMap::default(),
         };
 
         self.tabulate(&mut ctx, prog, req)?;
@@ -131,7 +131,7 @@ where
 
             // Save all blocks of the `callee_function`.
             // Because we want to jump to them later.
-            self.resolve_block_ids(&callee_function, start_pc)?;
+            self.resolve_block_ids(ctx, &callee_function, start_pc)?;
 
             // Filter by variable type
             let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
@@ -672,7 +672,7 @@ where
     /// Iterates over all instructions and remembers the pc of a
     /// BLOCK declaration. Then saves it into `block_resolver`.
     /// Those values will be used for JUMP instructions.
-    fn resolve_block_ids(&mut self, function: &AstFunction, start_pc: usize) -> Result<()> {
+    fn resolve_block_ids<'a>(&mut self, ctx: &mut Ctx<'a>, function: &AstFunction, start_pc: usize) -> Result<()> {
         for (pc, instruction) in function
             .instructions
             .iter()
@@ -682,7 +682,7 @@ where
         {
             match instruction {
                 Instruction::Block(block) => {
-                    self.block_resolver
+                    ctx.block_resolver
                         .insert((function.name.clone(), block.clone()), pc);
                 }
                 _ => {
@@ -709,7 +709,7 @@ where
         let mut incoming: HashMap<(String, usize, String), Vec<Fact>> = HashMap::new();
 
         // Save all blocks from the beginning.
-        self.resolve_block_ids(&function, 0)?;
+        self.resolve_block_ids(ctx, &function, 0)?;
 
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
@@ -786,7 +786,6 @@ where
                                 &new_function,
                                 d2.next_pc,
                                 &d2.belongs_to_var,
-                                &self.block_resolver,
                                 &mut self.defuse,
                             )?
                             .iter()

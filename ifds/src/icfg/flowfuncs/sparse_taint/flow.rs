@@ -34,7 +34,6 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         function: &AstFunction,
         pc: usize,
         variable: &String,
-        block_resolver: &BlockResolver,
         defuse: &mut DefUseChain,
     ) -> Result<Vec<Fact>> {
         debug!(
@@ -66,7 +65,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             }
             _ => {}
         }
-        let mut nodes = nodes
+        let nodes = nodes
             .into_iter()
             .filter_map(|x| {
                 if x.pc != x.next_pc {
@@ -125,6 +124,7 @@ mod test {
             prog: &Program {
                 functions: vec![function.clone()],
             },
+            block_resolver: HashMap::default()
         };
 
         let pc = 0;
@@ -134,7 +134,6 @@ mod test {
 
         let mut defuse = DefUseChain::default();
 
-        let block_resolver = BlockResolver::default();
         let sparse = SparseTaintNormalFlowFunction;
 
         let edges = sparse
@@ -143,7 +142,6 @@ mod test {
                 &function,
                 2,
                 &"%0".to_string(),
-                &block_resolver,
                 &mut defuse,
             )
             .unwrap();
