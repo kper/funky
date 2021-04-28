@@ -244,6 +244,8 @@ impl DefUseChain {
         let max_len = instructions.len();
         let scfg = self.build_next2(function, instructions, &ctx.block_resolver)?;
 
+        debug!("scfg {:#?}", scfg);
+
         let mut graph = Graph::default();
         self.build_graph(
             function,
@@ -437,7 +439,14 @@ impl DefUseChain {
             // Check if conditional
             match next_instruction {
                 SCFG::Conditional(_pc, _instruction, block1, block2) => {
-                    let next = next_instruction.get_pc();
+                    // We have to look a step further
+                    let next = relevant_instructions.get(i + 2).map(|x| x.get_pc()).unwrap_or(max_len);
+
+                    log::warn!(
+                        "Before building next graph: meet pc {} {:?}",
+                        next,
+                        _instruction
+                    );
 
                     let _res1 = self.build_graph(
                         function,
@@ -682,6 +691,7 @@ mod test {
                 Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
                 Instruction::Block("2".to_string()),
                 Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::Block("3".to_string()),
             ],
             ..Default::default()
         };
