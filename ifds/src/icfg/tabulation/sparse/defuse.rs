@@ -675,7 +675,6 @@ mod test {
 
     #[test]
     fn test_building_conditional_scfg() {
-        env_logger::init();
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
