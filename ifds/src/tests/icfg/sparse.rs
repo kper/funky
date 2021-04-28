@@ -434,7 +434,6 @@ fn test_ir_functions() {
 
 #[test]
 fn test_ir_multiple_functions() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -450,6 +449,27 @@ fn test_ir_multiple_functions() {
         };
         define mytest (param %0) (result 1) (define %0)  {
             RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_functions_rename_reg() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_functions_rename_regs",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            %0 <- CALL mytest(%0)
+        };
+        define mytest (param %5) (result 1) (define %5 %6)  {
+            %6 = %5
+            RETURN %6;
         };"
     );
 }
