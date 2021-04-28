@@ -6,6 +6,7 @@ use crate::ir::ast::Instruction;
 use anyhow::{Context, Result};
 use log::debug;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 
 use crate::icfg::tabulation::sparse::Ctx;
 
@@ -81,24 +82,56 @@ impl DefUseChain {
         function: &AstFunction,
         var: &String,
         pc: usize,
-    ) -> Result<Vec<Fact>> {
+    ) -> Result<Vec<&Fact>> {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
         let xx = graph.flatten().collect::<Vec<_>>();
+        debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
 
-        debug!("xx {:#?}", xx);
+        let mut queue: VecDeque<&Fact> = VecDeque::new();
+        let mut seen = Vec::new();
 
         // entry fact has a loop
-        let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == pc && x.next_pc == pc;
+        let is_entry = |x: &Fact| x.pc == x.next_pc && x.pc == pc && x.next_pc == pc;
 
-        let x = xx
-            .into_iter()
-            .filter(|x| x.pc >= pc && !is_entry(x))
-            .map(|x| x.clone())
-            .collect::<Vec<_>>();
+        if let Some(start) = graph
+            .edges
+            .iter()
+            .map(|x| x.get_from())
+            .chain(graph.edges.iter().map(|x| x.to()))
+            .find(|x| x.pc == pc && !is_entry(x))
+        {
+            debug!("Adding start {:#?}", start);
+            queue.push_back(start);
+        } else {
+            log::warn!(
+                "No start fact found. Therefore skipping for {} at {}",
+                var,
+                pc
+            );
+            return Ok(Vec::new());
+        }
 
-        Ok(x)
+        while let Some(node) = queue.pop_front() {
+            debug!("Popping node {:?}", node);
+            seen.push(node);
+            for child in graph
+                .edges
+                .iter()
+                .filter(|x| x.get_from() == node && !is_entry(x.get_from()))
+                .map(|x| x.to())
+            {
+                if !seen.contains(&child) {
+                    debug!("queue child {:?}", child);
+                    queue.push_back(child);
+                }
+            }
+        }
+
+        debug!("xx (filtered) for {} at {} {:#?}", var, pc, seen);
+
+        Ok(seen)
     }
 
     pub fn get_next<'a>(
@@ -211,8 +244,6 @@ impl DefUseChain {
         let max_len = instructions.len();
         let scfg = self.build_next2(function, instructions, &ctx.block_resolver)?;
 
-        debug!("scfg {:#?}", scfg);
-
         let mut graph = Graph::default();
         self.build_graph(
             function,
@@ -309,7 +340,7 @@ impl DefUseChain {
         let (is_defined, relevant_instructions) =
             get_relevant_instructions(instructions.clone(), is_defined, max_len);
 
-        debug!("rel {} {:#?}", var.name, relevant_instructions);
+        //debug!("rel {} {:#?}", var.name, relevant_instructions);
 
         let first = Fact::from_var(
             var,
