@@ -200,6 +200,38 @@ impl DefUseChain {
             .map(|(pc, _)| *pc)
     }
 
+    /// If the `start_pc` is not the same as `pc`, then remove the cache entry.
+    /// If the cache entry was removed, then return `true`.
+    pub fn force_remove_if_outdated(
+        &mut self,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<bool> {
+        debug!(
+            "Checking if `start_pc` is the same as {} for {} ({})",
+            pc, var, function.name
+        );
+        if let Some(start_pc) = self.get_start_pc(function, var) {
+            if start_pc != pc {
+                log::warn!(
+                    "Force removal of outdated cache entry for {} ({}) at {}",
+                    var,
+                    function.name,
+                    start_pc
+                );
+
+                self.inner.remove(&(function.name.clone(), var.clone()));
+
+                return Ok(true);
+            }
+        }
+
+        debug!("Cache is not outdated");
+
+        Ok(false)
+    }
+
     /// Build the defuse chain for the instruction
     /// The precondition is that the function must be already initialized.
     /// Because we need the track of the given variable `var`.

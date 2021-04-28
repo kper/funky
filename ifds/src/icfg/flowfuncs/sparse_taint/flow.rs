@@ -58,10 +58,11 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         let mut nodes = defuse.demand(ctx, function, variable, pc)?;
 
         match instruction {
-            Instruction::Unop(dest, ..) |
-            Instruction::Phi(dest, ..) |
-            Instruction::BinOp(dest, ..) | 
-            Instruction::Assign(dest, ..) => {
+            Instruction::Unop(dest, ..)
+            | Instruction::Phi(dest, ..)
+            | Instruction::BinOp(dest, ..)
+            | Instruction::Assign(dest, ..) => {
+                defuse.force_remove_if_outdated(function, dest, pc)?;
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
                 nodes.extend(x.into_iter().map(|x| x.clone()));
             }
