@@ -1121,9 +1121,10 @@ where
                         .find(|x| x.get_from() == d4 && x.to() == d5)
                         .is_none()
                     {
-                        summary_edge.push(Edge::Summary {
+                        summary_edge.push(Edge::Normal {
                             from: d4.clone(),
                             to: d5.clone().clone(),
+                            curved: false,
                         });
 
                         // Get all path edges

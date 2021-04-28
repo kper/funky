@@ -55,7 +55,6 @@ pub trait SparseInitialFlowFunction {
         function: &AstFunction,
         pc: usize,
         init_facts: &Vec<Fact>,
-        normal_flows_debug: &mut Vec<Edge>,
         defuse: &mut DefUseChain,
     ) -> Result<Vec<Edge>>;
 }

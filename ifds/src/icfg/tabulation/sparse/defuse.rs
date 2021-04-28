@@ -83,7 +83,6 @@ impl DefUseChain {
         Ok(x)
     }
 
-    /// Cache and get next
     pub fn demand_inclusive<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
