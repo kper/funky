@@ -146,9 +146,11 @@ mod test {
 
         let sparse = SparseTaintNormalFlowFunction;
 
-        let facts = sparse
+        let mut facts = sparse
             .flow(&mut ctx, &function, 2, &"%0".to_string(), &mut defuse)
             .unwrap();
+
+        facts.dedup();
 
         debug!("facts {:#?}", facts);
         assert_eq!(4, facts.len());
@@ -159,8 +161,8 @@ mod test {
                 var_is_global: false,
                 var_is_taut: false,
                 var_is_memory: false,
-                pc: 4,
-                next_pc: 4,
+                pc: 3,
+                next_pc: 3,
                 track: 1,
                 function: "main".to_string(),
                 memory_offset: None,

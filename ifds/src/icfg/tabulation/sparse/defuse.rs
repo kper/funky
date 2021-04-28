@@ -300,6 +300,8 @@ impl DefUseChain {
             &mut graph,
         )?;
 
+        debug!("graph {:#?}", graph.flatten().collect::<Vec<_>>());
+
         {
             self.inner
                 .insert((function.name.clone(), var.name.clone()), (pc, graph));
@@ -342,13 +344,13 @@ impl DefUseChain {
         graph: &mut Graph,
     ) -> Result<Fact> {
         let get_relevant_instructions =
-            |instructions: Vec<SCFG>, mut is_defined: bool, max_level: usize| {
+            |instructions, mut is_defined: bool, max_level: usize| {
                 let mut relevant_instructions = Vec::new();
                 let mut overwritten = false;
 
-                for instruction in instructions.into_iter() {
+                for instruction in instructions {
                     match instruction {
-                        SCFG::Instruction(_pc, ref inner_instruction) => {
+                        &SCFG::Instruction(_pc, ref inner_instruction) => {
                             let is_lhs = self.is_lhs_used(&var, &inner_instruction);
                             let is_rhs = self.is_rhs_used(&var, &inner_instruction);
 
@@ -378,7 +380,7 @@ impl DefUseChain {
                                 }
                             }
                         }
-                        SCFG::Jump(_pc, _jump_to_pc) => {
+                        &SCFG::Jump(_pc, _jump_to_pc) => {
                             relevant_instructions.push(instruction.clone());
                             break;
                         }
@@ -396,9 +398,9 @@ impl DefUseChain {
             };
 
         let (is_defined, relevant_instructions) =
-            get_relevant_instructions(instructions.clone(), is_defined, max_len);
+            get_relevant_instructions(instructions.iter().skip(start_pc), is_defined, max_len);
 
-        //debug!("rel {} {:#?}", var.name, relevant_instructions);
+        debug!("rel {} {:#?}", var.name, relevant_instructions);
 
         let first = Fact::from_var(
             var,
@@ -409,6 +411,8 @@ impl DefUseChain {
                 .unwrap_or(max_len),
             track,
         );
+        debug!("first fact {:#?}", first);
+        assert!(first.pc <= first.next_pc);
         let mut node = first.clone();
         let mut i = 0;
 
@@ -1333,7 +1337,7 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
 
         let facts = chain
             .cache(&mut ctx, &function, &"%0".to_string(), 0)
