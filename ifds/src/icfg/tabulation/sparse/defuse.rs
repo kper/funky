@@ -25,7 +25,8 @@ enum SCFG {
     Instruction(PC, Instruction),
     Conditional(PC, Instruction, Vec<SCFG>, Vec<SCFG>),
     ConditionalJump(PC, Instruction, PC),
-    Jump(PC, PC),
+    Jump(PC, PC), //unconditional
+    Table(PC, Instruction, Vec<PC>),
     FunctionEnd(PC),
 }
 
@@ -36,6 +37,7 @@ impl SCFG {
             SCFG::Instruction(pc, ..) => *pc,
             SCFG::ConditionalJump(pc, ..) => *pc,
             SCFG::Jump(pc, _jump_to_pc) => *pc,
+            SCFG::Table(pc, ..) => *pc,
             SCFG::FunctionEnd(pc, ..) => *pc,
         }
     }
@@ -446,6 +448,16 @@ impl DefUseChain {
 
                     node = x;
                 }
+                SCFG::Table(pc, _instruction, jumps) => {
+                    for jump_to_pc in jumps {
+                        log::error!("Jump to pc is {}", jump_to_pc);
+                        let next = jump_to_pc;
+                        debug!("Edge from {} to {} for {}", pc, next, var.name);
+                        let x = Fact::from_var(var, *pc, *next, track);
+                        graph.add_normal(node.clone(), x.clone())?;
+                        node = x;
+                    }
+                }
                 SCFG::FunctionEnd(pc) => {
                     let next = pc;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
@@ -630,7 +642,29 @@ impl DefUseChain {
                     debug!("Setting i to {}", i);
                 }
                 Instruction::Conditional(_, _) => {
-                    unimplemented!()
+                    panic!(
+                        "This is conditional is not supported. There must be an error with the IR"
+                    );
+                }
+                Instruction::Table(jumps) => {
+                    let mut jumps_pc = Vec::new();
+                    for jump_to_block in jumps {
+                        let jump_to_pc = block_resolver
+                            .get(&(function.name.clone(), jump_to_block.clone()))
+                            .context("Cannot find the block")?;
+
+                        //jumps_pc.push(jump_to_pc.checked_sub(1).unwrap_or(*jump_to_pc));
+                        jumps_pc.push(*jump_to_pc);
+                    }
+
+                    main.push(SCFG::Table(
+                            *pc,
+                            inner_instruction.clone().clone(),
+                            jumps_pc
+                        ));
+                    
+                    i += 1;
+                    debug!("Setting i to {}", i);
                 }
                 Instruction::Jump(block) => {
                     let jump_to_pc = block_resolver
@@ -788,6 +822,52 @@ mod test {
             .collect::<Vec<_>>();
 
         assert_snapshot!("building_loop_defuse_reg_0_scfg", facts);
+    }
+
+    #[test]
+    fn test_building_table_scfg() {
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Block("0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::Block("2".to_string()),
+                Instruction::Table(vec!["0".to_string(), "2".to_string(), "3".to_string()]),
+                Instruction::Block("3".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+            block_resolver: HashMap::default(),
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+        resolve_block_ids(&mut ctx, &function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_table_defuse_reg_0_scfg", facts);
     }
 
     #[test]
