@@ -141,7 +141,6 @@ fn test_ir_chain_assign() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_unop() {
     let req = Request {

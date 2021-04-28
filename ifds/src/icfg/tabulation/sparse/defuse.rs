@@ -658,11 +658,11 @@ impl DefUseChain {
                     }
 
                     main.push(SCFG::Table(
-                            *pc,
-                            inner_instruction.clone().clone(),
-                            jumps_pc
-                        ));
-                    
+                        *pc,
+                        inner_instruction.clone().clone(),
+                        jumps_pc,
+                    ));
+
                     i += 1;
                     debug!("Setting i to {}", i);
                 }
@@ -692,9 +692,14 @@ impl DefUseChain {
         let var = &variable.name;
 
         match instruction {
-            Instruction::Const(dest, _) if dest == var => true,
-            Instruction::Assign(dest, _src) if dest == var => true,
-            Instruction::BinOp(dest, _, _) if dest == var => true,
+            Instruction::Const(dest, ..) if dest == var => true,
+            Instruction::Assign(dest, ..) if dest == var => true,
+            Instruction::BinOp(dest, ..) if dest == var => true,
+            Instruction::Phi(dest, ..) if dest == var => true,
+            Instruction::Unop(dest, ..) if dest == var => true,
+            Instruction::Kill(dest) if dest == var => true,
+            Instruction::Unknown(dest, ..) if dest == var => true,
+            Instruction::Unop(dest, ..) if dest == var => true,
             _ => false,
         }
     }
@@ -705,6 +710,8 @@ impl DefUseChain {
         match instruction {
             Instruction::Assign(_dest, src) if src == var => true,
             Instruction::BinOp(_, src1, src2) if src1 == var || src2 == var => true,
+            Instruction::Phi(_, src1, src2) if src1 == var || src2 == var => true,
+            Instruction::Unop(_dest, src) if src == var => true,
             _ => false,
         }
     }
