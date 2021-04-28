@@ -24,6 +24,7 @@ type PC = usize;
 enum SCFG {
     Instruction(PC, Instruction),
     Conditional(PC, Instruction, Vec<SCFG>, Vec<SCFG>),
+    ConditionalJump(PC, Instruction, PC),
     Jump(PC, PC),
     FunctionEnd(PC),
 }
@@ -33,6 +34,7 @@ impl SCFG {
         match self {
             SCFG::Conditional(pc, ..) => *pc,
             SCFG::Instruction(pc, ..) => *pc,
+            SCFG::ConditionalJump(pc, ..) => *pc,
             SCFG::Jump(pc, _jump_to_pc) => *pc,
             SCFG::FunctionEnd(pc, ..) => *pc,
         }
@@ -417,6 +419,33 @@ impl DefUseChain {
                     graph.add_normal(node.clone(), x.clone())?;
                     node = x;
                 }
+                SCFG::ConditionalJump(pc, _instruction, jump_to_pc) => {
+                    // One edge back
+                    log::error!("Jump to pc is {}", jump_to_pc);
+                    let next = jump_to_pc;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+                    let x = Fact::from_var(var, *pc, *next, track);
+                    graph.add_normal(node.clone(), x.clone())?;
+
+                    // one edge goes next
+                    let x = self
+                        .add_next_instruction(
+                            &relevant_instructions,
+                            i,
+                            function,
+                            block_resolver,
+                            var,
+                            track,
+                            is_defined,
+                            graph,
+                            pc,
+                            &node,
+                            max_len,
+                        )
+                        .context("Adding next instruction failed")?;
+
+                    node = x;
+                }
                 SCFG::FunctionEnd(pc) => {
                     let next = pc;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
@@ -586,6 +615,23 @@ impl DefUseChain {
                     i = *end_cond_pc + 1; //skip all conditionals
                     debug!("Setting i to {}", i);
                 }
+                Instruction::Conditional(_, jumps) if jumps.len() == 1 => {
+                    let jump_to_block = jumps.first().context("Cannot get label")?;
+                    let jump_to_pc = block_resolver
+                        .get(&(function.name.clone(), jump_to_block.clone()))
+                        .context("Cannot find the block")?;
+
+                    main.push(SCFG::ConditionalJump(
+                        *pc,
+                        inner_instruction.clone().clone(),
+                        jump_to_pc.checked_sub(1).unwrap_or(*jump_to_pc),
+                    ));
+                    i += 1;
+                    debug!("Setting i to {}", i);
+                }
+                Instruction::Conditional(_, _) => {
+                    unimplemented!()
+                }
                 Instruction::Jump(block) => {
                     let jump_to_pc = block_resolver
                         .get(&(function.name.clone(), block.clone()))
@@ -742,6 +788,52 @@ mod test {
             .collect::<Vec<_>>();
 
         assert_snapshot!("building_loop_defuse_reg_0_scfg", facts);
+    }
+
+    #[test]
+    fn test_building_conditional_if_scfg() {
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Block("0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::Block("2".to_string()),
+                Instruction::Conditional("%0".to_string(), vec!["0".to_string()]),
+                Instruction::Block("3".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+            block_resolver: HashMap::default(),
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+        resolve_block_ids(&mut ctx, &function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_conditional_jump_defuse_reg_0_scfg", facts);
     }
 
     #[test]
