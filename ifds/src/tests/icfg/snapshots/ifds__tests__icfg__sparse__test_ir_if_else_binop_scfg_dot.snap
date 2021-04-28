@@ -1,0 +1,10 @@
+---
+source: src/tests/icfg/sparse.rs
+expression: output
+
+---
+(0) -> (3)
+(0) -> (7)
+(1) -> (1)
+(1) -> (10)
+(10) -> (11)

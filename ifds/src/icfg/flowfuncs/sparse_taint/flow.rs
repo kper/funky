@@ -61,11 +61,11 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         match instruction {
             Instruction::BinOp(dest, _, _) => {
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
-                nodes.extend(x.into_iter());
+                nodes.extend(x.into_iter().map(|x| x.clone()));
             }
             Instruction::Assign(dest, _) => {
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
-                nodes.extend(x.into_iter());
+                nodes.extend(x.into_iter().map(|x| x.clone()));
             }
             _ => {}
         }
@@ -81,6 +81,8 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             .collect::<Vec<_>>();
 
         facts.extend(nodes.into_iter());
+
+        debug!("Out {:#?}", facts);
 
         Ok(facts)
     }
@@ -145,6 +147,7 @@ mod test {
             .flow(&mut ctx, &function, 2, &"%0".to_string(), &mut defuse)
             .unwrap();
 
+        debug!("facts {:#?}", facts);
         assert_eq!(4, facts.len());
 
         let cmp_facts: Vec<Fact> = vec![

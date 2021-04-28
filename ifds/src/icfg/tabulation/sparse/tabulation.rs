@@ -74,6 +74,11 @@ where
         Ok((graph, state))
     }
 
+    /// Get a SCFG graph from the `def_use` chain
+    pub fn get_scfg_graph(&self, function: &String, var: &String) -> Option<&Graph> {
+        self.defuse.get_graph(function, var)
+    }
+
     /// Computes call-to-start edges
     pub(crate) fn pass_args<'a>(
         &mut self,

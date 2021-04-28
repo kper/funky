@@ -1,5 +1,5 @@
-use crate::icfg::tabulation::sparse::TabulationSparse;
 use crate::icfg::tikz2::render_to;
+use crate::icfg::{state::State, tabulation::sparse::TabulationSparse};
 use crate::solver::Request;
 use insta::assert_snapshot;
 use log::error;
@@ -8,9 +8,10 @@ use crate::grammar::*;
 
 use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
 use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
+use crate::ir::ast::Function as AstFunction;
 
 macro_rules! ir {
-    ($name:expr, $req:expr, $ir:expr) => {
+    ($name:expr, $req:expr, $ir:expr) => {{
         let mut convert = TabulationSparse::new(
             SparseTaintInitialFlowFunction,
             SparseTaintNormalFlowFunction,
@@ -33,7 +34,9 @@ macro_rules! ir {
         let output = render_to(&graph, &state);
 
         assert_snapshot!(format!("{}_dot", $name), output);
-    };
+
+        convert
+    }};
 }
 
 #[test]
@@ -76,7 +79,6 @@ fn test_ir_double_assign() {
     "
     );
 }
-
 
 #[ignore]
 #[test]
@@ -239,12 +241,13 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_if_else_binop() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
         pc: 0,
     };
-    ir!(
+    let tabulation = ir!(
         "test_ir_if_else_binop",
         req,
         "define test (result 0) (define %0 %1 %2 %3) {
@@ -261,6 +264,18 @@ fn test_ir_if_else_binop() {
             %3 = %1 op %0   
         };"
     );
+
+    let scfg = tabulation
+        .get_scfg_graph(&"test".to_string(), &"%1".to_string())
+        .unwrap();
+
+    let output = scfg
+        .edges
+        .iter()
+        .map(|x| format!("({}) -> ({})", x.get_from().pc, x.to().pc))
+        .collect::<Vec<_>>().join("\n");
+
+    assert_snapshot!(format!("{}_scfg_dot", "test_ir_if_else_binop"), output);
 }
 
 #[test]

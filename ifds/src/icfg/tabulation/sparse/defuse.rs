@@ -354,23 +354,90 @@ impl DefUseChain {
         let mut node = first.clone();
         let mut i = 0;
 
+        // Cannot simply add next instruction, we have to check to look
+        // if it is a conditional
+        // if yes, then look for the next inner instruction
+        // if not, then ok
+
         for instruction in relevant_instructions.iter() {
             match instruction {
                 SCFG::Instruction(pc, _instruction) => {
-                    let next = relevant_instructions
-                        .get(i + 1)
-                        .map(|x| x.get_pc())
-                        .unwrap_or(max_len);
+                    let x = self
+                        .add_next_instruction(
+                            &relevant_instructions,
+                            i,
+                            function,
+                            block_resolver,
+                            var,
+                            track,
+                            is_defined,
+                            graph,
+                            pc,
+                            &node,
+                            max_len,
+                        )
+                        .context("Adding next instruction failed")?;
 
-                    let x = Fact::from_var(var, *pc, next, track);
+                    node = x;
+                }
+                SCFG::Conditional(pc, _instruction, _block1, _block2) => {
+                    let x = self
+                        .add_next_instruction(
+                            &relevant_instructions,
+                            i,
+                            function,
+                            block_resolver,
+                            var,
+                            track,
+                            is_defined,
+                            graph,
+                            pc,
+                            &node,
+                            max_len,
+                        )
+                        .context("Adding next instruction failed")?;
+
+                    node = x;
+                }
+                SCFG::Return(pc) => {
+                    // this is not a normal return.
+                    // Instead, this is always the last instruction
+                    // of a function.
+
+                    let next = pc;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+                    let x = Fact::from_var(var, *pc, *next, track);
                     graph.add_normal(node.clone(), x.clone())?;
                     node = x;
                 }
-                SCFG::Conditional(pc, _instruction, block1, block2) => {
-                    let next = relevant_instructions
-                        .get(i + 1)
-                        .map(|x| x.get_pc())
-                        .unwrap_or(max_len);
+                _ => {}
+            }
+
+            i += 1;
+        }
+
+        Ok(node)
+    }
+
+    fn add_next_instruction<'a>(
+        &'a self,
+        relevant_instructions: &Vec<SCFG>,
+        i: usize,
+        function: &AstFunction,
+        block_resolver: &HashMap<(String, String), usize>,
+        var: &Variable,
+        track: usize,
+        is_defined: bool,
+        graph: &mut Graph,
+        pc: &usize,
+        node: &Fact,
+        max_len: usize,
+    ) -> Result<Fact> {
+        if let Some(next_instruction) = relevant_instructions.get(i + 1) {
+            // Check if conditional
+            match next_instruction {
+                SCFG::Conditional(_pc, _instruction, block1, block2) => {
+                    let next = next_instruction.get_pc();
 
                     let _res1 = self.build_graph(
                         function,
@@ -402,22 +469,25 @@ impl DefUseChain {
                     graph.add_normal(node.clone(), x.clone())?;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
 
-                    node = x;
+                    Ok(x)
                 }
-                SCFG::Return(pc) => {
-                    let next = pc;
-                    debug!("Edge from {} to {} for {}", pc, next, var.name);
-                    let x = Fact::from_var(var, *pc, *next, track);
+                _ => {
+                    let next = next_instruction.get_pc();
+                    let x = Fact::from_var(var, *pc, next, track);
                     graph.add_normal(node.clone(), x.clone())?;
-                    node = x;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+
+                    Ok(x)
                 }
-                _ => {}
             }
+        } else {
+            let next = max_len;
 
-            i += 1;
+            let x = Fact::from_var(var, *pc, next, track);
+            graph.add_normal(node.clone(), x.clone())?;
+
+            Ok(x)
         }
-
-        Ok(node)
     }
 
     fn build_next2<'a>(
@@ -596,6 +666,7 @@ mod test {
 
     #[test]
     fn test_building_conditional_scfg() {
+        env_logger::init();
         let func_name = "main".to_string();
         let function = AstFunction {
             name: func_name.clone(),
