@@ -197,7 +197,6 @@ fn test_ir_binop_offset() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_phi() {
     let req = Request {
