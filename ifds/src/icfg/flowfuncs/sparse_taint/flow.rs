@@ -1,31 +1,6 @@
-use crate::icfg::state::State;
 use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
 
 pub struct SparseTaintNormalFlowFunction;
-
-impl SparseTaintNormalFlowFunction {
-    pub fn identity<'a>(
-        &self,
-        ctx: &mut Ctx<'a>,
-        function: &AstFunction,
-        fact: &Fact,
-        pc: usize,
-        defuse: &mut DefUseChain,
-        edges: &mut Vec<Edge>,
-    ) -> Result<()> {
-        let after = defuse.get_next(ctx, function, &fact.belongs_to_var, pc)?;
-
-        for to in after {
-            edges.push(Edge::Normal {
-                from: fact.apply(),
-                to: to,
-                curved: false,
-            });
-        }
-
-        Ok(())
-    }
-}
 
 impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
     fn flow<'a>(
@@ -61,14 +36,25 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             .map(|x| x.clone())
             .collect::<Vec<_>>();
 
+        // append all left sides to the nodes
+        // %2 = binop %0 %1 -- there %2 is the left side
+        let mut append_lhs = |dest: &String| -> Result<()> {
+            defuse.force_remove_if_outdated(function, dest, pc)?;
+            let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+            nodes.extend(x.into_iter().map(|x| x.clone()));
+
+            Ok(())
+        };
+
         match instruction {
             Instruction::Unop(dest, ..)
             | Instruction::Phi(dest, ..)
             | Instruction::BinOp(dest, ..)
-            | Instruction::Assign(dest, ..) => {
-                defuse.force_remove_if_outdated(function, dest, pc)?;
-                let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
-                nodes.extend(x.into_iter().map(|x| x.clone()));
+            | Instruction::Assign(dest, ..) => append_lhs(dest)?,
+            Instruction::Call(_, _, dests) => {
+                for dest in dests {
+                    append_lhs(dest)?;
+                }
             }
             _ => {}
         }

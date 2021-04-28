@@ -400,7 +400,6 @@ fn test_ir_table() {
 
 #[test]
 fn test_ir_functions() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -431,4 +430,26 @@ fn test_ir_functions() {
         .collect::<Vec<_>>().join("\n");
 
     assert_snapshot!(format!("{}_scfg_dot", "test_ir_function"), output);
+}
+
+#[test]
+fn test_ir_multiple_functions() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_multiple_functions",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0)  {
+            RETURN %0;
+        };"
+    );
 }

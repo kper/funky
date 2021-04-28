@@ -151,10 +151,13 @@ impl DefUseChain {
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, old_pc)?;
 
+        // entry fact has a loop
+        let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == old_pc && x.next_pc == old_pc;
+
         let facts = graph
             .flatten()
             .into_iter()
-            .filter(|x| x.pc == old_pc)
+            .filter(|x| x.pc == old_pc && !is_entry(x))
             .map(|x| x.clone())
             .collect::<Vec<_>>();
 
