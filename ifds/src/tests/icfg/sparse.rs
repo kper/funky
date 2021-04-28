@@ -241,7 +241,6 @@ fn test_ir_killing_op() {
 
 #[test]
 fn test_ir_if_else_binop() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -328,7 +327,6 @@ fn test_ir_if() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_loop() {
     let req = Request {

@@ -18,19 +18,23 @@ type StartPC = usize;
 pub struct DefUseChain {
     inner: HashMap<(Function, Var), (StartPC, Graph)>,
 }
+
+type PC = usize;
 #[derive(Debug, Clone)]
 enum SCFG {
-    Instruction(usize, Instruction),
-    Conditional(usize, Instruction, Vec<SCFG>, Vec<SCFG>),
-    Return(usize),
+    Instruction(PC, Instruction),
+    Conditional(PC, Instruction, Vec<SCFG>, Vec<SCFG>),
+    Jump(PC, PC),
+    FunctionEnd(PC),
 }
 
 impl SCFG {
-    pub fn get_pc(&self) -> usize {
+    pub fn get_pc(&self) -> PC {
         match self {
             SCFG::Conditional(pc, ..) => *pc,
             SCFG::Instruction(pc, ..) => *pc,
-            SCFG::Return(pc, ..) => *pc,
+            SCFG::Jump(pc, _jump_to_pc) => *pc,
+            SCFG::FunctionEnd(pc, ..) => *pc,
         }
     }
 }
@@ -326,6 +330,10 @@ impl DefUseChain {
                                 }
                             }
                         }
+                        SCFG::Jump(_pc, _jump_to_pc) => {
+                            relevant_instructions.push(instruction.clone());
+                            break;
+                        }
                         _ => {
                             relevant_instructions.push(instruction.clone());
                         }
@@ -333,7 +341,7 @@ impl DefUseChain {
                 }
 
                 if is_top_level && !overwritten {
-                    relevant_instructions.push(SCFG::Return(max_level));
+                    relevant_instructions.push(SCFG::FunctionEnd(max_level));
                 }
 
                 (is_defined, relevant_instructions)
@@ -401,18 +409,21 @@ impl DefUseChain {
 
                     node = x;
                 }
-                SCFG::Return(pc) => {
-                    // this is not a normal return.
-                    // Instead, this is always the last instruction
-                    // of a function.
-
+                SCFG::Jump(pc, jump_to_pc) => {
+                    log::error!("Jump to pc is {}", jump_to_pc);
+                    let next = jump_to_pc;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+                    let x = Fact::from_var(var, *pc, *next, track);
+                    graph.add_normal(node.clone(), x.clone())?;
+                    node = x;
+                }
+                SCFG::FunctionEnd(pc) => {
                     let next = pc;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
                     let x = Fact::from_var(var, *pc, *next, track);
                     graph.add_normal(node.clone(), x.clone())?;
                     node = x;
                 }
-                _ => {}
             }
 
             i += 1;
@@ -440,7 +451,10 @@ impl DefUseChain {
             match next_instruction {
                 SCFG::Conditional(_pc, _instruction, block1, block2) => {
                     // We have to look a step further
-                    let next = relevant_instructions.get(i + 2).map(|x| x.get_pc()).unwrap_or(max_len);
+                    let next = relevant_instructions
+                        .get(i + 2)
+                        .map(|x| x.get_pc())
+                        .unwrap_or(max_len);
 
                     log::warn!(
                         "Before building next graph: meet pc {} {:?}",
@@ -572,6 +586,14 @@ impl DefUseChain {
                     i = *end_cond_pc + 1; //skip all conditionals
                     debug!("Setting i to {}", i);
                 }
+                Instruction::Jump(block) => {
+                    let jump_to_pc = block_resolver
+                        .get(&(function.name.clone(), block.clone()))
+                        .context("Cannot find the block")?;
+                    main.push(SCFG::Jump(*pc, *jump_to_pc - 1));
+                    i += 1;
+                    debug!("Setting i to {}", i);
+                }
                 _ => {
                     main.push(SCFG::Instruction(*pc, inner_instruction.clone().clone()));
                     i += 1;
@@ -671,6 +693,52 @@ mod test {
         }
 
         Ok(())
+    }
+
+    #[test]
+    fn test_building_loop_scfg() {
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Block("0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::BinOp("%2".to_string(), "%1".to_string(), "%0".to_string()),
+                Instruction::Block("2".to_string()),
+                Instruction::Jump("0".to_string()),
+                Instruction::Block("3".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+            block_resolver: HashMap::default(),
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+        resolve_block_ids(&mut ctx, &function, pc).unwrap();
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"%0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_loop_defuse_reg_0_scfg", facts);
     }
 
     #[test]
