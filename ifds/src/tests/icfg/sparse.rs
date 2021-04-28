@@ -346,7 +346,6 @@ fn test_ir_loop() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_table() {
     let req = Request {
