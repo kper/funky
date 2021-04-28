@@ -120,7 +120,6 @@ fn test_ir_simple_load() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_chain_assign() {
     let req = Request {
