@@ -397,3 +397,38 @@ fn test_ir_table() {
         "
     );
 }
+
+#[test]
+fn test_ir_functions() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let tabulation = ir!(
+        "test_ir_functions",
+        req,
+        "define test (result 0) (define %0) {
+            %0 = 1
+            CALL mytest(%0)
+        };
+        define mytest (param %0) (result 0) (define %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN;
+        };"
+    );
+
+    let scfg = tabulation
+        .get_scfg_graph(&"test".to_string(), &"taut".to_string())
+        .unwrap();
+
+    let output = scfg
+        .edges
+        .iter()
+        .map(|x| format!("({}) -> ({})", x.get_from().pc, x.to().pc))
+        .collect::<Vec<_>>().join("\n");
+
+    assert_snapshot!(format!("{}_scfg_dot", "test_ir_function"), output);
+}

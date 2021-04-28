@@ -352,6 +352,18 @@ impl DefUseChain {
                             let is_lhs = self.is_lhs_used(&var, &inner_instruction);
                             let is_rhs = self.is_rhs_used(&var, &inner_instruction);
 
+                            // Edge case for return
+                            // do not propage if not in return
+                            if !var.is_taut {
+                                //except when var is taut, then ok
+                                match inner_instruction {
+                                    Instruction::Return(dest) if !dest.contains(&var.name) => {
+                                        overwritten = true;
+                                    }
+                                    _ => {}
+                                }
+                            }
+
                             if is_lhs {
                                 if !is_defined {
                                     is_defined = true;
@@ -376,7 +388,7 @@ impl DefUseChain {
                     }
                 }
 
-                if is_top_level && !overwritten {
+                if is_top_level && (!overwritten || var.is_taut) {
                     relevant_instructions.push(SCFG::FunctionEnd(max_level));
                 }
 
@@ -732,6 +744,7 @@ impl DefUseChain {
             Instruction::Kill(dest) if dest == var => true,
             Instruction::Unknown(dest, ..) if dest == var => true,
             Instruction::Unop(dest, ..) if dest == var => true,
+            Instruction::Call(_, _, dest) if dest.contains(var) => true,
             _ => false,
         }
     }
@@ -744,6 +757,9 @@ impl DefUseChain {
             Instruction::BinOp(_, src1, src2) if src1 == var || src2 == var => true,
             Instruction::Phi(_, src1, src2) if src1 == var || src2 == var => true,
             Instruction::Unop(_dest, src) if src == var => true,
+            Instruction::Call(..) if variable.is_taut => true,
+            Instruction::Call(_, params, _) if params.contains(var) => true,
+            Instruction::Return(params) if params.contains(var) => true,
             _ => false,
         }
     }

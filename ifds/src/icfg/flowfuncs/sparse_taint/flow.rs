@@ -55,7 +55,11 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
 
         debug!("Next instruction is {:?} for {}", instruction, variable);
 
-        let mut nodes = defuse.demand(ctx, function, variable, pc)?;
+        let mut nodes = defuse
+            .demand_inclusive(ctx, function, variable, pc)?
+            .into_iter()
+            .map(|x| x.clone())
+            .collect::<Vec<_>>();
 
         match instruction {
             Instruction::Unop(dest, ..)
