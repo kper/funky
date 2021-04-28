@@ -32,11 +32,10 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (13) at (0, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (14) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (15) at (1, 2) { };
-\node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
-\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [0])};
-\node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(1, 2.0)};
-\node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 3.0)};
+\node[font=\tiny] (note_0) at (-1.5, 1.5) {Const(0, 1.0)};
+\node[font=\tiny] (note_1) at (-1.5, 2.5) {Conditional(1, [0])};
+\node[font=\tiny] (note_2) at (-1.5, 3.5) {Const(1, 2.0)};
+\node[font=\tiny] (note_3) at (-1.5, 4.5) {Const(2, 3.0)};
 		\path[->, blue] (0) [loop right] edge  node { } (0);
 		\path[->, blue] (0) [bend right] edge  node { } (1);
 		\path[->, blue] (0) [bend right] edge  node { } (2);

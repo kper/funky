@@ -114,15 +114,8 @@ where
                 .init_function(&callee_function, start_pc)
                 .context("Error during function init")?;
 
-            self.pacemaker(
-                callee_function,
-                ctx,
-                path_edge,
-                worklist,
-                normal_flows_debug,
-                &init_facts,
-            )
-            .context("Pacemaker for pass_args failed")?;
+            self.pacemaker(callee_function, ctx, start_pc)
+                .context("Pacemaker for pass_args failed")?;
 
             // Create all params
             /*let _ = ctx
@@ -612,14 +605,7 @@ where
             },
         )?;
 
-        self.pacemaker(
-            function,
-            ctx,
-            &mut path_edge,
-            &mut worklist,
-            &mut normal_flows_debug,
-            &facts,
-        )?;
+        self.pacemaker(function, ctx, req.pc)?;
 
         // Save all blocks from the beginning.
         self.resolve_block_ids(ctx, &function, 0)?;
@@ -886,24 +872,15 @@ where
         Ok(())
     }
 
-    /// Creates the control flow of taut facts.
-    /// This is the backbone of the program.
-    /// It also propagates them to the `path_edge`.
+    /// Creates the instruction labels
+    /// for the graph.
     pub(crate) fn pacemaker<'a>(
         &self,
         function: &AstFunction,
         ctx: &mut Ctx<'a>,
-        path_edge: &mut Vec<Edge>,
-        worklist: &mut VecDeque<Edge>,
-        normal_flows_debug: &mut Vec<Edge>,
-        init_facts: &Vec<Fact>,
+        start_pc: usize,
     ) -> Result<(), anyhow::Error> {
-        //let mut edges = Vec::new();
-
-        //let start_taut = init_facts.get(0).context("Cannot find taut")?;
-        //let mut last_taut: Option<Fact> = Some(start_taut.clone());
-
-        for (i, instruction) in function.instructions.iter().enumerate() {
+        for (i, instruction) in function.instructions.iter().enumerate().skip(start_pc) {
             ctx.state.add_statement_with_note(
                 function,
                 format!("{:?}", instruction),
