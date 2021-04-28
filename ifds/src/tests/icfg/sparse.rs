@@ -302,6 +302,36 @@ fn test_ir_if_else() {
 }
 
 #[test]
+fn test_ir_if_else_offset() {
+    // This test checks how the sparse algorithm behaves
+    // when the analysis starts in a branch.
+    let req = Request {
+        variable: None,
+        function: "main".to_string(),
+        pc: 4,
+    };
+    ir!(
+        "test_ir_if_else_offset",
+        req,
+        "define main (result 0) (define %0 %1 %2 %3) {
+            BLOCK 0
+            %0 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            %3 = %1
+        };
+        "
+    );
+}
+
+#[test]
 fn test_ir_if() {
     let req = Request {
         variable: None,
