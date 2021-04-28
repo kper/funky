@@ -463,9 +463,9 @@ fn test_ir_functions_rename_reg() {
     ir!(
         "test_ir_functions_rename_regs",
         req,
-        "define test (result 0) (define %0) {
+        "define test (result 0) (define %0 %1) {
             %0 = 1
-            %0 <- CALL mytest(%0)
+            %1 <- CALL mytest(%0)
         };
         define mytest (param %5) (result 1) (define %5 %6)  {
             %6 = %5
