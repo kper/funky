@@ -151,10 +151,10 @@ fn test_ir_unop() {
     ir!(
         "test_ir_unop",
         req,
-        "define test (result 0) (define %0 %1) {
+        "define test (result 0) (define %0 %1 %2) {
             %0 = 1
             %1 = op %0
-            %1 = op %0   
+            %2 = op %0   
         };"
     );
 }

@@ -60,7 +60,8 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         match instruction {
             Instruction::Unop(dest, ..) |
             Instruction::Phi(dest, ..) |
-            Instruction::BinOp(dest, ..) | Instruction::Assign(dest, ..) => {
+            Instruction::BinOp(dest, ..) | 
+            Instruction::Assign(dest, ..) => {
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
                 nodes.extend(x.into_iter().map(|x| x.clone()));
             }
