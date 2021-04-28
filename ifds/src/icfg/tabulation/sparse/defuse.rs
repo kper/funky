@@ -590,7 +590,10 @@ impl DefUseChain {
                     let jump_to_pc = block_resolver
                         .get(&(function.name.clone(), block.clone()))
                         .context("Cannot find the block")?;
-                    main.push(SCFG::Jump(*pc, *jump_to_pc - 1));
+                    main.push(SCFG::Jump(
+                        *pc,
+                        jump_to_pc.checked_sub(1).unwrap_or(*jump_to_pc),
+                    ));
                     i += 1;
                     debug!("Setting i to {}", i);
                 }
