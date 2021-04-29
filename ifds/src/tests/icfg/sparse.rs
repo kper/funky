@@ -614,9 +614,9 @@ fn test_ir_return_double() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_return_branches() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),

@@ -725,6 +725,7 @@ where
         function: &AstFunction,
         start_pc: usize,
     ) -> Result<()> {
+        debug!("Resolving block ids for {}", function.name);
         for (pc, instruction) in function
             .instructions
             .iter()
@@ -859,6 +860,8 @@ where
             .iter()
             .find(|x| &x.name == callee)
             .context("Cannot find function")?;
+
+        self.resolve_block_ids(ctx, callee_function, d2.next_pc)?;
 
         let call_edges = self
             .pass_args(
@@ -1058,7 +1061,7 @@ where
     /// exists.
     fn union_end_summary_edge<'a>(
         &self,
-        ctx: &mut Ctx<'a>,
+        _ctx: &mut Ctx<'a>,
         edge_ctx: &mut EdgeCtx,
         d1: &Fact,
         d2: &Fact,
