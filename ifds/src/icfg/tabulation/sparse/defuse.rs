@@ -164,6 +164,39 @@ impl DefUseChain {
         Ok(facts)
     }
 
+    pub fn get_next2<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        old_pc: usize,
+    ) -> Result<Vec<Fact>> {
+        let graph = self.cache(ctx, function, var, old_pc)?;
+
+        // entry fact has a loop
+        let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == old_pc && x.next_pc == old_pc;
+
+        let next_pcs = graph
+            .flatten()
+            .into_iter()
+            .filter(|x| x.pc == old_pc && !is_entry(x))
+            .map(|x| x.next_pc);
+
+        let mut facts = Vec::new();
+
+        for next_pc in next_pcs {
+            facts.extend(
+                graph
+                    .flatten()
+                    .into_iter()
+                    .filter(|x| x.pc == next_pc && !is_entry(x))
+                    .map(|x| x.clone()),
+            )
+        }
+
+        Ok(facts)
+    }
+
     // nodes which point to (var, pc)
     pub fn points_to<'a>(
         &mut self,

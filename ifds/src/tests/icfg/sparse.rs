@@ -563,12 +563,13 @@ fn test_ir_overwrite_return_values() {
 
 #[test]
 fn test_ir_early_return() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
         pc: 0,
     };
-    ir!(
+    let tabulation = ir!(
         "test_ir_early_return",
         req,
         "define test (result 0) (define %0 %1 %2 %3) {
@@ -588,6 +589,18 @@ fn test_ir_early_return() {
         };
         "
     );
+    let scfg = tabulation
+        .get_scfg_graph(&"test".to_string(), &"%0".to_string())
+        .unwrap();
+
+    let output = scfg
+        .edges
+        .iter()
+        .map(|x| format!("({}) -> ({})", x.get_from().pc, x.to().pc))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert_snapshot!(format!("{}_scfg_dot", "test_ir_early_return"), output);
 }
 
 #[test]
@@ -689,7 +702,6 @@ fn test_global_get_and_set() {
 
 #[test]
 fn test_global_set() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),

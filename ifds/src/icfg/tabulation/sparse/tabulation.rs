@@ -154,7 +154,7 @@ where
             // Cache the rest normal
             for fact in init_facts
                 .iter()
-                .filter(|x| !params.contains(&x.belongs_to_var))
+                .filter(|x| !params.contains(&x.belongs_to_var) || x.var_is_taut)
             {
                 self.defuse
                     .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
@@ -621,7 +621,7 @@ where
 
     /// Computes call-to-return
     fn call_flow<'a>(
-        &self,
+        &mut self,
         _program: &Program,
         caller_function: &AstFunction,
         callee: &String,
@@ -632,37 +632,22 @@ where
         caller: &String,
     ) -> Result<Vec<Edge>> {
         debug!(
-            "Generating call-to-return edges for {} ({})",
-            callee, caller
+            "Generating call-to-return edges for {} ({}) at {}",
+            callee, caller, pc
         );
 
-        let before: Vec<_> = ctx
-            .state
-            .get_facts_at(&caller_function.name, pc)?
-            .into_iter()
-            .filter(|x| &x.belongs_to_var == caller)
-            .filter(|x| !x.var_is_global)
-            .map(|x| x.clone())
-            .collect();
-        debug!("Facts before statement {}", before.len());
+        let after = self.defuse.get_next2(ctx, &caller_function, caller, pc)?;
 
-        let after = self
+        let before = self
             .defuse
             .get_facts_at(&caller_function.name, caller, pc)?;
 
-        // Create a copy of `before`, but eliminate all not needed facts
-        // and advance `next_pc`
+        debug!("Facts before call {:#?}", before);
+        debug!("Facts after call {:#?}", after);
+
         let after: Vec<_> = after
             .into_iter()
-            .filter(|x| !x.var_is_taut)
-            .filter(|x| !x.var_is_global)
             .filter(|x| !dests.contains(&x.belongs_to_var))
-            .cloned()
-            .map(|x| {
-                let mut y = x;
-                y.next_pc += 1;
-                y
-            })
             .collect();
 
         debug!("Facts after statement without dests {}", after.len());
@@ -671,24 +656,11 @@ where
         debug!("after {:#?}", after);
 
         let mut edges = Vec::with_capacity(after.len());
-        for fact in before {
-            let b = after
-                .iter()
-                .find(|x| x.belongs_to_var == fact.belongs_to_var);
-
-            if let Some(b) = b {
-                // Save the new fact because it is relevant
-                //ctx.state.cache_fact(&b.function, b.clone())?;
-                edges.push(Edge::CallToReturn {
-                    from: fact.clone(),
-                    to: b.clone(),
-                });
-            } else {
-                debug!(
-                    "Creating CallToReturn edge for \"{}\" because no match",
-                    fact.belongs_to_var
-                );
-            }
+        for (from, to) in before.into_iter().zip(after) {
+            edges.push(Edge::CallToReturn {
+                from: from.clone(),
+                to: to.clone(),
+            });
         }
 
         Ok(edges)
