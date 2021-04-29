@@ -54,8 +54,9 @@ impl DefUseChain {
     /// Get the facts in the graph.
     pub fn get_facts_at(&self, function: &String, var: &String, pc: usize) -> Result<Vec<&Fact>> {
         let graph = self.get_graph(function, var).context("Cannot find graph")?;
-        let facts = graph
-            .flatten()
+        let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
+
+        let facts = all_facts
             .into_iter()
             .filter(|x| x.pc == pc)
             .collect::<Vec<_>>();

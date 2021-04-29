@@ -647,7 +647,6 @@ fn test_ir_return_branches() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_self_loop() {
     let req = Request {

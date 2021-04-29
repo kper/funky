@@ -200,19 +200,20 @@ where
             let caller_facts =
                 self.defuse
                     .get_facts_at(&caller_function.name, caller_var, current_pc)?;
-            assert_eq!(1, caller_facts.len(), "There must only be one caller fact");
-            let caller_fact = caller_facts.first().context("No caller fact found")?;
+            //assert_eq!(1, caller_facts.len(), "There must only be one caller fact");
 
-            // The corresponding edges have to match now, but filter `dest`.
-            // taut -> taut
-            // %0   -> %0
-            // %1   -> %1
+            if let Some(caller_fact) = caller_facts.first() {
+                // The corresponding edges have to match now, but filter `dest`.
+                // taut -> taut
+                // %0   -> %0
+                // %1   -> %1
 
-            // Create an edge.
-            edges.push(Edge::Call {
-                from: caller_fact.clone().clone(),
-                to: callee_fact.clone(),
-            });
+                // Create an edge.
+                edges.push(Edge::Call {
+                    from: caller_fact.clone().clone(),
+                    to: callee_fact.clone(),
+                });
+            }
 
             Ok(edges)
         } else {
