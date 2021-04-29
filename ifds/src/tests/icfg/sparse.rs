@@ -590,6 +590,7 @@ fn test_ir_early_return() {
 
 #[test]
 fn test_ir_return_double() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),

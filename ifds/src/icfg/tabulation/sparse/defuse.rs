@@ -234,15 +234,37 @@ impl DefUseChain {
         Ok(false)
     }
 
-    /// Build the defuse chain for the instruction
-    /// The precondition is that the function must be already initialized.
-    /// Because we need the track of the given variable `var`.
-    pub(crate) fn cache<'a>(
+    pub fn cache<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
         var: &String,
         pc: usize,
+    ) -> Result<&Graph> {
+        self.inner_cache(ctx, function, var, pc, false, false)
+    }
+
+    pub fn cache_when_already_defined<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<&Graph> {
+        self.inner_cache(ctx, function, var, pc, true, true)
+    }
+
+    /// Build the defuse chain for the instruction
+    /// The precondition is that the function must be already initialized.
+    /// Because we need the track of the given variable `var`.
+    fn inner_cache<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+        is_defined: bool,
+        was_called_in_param: bool,
     ) -> Result<&Graph> {
         let var = ctx
             .state
@@ -260,7 +282,7 @@ impl DefUseChain {
                 .context("Cannot get start_pc")?;
 
             // If `pc` is lower than `start_pc`, then delete and continue
-            if pc > start_pc {
+            if pc >= start_pc {
                 debug!("Cached.");
                 let x = self
                     .inner
@@ -297,9 +319,10 @@ impl DefUseChain {
             &var,
             track,
             pc,
-            false,
+            is_defined,
             true,
             &mut graph,
+            was_called_in_param,
         )?;
 
         debug!("graph {:#?}", graph.flatten().collect::<Vec<_>>());
@@ -344,75 +367,81 @@ impl DefUseChain {
         is_defined: bool,
         is_top_level: bool,
         graph: &mut Graph,
+        was_called_as_param: bool,
     ) -> Result<Fact> {
-        let get_relevant_instructions =
-            |instructions, mut is_defined: bool, max_level: usize| {
-                let mut relevant_instructions = Vec::new();
-                let mut overwritten = false;
+        let get_relevant_instructions = |instructions, mut is_defined: bool, max_level: usize| {
+            let mut relevant_instructions = Vec::new();
+            let mut overwritten = false;
 
-                for instruction in instructions {
-                    match instruction {
-                        &SCFG::Instruction(_pc, ref inner_instruction) => {
-                            let is_lhs = self.is_lhs_used(&var, &inner_instruction);
-                            let is_rhs = self.is_rhs_used(&var, &inner_instruction);
+            for instruction in instructions {
+                match instruction {
+                    &SCFG::Instruction(_pc, ref inner_instruction) => {
+                        let is_lhs = self.is_lhs_used(&var, &inner_instruction);
+                        let is_rhs = self.is_rhs_used(&var, &inner_instruction);
 
-                            // Edge case for return
-                            // do not propage if not in return
-                            if !var.is_taut {
-                                //except when var is taut, then ok
-                                match inner_instruction {
-                                    Instruction::Return(dest) if !dest.contains(&var.name) => {
-                                        overwritten = true;
-                                    }
-                                    _ => {}
-                                }
-                            }
-
-                            if is_lhs {
-                                if !is_defined {
-                                    is_defined = true;
-                                    relevant_instructions.push(instruction.clone());
-                                } else {
+                        // Edge case for return
+                        // do not propage if not in return
+                        if !var.is_taut {
+                            //except when var is taut, then ok
+                            match inner_instruction {
+                                Instruction::Return(dest) if !dest.contains(&var.name) => {
                                     overwritten = true;
-                                    break;
                                 }
-                            } else {
-                                if is_rhs {
-                                    relevant_instructions.push(instruction.clone());
-                                }
+                                _ => {}
                             }
                         }
-                        &SCFG::Jump(_pc, _jump_to_pc) => {
-                            relevant_instructions.push(instruction.clone());
-                            break;
-                        }
-                        _ => {
-                            relevant_instructions.push(instruction.clone());
+
+                        if is_lhs {
+                            if !is_defined {
+                                is_defined = true;
+                                relevant_instructions.push(instruction.clone());
+                            } else {
+                                overwritten = true;
+                                break;
+                            }
+                        } else {
+                            if is_rhs {
+                                relevant_instructions.push(instruction.clone());
+                            }
                         }
                     }
+                    &SCFG::Jump(_pc, _jump_to_pc) => {
+                        relevant_instructions.push(instruction.clone());
+                        break;
+                    }
+                    _ => {
+                        relevant_instructions.push(instruction.clone());
+                    }
                 }
+            }
 
-                if is_top_level && (!overwritten || var.is_taut) {
+            if is_top_level && (!overwritten || var.is_taut) {
+                if !was_called_as_param || var.is_taut {
+                    relevant_instructions.push(SCFG::FunctionEnd(max_level));
+                } else if relevant_instructions.len() > 0 {
                     relevant_instructions.push(SCFG::FunctionEnd(max_level));
                 }
+            }
 
-                (is_defined, relevant_instructions)
-            };
+            (is_defined, relevant_instructions)
+        };
 
         let (is_defined, relevant_instructions) =
             get_relevant_instructions(instructions.iter().skip(start_pc), is_defined, max_len);
 
         debug!("rel {} {:#?}", var.name, relevant_instructions);
 
-        let first = Fact::from_var(
-            var,
-            start_pc,
-            relevant_instructions
-                .first()
-                .map(|x| x.get_pc())
-                .unwrap_or(max_len),
-            track,
-        );
+        let next_pc = {
+            if relevant_instructions.len() == 0 && was_called_as_param {
+                start_pc
+            } else {
+                relevant_instructions
+                    .first()
+                    .map(|x| x.get_pc())
+                    .unwrap_or(max_len)
+            }
+        };
+        let first = Fact::from_var(var, start_pc, next_pc, track);
         debug!("first fact {:#?}", first);
         assert!(first.pc <= first.next_pc);
         let mut node = first.clone();
@@ -564,6 +593,7 @@ impl DefUseChain {
                         is_defined,
                         false,
                         graph,
+                        false,
                     )?;
 
                     let _res2 = self.build_graph(
@@ -577,6 +607,7 @@ impl DefUseChain {
                         is_defined,
                         false,
                         graph,
+                        false,
                     )?;
 
                     let x = Fact::from_var(var, *pc, next, track);

@@ -141,7 +141,7 @@ where
 
             for fact in init_facts.iter() {
                 self.defuse
-                    .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
+                    .cache_when_already_defined(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
             }
 
             // Save all blocks of the `callee_function`.
