@@ -234,6 +234,11 @@ impl DefUseChain {
         Ok(false)
     }
 
+    /// Build the defuse chain for the function, var and pc.
+    /// Also, the `var` is not initialized in the parameters. So it assumes,
+    /// that the first assignment is ok.
+    /// The precondition is that the function must be already initialized.
+    /// Because we need the track of the given variable `var`.
     pub fn cache<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
@@ -244,6 +249,11 @@ impl DefUseChain {
         self.inner_cache(ctx, function, var, pc, false, false)
     }
 
+    /// Build the defuse chain for the function, var and pc.
+    /// Also, the `var` was initialized in the parameters. Therefore,
+    /// any following assignment will kill it.
+    /// The precondition is that the function must be already initialized.
+    /// Because we need the track of the given variable `var`.
     pub fn cache_when_already_defined<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
@@ -254,7 +264,7 @@ impl DefUseChain {
         self.inner_cache(ctx, function, var, pc, true, true)
     }
 
-    /// Build the defuse chain for the instruction
+    /// Build the defuse chain for the function, var and pc.
     /// The precondition is that the function must be already initialized.
     /// Because we need the track of the given variable `var`.
     fn inner_cache<'a>(
@@ -264,7 +274,7 @@ impl DefUseChain {
         var: &String,
         pc: usize,
         is_defined: bool,
-        was_called_in_param: bool,
+        was_called_in_param: bool, //handles an edge case when `var` was a parameter
     ) -> Result<&Graph> {
         let var = ctx
             .state

@@ -268,7 +268,8 @@ fn test_ir_if_else_binop() {
         .edges
         .iter()
         .map(|x| format!("({}) -> ({})", x.get_from().pc, x.to().pc))
-        .collect::<Vec<_>>().join("\n");
+        .collect::<Vec<_>>()
+        .join("\n");
 
     assert_snapshot!(format!("{}_scfg_dot", "test_ir_if_else_binop"), output);
 }
@@ -427,7 +428,8 @@ fn test_ir_functions() {
         .edges
         .iter()
         .map(|x| format!("({}) -> ({})", x.get_from().pc, x.to().pc))
-        .collect::<Vec<_>>().join("\n");
+        .collect::<Vec<_>>()
+        .join("\n");
 
     assert_snapshot!(format!("{}_scfg_dot", "test_ir_function"), output);
 }
@@ -590,7 +592,6 @@ fn test_ir_early_return() {
 
 #[test]
 fn test_ir_return_double() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),

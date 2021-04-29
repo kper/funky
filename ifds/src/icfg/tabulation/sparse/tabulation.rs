@@ -140,8 +140,12 @@ where
                 .context("Pacemaker for pass_args failed")?;
 
             for fact in init_facts.iter() {
-                self.defuse
-                    .cache_when_already_defined(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
+                self.defuse.cache_when_already_defined(
+                    ctx,
+                    &callee_function,
+                    &fact.belongs_to_var,
+                    start_pc,
+                )?;
             }
 
             // Save all blocks of the `callee_function`.
@@ -283,12 +287,12 @@ where
     /// Computes exit-to-return edges
     fn return_val<'a>(
         &mut self,
+        ctx: &mut Ctx<'a>,
         caller_function: &String, //d4
         callee_function: &String, //d2
         caller_pc: usize,         //d4
         callee_pc: usize,         //d2
         caller_instructions: &Vec<Instruction>,
-        ctx: &mut Ctx<'a>,
         callee_var: &String,
     ) -> Result<Vec<Edge>> {
         debug!("Trying to compute return_val");
@@ -683,11 +687,12 @@ where
             }
         }
 
-        self.forward(&prog, &function, ctx, req.pc, &mut edge_ctx)?;
+        self.forward(&prog, ctx, req.pc, &mut edge_ctx)?;
 
         Ok(())
     }
 
+    /// Adding path edges to the `worklist` and `path_edge` if it does not exist already.
     fn propagate(&self, graph: &mut Graph, edge_ctx: &mut EdgeCtx, e: Edge) -> Result<()> {
         let from = e.get_from();
         let to = e.to();
@@ -741,10 +746,10 @@ where
         Ok(())
     }
 
+    /// Handles the forward tabulation.
     fn forward<'a>(
         &mut self,
         program: &Program,
-        function: &AstFunction,
         ctx: &mut Ctx<'a>,
         start_pc: usize,
         edge_ctx: &mut EdgeCtx,
@@ -776,7 +781,7 @@ where
                 match n {
                     Instruction::Call(callee, params, dest) => {
                         self.handle_call(
-                            &program, d1, d2, callee, params, ctx, dest, start_pc, edge_ctx,
+                            ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
                         )?;
                     }
                     Instruction::Return(_dest) => {
@@ -819,30 +824,24 @@ where
                     }
                 }
             } else {
-                self.end_procedure(&program, ctx, edge_ctx, d1, d2)?;
+                self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
             }
         }
-
-        //graph.edges.extend_from_slice(&path_edge);
-        /*ctx.graph
-        .edges
-        .extend_from_slice(&edge_ctx.normal_flows_debug);*/
-        //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())
     }
 
     fn handle_call<'a>(
         &mut self,
+        ctx: &mut Ctx<'a>,
+        edge_ctx: &mut EdgeCtx,
         program: &Program,
         d1: &Fact,
         d2: &Fact,
         callee: &String,
         params: &Vec<String>,
-        ctx: &mut Ctx<'a>,
         dests: &Vec<String>,
         start_pc: usize,
-        edge_ctx: &mut EdgeCtx,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
 
@@ -920,16 +919,20 @@ where
                     debug!("d4 {:#?}", d4);
 
                     for d5 in self.return_val(
+                        ctx,
                         &d2.function,
                         &d4.function,
                         d2.next_pc,
                         d4.next_pc,
                         caller_instructions,
-                        ctx,
                         &d4.belongs_to_var,
                     )? {
                         debug!("d5 {:#?}", d5);
-                        assert_eq!(d2.function, d5.to().function);
+                        assert_eq!(
+                            d2.function,
+                            d5.to().function,
+                            "Summary edges must be intraprocedural"
+                        );
                         edge_ctx.summary_edge.push(Edge::Normal {
                             from: d2.clone(),
                             to: d5.to().clone(),
@@ -971,6 +974,7 @@ where
             .collect::<Vec<_>>();
         debug!("return_sites {:#?}", return_sites);
 
+        // add all other usages of the variable
         let defuse_usages = self
             .defuse
             .demand_inclusive(ctx, caller_function, caller_var, pc)?
@@ -985,7 +989,10 @@ where
             .chain(return_sites)
             .chain(defuse_usages)
         {
-            assert_eq!(d1.function, d3.function);
+            assert_eq!(
+                d1.function, d3.function,
+                "Call flow edges must be intraprocedural"
+            );
             let taut = ctx
                 .state
                 .get_facts_at(&d1.function, start_pc)
@@ -1042,16 +1049,33 @@ where
 
         // first pc of the function, because it could be offsetted
         let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
+        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, first_statement_pc_callee)?;
 
-        if let Some(end_summary) = edge_ctx.end_summary.get_mut(&(
-            d1.function.clone(),
-            first_statement_pc_callee,
-            d1.belongs_to_var.clone(),
-        )) {
+        Ok(())
+    }
+
+    /// Add a path edge between `d1` and `d2` to `edge_ctx.end_summary` if it does not already
+    /// exists.
+    fn union_end_summary_edge<'a>(
+        &self,
+        ctx: &mut Ctx<'a>,
+        edge_ctx: &mut EdgeCtx,
+        d1: &Fact,
+        d2: &Fact,
+        pc: PC,
+    ) -> Result<()> {
+        // If there is already an entry, then append
+        // else, insert into the hashmap
+        if let Some(end_summary) =
+            edge_ctx
+                .end_summary
+                .get_mut(&(d1.function.clone(), pc, d1.belongs_to_var.clone()))
+        {
             let facts = self
                 .defuse
                 .get_facts_at(&d2.function.clone(), &d2.belongs_to_var, d2.next_pc)?
                 .into_iter()
+                .filter(|x| x.pc == x.next_pc) // get only real end points
                 .map(|x| x.clone())
                 .collect::<Vec<_>>();
             end_summary.extend(facts);
@@ -1078,48 +1102,21 @@ where
     /// A summary function is a function from the beginning to the end.
     pub(crate) fn end_procedure<'a>(
         &mut self,
-        program: &Program,
         ctx: &mut Ctx<'a>,
+        program: &Program,
         edge_ctx: &mut EdgeCtx,
         d1: &Fact,
         d2: &Fact,
     ) -> Result<()> {
         debug!("=> Reached end of procedure");
+        assert!(d1.pc <= d2.pc); // path edge from `taut` to end of function.
 
         if d1.function != d2.function {
             debug!("=> From and End of the edge are not the same function. Therefore aborting.");
             return Ok(());
         }
 
-        // Summary
-        if let Some(end_summary) = edge_ctx.end_summary.get_mut(&(
-            d1.function.clone(),
-            d1.next_pc,
-            d1.belongs_to_var.clone(),
-        )) {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function.clone(), &d2.belongs_to_var, d2.next_pc)?
-                .into_iter()
-                .map(|x| x.clone())
-                .collect::<Vec<_>>();
-
-            end_summary.extend(facts);
-            end_summary.dedup();
-        } else {
-            let facts = self
-                .defuse
-                .get_facts_at(&d2.function.clone(), &d2.belongs_to_var, d2.next_pc)?
-                .into_iter()
-                .map(|x| x.clone())
-                .collect::<Vec<_>>();
-            edge_ctx.end_summary.insert(
-                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
-                facts,
-            );
-        }
-
-        debug!("End Summary {:#?}", edge_ctx.end_summary);
+        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, d1.next_pc)?;
 
         // Incoming has as key the beginning of procedure
         // The values are the callers of the procedure.
@@ -1140,14 +1137,15 @@ where
                     .context("Cannot find function")?
                     .instructions;
 
+                // Computes all return-to-exit edges
                 // Use only `d4`'s var
                 let ret_vals = self.return_val(
+                    ctx,
                     &d4.function,
                     &d2.function,
                     d4.next_pc,
                     d2.next_pc,
                     &instructions,
-                    ctx,
                     &d2.belongs_to_var,
                 )?;
 
