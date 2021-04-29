@@ -766,6 +766,8 @@ impl DefUseChain {
             Instruction::Call(..) if variable.is_taut => true,
             Instruction::Call(_, params, _) if params.contains(var) => true,
             Instruction::Return(params) if params.contains(var) => true,
+            Instruction::Call(_, _, _) if variable.is_global => true,
+            Instruction::Return(..) if variable.is_global => true,
             _ => false,
         }
     }
