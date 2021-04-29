@@ -3,6 +3,4 @@ source: src/tests/icfg/sparse.rs
 expression: output
 
 ---
-(1) -> (1)
-(1) -> (10)
-(10) -> (11)
+(3) -> (11)

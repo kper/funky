@@ -473,3 +473,196 @@ fn test_ir_functions_rename_reg() {
         };"
     );
 }
+
+#[test]
+fn test_ir_return_values() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_values",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_passed_value() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_passed_value",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_return_values3() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_values3",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 = 2
+            %2 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_overwrite_return_values() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_overwrite_return_values",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };"
+    );
+}
+
+#[test]
+fn test_ir_early_return() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_early_return",
+        req,
+        "define test (result 0) (define %0 %1 %2 %3) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytestfoo(%0)
+            %3 <- CALL mytestfoo(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };
+        define mytestfoo (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[test]
+fn test_ir_return_double() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 %2 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %0 %1;
+        };
+        "
+    );
+}
+
+#[ignore]
+#[test]
+fn test_ir_return_branches() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_return_branches",
+        req,
+        "define test (result 0) (define %0 %1) {
+            %0 = 5
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1 %2) {
+            %1 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2 
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            RETURN %1;
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            RETURN %0;
+        };
+        "
+    );
+}
+
+#[ignore]
+#[test]
+fn test_ir_self_loop() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 1,
+    };
+    ir!(
+        "test_ir_self_loop",
+        req,
+        "define test (param %0) (result 1) (define %0 %1 %2) {
+            %2 = 1
+            %0 = 5
+            %1 <- CALL test(%0)
+            %0 = %1
+            RETURN %0;
+        };
+        "
+    );
+}
