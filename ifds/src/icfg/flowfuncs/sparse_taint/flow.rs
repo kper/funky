@@ -1,3 +1,4 @@
+use crate::icfg::tabulation::sparse::defuse::DefUseChain;
 use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
 
 pub struct SparseTaintNormalFlowFunction;

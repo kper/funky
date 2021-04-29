@@ -139,13 +139,25 @@ where
             self.pacemaker(callee_function, ctx, start_pc)
                 .context("Pacemaker for pass_args failed")?;
 
-            for fact in init_facts.iter() {
+            // Cache all params with `cache_when_already_defined`
+            for fact in init_facts
+                .iter()
+                .filter(|x| params.contains(&x.belongs_to_var))
+            {
                 self.defuse.cache_when_already_defined(
                     ctx,
                     &callee_function,
                     &fact.belongs_to_var,
                     start_pc,
                 )?;
+            }
+            // Cache the rest normal
+            for fact in init_facts
+                .iter()
+                .filter(|x| !params.contains(&x.belongs_to_var))
+            {
+                self.defuse
+                    .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
             }
 
             // Save all blocks of the `callee_function`.
@@ -175,6 +187,7 @@ where
 
             let mut edges = vec![];
 
+            /*
             if caller_variable.is_memory {
                 let memory_edges = self
                     .pass_args_memory(
@@ -187,9 +200,7 @@ where
                     .context("Passing memory variables to a called function failed")?;
 
                 edges.extend(memory_edges);
-
-                return Ok(edges);
-            }
+            }*/
 
             // Last caller facts
             debug!(
@@ -197,22 +208,36 @@ where
                 caller_function.name, current_pc
             );
 
-            let caller_facts =
-                self.defuse
-                    .get_facts_at(&caller_function.name, caller_var, current_pc)?;
-            //assert_eq!(1, caller_facts.len(), "There must only be one caller fact");
+            // Add global edges
+            if caller_variable.is_global {
+                self.pass_args_globals(
+                    ctx,
+                    caller_function,
+                    callee_function,
+                    callee_fact,
+                    &caller_variable,
+                    current_pc,
+                    &mut edges,
+                )?;
+            } else {
+                assert!(!caller_variable.is_memory);
 
-            if let Some(caller_fact) = caller_facts.first() {
-                // The corresponding edges have to match now, but filter `dest`.
-                // taut -> taut
-                // %0   -> %0
-                // %1   -> %1
+                let caller_facts =
+                    self.defuse
+                        .get_facts_at(&caller_function.name, caller_var, current_pc)?;
 
-                // Create an edge.
-                edges.push(Edge::Call {
-                    from: caller_fact.clone().clone(),
-                    to: callee_fact.clone(),
-                });
+                if let Some(caller_fact) = caller_facts.first() {
+                    // The corresponding edges have to match now, but filter `dest`.
+                    // taut -> taut
+                    // %0   -> %0
+                    // %1   -> %1
+
+                    // Create an edge.
+                    edges.push(Edge::Call {
+                        from: caller_fact.clone().clone(),
+                        to: callee_fact.clone(),
+                    });
+                }
             }
 
             Ok(edges)
@@ -224,6 +249,36 @@ where
 
             return Ok(vec![]);
         }
+    }
+
+    /// Compute the call-to-start edge for the `caller_variable` when it is a global
+    fn pass_args_globals<'a>(
+        &mut self,
+        _ctx: &mut Ctx<'a>,
+        caller_function: &AstFunction,
+        _callee_function: &AstFunction,
+        callee_fact: &Fact,
+        caller_variable: &Variable,
+        current_pc: usize,
+        edges: &mut Edges,
+    ) -> Result<()> {
+        assert!(caller_variable.is_global);
+
+        let caller_var = &caller_variable.name;
+
+        let caller_facts =
+            self.defuse
+                .get_facts_at(&caller_function.name, caller_var, current_pc)?;
+
+        if let Some(caller_fact) = caller_facts.first() {
+            // Create an edge.
+            edges.push(Edge::Call {
+                from: caller_fact.clone().clone(),
+                to: callee_fact.clone(),
+            });
+        }
+
+        Ok(())
     }
 
     /// Handle the parameter argument handling for memory variables
@@ -879,34 +934,34 @@ where
                     callee, pc
                 )
             })?;
-        for d3 in call_edges.into_iter() {
+
+        let call_facts = call_edges.iter().map(|x| x.to()).collect::<Vec<_>>();
+
+        for d3 in call_edges.iter() {
             debug!("d3 {:#?}", d3);
+            let d3 = d3.to();
 
             self.propagate(
                 &mut ctx.graph,
                 edge_ctx,
                 Edge::Path {
-                    from: d3.to().clone(),
-                    to: d3.to().clone(),
+                    from: d3.clone(),
+                    to: d3.clone(),
                 },
             )?; //self loop
 
             //Add incoming
-            if let Some(incoming) = edge_ctx.incoming.get_mut(&(
-                d3.to().function.clone(),
-                d3.to().pc,
-                d3.to().belongs_to_var.clone(),
-            )) {
+            if let Some(incoming) =
+                edge_ctx
+                    .incoming
+                    .get_mut(&(d3.function.clone(), d3.pc, d3.belongs_to_var.clone()))
+            {
                 if !incoming.contains(&d2) {
                     incoming.push(d2.clone());
                 }
             } else {
                 edge_ctx.incoming.insert(
-                    (
-                        d3.to().function.clone(),
-                        d3.to().pc,
-                        d3.to().belongs_to_var.clone(),
-                    ),
+                    (d3.function.clone(), d3.pc, d3.belongs_to_var.clone()),
                     vec![d2.clone()],
                 );
             }
@@ -914,11 +969,11 @@ where
             debug!("Incoming in call {:#?}", edge_ctx.incoming);
             debug!("end summary {:#?}", edge_ctx.end_summary);
 
-            if let Some(end_summary) = edge_ctx.end_summary.get(&(
-                d3.to().function.clone(),
-                d3.to().pc,
-                d3.to().belongs_to_var.clone(),
-            )) {
+            if let Some(end_summary) =
+                edge_ctx
+                    .end_summary
+                    .get(&(d3.function.clone(), d3.pc, d3.belongs_to_var.clone()))
+            {
                 for d4 in end_summary.iter() {
                     debug!("d4 {:#?}", d4);
 
@@ -948,6 +1003,53 @@ where
 
             debug!("end summary {:#?}", edge_ctx.end_summary);
         }
+
+        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
+        let taut = self
+            .defuse
+            .get_facts_at(
+                &callee_function.name,
+                &"taut".to_string(),
+                first_statement_pc_callee,
+            )?
+            .first()
+            .context("Cannot get the taut fact")?
+            .clone()
+            .clone();
+
+        for d3 in call_facts.into_iter() {
+            // add all other usages of the variable
+            debug!(
+                "Next usages of {} on {} at {}",
+                callee_function.name, d3.belongs_to_var, d3.pc
+            );
+
+            let usages = self
+                .normal_flow
+                .flow(
+                    ctx,
+                    &callee_function,
+                    d3.next_pc,
+                    &d3.belongs_to_var,
+                    &mut self.defuse,
+                )?
+                .into_iter()
+                .collect::<Vec<_>>();
+
+            debug!("usages {:#?}", usages);
+
+            for x in usages.into_iter() {
+                self.propagate(
+                    &mut ctx.graph,
+                    edge_ctx,
+                    Edge::Path {
+                        from: taut.clone(),
+                        to: x.clone(),
+                    },
+                )?;
+            }
+        }
+
         let call_flow = self
             .call_flow(
                 program,
@@ -978,21 +1080,7 @@ where
             .collect::<Vec<_>>();
         debug!("return_sites {:#?}", return_sites);
 
-        // add all other usages of the variable
-        let defuse_usages = self
-            .defuse
-            .demand_inclusive(ctx, caller_function, caller_var, pc)?
-            .into_iter()
-            .map(|x| x.clone())
-            .collect::<Vec<_>>();
-
-        debug!("defuse usages {:#?}", defuse_usages);
-
-        for d3 in call_flow
-            .into_iter()
-            .chain(return_sites)
-            .chain(defuse_usages)
-        {
+        for d3 in call_flow.into_iter().chain(return_sites) {
             assert_eq!(
                 d1.function, d3.function,
                 "Call flow edges must be intraprocedural"

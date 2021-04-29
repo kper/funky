@@ -667,3 +667,48 @@ fn test_ir_self_loop() {
         "
     );
 }
+
+#[test]
+fn test_global_get_and_set() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_get_and_set",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        %1 = %-1
+        %-2 = %1
+        };
+    "
+    );
+}
+
+#[test]
+fn test_global_set() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_set",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-1 %0 %1) {
+            %0 = 1
+            %-1 = %0
+            %1 <- CALL 1()
+        };
+
+        define 1 (param) (result 1) (define %-1 %0) {
+            %0 = %-1
+            RETURN %0;
+        };
+    "
+    );
+}

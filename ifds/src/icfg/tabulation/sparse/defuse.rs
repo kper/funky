@@ -277,6 +277,10 @@ impl DefUseChain {
         is_defined: bool,
         was_called_in_param: bool, //handles an edge case when `var` was a parameter
     ) -> Result<&Graph> {
+        debug!(
+            "=> Cache: func {} for {} at {} (is_defined {}, was_called_in param {})",
+            function.name, var, pc, is_defined, was_called_in_param
+        );
         let var = ctx
             .state
             .get_var(&function.name, var)
@@ -387,8 +391,13 @@ impl DefUseChain {
             for instruction in instructions {
                 match instruction {
                     &SCFG::Instruction(_pc, ref inner_instruction) => {
+                        debug!("Checking {:?}", inner_instruction);
+
                         let is_lhs = self.is_lhs_used(&var, &inner_instruction);
                         let is_rhs = self.is_rhs_used(&var, &inner_instruction);
+
+                        debug!("is_lhs {}", is_lhs);
+                        debug!("is_rhs {}", is_rhs);
 
                         // Edge case for return
                         // do not propage if not in return
@@ -406,12 +415,15 @@ impl DefUseChain {
                             if !is_defined {
                                 is_defined = true;
                                 relevant_instructions.push(instruction.clone());
+                                debug!("Instruction is now defined.");
                             } else {
+                                log::warn!("Instruction is overwritten. Therefore stopping.");
                                 overwritten = true;
                                 break;
                             }
                         } else {
                             if is_rhs {
+                                debug!("Instruction is used on the rhs.");
                                 relevant_instructions.push(instruction.clone());
                             }
                         }
@@ -440,7 +452,7 @@ impl DefUseChain {
         let (is_defined, relevant_instructions) =
             get_relevant_instructions(instructions.iter().skip(start_pc), is_defined, max_len);
 
-        debug!("rel {} {:#?}", var.name, relevant_instructions);
+        debug!("relevant scfg {} {:#?}", var.name, relevant_instructions);
 
         let next_pc = {
             if relevant_instructions.len() == 0 && was_called_as_param {
@@ -790,7 +802,7 @@ impl DefUseChain {
             Instruction::Phi(dest, ..) if dest == var => true,
             Instruction::Unop(dest, ..) if dest == var => true,
             Instruction::Kill(dest) if dest == var => true,
-            Instruction::Unknown(dest, ..) if dest == var => true,
+            Instruction::Unknown(dest) if dest == var => true,
             Instruction::Unop(dest, ..) if dest == var => true,
             Instruction::Call(_, _, dest) if dest.contains(var) => true,
             _ => false,
@@ -809,6 +821,7 @@ impl DefUseChain {
             Instruction::Call(_, params, _) if params.contains(var) => true,
             Instruction::Return(params) if params.contains(var) => true,
             Instruction::Call(_, _, _) if variable.is_global => true,
+            Instruction::CallIndirect(_, _, _) if variable.is_global => true,
             Instruction::Return(..) if variable.is_global => true,
             _ => false,
         }
@@ -855,6 +868,7 @@ mod test {
     use super::*;
     use crate::icfg::state::State;
     use crate::ir::ast::Program;
+    use insta::_macro_support::assert_snapshot;
     use insta::assert_debug_snapshot as assert_snapshot;
 
     fn resolve_block_ids<'a>(
