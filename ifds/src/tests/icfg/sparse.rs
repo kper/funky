@@ -161,6 +161,7 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -569,6 +570,7 @@ fn test_ir_early_return() {
         function: "test".to_string(),
         pc: 0,
     };
+
     let tabulation = ir!(
         "test_ir_early_return",
         req,

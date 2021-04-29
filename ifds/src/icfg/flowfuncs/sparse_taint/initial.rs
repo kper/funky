@@ -1,3 +1,4 @@
+use crate::icfg::tabulation::sparse::defuse::DefUseChain;
 use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
 
 pub struct SparseTaintInitialFlowFunction;
@@ -59,12 +60,28 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .get_next(ctx, &function, dest, pc)
+                            .get_next2(ctx, &function, dest, pc)
                             .context("Cannot find var's fact")?;
 
-                        for var in after_var.into_iter() {
+                        // append all left sides to the nodes
+                        // %2 = binop %0 %1 -- there %2 is the left side
+                        let mut appended = Vec::new();
+                        let mut append_lhs = |dest: &String| -> Result<()> {
+                            defuse.force_remove_if_outdated(function, dest, pc)?;
+                            let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+                            appended.extend(x.into_iter().map(|x| x.clone()));
+
+                            Ok(())
+                        };
+
+                        for var in after_var.clone().iter() {
+                            append_lhs(&var.belongs_to_var)?;
+                        }
+
+                        for var in after_var.into_iter().chain(appended) {
                             let applied = var.apply();
 
+                            // after
                             edges.push(Edge::Path {
                                 from: init_fact.clone().clone(),
                                 to: applied.clone(),
@@ -171,10 +188,10 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let applied = var.apply(); 
+                            let applied = var.apply();
 
                             assert!(applied.pc <= applied.next_pc);
-                           
+
                             edges.push(Edge::Path {
                                 from: init_fact.clone().clone(),
                                 to: var.clone(),

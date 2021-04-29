@@ -53,6 +53,7 @@ impl DefUseChain {
 
     /// Get the facts in the graph.
     pub fn get_facts_at(&self, function: &String, var: &String, pc: usize) -> Result<Vec<&Fact>> {
+        debug!("Get facts for {} ({}) at {}", function, var, pc);
         let graph = self.get_graph(function, var).context("Cannot find graph")?;
         let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
 
@@ -140,28 +141,6 @@ impl DefUseChain {
         debug!("xx (filtered) for {} at {} {:#?}", var, pc, seen);
 
         Ok(seen)
-    }
-
-    pub fn get_next<'a>(
-        &mut self,
-        ctx: &mut Ctx<'a>,
-        function: &AstFunction,
-        var: &String,
-        old_pc: usize,
-    ) -> Result<Vec<Fact>> {
-        let graph = self.cache(ctx, function, var, old_pc)?;
-
-        // entry fact has a loop
-        let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == old_pc && x.next_pc == old_pc;
-
-        let facts = graph
-            .flatten()
-            .into_iter()
-            .filter(|x| x.pc == old_pc && !is_entry(x))
-            .map(|x| x.clone())
-            .collect::<Vec<_>>();
-
-        Ok(facts)
     }
 
     pub fn get_next2<'a>(

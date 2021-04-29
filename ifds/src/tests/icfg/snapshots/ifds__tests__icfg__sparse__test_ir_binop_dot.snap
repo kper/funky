@@ -18,13 +18,13 @@ expression: output
 
                     \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (5) at (3, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (6) at (2, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (7) at (2, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (8) at (1, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (3, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (5) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (6) at (1, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (7) at (2, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (8) at (2, 4) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
 \node[font=\tiny] (note_2) at (-1.5, 2.5) {BinOp(2, 0, 1)};

@@ -373,14 +373,16 @@ where
         if callee_var == &"taut".to_string() {
             let callee_taut = self
                 .defuse
-                .get_facts_at(&callee_function.name, &"taut".to_string(), callee_pc)?
+                .get_facts_at(&callee_function.name, &"taut".to_string(), callee_pc)
+                .context("Cannot get the callee facts")?
                 .into_iter()
                 .map(|x| x.clone())
                 .collect::<Vec<_>>();
 
             let caller_fact_var = self
                 .defuse
-                .get_next(ctx, caller_function, &"taut".to_string(), caller_pc)?
+                .get_facts_at(&caller_function.name, &"taut".to_string(), caller_pc)
+                .context("Cannot get the caller facts")?
                 .iter()
                 .map(|x| x.apply())
                 .collect::<Vec<_>>();
@@ -404,9 +406,8 @@ where
         for dest in dests {
             let caller_fact_var = self
                 .defuse
-                .get_next(ctx, caller_function, &dest, caller_pc)?
+                .get_next2(ctx, &caller_function, &dest, caller_pc)?
                 .into_iter()
-                .map(|x| x.apply())
                 .collect::<Vec<_>>();
 
             caller_facts.extend(caller_fact_var);
@@ -728,6 +729,8 @@ where
         let f = edge_ctx.path_edge.iter().find(|x| {
             x.get_from().pc == from.pc
                 && x.to().pc == to.pc
+                && x.get_from().next_pc == from.next_pc
+                && x.to().next_pc == to.next_pc
                 && x.get_from().belongs_to_var == from.belongs_to_var
                 && x.to().belongs_to_var == to.belongs_to_var
                 && x.get_from().function == from.function
@@ -873,7 +876,6 @@ where
         start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
-
         let caller_var = &d2.belongs_to_var;
         let caller_function = &program
             .functions
@@ -891,6 +893,7 @@ where
 
         self.resolve_block_ids(ctx, callee_function, d2.next_pc)?;
 
+        // Get the edges from call to argument at the callee
         let call_edges = self
             .pass_args(
                 caller_function,
@@ -907,12 +910,14 @@ where
                 )
             })?;
 
+        // Extract the goals of the edges.
         let call_facts = call_edges.iter().map(|x| x.to()).collect::<Vec<_>>();
 
         for d3 in call_edges.iter() {
             debug!("d3 {:#?}", d3);
             let d3 = d3.to();
 
+            // self loop
             self.propagate(
                 &mut ctx.graph,
                 edge_ctx,
@@ -920,7 +925,7 @@ where
                     from: d3.clone(),
                     to: d3.clone(),
                 },
-            )?; //self loop
+            )?;
 
             //Add incoming
             if let Some(incoming) =
@@ -1059,7 +1064,7 @@ where
             );
             let taut = ctx
                 .state
-                .get_facts_at(&d1.function, start_pc)
+                .get_facts_at(&d1.function, start_pc) //TODO
                 .context("Cannot find start facts")?
                 .find(|x| x.var_is_taut)
                 .context("Cannot find tautological start fact")?
@@ -1153,7 +1158,7 @@ where
                 .collect::<Vec<_>>();
 
             edge_ctx.end_summary.insert(
-                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
+                (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
                 facts,
             );
         }
@@ -1180,19 +1185,20 @@ where
             return Ok(());
         }
 
-        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, d1.next_pc)?;
+        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, d1.pc)?;
 
         // Incoming has as key the beginning of procedure
         // The values are the callers of the procedure.
         let mut path_edges = Vec::new();
+        debug!("Incoming {:#?}", edge_ctx.incoming);
         if let Some(incoming) =
             edge_ctx
                 .incoming
-                .get(&(d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()))
+                .get(&(d1.function.clone(), d1.pc, d1.belongs_to_var.clone()))
         {
             debug!("Incoming {:#?}", incoming);
             for d4 in incoming.iter() {
-                debug!("Computing return to fact to {:#?}", d4);
+                debug!("Computing return from {:#?}", d4);
 
                 let instructions = &program
                     .functions
@@ -1227,9 +1233,10 @@ where
                         .find(|x| x.get_from() == d4 && x.to() == d5)
                         .is_none()
                     {
-                        edge_ctx.summary_edge.push(Edge::Summary {
+                        edge_ctx.summary_edge.push(Edge::Normal {
                             from: d4.clone(),
                             to: d5.clone().clone(),
+                            curved: false,
                         });
 
                         // Get all path edges
