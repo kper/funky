@@ -60,8 +60,11 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .get_next2(ctx, &function, dest, pc)
-                            .context("Cannot find var's fact")?;
+                            .demand(ctx, &function, dest, pc)
+                            .context("Cannot find var's fact")?
+                            .into_iter()
+                            .map(|x| x.clone())
+                            .collect::<Vec<_>>();
 
                         // append all left sides to the nodes
                         // %2 = binop %0 %1 -- there %2 is the left side

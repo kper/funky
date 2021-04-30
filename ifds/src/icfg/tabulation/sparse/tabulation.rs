@@ -1062,12 +1062,13 @@ where
                 d1.function, d3.function,
                 "Call flow edges must be intraprocedural"
             );
-            let taut = ctx
-                .state
-                .get_facts_at(&d1.function, start_pc) //TODO
-                .context("Cannot find start facts")?
-                .find(|x| x.var_is_taut)
+            let taut = self
+                .defuse
+                .get_facts_at(&d1.function, &"taut".to_string(), start_pc)
+                .context("Cannot find facts")?
+                .first()
                 .context("Cannot find tautological start fact")?
+                .clone()
                 .clone();
 
             self.propagate(
