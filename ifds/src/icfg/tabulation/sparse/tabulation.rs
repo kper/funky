@@ -151,11 +151,29 @@ where
                     start_pc,
                 )?;
             }
+
+            // Cache globals
+            for fact in init_facts.iter().filter(|x| x.var_is_global) {
+                self.defuse.cache_when_already_defined(
+                    ctx,
+                    &callee_function,
+                    &fact.belongs_to_var,
+                    start_pc,
+                )?;
+            }
+
+            // Cache memory
+            for fact in init_facts.iter().filter(|x| x.var_is_memory) {
+                unimplemented!()
+            }
+
             // Cache the rest normal
-            for fact in init_facts
-                .iter()
-                .filter(|x| !params.contains(&x.belongs_to_var) || x.var_is_taut)
-            {
+            for fact in init_facts.iter().filter(|x| {
+                !params.contains(&x.belongs_to_var)
+                    || x.var_is_taut
+                    || x.var_is_global
+                    || x.var_is_memory
+            }) {
                 self.defuse
                     .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
             }
@@ -169,11 +187,12 @@ where
 
             // Get the position in the parameters. If it does not exist then
             // it is `taut`.
+            eprintln!("params {:?}", params);
             let pos_in_param = params
                 .iter()
                 .position(|x| x == caller_var)
                 .map(|x| x + TAUT)
-                .unwrap_or(callee_globals); // because, globals are before the parameters
+                .unwrap_or(callee_globals - 1); // because, globals are before the parameters
 
             let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
                 (true, _) => 0,
@@ -425,6 +444,49 @@ where
                     from: callee_fact.clone().clone(),
                     to: caller_fact,
                 });
+            }
+        }
+
+        // handle globals
+        {
+            let callee_variable = ctx.state.get_var(&callee_function.name, callee_var);
+
+            if let Some(callee_variable) = callee_variable {
+                if callee_variable.is_global {
+                    // callee is a global
+
+                    // Now, getting the next caller variable for the callee
+                    // The names of the caller's variable and callee's variable is the same.
+                    // %-2 -> %-2
+                    let caller_fact_var = self
+                        .defuse
+                        .get_next2(ctx, &caller_function, &callee_var, caller_pc)?
+                        .into_iter()
+                        .collect::<Vec<_>>();
+
+                    let callee_facts = self
+                        .defuse
+                        .points_to(ctx, &callee_function, callee_var, callee_pc)?
+                        .into_iter()
+                        .collect::<Vec<_>>();
+
+                    if let Some(callee_fact) = callee_facts.first() {
+                        for caller_var in caller_fact_var {
+                            self.defuse.force_remove_if_outdated(
+                                caller_function,
+                                &caller_var.belongs_to_var,
+                                caller_pc,
+                            )?;
+
+                            edges.push(Edge::Return {
+                                from: callee_fact.clone().apply(),
+                                to: caller_var,
+                            });
+                        }
+                    } else {
+                        log::warn!("There is no global variable for the callee");
+                    }
+                }
             }
         }
 

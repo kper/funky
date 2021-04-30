@@ -419,6 +419,18 @@ impl DefUseChain {
                                 Instruction::Return(dest) if !dest.contains(&var.name) => {
                                     overwritten = true;
                                 }
+                                Instruction::Call(..) if var.is_global && is_lhs => {
+                                    // Edge case when variable is global, `is_lhs` is ok and on call
+                                    // then add instruction, but stop there
+                                    relevant_instructions.push(instruction.clone());
+                                    overwritten = true;
+                                }
+                                Instruction::CallIndirect(..) if var.is_global && is_lhs => {
+                                    // Edge case when variable is global, `is_lhs` is ok and on call
+                                    // then add instruction, but stop there
+                                    relevant_instructions.push(instruction.clone());
+                                    overwritten = true;
+                                }
                                 _ => {}
                             }
                         }
@@ -816,7 +828,10 @@ impl DefUseChain {
             Instruction::Kill(dest) if dest == var => true,
             Instruction::Unknown(dest) if dest == var => true,
             Instruction::Unop(dest, ..) if dest == var => true,
+            Instruction::Call(..) if variable.is_global => true,
+            Instruction::CallIndirect(..) if variable.is_global => true,
             Instruction::Call(_, _, dest) if dest.contains(var) => true,
+            Instruction::CallIndirect(_, _, dest) if dest.contains(var) => true,
             _ => false,
         }
     }

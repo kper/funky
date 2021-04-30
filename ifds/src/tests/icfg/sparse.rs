@@ -745,3 +745,37 @@ fn test_ir_initial_function() {
         };"
     );
 }
+
+#[test]
+fn test_global_get_and_set_multiple_functions() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_get_and_set_multiple_functions",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        %1 = %-1
+        %-2 = %1
+        %2 = 1
+        %0 <- CALL 1 (%2)
+        %1 <- CALL 2 ()
+        };
+
+        define 1 (param %0) (result 1) (define %-2 %-1 %0) {
+        %0 = %-2
+        %-1 = 1
+        RETURN %0;
+        };
+
+        define 2 (result 1) (define %-2 %-1 %0) {
+        %0 = 1
+        %-2 = 1
+        RETURN %0;
+        };
+    "
+    );
+}
