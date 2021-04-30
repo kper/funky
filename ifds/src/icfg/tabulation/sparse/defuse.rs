@@ -847,37 +847,11 @@ impl DefUseChain {
             Instruction::Call(..) if variable.is_taut => true,
             Instruction::Call(_, params, _) if params.contains(var) => true,
             Instruction::Return(params) if params.contains(var) => true,
+            Instruction::Return(..) if variable.is_global => true,
+            Instruction::Return(..) if variable.is_memory => true,
             Instruction::Call(_, _, _) if variable.is_global => true,
             Instruction::CallIndirect(_, _, _) if variable.is_global => true,
-            Instruction::Return(..) if variable.is_global => true,
-            _ => false,
-        }
-    }
-
-    fn is_used_mem(&self, _variable: &Variable, instruction: &Instruction) -> bool {
-        macro_rules! is_mem {
-            ($e:ident) => {
-                $e.starts_with("mem")
-            };
-        }
-
-        match instruction {
-            Instruction::Unop(dest, src) => is_mem!(dest) || is_mem!(src),
-            Instruction::BinOp(dest, src1, src2) => is_mem!(dest) || is_mem!(src1) || is_mem!(src2),
-            Instruction::Const(dest, _) => is_mem!(dest),
-            Instruction::Assign(dest, src) => is_mem!(dest) || is_mem!(src),
-            Instruction::Call(_callee, params, dest) => {
-                params.iter().any(|x| is_mem!(x)) || dest.iter().any(|x| is_mem!(x))
-            }
-            Instruction::CallIndirect(_callee, params, dest) => {
-                params.iter().any(|x| is_mem!(x)) || dest.iter().any(|x| is_mem!(x))
-            }
-            Instruction::Kill(dest) => is_mem!(dest),
-            Instruction::Conditional(dest, _) => is_mem!(dest),
-            Instruction::Return(dest) => dest.iter().any(|x| is_mem!(x)),
-            Instruction::Phi(dest, src1, src2) => is_mem!(dest) || is_mem!(src1) || is_mem!(src2),
-            Instruction::Store(src1, _, src2) => is_mem!(src1) || is_mem!(src2),
-            Instruction::Load(dest, _, src) => is_mem!(dest) || is_mem!(src),
+            Instruction::Store(src, ..) => true, //always true for all occurances
             _ => false,
         }
     }

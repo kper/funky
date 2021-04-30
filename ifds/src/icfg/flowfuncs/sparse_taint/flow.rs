@@ -57,6 +57,13 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     append_lhs(dest)?;
                 }
             }
+            Instruction::Store(src, offset, _i) => {
+                let y = ctx
+                    .state
+                    .add_memory_var(function.name.clone(), *offset as usize);
+                let x = defuse.demand_inclusive(ctx, function, &y.name, pc)?;
+                nodes.extend(x.into_iter().map(|x| x.clone()));
+            }
             _ => {}
         }
         let nodes = nodes
