@@ -16,7 +16,7 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 5) { };
@@ -24,9 +24,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (5) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (1, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (9) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (10) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (9) at (1, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 1.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 2.5) {Conditional(1, [0])};
 \node[font=\tiny] (note_2) at (-1.5, 3.5) {Const(1, 2.0)};
@@ -41,7 +40,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (7);
 		\path[->, blue] (0) [bend right] edge  node { } (8);
 		\path[->, blue] (0) [bend right] edge  node { } (9);
-		\path[->, blue] (0) [bend right] edge  node { } (10);
 
 
                 \end{tikzpicture}

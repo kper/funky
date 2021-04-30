@@ -161,7 +161,6 @@ fn test_ir_unop() {
 
 #[test]
 fn test_ir_binop() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -630,7 +629,6 @@ fn test_ir_return_double() {
 
 #[test]
 fn test_ir_return_branches() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -728,7 +726,6 @@ fn test_global_set() {
 
 #[test]
 fn test_ir_initial_function() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),

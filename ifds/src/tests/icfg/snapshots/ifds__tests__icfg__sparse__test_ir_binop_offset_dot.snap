@@ -16,13 +16,13 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (2) at (2, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (3) at (2, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (4) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (5) at (1, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (6) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (5) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (6) at (1, 4) { };
 \node[font=\tiny] (note_0) at (-1.5, 1.5) {Const(1, 1.0)};
 \node[font=\tiny] (note_1) at (-1.5, 2.5) {BinOp(2, 0, 1)};
 \node[font=\tiny] (note_2) at (-1.5, 3.5) {BinOp(2, 1, 0)};
