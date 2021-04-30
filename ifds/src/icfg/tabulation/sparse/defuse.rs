@@ -847,11 +847,13 @@ impl DefUseChain {
             Instruction::Unop(_dest, src) if src == var => true,
             Instruction::Call(..) if variable.is_taut => true,
             Instruction::Call(_, params, _) if params.contains(var) => true,
+            Instruction::Call(..) if variable.is_memory => true,
             Instruction::Return(params) if params.contains(var) => true,
             Instruction::Return(..) if variable.is_global => true,
             Instruction::Return(..) if variable.is_memory => true,
             Instruction::Call(_, _, _) if variable.is_global => true,
             Instruction::CallIndirect(_, _, _) if variable.is_global => true,
+            Instruction::CallIndirect(_, _, _) if variable.is_memory => true,
             Instruction::Store(src, _, _) if src == var => true,
             Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
             Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences

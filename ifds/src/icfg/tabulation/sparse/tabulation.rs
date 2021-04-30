@@ -128,16 +128,21 @@ where
             || caller_variable.is_global
             || caller_variable.is_memory
         {
+            let mut edges = Vec::new();
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
-            let init_facts = ctx
+            let mut init_facts = ctx
                 .state
                 .init_function(&callee_function, start_pc)
                 .context("Error during function init")?;
 
             self.pacemaker(callee_function, ctx, start_pc)
                 .context("Pacemaker for pass_args failed")?;
+
+            // Save all blocks of the `callee_function`.
+            // Because we want to jump to them later.
+            self.resolve_block_ids(ctx, &callee_function, start_pc)?;
 
             // Cache all params with `cache_when_already_defined`
             for fact in init_facts
@@ -164,118 +169,85 @@ where
 
             // Cache memory
             for fact in init_facts.iter().filter(|x| x.var_is_memory) {
-                unimplemented!()
-            }
-
-            // Cache the rest normal
-            for fact in init_facts.iter().filter(|x| {
-                !params.contains(&x.belongs_to_var)
-                    || x.var_is_taut
-                    || x.var_is_global
-                    || x.var_is_memory
-            }) {
+                // actually this path is not possible, because
+                // memory variables are not initialized by definitions.
+                // But, it is still here for sake of completeness.
                 self.defuse
                     .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
             }
 
-            // Save all blocks of the `callee_function`.
-            // Because we want to jump to them later.
-            self.resolve_block_ids(ctx, &callee_function, start_pc)?;
+            // Cache the rest
+            for fact in init_facts.iter().filter(|x| x.var_is_taut) {
+                // actually this path is not possible, because
+                // memory variables are not initialized by definitions.
+                // But, it is still here for sake of completeness.
+                self.defuse
+                    .cache(ctx, &callee_function, &fact.belongs_to_var, start_pc)?;
+            }
 
-            // Filter by variable type
-            let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
-
-            // Get the position in the parameters. If it does not exist then
-            // it is `taut` or a `global`.
-            let callee_offset = {
-                if caller_variable.is_taut {
-                    0
-                } else if caller_variable.is_global {
-                    caller_function
-                        .definitions
-                        .iter()
-                        .position(|x| x == &caller_variable.name)
-                        .map(|x| x + TAUT) //the first is taut in `init_facts`
-                        .context("Global must be defined")?
-                } else if caller_variable.is_memory {
-                    unimplemented!()
-                } else {
-                    params
-                        .iter()
-                        .position(|x| x == caller_var)
-                        .map(|x| x + TAUT + callee_globals)
-                        .context("Param must exist")?
-                }
-            };
-
-            let callee_fact = init_facts
-                .get(callee_offset)
-                .context("Cannot find callee's fact")?;
-
-            let mut edges = vec![];
-
-            /*
-            if caller_variable.is_memory {
-                let memory_edges = self
-                    .pass_args_memory(
-                        &caller_function,
-                        &callee_function,
-                        &caller_variable,
-                        current_pc,
-                        ctx,
-                    )
-                    .context("Passing memory variables to a called function failed")?;
-
-                edges.extend(memory_edges);
-            }*/
-
-            // Last caller facts
-            debug!(
-                "caller {} with current_pc {}",
-                caller_function.name, current_pc
-            );
-
+            let mut callee_facts = Vec::new();
             // Add global edges
             if caller_variable.is_global {
-                self.pass_args_globals(
+                callee_facts.push(self.pass_args_globals(
                     ctx,
                     caller_function,
                     callee_function,
-                    callee_fact,
                     &caller_variable,
-                    current_pc,
-                    &mut edges,
-                )?;
+                    &init_facts,
+                )?);
+            } else if caller_variable.is_memory {
+                callee_facts.push(self.pass_args_memory(
+                    ctx,
+                    caller_function,
+                    callee_function,
+                    &caller_variable,
+                    start_pc,
+                )?);
             } else {
-                assert!(!caller_variable.is_memory);
+                // Get the position in the parameters. If it does not exist then
+                // it is `taut` or a `global`.
+                let callee_offset = {
+                    if caller_variable.is_taut {
+                        0
+                    } else if !caller_variable.is_memory && !caller_variable.is_global {
+                        // Filter by variable type
+                        let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
+                        params
+                            .iter()
+                            .position(|x| x == caller_var)
+                            .map(|x| x + TAUT + callee_globals)
+                            .context("Param must exist")?
+                    } else {
+                        bail!("This cannot happen");
+                    }
+                };
 
-                let caller_facts =
-                    self.defuse
-                        .get_facts_at(&caller_function.name, caller_var, current_pc)?;
+                let callee_fact = init_facts
+                    .get(callee_offset)
+                    .context("Cannot find callee's fact")?;
 
-                if let Some(caller_fact) = caller_facts.first() {
-                    // The corresponding edges have to match now, but filter `dest`.
-                    // taut -> taut
-                    // %0   -> %0
-                    // %1   -> %1
+                callee_facts.push(callee_fact.clone());
+            }
 
+            let caller_facts =
+                self.defuse
+                    .get_facts_at(&caller_function.name, caller_var, current_pc)?;
+
+            if let Some(caller_fact) = caller_facts.first() {
+                for callee_fact in callee_facts.into_iter() {
                     // Create an edge.
                     edges.push(Edge::Call {
                         from: caller_fact.clone().clone(),
-                        to: callee_fact.clone(),
+                        to: callee_fact,
                     });
                 }
             }
 
-            Ok(edges)
-        } else {
-            debug!(
-                "Caller's variable is not a parameter {} in {:?} for {}",
-                caller_var, params, callee_function.name
-            );
-
-            return Ok(vec![]);
+            return Ok(edges);
         }
+
+        // not a parameter, therefore skipping
+        return Ok(vec![]);
     }
 
     /// Compute the call-to-start edge for the `caller_variable` when it is a global
@@ -284,79 +256,52 @@ where
         _ctx: &mut Ctx<'a>,
         caller_function: &AstFunction,
         _callee_function: &AstFunction,
-        callee_fact: &Fact,
         caller_variable: &Variable,
-        current_pc: usize,
-        edges: &mut Edges,
-    ) -> Result<()> {
+        init_facts: &Vec<Fact>,
+    ) -> Result<Fact> {
         assert!(caller_variable.is_global);
 
-        let caller_var = &caller_variable.name;
+        let pos = caller_function
+            .definitions
+            .iter()
+            .position(|x| x == &caller_variable.name)
+            .map(|x| x + TAUT) //the first is taut in `init_facts`
+            .context("Global must be defined")?;
 
-        let caller_facts =
-            self.defuse
-                .get_facts_at(&caller_function.name, caller_var, current_pc)?;
+        let callee_fact = init_facts.get(pos).context("Cannot find callee's fact")?;
 
-        if let Some(caller_fact) = caller_facts.first() {
-            // Create an edge.
-            edges.push(Edge::Call {
-                from: caller_fact.clone().clone(),
-                to: callee_fact.clone(),
-            });
-        }
-
-        Ok(())
+        Ok(callee_fact.clone())
     }
 
-    /// Handle the parameter argument handling for memory variables
+    /// Compute the call-to-start edge for the `caller_variable` when it is a memory var.
     fn pass_args_memory<'a>(
         &mut self,
+        ctx: &mut Ctx<'a>,
         caller_function: &AstFunction,
         callee_function: &AstFunction,
         caller_variable: &Variable,
-        current_pc: usize,
-        ctx: &mut Ctx<'a>,
-    ) -> Result<Vec<Edge>> {
-        let start_pc = 0;
+        start_pc: usize,
+    ) -> Result<Fact> {
+        assert!(caller_variable.is_memory);
+        let mem = ctx.state.add_memory_var(
+            callee_function.name.clone(),
+            caller_variable
+                .memory_offset
+                .context("Cannot unpack offset")?,
+        );
 
-        let caller_facts: Vec<_> = ctx
-            .state
-            .get_facts_at(&caller_function.name, current_pc)?
-            .filter(|x| x.var_is_memory && caller_variable.name == x.belongs_to_var)
-            .cloned()
-            .collect();
+        self.defuse
+            .cache(ctx, &callee_function, &mem.name, start_pc)?;
 
-        let callee_facts: Vec<_> = ctx
-            .state
-            .get_facts_at(&callee_function.name, start_pc)?
-            .filter(|x| x.var_is_memory && caller_variable.name == x.belongs_to_var)
-            .cloned()
-            .collect();
+        let facts = self
+            .defuse
+            .get_facts_at(&callee_function.name, &mem.name, start_pc)?;
 
-        let mut edges = Vec::new();
-        for caller_fact in caller_facts.into_iter() {
-            if let Some(callee_fact) = callee_facts
-                .iter()
-                .find(|x| caller_fact.memory_offset == x.memory_offset)
-            {
-                edges.push(Edge::Call {
-                    from: caller_fact,
-                    to: callee_fact.clone().clone(),
-                });
-            } else {
-                // the variable does not exist, therefore creating it
-                let callee_fact = ctx
-                    .state
-                    .init_memory_fact(&callee_function.name, &caller_fact)?;
+        let fact = facts
+            .first()
+            .context("Cannot find start fact of the memory var")?;
 
-                edges.push(Edge::Call {
-                    from: caller_fact,
-                    to: callee_fact.clone().clone(),
-                });
-            }
-        }
-
-        Ok(edges)
+        Ok(fact.clone().clone())
     }
 
     fn get_function_by_name<'a>(
@@ -417,7 +362,7 @@ where
             for (from, to) in callee_taut.into_iter().zip(caller_fact_var) {
                 edges.push(Edge::Return {
                     from: from.clone(),
-                    to: to,
+                    to,
                 });
             }
         }
@@ -1051,14 +996,13 @@ where
             debug!("end summary {:#?}", edge_ctx.end_summary);
         }
 
-        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
-        let taut = self
-            .defuse
-            .get_facts_at(
-                &callee_function.name,
-                &"taut".to_string(),
-                first_statement_pc_callee,
-            )?
+        let first_statement_pc_callee = ctx.state.get_min_pc(&callee_function.name)?;
+        let tauts = self.defuse.get_facts_at(
+            &callee_function.name,
+            &"taut".to_string(),
+            first_statement_pc_callee,
+        )?;
+        let taut = tauts
             .first()
             .context("Cannot get the taut fact")?
             .clone()
