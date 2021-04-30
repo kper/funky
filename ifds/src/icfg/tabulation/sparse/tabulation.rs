@@ -681,7 +681,7 @@ where
             return Ok(());
         }
 
-        let facts = ctx.state.init_function(&function, req.pc)?;
+        let facts = ctx.state.init_function(&function, req.pc + 1)?; //the +1 is required for the sparsed variant. Usually, I give it `next_pc`
 
         debug!("Initial facts {:?}", facts);
 

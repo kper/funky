@@ -43,9 +43,6 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     let before = vec![init_fact.clone()];
 
                     for b in before.into_iter() {
-                        // The tautological fact was built by the `pacemaker`
-                        // and will not be sparsely propagated.
-
                         let after_taut = defuse
                             .demand(ctx, &function, &"taut".to_string(), b.pc)
                             .context("Cannot find taut's fact")?;
@@ -93,39 +90,56 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     }
                 }
                 Instruction::Call(_callee, _, dests) => {
+                    // When the analysis starts at a Call Instruction,
+                    // then the function doesn't get called.
+                    // But all destinations get automatically tainted.
+
+                    let before = vec![init_fact.clone()];
+                    for b in before.into_iter() {
+                        let after_taut = defuse
+                            .demand(ctx, &function, &"taut".to_string(), b.pc)
+                            .context("Cannot find taut's fact")?;
+
+                        debug!("Next taut is {:#?}", after_taut);
+
+                        for taut in after_taut.into_iter() {
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: taut.clone(),
+                            });
+                        }
+                    }
                     for dest in dests {
-                        let before = vec![init_fact.clone()];
+                        let after_var = defuse
+                            .demand(ctx, &function, dest, pc)
+                            .context("Cannot find var's fact")?
+                            .into_iter()
+                            .map(|x| x.clone())
+                            .collect::<Vec<_>>();
 
-                        for b in before.into_iter() {
-                            // The tautological fact was built by the `pacemaker`
-                            // and will not be sparsely propagated.
+                        // append all left sides to the nodes
+                        // %2 = binop %0 %1 -- there %2 is the left side
+                        let mut appended = Vec::new();
+                        let mut append_lhs = |dest: &String| -> Result<()> {
+                            defuse.force_remove_if_outdated(function, dest, pc)?;
+                            let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+                            appended.extend(x.into_iter().map(|x| x.clone()));
 
-                            let after_taut = defuse
-                                .demand(ctx, &function, &"taut".to_string(), pc)
-                                .context("Cannot find taut's fact")?;
+                            Ok(())
+                        };
 
-                            for taut in after_taut.into_iter() {
-                                edges.push(Edge::Path {
-                                    from: init_fact.clone().clone(),
-                                    to: taut.clone(),
-                                });
-                            }
+                        for var in after_var.clone().iter() {
+                            append_lhs(&var.belongs_to_var)?;
+                        }
 
-                            let after_var = defuse
-                                .demand(ctx, &function, dest, pc)
-                                .context("Cannot find var's fact")?;
+                        for var in after_var.into_iter().chain(appended) {
+                            let applied = var.apply();
 
-                            for var in after_var.into_iter() {
-                                let mut applied = var.clone();
-                                applied.pc += 1;
-
-                                assert!(applied.pc <= applied.next_pc);
-
-                                edges.push(Edge::Path {
-                                    from: init_fact.clone().clone(),
-                                    to: applied.clone(),
-                                });
-                            }
+                            // after
+                            edges.push(Edge::Path {
+                                from: init_fact.clone().clone(),
+                                to: applied.clone(),
+                            });
                         }
                     }
                 }

@@ -725,3 +725,26 @@ fn test_global_set() {
     "
     );
 }
+
+#[test]
+fn test_ir_initial_function() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 1,
+    };
+    let tabulation = ir!(
+        "test_ir_initial_function",
+        req,
+        "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 = %1 op %0   
+        };
+        define mytest (param %0) (result 1) (define %0)  {
+            %0 = 2   
+            RETURN %0;
+        };"
+    );
+}
