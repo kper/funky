@@ -832,6 +832,7 @@ impl DefUseChain {
             Instruction::CallIndirect(..) if variable.is_global => true,
             Instruction::Call(_, _, dest) if dest.contains(var) => true,
             Instruction::CallIndirect(_, _, dest) if dest.contains(var) => true,
+            Instruction::Load(dest, ..) if dest == var => true,
             _ => false,
         }
     }
@@ -839,7 +840,7 @@ impl DefUseChain {
     fn is_rhs_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
         let var = &variable.name;
 
-        match instruction {
+        let s1 = match instruction {
             Instruction::Assign(_dest, src) if src == var => true,
             Instruction::BinOp(_, src1, src2) if src1 == var || src2 == var => true,
             Instruction::Phi(_, src1, src2) if src1 == var || src2 == var => true,
@@ -851,14 +852,44 @@ impl DefUseChain {
             Instruction::Return(..) if variable.is_memory => true,
             Instruction::Call(_, _, _) if variable.is_global => true,
             Instruction::CallIndirect(_, _, _) if variable.is_global => true,
-            Instruction::Store(src, ..) => true, //always true for all occurances
+            Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
+            Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences
+            Instruction::Load(dest, ..) if dest == var => true,
             _ => false,
+        };
+
+        // If the `variable` is a memory variable,
+        // we also have to check if it is used
+        if variable.is_memory {
+            let s2 = self.is_rhs_used_memory(variable, instruction);
+            return s1 || s2;
+        } else {
+            return s1;
         }
     }
 
-    fn is_used_taut(&self, _variable: &Variable, instruction: &Instruction) -> bool {
+    /// Returns `true` if the `variable` is used in the `instruction`. It is only important,
+    /// that is some memory variable on rhs.
+    /// Precondition is that `variable.is_memory`
+    fn is_rhs_used_memory(&self, variable: &Variable, instruction: &Instruction) -> bool {
+        let var = &variable.name;
+
+        let is_mem = |x: &String| x.starts_with("@") || x.starts_with("mem");
+
         match instruction {
-            Instruction::Const(_dest, _) => true,
+            Instruction::Assign(_dest, src) => is_mem(src),
+            Instruction::BinOp(_, src1, src2) => is_mem(src1) || is_mem(src2),
+            Instruction::Phi(_, src1, src2) => is_mem(src1) || is_mem(src2),
+            /*Instruction::Unop(_dest, src) if src == var => true,
+            Instruction::Call(..) if variable.is_taut => true,
+            Instruction::Call(_, params, _) if params.contains(var) => true,
+            Instruction::Return(params) if params.contains(var) => true,
+            Instruction::Return(..) if variable.is_global => true,
+            Instruction::Return(..) if variable.is_memory => true,
+            Instruction::Call(_, _, _) if variable.is_global => true,
+            Instruction::CallIndirect(_, _, _) if variable.is_global => true,
+            Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
+            Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences*/
             _ => false,
         }
     }
