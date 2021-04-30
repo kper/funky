@@ -186,18 +186,26 @@ where
             let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
 
             // Get the position in the parameters. If it does not exist then
-            // it is `taut`.
-            eprintln!("params {:?}", params);
-            let pos_in_param = params
-                .iter()
-                .position(|x| x == caller_var)
-                .map(|x| x + TAUT)
-                .unwrap_or(callee_globals - 1); // because, globals are before the parameters
-
-            let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
-                (true, _) => 0,
-                (false, false) => callee_globals + pos_in_param, // if not global, than start at normal beginning
-                (false, true) => pos_in_param,                   //look for the global
+            // it is `taut` or a `global`.
+            let callee_offset = {
+                if caller_variable.is_taut {
+                    TAUT
+                } else if caller_variable.is_global {
+                    caller_function
+                        .definitions
+                        .iter()
+                        .position(|x| x == &caller_variable.name)
+                        .map(|x| x + TAUT) //the first is taut in `init_facts`
+                        .context("Global must be defined")?
+                } else if caller_variable.is_memory {
+                    unimplemented!()
+                } else {
+                    params
+                        .iter()
+                        .position(|x| x == caller_var)
+                        .map(|x| x + TAUT + callee_globals)
+                        .context("Param must exist")?
+                }
             };
 
             let callee_fact = init_facts
