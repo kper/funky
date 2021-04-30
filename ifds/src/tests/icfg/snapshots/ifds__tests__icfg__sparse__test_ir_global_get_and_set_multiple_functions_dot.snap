@@ -48,8 +48,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (5) at (10, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (6) at (10, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (10, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (8) at (11, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (9) at (11, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (8) at (11, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (9) at (11, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (12) at (13, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (13) at (13, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (19) at (10, 4) { };

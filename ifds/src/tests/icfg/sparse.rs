@@ -842,7 +842,6 @@ fn test_memory_store_offset() {
 
 #[test]
 fn test_memory_load() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),

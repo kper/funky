@@ -18,9 +18,9 @@ expression: output
 
                     \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (3, 4) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (3, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (5) at (2, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (6) at (2, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (7) at (1, 4) { };

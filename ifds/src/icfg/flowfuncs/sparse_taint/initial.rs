@@ -57,7 +57,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         let after_var = defuse
-                            .demand(ctx, &function, dest, pc)
+                            .demand_inclusive(ctx, &function, dest, pc)
                             .context("Cannot find var's fact")?
                             .into_iter()
                             .map(|x| x.clone())

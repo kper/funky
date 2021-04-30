@@ -26,8 +26,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (9) at (0, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (10) at (2, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (11) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (10) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (11) at (2, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (12) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (13) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (14) at (0, 3) { };

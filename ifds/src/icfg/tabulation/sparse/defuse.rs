@@ -840,7 +840,7 @@ impl DefUseChain {
     fn is_rhs_used(&self, variable: &Variable, instruction: &Instruction) -> bool {
         let var = &variable.name;
 
-        let s1 = match instruction {
+        match instruction {
             Instruction::Assign(_dest, src) if src == var => true,
             Instruction::BinOp(_, src1, src2) if src1 == var || src2 == var => true,
             Instruction::Phi(_, src1, src2) if src1 == var || src2 == var => true,
@@ -852,22 +852,15 @@ impl DefUseChain {
             Instruction::Return(..) if variable.is_memory => true,
             Instruction::Call(_, _, _) if variable.is_global => true,
             Instruction::CallIndirect(_, _, _) if variable.is_global => true,
+            Instruction::Store(src, _, _) if src == var => true,
             Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
             Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences
             Instruction::Load(dest, ..) if dest == var => true,
             _ => false,
-        };
-
-        // If the `variable` is a memory variable,
-        // we also have to check if it is used
-        if variable.is_memory {
-            let s2 = self.is_rhs_used_memory(variable, instruction);
-            return s1 || s2;
-        } else {
-            return s1;
         }
     }
 
+    /*
     /// Returns `true` if the `variable` is used in the `instruction`. It is only important,
     /// that is some memory variable on rhs.
     /// Precondition is that `variable.is_memory`
@@ -892,7 +885,7 @@ impl DefUseChain {
             Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences*/
             _ => false,
         }
-    }
+    }*/
 }
 
 #[cfg(test)]

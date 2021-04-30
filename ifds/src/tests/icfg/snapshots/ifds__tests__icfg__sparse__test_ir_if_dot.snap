@@ -20,10 +20,10 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (4) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (5) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (1, 5) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (1, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (9) at (1, 1) { };
 \node[font=\tiny] (note_0) at (-1.5, 1.5) {Const(0, 1.0)};

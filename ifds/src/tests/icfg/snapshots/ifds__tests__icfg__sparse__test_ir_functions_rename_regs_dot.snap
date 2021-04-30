@@ -20,8 +20,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 1) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (5) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (6) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (2, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (11) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (24) at (1, 2) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
