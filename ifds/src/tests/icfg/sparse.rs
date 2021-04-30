@@ -809,3 +809,33 @@ fn test_memory_store() {
     "
     );
 }
+
+#[test]
+fn test_memory_store_offset() {
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_store_offset",
+        req,
+        "
+        define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9) {
+        BLOCK 0
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 = 8
+        %3 = -12345
+        STORE FROM %3 OFFSET 0 + %2 ALIGN 3 64
+        %5 = 8
+        %6 = -12345
+        STORE FROM %6 OFFSET 0 + %5 ALIGN 2 32
+        %7 = 8
+        %8 = -12345
+        STORE FROM %8 OFFSET 1 + %7 ALIGN 3 64
+        RETURN ;
+        };
+    "
+    );
+}

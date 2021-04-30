@@ -166,12 +166,11 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .add_memory_var(function.name.clone(), offset.clone() as usize);
 
                         let after_var = defuse
-                            .demand(ctx, &function, &mem.name, pc)
+                            .demand_inclusive(ctx, &function, &mem.name, pc)
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let mut applied = var.clone();
-                            applied.pc += 1;
+                            let mut applied = var.apply();
 
                             assert!(applied.pc <= applied.next_pc);
 
