@@ -189,7 +189,7 @@ where
             // it is `taut` or a `global`.
             let callee_offset = {
                 if caller_variable.is_taut {
-                    TAUT
+                    0
                 } else if caller_variable.is_global {
                     caller_function
                         .definitions
