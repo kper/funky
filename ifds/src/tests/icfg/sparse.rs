@@ -564,7 +564,6 @@ fn test_ir_overwrite_return_values() {
 
 #[test]
 fn test_ir_early_return() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
