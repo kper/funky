@@ -405,7 +405,7 @@ where
                     // %-2 -> %-2
                     let caller_fact_var = self
                         .defuse
-                        .get_next2(ctx, &caller_function, &callee_var, caller_pc)?
+                        .get_next(ctx, &caller_function, &callee_var, caller_pc)?
                         .into_iter()
                         .collect::<Vec<_>>();
 
@@ -462,7 +462,7 @@ where
 
                     let caller_fact_var = self
                         .defuse
-                        .get_next2(ctx, &caller_function, &callee_var, caller_pc)
+                        .get_next(ctx, &caller_function, &callee_var, caller_pc)
                         .context("Cannot retrieve next occurrence of the caller's var")?
                         .into_iter()
                         .collect::<Vec<_>>();
@@ -513,7 +513,7 @@ where
             callee, caller, pc
         );
 
-        let after = self.defuse.get_next2(ctx, &caller_function, caller, pc)?;
+        let after = self.defuse.get_next(ctx, &caller_function, caller, pc)?;
 
         let before = self
             .defuse

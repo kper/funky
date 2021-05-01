@@ -138,6 +138,7 @@ impl DefUseChain {
         Ok(x)
     }
 
+    /// Works like `demand`, but also includes the current instruction.
     pub fn demand_inclusive<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
@@ -196,7 +197,7 @@ impl DefUseChain {
         Ok(seen)
     }
 
-    pub fn get_next2<'a>(
+    pub fn get_next<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
