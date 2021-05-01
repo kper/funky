@@ -896,3 +896,117 @@ fn test_memory_load_different_functions() {
     "
     );
 }
+
+#[test]
+fn test_memory_load_different_functions2() {
+    env_logger::init();
+    let req = Request {
+        variable: None,
+        function: "0".to_string(),
+        pc: 2,
+    };
+    ir!(
+        "test_ir_memory_load_different_functions2",
+        req,
+        "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        STORE FROM %1 OFFSET 1 + %0 ALIGN 2 32
+        %3 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
+        RETURN %0;
+       };
+    "
+    );
+}
+
+#[ignore]
+#[test]
+fn test_global_call() {
+    let req = Request {
+        variable: None,
+        function: "1".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_global_call",
+        req,
+        "
+        define 0 (param %0) (result 0) (define %-2 %-1 %0 %1) {
+        BLOCK 0
+        %1 = %0
+        %-1 = %1
+        RETURN ;
+        };
+        define 1 (param %0) (result 0) (define %-2 %-1 %0 %1 %2) {
+        BLOCK 1
+        %1 = 1
+        CALL 0(%1)
+        %2 = %0
+        %-2 = %2
+        RETURN ;
+        };
+    "
+    );
+}
+
+#[ignore]
+#[test]
+fn test_global_writes() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_globals_writes",
+        req,
+        "
+        define test (result 0) (define %-1 %0 %2) {
+            %0 = 1
+            %-1 = %0 
+            %2 <- CALL mytest()
+        };
+        define mytest (param) (result 1) (define %-1 %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN %-1;
+        };
+    "
+    );
+}
+
+#[ignore]
+#[test]
+fn test_global_check_order() {
+    let req = Request {
+        variable: None,
+        function: "test".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_globals_check_order",
+        req,
+        "
+        define test (result 0) (define %-2 %-1 %0 %2) {
+            %0 = 1
+            %-1 = %0 
+            %2 <- CALL mytest()
+        };
+        define mytest (param) (result 1) (define %-2 %-1 %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN %-1;
+        };
+    "
+    );
+}

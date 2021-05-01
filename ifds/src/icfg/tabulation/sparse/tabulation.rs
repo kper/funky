@@ -290,18 +290,11 @@ where
                 .context("Cannot unpack offset")?,
         );
 
-        //self.defuse
-        //.cache(ctx, &callee_function, &mem.name, start_pc)?;
-
-        let facts = self
+        let fact = self
             .defuse
-            .get_facts_at(ctx, &callee_function, &mem.name, start_pc)?;
+            .get_entry_fact(ctx, &callee_function, &mem.name, start_pc)?;
 
-        let fact = facts
-            .first()
-            .context("Cannot find start fact of the memory var")?;
-
-        Ok(fact.clone().clone())
+        Ok(fact)
     }
 
     fn get_function_by_name<'a>(
@@ -437,6 +430,35 @@ where
                                 &caller_var.belongs_to_var,
                                 caller_pc,
                             )?;
+
+                            /*
+                            if ctx
+                                .state
+                                .get_var(&caller_function.name, &caller_var.belongs_to_var)
+                                .is_none()
+                            {
+                                if caller_var.var_is_memory {
+                                    ctx.state.add_memory_var(
+                                        caller_function.name.clone(),
+                                        caller_var
+                                            .memory_offset
+                                            .context("Memory offset cannot be `None`")?,
+                                    );
+
+                                    self.defuse.cache(
+                                        ctx,
+                                        caller_function,
+                                        &caller_var.belongs_to_var,
+                                        caller_pc,
+                                    )?;
+                                } else {
+                                    bail!(
+                                        "Returned variable {} is not defined in {}",
+                                        caller_var.belongs_to_var,
+                                        caller_var.function
+                                    );
+                                }
+                            }*/
 
                             edges.push(Edge::Return {
                                 from: callee_fact.clone().apply(),

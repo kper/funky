@@ -76,6 +76,48 @@ impl DefUseChain {
         Ok(facts)
     }
 
+    /// Get the facts in the graph.
+    pub fn get_entry_fact<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        start_pc: usize,
+    ) -> Result<Fact> {
+        let start = self.get_start_pc(function, var).unwrap_or(start_pc);
+
+        debug!("Get facts for {} ({}) at {}", function.name, var, start);
+        let graph = self.cache(ctx, function, var, start).with_context(|| {
+            format!(
+                "Cannot find graph for {} (func {}) at {}",
+                var, function.name, start
+            )
+        })?;
+        let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
+
+        let facts = all_facts
+            .into_iter()
+            .filter(|x| x.pc == start && x.next_pc == start)
+            .collect::<Vec<_>>();
+
+        if let Some(fact) = facts.first() {
+            return Ok(fact.clone().clone());
+        } else {
+            let var = ctx
+                .state
+                .get_var(&function.name, var)
+                .context("Cannot find var")?;
+            let track = ctx
+                .state
+                .get_track(&function.name, &var.name)
+                .context("Cannot find track")?;
+
+            let first = Fact::from_var(var, start_pc, start_pc, track);
+
+            return Ok(first);
+        }
+    }
+
     /// Cache and get next
     pub fn demand<'a>(
         &mut self,
@@ -271,6 +313,7 @@ impl DefUseChain {
         pc: usize,
     ) -> Result<&Graph> {
         self.inner_cache(ctx, function, var, pc, false, false)
+            .context("Caching failed")
     }
 
     /// Build the defuse chain for the function, var and pc.
@@ -286,6 +329,7 @@ impl DefUseChain {
         pc: usize,
     ) -> Result<&Graph> {
         self.inner_cache(ctx, function, var, pc, true, true)
+            .context("Caching when variable is already defined failed")
     }
 
     /// Build the defuse chain for the function, var and pc.

@@ -216,6 +216,15 @@ impl State {
     pub fn init_function(&mut self, function: &AstFunction, pc: usize) -> Result<Vec<Fact>> {
         debug!("Adding new function {} to the graph", function.name);
 
+        if self.functions.get(&function.name).is_some() {
+            let init_facts = self
+                .init_facts
+                .get(&function.name)
+                .context("Expected to have init facts")?;
+
+            return Ok(init_facts.clone());
+        }
+
         self.init_function_def(function)?;
 
         let mut variables = Vec::with_capacity(function.definitions.len() + 1);
@@ -312,7 +321,6 @@ impl State {
             .get(&pc)
             .context("Cannot find fact for pc")?
             .iter())
-            //.filter(move |x| x.next_pc == pc)) //TODO remove this line
     }
 
     /// Get the track by given name and function.

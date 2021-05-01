@@ -42,6 +42,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         let mut append_lhs = |dest: &String| -> Result<()> {
             defuse.force_remove_if_outdated(function, dest, pc)?;
             let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
+
             nodes.extend(x.into_iter().map(|x| x.clone()));
 
             Ok(())
