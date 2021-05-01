@@ -111,8 +111,15 @@ impl Fact {
         }
     }
 
-    /// Add to `pc` + 1 only if it smaller than `next_pc`.
+    /// Add to `pc` + 1.
     pub fn apply(&self) -> Fact {
+        let mut x = self.clone();
+        x.pc += 1;
+        x
+    }
+
+    /// Add to `pc` + 1 only if `pc < next_pc`.
+    pub fn apply_bound(&self) -> Fact {
         let mut x = self.clone();
         if x.pc < x.next_pc {
             x.pc += 1;

@@ -52,9 +52,20 @@ impl DefUseChain {
     }
 
     /// Get the facts in the graph.
-    pub fn get_facts_at(&self, function: &String, var: &String, pc: usize) -> Result<Vec<&Fact>> {
-        debug!("Get facts for {} ({}) at {}", function, var, pc);
-        let graph = self.get_graph(function, var).context("Cannot find graph")?;
+    pub fn get_facts_at<'a>(
+        &mut self,
+        ctx: &mut Ctx<'a>,
+        function: &AstFunction,
+        var: &String,
+        pc: usize,
+    ) -> Result<Vec<&Fact>> {
+        debug!("Get facts for {} ({}) at {}", function.name, var, pc);
+        let graph = self.cache(ctx, function, var, pc).with_context(|| {
+            format!(
+                "Cannot find graph for {} (func {}) at {}",
+                var, function.name, pc
+            )
+        })?;
         let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
 
         let facts = all_facts
@@ -155,9 +166,10 @@ impl DefUseChain {
         // entry fact has a loop
         let is_entry = |x: &&Fact| x.pc == x.next_pc && x.pc == old_pc && x.next_pc == old_pc;
 
-        let next_pcs = graph
-            .flatten()
-            .into_iter()
+        let all_facts = graph.flatten().collect::<Vec<_>>();
+
+        let next_pcs = all_facts
+            .iter()
             .filter(|x| x.pc == old_pc && !is_entry(x))
             .map(|x| x.next_pc);
 
@@ -165,11 +177,10 @@ impl DefUseChain {
 
         for next_pc in next_pcs {
             facts.extend(
-                graph
-                    .flatten()
-                    .into_iter()
+                all_facts
+                    .iter()
                     .filter(|x| x.pc == next_pc && !is_entry(x))
-                    .map(|x| x.clone()),
+                    .map(|x| x.clone().clone()),
             )
         }
 
@@ -333,7 +344,9 @@ impl DefUseChain {
         let instructions: Vec<_> = function.instructions.iter().enumerate().collect();
 
         let max_len = instructions.len();
-        let scfg = self.build_next2(function, instructions, &ctx.block_resolver)?;
+        let scfg = self
+            .build_next2(function, instructions, &ctx.block_resolver)
+            .context("Building the controlflow graph failed")?;
 
         debug!("scfg {:#?}", scfg);
 
@@ -350,7 +363,8 @@ impl DefUseChain {
             true,
             &mut graph,
             was_called_in_param,
-        )?;
+        )
+        .context("Building the graph failed")?;
 
         debug!("graph {:#?}", graph.flatten().collect::<Vec<_>>());
 
@@ -416,20 +430,15 @@ impl DefUseChain {
                         if !var.is_taut {
                             //except when var is taut, then ok
                             match inner_instruction {
-                                Instruction::Return(dest) if !dest.contains(&var.name) => {
-                                    overwritten = true;
-                                }
                                 Instruction::Call(..) if var.is_global && is_lhs => {
                                     // Edge case when variable is global, `is_lhs` is ok and on call
                                     // then add instruction, but stop there
                                     relevant_instructions.push(instruction.clone());
-                                    overwritten = true;
                                 }
                                 Instruction::CallIndirect(..) if var.is_global && is_lhs => {
                                     // Edge case when variable is global, `is_lhs` is ok and on call
                                     // then add instruction, but stop there
                                     relevant_instructions.push(instruction.clone());
-                                    overwritten = true;
                                 }
                                 _ => {}
                             }
@@ -442,7 +451,6 @@ impl DefUseChain {
                                 debug!("Instruction is now defined.");
                             } else {
                                 log::warn!("Instruction is overwritten. Therefore stopping.");
-                                overwritten = true;
                                 break;
                             }
                         } else {
@@ -462,7 +470,8 @@ impl DefUseChain {
                 }
             }
 
-            if is_top_level && (!overwritten || var.is_taut) {
+            //if is_top_level && (!overwritten || var.is_taut) {
+            if is_top_level {
                 if !was_called_as_param || var.is_taut {
                     relevant_instructions.push(SCFG::FunctionEnd(max_level));
                 } else if relevant_instructions.len() > 0 {
@@ -925,6 +934,56 @@ mod test {
     }
 
     #[test]
+    fn test_building_mem_scfg() {
+        let func_name = "main".to_string();
+        let function = AstFunction {
+            name: func_name.clone(),
+            definitions: vec![
+                "%0".to_string(),
+                "%1".to_string(),
+                "%2".to_string(),
+                "%3".to_string(),
+            ],
+            instructions: vec![
+                Instruction::Const("%0".to_string(), 1.0),
+                Instruction::Block("0".to_string()),
+                Instruction::Const("%2".to_string(), 1.0),
+                Instruction::Store("%2".to_string(), 0.0, "%0".to_string()),
+                Instruction::BinOp("3".to_string(), "%0".to_string(), "%2".to_string()),
+            ],
+            ..Default::default()
+        };
+
+        let mut graph = Graph::default();
+        let mut state = State::default();
+
+        let mut ctx = Ctx {
+            graph: &mut graph,
+            state: &mut state,
+            prog: &Program {
+                functions: vec![function.clone()],
+            },
+            block_resolver: HashMap::default(),
+        };
+
+        let pc = 0;
+
+        // fullfilling precondition of `chain.cache()`
+        ctx.state.init_function(&function, pc).unwrap();
+        resolve_block_ids(&mut ctx, &function, pc).unwrap();
+        ctx.state.add_memory_var("main".to_string(), 0);
+
+        let mut chain = DefUseChain::default();
+        let facts = chain
+            .cache(&mut ctx, &function, &"mem@0".to_string(), pc)
+            .unwrap()
+            .flatten()
+            .collect::<Vec<_>>();
+
+        assert_snapshot!("building_memory_defuse_mem_0_scfg", facts);
+    }
+
+    #[test]
     fn test_building_loop_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
@@ -1313,7 +1372,7 @@ mod test {
 
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
         assert_eq!(0, facts.get(0).unwrap().next_pc);
 
         let before = chain
@@ -1325,7 +1384,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(0, after.len());
+        assert_eq!(1, after.len());
     }
 
     #[test]
@@ -1370,7 +1429,7 @@ mod test {
 
         assert_snapshot!("defuse_reg_1_scfg", facts);
 
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
         assert_eq!(5, facts.get(1).unwrap().next_pc);
 
         let before = chain
@@ -1382,7 +1441,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(0, after.len());
+        assert_eq!(1, after.len());
     }
 
     #[test]
@@ -1431,6 +1490,6 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(2, facts.len());
+        assert_eq!(3, facts.len());
     }
 }

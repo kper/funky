@@ -26,7 +26,7 @@ macro_rules! ir {
             err.chain()
                 .skip(1)
                 .for_each(|cause| error!("because: {}", cause));
-            panic!("")
+            panic!("Macro panicked")
         }
 
         let (graph, state) = res.unwrap();
@@ -563,7 +563,6 @@ fn test_ir_overwrite_return_values() {
 
 #[test]
 fn test_ir_early_return() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -884,15 +883,15 @@ fn test_memory_load_different_functions() {
         BLOCK 0
         %0 = 8
         %1 = -12345
-        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
-        %2 <- CALL 1 ()
+        %2 <- CALL 1 (%1)
+        %3 = LOAD OFFSET 0 + %1 ALIGN 0
         RETURN ;
        }; 
 
-       define 1 (result 1) (define %0 %1) {
-        %1 = 8
-        %0 = LOAD OFFSET 0 + %1 ALIGN 0
-        RETURN %0;
+       define 1 (param %0) (result 1) (define %0 %1) {
+        STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
+        %1 = LOAD OFFSET 0 + %0 ALIGN 0
+        RETURN %1;
        };
     "
     );

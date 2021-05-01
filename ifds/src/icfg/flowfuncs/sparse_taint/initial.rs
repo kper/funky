@@ -79,7 +79,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         for var in after_var.into_iter().chain(appended) {
-                            let applied = var.apply();
+                            let applied = var.apply_bound();
 
                             // after
                             edges.push(Edge::Path {
@@ -133,7 +133,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                         }
 
                         for var in after_var.into_iter().chain(appended) {
-                            let applied = var.apply();
+                            let applied = var.apply_bound();
 
                             // after
                             edges.push(Edge::Path {
@@ -170,7 +170,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let mut applied = var.apply();
+                            let mut applied = var.apply_bound();
 
                             assert!(applied.pc <= applied.next_pc);
 
@@ -204,7 +204,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                             .context("Cannot find var's fact")?;
 
                         for var in after_var.into_iter() {
-                            let applied = var.apply();
+                            let applied = var.apply_bound();
 
                             assert!(applied.pc <= applied.next_pc);
 

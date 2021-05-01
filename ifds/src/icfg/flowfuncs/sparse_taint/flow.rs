@@ -72,7 +72,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             .into_iter()
             .filter_map(|x| {
                 if x.pc != x.next_pc {
-                    Some(x.apply())
+                    Some(x.apply_bound())
                 } else {
                     Some(x)
                 }
