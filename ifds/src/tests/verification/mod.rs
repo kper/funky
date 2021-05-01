@@ -1,5 +1,3 @@
-use crate::solver::bfs::*;
-use crate::solver::*;
 use itertools::Itertools;
 
 use log::debug;
@@ -14,6 +12,8 @@ use std::collections::HashSet;
 
 use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
 use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
+use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
+use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 use crate::icfg::tikz::render_to;
 use crate::icfg::tikz2::render_to as render_to2;
 use insta::assert_snapshot;
@@ -79,7 +79,7 @@ macro_rules! orig {
 
 macro_rules! fast {
     ($name:expr, $prog:expr, $req:expr) => {{
-        let mut convert = TabulationOriginal::default();
+        let mut convert = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
         let (graph, state) = convert.visit(&$prog, $req).unwrap();
 
@@ -108,7 +108,7 @@ macro_rules! sparse {
             SparseTaintNormalFlowFunction,
         );
 
-        let (mut graph, state) = convert.visit(&$prog, $req).unwrap();
+        let (graph, state) = convert.visit(&$prog, $req).unwrap();
 
         let output = render_to2(&graph, &state);
 

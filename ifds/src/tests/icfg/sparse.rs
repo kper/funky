@@ -1,5 +1,5 @@
+use crate::icfg::tabulation::sparse::TabulationSparse;
 use crate::icfg::tikz2::render_to;
-use crate::icfg::{state::State, tabulation::sparse::TabulationSparse};
 use crate::solver::Request;
 use insta::assert_snapshot;
 use log::error;
@@ -8,7 +8,6 @@ use crate::grammar::*;
 
 use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
 use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
-use crate::ir::ast::Function as AstFunction;
 
 macro_rules! ir {
     ($name:expr, $req:expr, $ir:expr) => {{
@@ -728,7 +727,8 @@ fn test_ir_initial_function() {
         function: "test".to_string(),
         pc: 1,
     };
-    let tabulation = ir!(
+
+    ir!(
         "test_ir_initial_function",
         req,
         "define test (result 0) (define %0 %1 %2) {

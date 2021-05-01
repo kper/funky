@@ -913,33 +913,6 @@ impl DefUseChain {
             _ => false,
         }
     }
-
-    /*
-    /// Returns `true` if the `variable` is used in the `instruction`. It is only important,
-    /// that is some memory variable on rhs.
-    /// Precondition is that `variable.is_memory`
-    fn is_rhs_used_memory(&self, variable: &Variable, instruction: &Instruction) -> bool {
-        let var = &variable.name;
-
-        let is_mem = |x: &String| x.starts_with("@") || x.starts_with("mem");
-
-        match instruction {
-            Instruction::Assign(_dest, src) => is_mem(src),
-            Instruction::BinOp(_, src1, src2) => is_mem(src1) || is_mem(src2),
-            Instruction::Phi(_, src1, src2) => is_mem(src1) || is_mem(src2),
-            /*Instruction::Unop(_dest, src) if src == var => true,
-            Instruction::Call(..) if variable.is_taut => true,
-            Instruction::Call(_, params, _) if params.contains(var) => true,
-            Instruction::Return(params) if params.contains(var) => true,
-            Instruction::Return(..) if variable.is_global => true,
-            Instruction::Return(..) if variable.is_memory => true,
-            Instruction::Call(_, _, _) if variable.is_global => true,
-            Instruction::CallIndirect(_, _, _) if variable.is_global => true,
-            Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
-            Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences*/
-            _ => false,
-        }
-    }*/
 }
 
 #[cfg(test)]
@@ -947,7 +920,6 @@ mod test {
     use super::*;
     use crate::icfg::state::State;
     use crate::ir::ast::Program;
-    use insta::_macro_support::assert_snapshot;
     use insta::assert_debug_snapshot as assert_snapshot;
 
     fn resolve_block_ids<'a>(
