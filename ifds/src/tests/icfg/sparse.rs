@@ -899,7 +899,6 @@ fn test_memory_load_different_functions() {
 
 #[test]
 fn test_memory_load_different_functions2() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "0".to_string(),
@@ -929,7 +928,6 @@ fn test_memory_load_different_functions2() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_global_call() {
     let req = Request {
@@ -959,7 +957,6 @@ fn test_global_call() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_global_writes() {
     let req = Request {
@@ -977,32 +974,6 @@ fn test_global_writes() {
             %2 <- CALL mytest()
         };
         define mytest (param) (result 1) (define %-1 %0 %1)  {
-            %0 = 2   
-            %1 = 3
-            RETURN %-1;
-        };
-    "
-    );
-}
-
-#[ignore]
-#[test]
-fn test_global_check_order() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-    ir!(
-        "test_ir_globals_check_order",
-        req,
-        "
-        define test (result 0) (define %-2 %-1 %0 %2) {
-            %0 = 1
-            %-1 = %0 
-            %2 <- CALL mytest()
-        };
-        define mytest (param) (result 1) (define %-2 %-1 %0 %1)  {
             %0 = 2   
             %1 = 3
             RETURN %-1;

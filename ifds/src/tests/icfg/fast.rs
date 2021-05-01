@@ -9,7 +9,7 @@ use crate::grammar::*;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
 
-use std::fs::{OpenOptions, create_dir};
+use std::fs::{create_dir, OpenOptions};
 use std::io::Write;
 
 /// Write the IR to a seperate file. This makes it possible
@@ -68,7 +68,6 @@ fn test_ir_const() {
     "
     );
 }
-
 
 #[test]
 fn test_ir_simple_store() {
@@ -788,31 +787,6 @@ fn test_global_writes() {
 }
 
 #[test]
-fn test_global_check_order() {
-    let req = Request {
-        variable: None,
-        function: "test".to_string(),
-        pc: 0,
-    };
-    ir!(
-        "test_ir_globals_check_order",
-        req,
-        "
-        define test (result 0) (define %-2 %-1 %0 %2) {
-            %0 = 1
-            %-1 = %0 
-            %2 <- CALL mytest()
-        };
-        define mytest (param) (result 1) (define %-2 %-1 %0 %1)  {
-            %0 = 2   
-            %1 = 3
-            RETURN %-1;
-        };
-    "
-    );
-}
-
-#[test]
 fn test_memory_store() {
     let req = Request {
         variable: None,
@@ -929,5 +903,3 @@ fn test_memory_load_different_functions2() {
     "
     );
 }
-
-

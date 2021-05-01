@@ -21,6 +21,8 @@ pub struct State {
     /// of a functions. We need this because we have to reinitalize the
     /// function when function is calling itself.
     init_facts: HashMap<FunctionName, Vec<Fact>>,
+    /// saves the `start_pc` for the function
+    start_pc: HashMap<FunctionName, PC>,
     note_counter: Counter,
     pub notes: Vec<Note>,
 }
@@ -217,12 +219,19 @@ impl State {
         debug!("Adding new function {} to the graph", function.name);
 
         if self.functions.get(&function.name).is_some() {
-            let init_facts = self
-                .init_facts
+            let start = self
+                .start_pc
                 .get(&function.name)
-                .context("Expected to have init facts")?;
+                .context("Cannot find start_pc")?;
 
-            return Ok(init_facts.clone());
+            if *start <= pc {
+                let init_facts = self
+                    .init_facts
+                    .get(&function.name)
+                    .context("Expected to have init facts")?;
+
+                return Ok(init_facts.clone());
+            }
         }
 
         self.init_function_def(function)?;
@@ -271,6 +280,7 @@ impl State {
 
         // insert the initial facts or update them.
         self.init_facts.insert(function.name.clone(), facts.clone());
+        self.start_pc.insert(function.name.clone(), pc);
 
         Ok(facts)
     }
