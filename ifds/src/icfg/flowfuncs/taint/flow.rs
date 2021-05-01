@@ -51,6 +51,9 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
+            Instruction::Const(reg, _) => {
+                //kill
+            }
             Instruction::Assign(dest, src) if src == variable => {
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, dest)?;
                 state.add_statement(function, format!("{:?}", instruction), pc + 1, src)?;
