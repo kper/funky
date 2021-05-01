@@ -51,7 +51,7 @@ impl NormalFlowFunction for TaintNormalFlowFunction {
                     });
                 }
             }
-            Instruction::Const(reg, _) => {
+            Instruction::Const(_reg, _) => {
                 //kill
             }
             Instruction::Assign(dest, src) if src == variable => {

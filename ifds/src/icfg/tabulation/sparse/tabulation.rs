@@ -46,7 +46,7 @@ pub struct EdgeCtx {
     normal_flows_debug: Edges,
 }
 
-/// Central datastructure for the computation of the IFDS problem.
+/// Central data structure for the computation of the IFDS problem.
 #[derive(Debug)]
 pub struct TabulationSparse<I, F>
 where
@@ -124,7 +124,7 @@ where
             // Init facts of the called function
             // Start from the beginning.
             let start_pc = 0;
-            let mut init_facts = ctx
+            let init_facts = ctx
                 .state
                 .init_function(&callee_function, start_pc)
                 .context("Error during function init")?;
@@ -269,7 +269,7 @@ where
     fn pass_args_memory<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
-        caller_function: &AstFunction,
+        _caller_function: &AstFunction,
         callee_function: &AstFunction,
         caller_variable: &Variable,
         start_pc: usize,
@@ -468,55 +468,54 @@ where
         {
             let callee_variable = ctx.state.get_var(&callee_function.name, callee_var);
             if let Some(callee_variable) = callee_variable {
-                if callee_variable.is_memory {
-                    if ctx
-                        .state
-                        .get_var(&caller_function.name, &callee_variable.name)
-                        .is_none()
-                    {
-                        // Check if the caller has the same memory variable,
-                        // if not then create one.
-                        // This handles when the memory variable was initialized in the callee's method
-                        // and needs to be propagated to the caller, but it does not exist
-                        // in the caller's function.
-                        log::warn!("Memory variable of the caller was not initialized");
-                        ctx.state.add_memory_var(
-                            caller_function.name.clone(),
-                            callee_variable
-                                .memory_offset
-                                .context("Memory offset cannot be `None` on a memory variable")?,
-                        );
+                let is_mem = ctx
+                    .state
+                    .get_var(&caller_function.name, &callee_variable.name)
+                    .is_none();
+
+                if is_mem {
+                    // Check if the caller has the same memory variable,
+                    // if not then create one.
+                    // This handles when the memory variable was initialized in the callee's method
+                    // and needs to be propagated to the caller, but it does not exist
+                    // in the caller's function.
+                    log::warn!("Memory variable of the caller was not initialized");
+                    let memory_offset = callee_variable
+                        .memory_offset
+                        .context("Memory offset cannot be `None` on a memory variable")?;
+
+                    ctx.state
+                        .add_memory_var(caller_function.name.clone(), memory_offset);
+                }
+
+                let caller_fact_var = self
+                    .defuse
+                    .get_next2(ctx, &caller_function, &callee_var, caller_pc)
+                    .context("Cannot retrieve next occurrence of the caller's var")?
+                    .into_iter()
+                    .collect::<Vec<_>>();
+
+                let callee_facts = self
+                    .defuse
+                    .points_to(ctx, &callee_function, callee_var, callee_pc)?
+                    .into_iter()
+                    .collect::<Vec<_>>();
+
+                if let Some(callee_fact) = callee_facts.first() {
+                    for caller_var in caller_fact_var {
+                        self.defuse.force_remove_if_outdated(
+                            caller_function,
+                            &caller_var.belongs_to_var,
+                            caller_pc,
+                        )?;
+
+                        edges.push(Edge::Return {
+                            from: callee_fact.clone().apply(),
+                            to: caller_var,
+                        });
                     }
-
-                    let caller_fact_var = self
-                        .defuse
-                        .get_next2(ctx, &caller_function, &callee_var, caller_pc)
-                        .context("Cannot retrieve next occurrence of the caller's var")?
-                        .into_iter()
-                        .collect::<Vec<_>>();
-
-                    let callee_facts = self
-                        .defuse
-                        .points_to(ctx, &callee_function, callee_var, callee_pc)?
-                        .into_iter()
-                        .collect::<Vec<_>>();
-
-                    if let Some(callee_fact) = callee_facts.first() {
-                        for caller_var in caller_fact_var {
-                            self.defuse.force_remove_if_outdated(
-                                caller_function,
-                                &caller_var.belongs_to_var,
-                                caller_pc,
-                            )?;
-
-                            edges.push(Edge::Return {
-                                from: callee_fact.clone().apply(),
-                                to: caller_var,
-                            });
-                        }
-                    } else {
-                        log::warn!("There is no memory variable for the callee");
-                    }
+                } else {
+                    log::warn!("There is no memory variable for the callee");
                 }
             }
         }

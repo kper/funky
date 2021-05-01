@@ -59,7 +59,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     append_lhs(dest)?;
                 }
             }
-            Instruction::Store(src, offset, _i) => {
+            Instruction::Store(_src, offset, _i) => {
                 let y = ctx
                     .state
                     .add_memory_var(function.name.clone(), *offset as usize);

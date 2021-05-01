@@ -456,7 +456,6 @@ impl DefUseChain {
     ) -> Result<Fact> {
         let get_relevant_instructions = |instructions, mut is_defined: bool, max_level: usize| {
             let mut relevant_instructions = Vec::new();
-            let mut overwritten = false;
 
             for instruction in instructions {
                 match instruction {
@@ -470,7 +469,7 @@ impl DefUseChain {
                         debug!("is_rhs {}", is_rhs);
 
                         // Edge case for return
-                        // do not propage if not in return
+                        // do not propagate if not in return
                         if !var.is_taut {
                             //except when var is taut, then ok
                             match inner_instruction {
