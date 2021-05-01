@@ -58,7 +58,6 @@ fn test_ir_const() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_double_assign() {
     let req = Request {
@@ -80,7 +79,6 @@ fn test_ir_double_assign() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_simple_store() {
     let req = Request {
@@ -100,7 +98,6 @@ fn test_ir_simple_store() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_ir_simple_load() {
     let req = Request {
