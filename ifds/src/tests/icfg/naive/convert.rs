@@ -101,6 +101,22 @@ fn test_ir_chain_assign() {
 }
 
 #[test]
+fn test_ir_functions() {
+    ir!(
+        "test_ir_functions",
+        "define test (result 0) (define %0) {
+            %0 = 1
+            CALL mytest(%0)
+        };
+        define mytest (param %0) (result 0) (define %0 %1)  {
+            %0 = 2   
+            %1 = 3
+            RETURN;
+        };"
+    );
+}
+
+#[test]
 fn test_ir_unop() {
     ir!(
         "test_ir_unop",

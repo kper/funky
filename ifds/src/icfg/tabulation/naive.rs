@@ -261,9 +261,7 @@ impl TabulationNaive {
             }
             Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
-                let fi = |x: &&Fact| {
-                    !params.contains(&x.belongs_to_var) && !dests.contains(&x.belongs_to_var)
-                };
+                let fi = |x: &&Fact| !dests.contains(&x.belongs_to_var);
 
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?.filter(fi);
                 let out_ = ctx.state.get_facts_at(&function.name, pc + 1)?.filter(fi);
@@ -273,7 +271,6 @@ impl TabulationNaive {
                 }
 
                 // Call edges
-
                 let in_ = ctx
                     .state
                     .get_facts_at(&function.name, pc)?

@@ -1,7 +1,7 @@
 use crate::icfg::tabulation::orig::TabulationOriginal;
 use crate::icfg::tikz::render_to;
-use insta::assert_snapshot;
 use crate::solver::Request;
+use insta::assert_snapshot;
 use log::error;
 
 use crate::grammar::*;

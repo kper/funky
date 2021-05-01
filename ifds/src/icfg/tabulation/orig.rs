@@ -35,12 +35,14 @@ impl TabulationOriginal {
     /// Computes a graph by a given program and `req` ([`Request`]).
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {
+        // Starts with the naive graph
         let mut fact_gen = TabulationNaive::default();
         let (mut graph, mut state, call_resolver) = fact_gen
             .visit(prog)
             .context("Naive fact generation failed")?;
 
         let mut new_graph = Graph::default();
+        //let mut new_graph = graph.clone();
 
         let mut ctx = Ctx {
             graph: &mut graph,
@@ -197,22 +199,23 @@ impl TabulationOriginal {
                             )?;
                         }
 
-                        let flow_edges = ctx
+                        // call flow
+                        let call_to_return = ctx
                             .graph
                             .edges
                             .iter()
                             .chain(summary.iter())
                             .filter(|x| {
                                 x.get_from().function == caller_function.name
-                                    && x.get_from().belongs_to_var == d2.belongs_to_var
+                                    //&& x.get_from().belongs_to_var == d2.belongs_to_var
                                     && x.get_from().next_pc == d2.next_pc
                                     && x.to().function == caller_function.name
                                     //&& x.to().belongs_to_var == x.get_from().belongs_to_var
-                                    && x.to().next_pc == x.get_from().next_pc + 1
+                                    && x.to().next_pc == d2.next_pc + 1
                             })
-                            .map(|x| x.to());
+                            .collect::<Vec<_>>();
 
-                        for to in flow_edges.into_iter() {
+                        for to in call_to_return.into_iter().map(|x| x.to()) {
                             assert_eq!(d1.function, to.function);
 
                             self.propagate(
@@ -233,16 +236,32 @@ impl TabulationOriginal {
                             .find(|x| x.name == d2.function)
                             .unwrap();
 
-                        let flow_edges =
-                            ctx.graph
-                                .edges
-                                .iter()
-                                .filter(|x| x.is_normal())
-                                .filter(|x| {
-                                    x.get_from().function == new_function.name
-                                        && x.get_from().belongs_to_var == d2.belongs_to_var
-                                        && x.get_from().next_pc == d2.next_pc
-                                });
+                        let flow_edges = {
+                            if pc > start_pc {
+                                ctx.graph
+                                    .edges
+                                    .iter()
+                                    .filter(|x| x.is_normal())
+                                    .filter(|x| {
+                                        x.get_from().function == new_function.name
+                                            && x.get_from().belongs_to_var == d2.belongs_to_var
+                                            && x.get_from().next_pc == d2.next_pc
+                                    })
+                                    .filter(|x| !(x.get_from().var_is_taut && !x.to().var_is_taut))
+                                    .collect::<Vec<_>>() // removing all assignment edges
+                            } else {
+                                ctx.graph
+                                    .edges
+                                    .iter()
+                                    .filter(|x| x.is_normal())
+                                    .filter(|x| {
+                                        x.get_from().function == new_function.name
+                                            && x.get_from().belongs_to_var == d2.belongs_to_var
+                                            && x.get_from().next_pc == d2.next_pc
+                                    })
+                                    .collect::<Vec<_>>()
+                            }
+                        };
 
                         for f in flow_edges.into_iter() {
                             debug!("Normal flow {:#?}", f);
@@ -279,10 +298,7 @@ impl TabulationOriginal {
                             .iter()
                             .filter(|x| x.is_call())
                             .filter(|x| {
-                                &x.get_from().function == caller
-                                    && x.to().function == d1.function
-                                    && x.to().belongs_to_var == d1.belongs_to_var
-                                    && x.to().next_pc == d1.next_pc
+                                &x.get_from().function == caller && x.to().function == d2.function
                             })
                             .map(|x| x.get_from());
 
@@ -313,7 +329,7 @@ impl TabulationOriginal {
                                     })
                                     .is_none()
                                 {
-                                    let ret = d4.clone();
+                                    let ret = d5.clone();
                                     summary.push(Edge::Summary {
                                         from: d4.clone(),
                                         to: ret.clone(),
@@ -362,7 +378,7 @@ impl TabulationOriginal {
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        //graph.edges.extend_from_slice(&normal_flows_debug);
+        //ctx.graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())

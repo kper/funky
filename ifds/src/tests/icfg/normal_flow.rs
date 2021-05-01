@@ -88,28 +88,7 @@ fn test_const_initial_flow() {
         &mut state,
     );
 
-    assert_eq!(edges.len(), 1);
-
-    assert_eq!(
-        Some(&Edge::Normal {
-            from: Fact {
-                var_is_taut: true,
-                next_pc: 0,
-                belongs_to_var: "taut".to_string(),
-                function: "main".to_string(),
-                ..Default::default()
-            },
-            to: Fact {
-                var_is_taut: true,
-                next_pc: 1,
-                belongs_to_var: "taut".to_string(),
-                function: "main".to_string(),
-                ..Default::default()
-            },
-            curved: false,
-        }),
-        edges.get(0),
-    );
+    assert_eq!(0, edges.len());
 }
 
 #[test]
