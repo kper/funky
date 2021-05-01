@@ -2,11 +2,15 @@ use crate::solver::bfs::*;
 use crate::solver::*;
 use itertools::Itertools;
 
+use log::debug;
+
 use crate::grammar::*;
 use crate::icfg::tabulation::fast::TabulationFast;
 use crate::icfg::tabulation::naive::TabulationNaive;
 use crate::icfg::tabulation::orig::TabulationOriginal;
 use crate::icfg::tabulation::sparse::TabulationSparse;
+
+use std::collections::HashSet;
 
 use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
 use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
@@ -136,9 +140,28 @@ macro_rules! run {
         let mut s4 = sparse!($name, &prog, $req);
         s4.sort();
 
-        //assert_eq!(s2, s2, "naive and orig failed");
-        //assert_eq!(s2, s3, "orig and fast failed");
-        //assert_eq!(s2, s4, "orig and sparse failed");
+        debug!("naive {:#?}", s1);
+        debug!("orig {:#?}", s2);
+        debug!("fast {:#?}", s3);
+        debug!("sparse {:#?}", s4);
+
+        let s1 = s1.into_iter().collect::<HashSet<_>>();
+        let s2 = s2.into_iter().collect::<HashSet<_>>();
+        let s3 = s3.into_iter().collect::<HashSet<_>>();
+        let s4 = s4.into_iter().collect::<HashSet<_>>();
+
+        assert!(s1.is_superset(&s2), "naive and orig failed");
+        assert!(s1.is_superset(&s3), "naive and fast failed");
+        assert!(s1.is_superset(&s4), "naive and sparsed failed");
+
+        assert!(s2.is_superset(&s3), "orig and fast failed");
+        assert!(s2.is_superset(&s4), "orig and sparse failed");
+
+        assert_eq!(s1, s2, "naive and orig failed");
+        assert_eq!(s1, s3, "naive and fast failed");
+        assert_eq!(s1, s4, "naive and sparse failed");
+
+        assert_eq!(s3, s4, "fast and sparse failed");
     };
 }
 
