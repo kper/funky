@@ -36,14 +36,6 @@ type Facts = Vec<Fact>;
 type LookupTable = HashMap<(Function, PC, VariableString), Facts>;
 type Edges = Vec<Edge>;
 
-/**
- let mut path_edge = Vec::new();
-        let mut worklist = VecDeque::new();
-        let mut summary_edge = Vec::new();
-        let mut normal_flows_debug = Vec::new();
-
-*/
-
 #[derive(Default)]
 pub struct EdgeCtx {
     end_summary: LookupTable,
