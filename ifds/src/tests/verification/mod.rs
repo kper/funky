@@ -161,8 +161,6 @@ macro_rules! run {
         assert_eq!(s1, s2, "naive and orig failed");
         assert_eq!(s1, s3, "naive and fast failed");
         assert_eq!(s1, s4, "naive and sparse failed");
-
-        assert_eq!(s3, s4, "fast and sparse failed");
     };
 }
 
@@ -262,4 +260,25 @@ fn test_memory_load_different_functions2() {
        };
     ";
     run!("memory_load_different_functions2", ir, &req);
+}
+
+#[test]
+fn test_ir_return_double() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 %2 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %0 = 2
+            %1 = 3
+            RETURN %0 %1;
+        };
+        ";
+    run!("return_double", ir, &req);
 }
