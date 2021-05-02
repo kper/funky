@@ -423,14 +423,28 @@ impl TabulationNaive {
 
                 if let Some(incoming) = call_resolver.get(&function.name) {
                     for incoming in incoming.iter() {
+                        // taut
                         let in_ = ctx
                             .state
                             .get_facts_at(&function.name, pc)?
-                            .filter(|x| src.contains(&x.belongs_to_var) || x.var_is_taut);
+                            .filter(|x| x.var_is_taut);
                         let out_ = ctx
                             .state
                             .get_facts_at(&incoming.0, incoming.1 + 1)?
-                            .filter(|x| incoming.2.contains(&x.belongs_to_var) || x.var_is_taut);
+                            .filter(|x| x.var_is_taut);
+
+                        for (from, after) in in_.zip(out_) {
+                            ctx.graph.add_return(from.clone(), after.clone())?;
+                        }
+
+                        let in_ = ctx
+                            .state
+                            .get_facts_at(&function.name, pc)?
+                            .filter(|x| src.contains(&x.belongs_to_var));
+                        let out_ = ctx
+                            .state
+                            .get_facts_at(&incoming.0, incoming.1 + 1)?
+                            .filter(|x| incoming.2.contains(&x.belongs_to_var));
 
                         for (from, after) in in_.zip(out_) {
                             ctx.graph.add_return(from.clone(), after.clone())?;

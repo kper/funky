@@ -97,7 +97,7 @@ impl TabulationOriginal {
             &mut summary_edge,
             &mut normal_flows_debug,
             ctx,
-            req.pc,
+            req,
         )?;
 
         Ok(())
@@ -136,8 +136,9 @@ impl TabulationOriginal {
         summary: &mut Vec<Edge>,
         normal_flows_debug: &mut Vec<Edge>,
         ctx: &mut Ctx<'a>,
-        start_pc: usize,
+        req: &Request,
     ) -> Result<()> {
+        let start_pc = req.pc;
         while let Some(edge) = worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
@@ -204,10 +205,9 @@ impl TabulationOriginal {
                             .graph
                             .edges
                             .iter()
-                            .chain(summary.iter())
                             .filter(|x| {
                                 x.get_from().function == caller_function.name
-                                    //&& x.get_from().belongs_to_var == d2.belongs_to_var
+                                    && x.get_from().belongs_to_var == d2.belongs_to_var
                                     && x.get_from().next_pc == d2.next_pc
                                     && x.to().function == caller_function.name
                                     //&& x.to().belongs_to_var == x.get_from().belongs_to_var
@@ -216,6 +216,27 @@ impl TabulationOriginal {
                             .collect::<Vec<_>>();
 
                         for to in call_to_return.into_iter().map(|x| x.to()) {
+                            assert_eq!(d1.function, to.function);
+
+                            self.propagate(
+                                &mut ctx.new_graph,
+                                path_edge,
+                                worklist,
+                                Edge::Path {
+                                    from: d1.clone(),
+                                    to: to.clone(),
+                                },
+                            )?;
+                        }
+
+                        let ret_edges = summary.iter().filter(|x| {
+                            x.get_from().function == caller_function.name
+                                && x.to().function == caller_function.name
+                                && x.to().next_pc == d2.next_pc + 1
+                                && x.get_from().next_pc == d2.next_pc
+                        });
+
+                        for to in ret_edges.map(|x| x.to()) {
                             assert_eq!(d1.function, to.function);
 
                             self.propagate(
@@ -237,7 +258,7 @@ impl TabulationOriginal {
                             .unwrap();
 
                         let flow_edges = {
-                            if pc > start_pc {
+                            if pc > start_pc || d2.function != req.function {
                                 ctx.graph
                                     .edges
                                     .iter()
@@ -292,37 +313,58 @@ impl TabulationOriginal {
                     for (caller, callee) in callers {
                         assert_eq!(callee, &d1.function);
 
-                        let d4 = ctx
-                            .graph
-                            .edges
-                            .iter()
-                            .filter(|x| x.is_call())
-                            .filter(|x| {
-                                &x.get_from().function == caller && x.to().function == d2.function
-                            })
-                            .map(|x| x.get_from());
+                        let d4 = ctx.graph.edges.iter().filter(|x| x.is_call()).filter(|x| {
+                            &x.get_from().function == caller
+                                && x.to().function == d2.function
+                                && x.to().next_pc == 0
+                        });
 
                         for d4 in d4.into_iter() {
+                            let caller_fact = d4.get_from();
+                            let _callee_start_fact = d4.to();
+
                             let d5 = ctx
                                 .graph
                                 .edges
                                 .iter()
                                 .filter(|x| x.is_return())
                                 .filter(|x| {
-                                    x.get_from().belongs_to_var == d2.belongs_to_var
-                                    && x.get_from().function == d2.function
+                                    x.get_from().function == d2.function
                                     && x.get_from().next_pc == d2.next_pc - 1 //because applied before
-                                    && &x.to().function == &d4.function
+                                    && &x.to().function == &caller_fact.function
+                                    && x.to().next_pc == caller_fact.next_pc + 1
+                                    //&& x.get_from().belongs_to_var == d2.belongs_to_var
                                     // && x.to().next_pc == pc + 1
+                                });
+
+                            let d5 = d5
+                                .into_iter()
+                                .filter(|x| {
+                                    // check if there is a path edge to the node
+                                    ctx.new_graph
+                                        .edges
+                                        .iter()
+                                        .find(|path_edge| {
+                                            path_edge.is_path()
+                                                && path_edge.get_from().next_pc == 0
+                                                && path_edge.to().next_pc == x.get_from().next_pc
+                                                && path_edge.to().belongs_to_var
+                                                    == x.get_from().belongs_to_var
+                                                && path_edge.get_from().function == d2.function
+                                                && path_edge.to().function == d2.function
+                                        })
+                                        .is_some()
                                 })
-                                .map(|x| x.to());
+                                .map(|x| x.to())
+                                .collect::<Vec<_>>();
 
                             for d5 in d5 {
                                 if summary
                                     .iter()
                                     .find(|x| {
                                         &x.get_from().function == caller
-                                            && x.get_from().belongs_to_var == d4.belongs_to_var
+                                            && x.get_from().belongs_to_var
+                                                == caller_fact.belongs_to_var
                                             && &x.to().function == caller
                                             && x.to().next_pc == x.get_from().next_pc + 1
                                             && x.to().belongs_to_var == d5.belongs_to_var
@@ -331,40 +373,33 @@ impl TabulationOriginal {
                                 {
                                     let ret = d5.clone();
                                     summary.push(Edge::Summary {
-                                        from: d4.clone(),
+                                        from: caller_fact.clone(),
                                         to: ret.clone(),
                                     });
 
                                     let edges = ctx
-                                        .graph
+                                        .new_graph
                                         .edges
                                         .iter()
                                         .filter(|x| {
-                                            &x.get_from().function == caller
-                                                && &x.to().function == caller
-                                                && x.get_from().next_pc == start_pc
-                                                && x.to().belongs_to_var == d4.belongs_to_var
-                                                && x.to().next_pc == d4.next_pc
+                                            x.is_path()
+                                                && &x.get_from().function == caller
+                                                //&& x.to().belongs_to_var == ret.belongs_to_var
+                                                && x.to().next_pc == ret.next_pc - 1
                                         })
-                                        .map(|x| x.get_from());
+                                        .map(|x| x.get_from().clone())
+                                        .collect::<Vec<_>>();
 
                                     for d3 in edges {
                                         let mut ret = ret.clone();
                                         ret.belongs_to_var = d5.belongs_to_var.clone();
-
-                                        let init = ctx
-                                            .state
-                                            .get_facts_at(caller, 0)?
-                                            .find(|x| x.belongs_to_var == d3.belongs_to_var)
-                                            .context("Cannot find fact")?
-                                            .clone();
 
                                         self.propagate(
                                             &mut ctx.new_graph,
                                             path_edge,
                                             worklist,
                                             Edge::Path {
-                                                from: init,
+                                                from: d3.clone(),
                                                 to: ret,
                                             },
                                         )?;

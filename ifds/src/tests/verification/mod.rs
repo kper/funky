@@ -205,3 +205,32 @@ fn test_if_else() {
 
     run!("verification_if_else", ir, &req);
 }
+
+#[test]
+fn test_early_return() {
+    let req = Request {
+        function: "test".to_string(),
+        pc: 0,
+        variable: Some("%0".to_string()),
+    };
+
+    let ir = "\
+        define test (result 0) (define %0 %1 %2 %3) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+            %2 <- CALL mytestfoo(%0)
+            %3 <- CALL mytestfoo(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %0 = 2   
+            %1 = 3
+            RETURN %1;
+        };
+        define mytestfoo (param %0) (result 1) (define %0 %1) {
+            %1 = 3
+            RETURN %0;
+        };
+    ";
+
+    run!("verification_early_return", ir, &req);
+}

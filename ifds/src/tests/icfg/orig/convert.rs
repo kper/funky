@@ -115,6 +115,7 @@ fn test_ir_multiple_functions() {
 
 #[test]
 fn test_ir_functions_rename_reg() {
+    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
@@ -149,8 +150,8 @@ fn test_ir_return_values() {
             %1 <- CALL mytest(%0)
         };
         define mytest (param %0) (result 1) (define %0 %1) {
+            %1 = %0
             %0 = 2   
-            %1 = 3
             RETURN %1;
         };"
     );

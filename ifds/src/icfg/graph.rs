@@ -208,6 +208,14 @@ impl Edge {
         }
     }
 
+    /// Checks if edge is a path edge
+    pub fn is_path(&self) -> bool {
+        match self {
+            Edge::Path { from: _, to: _ } => true,
+            _ => false,
+        }
+    }
+
     /// Checks if edge is a call edge
     pub fn is_call(&self) -> bool {
         match self {
