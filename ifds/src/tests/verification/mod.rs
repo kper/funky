@@ -282,3 +282,23 @@ fn test_ir_return_double() {
         ";
     run!("return_double", ir, &req);
 }
+
+#[test]
+fn test_ir_return_double2() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 %2 <- CALL mytest(%0)
+            %1 = 2
+        };
+        define mytest (param %0) (result 2) (define %0 %1) {
+            %1 = 3
+            RETURN %0 %1;
+        };
+        ";
+    run!("return_double2", ir, &req);
+}
