@@ -31,12 +31,38 @@ Due to a error in cargo, it is not possible to build the taint checker from the 
 
 ## Usage
 
+### funky
+
 ```
 ./funky <input> <function> [<args>...] [--stage0 | --stage1] [--spec]
 ./funky (-h | --help)
 ./funky --version
 ```
+
+### ifds
+
+```
+USAGE:
+    ifds <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+SUBCOMMANDS:
+    help     Prints this message or the help of the given subcommand(s)
+    ir       
+    naive    
+    orig     
+    repl     
+    run      
+    tikz     
+    ui 
+```
+
 ## Run it
+
+### funky
 
 ```
 cargo run --bin funky -- ./testsuite/block.0.wasm "break-bare"
