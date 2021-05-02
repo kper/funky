@@ -333,3 +333,33 @@ fn test_global_get_and_set_multiple_functions() {
     ";
     run!("global_get_and_set_multiple_functions", ir, &req);
 }
+
+#[test]
+fn test_return_branches() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1) {
+            %0 = 5
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1 %2) {
+            %1 = 1
+            IF %1 THEN GOTO 1 ELSE GOTO 2
+            BLOCK 1
+            %1 = 2
+            %2 = 3
+            RETURN %1;
+            GOTO 3
+            BLOCK 2
+            %2 = 4
+            GOTO 3
+            BLOCK 3
+            RETURN %0;
+        };
+        ";
+
+    run!("return_branches", ir, &req);
+}
