@@ -16,7 +16,7 @@ In this video, you can see how variables are tainted (the first parameter of the
 
 ### Tabulation
 
-Tabulation is the process of calculating the `same-level-realizable-paths`. The `ifds` supports multiple algorithms.
+Tabulation is the process of calculating the `same-level-realizable-paths`. The `ifds` implementation supports multiple algorithms.
 
 ![Tabulation](graph.png)
 
