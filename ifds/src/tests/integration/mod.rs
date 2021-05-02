@@ -8,10 +8,15 @@ use wasm_parser::{parse, read_wasm};
 use crate::grammar::*;
 use crate::icfg::tabulation::fast::TabulationFast;
 use crate::icfg::tikz::render_to;
+use crate::icfg::tikz2::render_to as render_to2;
 use crate::solver::Request;
 
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+
+use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
+use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
+use crate::icfg::tabulation::sparse::TabulationSparse;
 
 macro_rules! wasm {
     ($input:expr) => {{
@@ -59,6 +64,27 @@ macro_rules! run {
     };
 }
 
+macro_rules! run_sparse {
+    ($name:expr, $req:expr, $fs:expr) => {
+        let ir = wasm!($fs);
+
+        let ir_code = ir.buffer();
+
+        let mut convert = TabulationSparse::new(
+            SparseTaintInitialFlowFunction,
+            SparseTaintNormalFlowFunction,
+        );
+
+        let prog = ProgramParser::new().parse(&ir_code).unwrap();
+
+        let (graph, res) = convert.visit(&prog, &$req).unwrap();
+
+        let output = render_to2(&graph, &res);
+
+        assert_snapshot!(format!("sparse_{}", $name), output);
+    };
+}
+
 #[test]
 fn test_add() {
     let req = Request {
@@ -79,6 +105,18 @@ fn test_fib() {
     };
 
     run!("fib", req, "../tests/fib.wasm");
+}
+
+#[test]
+fn test_fib_sparse() {
+    env_logger::init();
+    let req = Request {
+        function: "0".to_string(),
+        variable: None,
+        pc: 3,
+    };
+
+    run_sparse!("fib", req, "../tests/fib.wasm");
 }
 
 #[test]

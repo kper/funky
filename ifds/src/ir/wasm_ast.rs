@@ -516,6 +516,9 @@ impl IR {
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
 
+                    debug!("First block is {}", name);
+                    debug!("Second block is {}", then_name);
+
                     let block = Block {
                         name: name.clone(),
                         is_loop: false,
@@ -564,6 +567,10 @@ impl IR {
                     let name = self.block_counter.get();
                     let then_name = self.block_counter.get();
                     let done_name = self.block_counter.get();
+
+                    debug!("First block is {}", name);
+                    debug!("Second block is {}", then_name);
+                    debug!("Done block is {}", done_name);
 
                     let block = Block {
                         name: name.clone(),

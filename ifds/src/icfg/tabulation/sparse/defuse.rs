@@ -24,6 +24,7 @@ type PC = usize;
 enum SCFG {
     Instruction(PC, Instruction),
     Conditional(PC, Instruction, Vec<SCFG>, Vec<SCFG>),
+    ConditionalSingle(PC, Instruction, PC, Vec<SCFG>),
     ConditionalJump(PC, Instruction, PC),
     Jump(PC, PC), //unconditional
     Table(PC, Instruction, Vec<PC>),
@@ -35,6 +36,7 @@ impl SCFG {
         match self {
             SCFG::Conditional(pc, ..) => *pc,
             SCFG::Instruction(pc, ..) => *pc,
+            SCFG::ConditionalSingle(pc, ..) => *pc,
             SCFG::ConditionalJump(pc, ..) => *pc,
             SCFG::Jump(pc, _jump_to_pc) => *pc,
             SCFG::Table(pc, ..) => *pc,
@@ -573,6 +575,25 @@ impl DefUseChain {
 
                     node = x;
                 }
+                SCFG::ConditionalSingle(pc, _instruction, _jump_to, _block) => {
+                    let x = self
+                        .add_next_instruction(
+                            &relevant_instructions,
+                            i,
+                            function,
+                            block_resolver,
+                            var,
+                            track,
+                            is_defined,
+                            graph,
+                            pc,
+                            &node,
+                            max_len,
+                        )
+                        .context("Adding next instruction failed")?;
+
+                    node = x;
+                }
                 SCFG::Conditional(pc, _instruction, _block1, _block2) => {
                     let x = self
                         .add_next_instruction(
@@ -593,7 +614,7 @@ impl DefUseChain {
                     node = x;
                 }
                 SCFG::Jump(pc, jump_to_pc) => {
-                    log::error!("Jump to pc is {}", jump_to_pc);
+                    //log::error!("Jump to pc is {}", jump_to_pc);
                     let next = jump_to_pc;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
                     let x = Fact::from_var(var, *pc, *next, track);
@@ -602,7 +623,7 @@ impl DefUseChain {
                 }
                 SCFG::ConditionalJump(pc, _instruction, jump_to_pc) => {
                     // One edge back
-                    log::error!("Jump to pc is {}", jump_to_pc);
+                    //log::error!("Jump to pc is {}", jump_to_pc);
                     let next = jump_to_pc;
                     debug!("Edge from {} to {} for {}", pc, next, var.name);
                     let x = Fact::from_var(var, *pc, *next, track);
@@ -629,7 +650,7 @@ impl DefUseChain {
                 }
                 SCFG::Table(pc, _instruction, jumps) => {
                     for jump_to_pc in jumps {
-                        log::error!("Jump to pc is {}", jump_to_pc);
+                        //log::error!("Jump to pc is {}", jump_to_pc);
                         let next = jump_to_pc;
                         debug!("Edge from {} to {} for {}", pc, next, var.name);
                         let x = Fact::from_var(var, *pc, *next, track);
@@ -716,6 +737,33 @@ impl DefUseChain {
 
                     Ok(x)
                 }
+                SCFG::ConditionalSingle(_pc, _instruction, _jump_pc, block) => {
+                    // We have to look a step further
+                    let next = relevant_instructions
+                        .get(i + 2)
+                        .map(|x| x.get_pc())
+                        .unwrap_or(max_len);
+
+                    let _res1 = self.build_graph(
+                        function,
+                        block,
+                        block_resolver,
+                        next,
+                        var,
+                        track,
+                        0,
+                        is_defined,
+                        false,
+                        graph,
+                        false,
+                    )?;
+
+                    let x = Fact::from_var(var, *pc, next, track);
+                    graph.add_normal(node.clone(), x.clone())?;
+                    debug!("Edge from {} to {} for {}", pc, next, var.name);
+
+                    Ok(x)
+                }
                 _ => {
                     let next = next_instruction.get_pc();
                     let x = Fact::from_var(var, *pc, next, track);
@@ -749,63 +797,45 @@ impl DefUseChain {
             debug!("Instruction {:?}", inner_instruction);
             match inner_instruction {
                 Instruction::Conditional(_, jumps) if jumps.len() == 2 => {
-                    let after_cond = jumps
-                        .last()
+                    let first = jumps
+                        .first()
                         .unwrap()
                         .parse::<usize>()
-                        .context("Jump is not a number")?
-                        + 1;
-                    let end_cond_pc = block_resolver
-                        .get(&(function.name.clone(), format!("{}", after_cond)))
-                        .context("Cannot find the end of the conditional")?;
+                        .context("Jump is not a number")?;
+
+                    let first_pc = block_resolver
+                        .get(&(function.name.clone(), format!("{}", first)))
+                        .with_context(|| {
+                            format!("Cannot find the beginning of the conditional {}", first)
+                        })?;
 
                     let after_first_block = jumps
                         .get(1)
                         .unwrap()
                         .parse::<usize>()
-                        .context("Jump is not a number")?
-                        - 1; //last instruction of the first_block
-                    let last_pc_first_block = block_resolver
-                        .get(&(function.name.clone(), format!("{}", after_first_block)))
-                        .context("Cannot find the end of the first block")?;
-
-                    let second_block_id = jumps
-                        .get(1)
-                        .unwrap()
-                        .parse::<usize>()
                         .context("Jump is not a number")?;
 
-                    let first_pc_second_block = block_resolver
-                        .get(&(function.name.clone(), format!("{}", second_block_id)))
-                        .context("Cannot find the end of the second block")?;
+                    let last_pc_first_block = block_resolver
+                        .get(&(function.name.clone(), format!("{}", jumps.last().unwrap())))
+                        .context("Cannot find the end of the first block")?
+                        - 1;
 
                     let first_branch = self
-                        .take_branch(function, pc + 2, last_pc_first_block - pc)
+                        .take_branch(function, *first_pc, last_pc_first_block - pc)
                         .collect::<Vec<_>>();
                     debug!("first {:#?}", first_branch);
                     assert_eq!(last_pc_first_block - pc, first_branch.len());
-                    let second_branch = self
-                        .take_branch(
-                            function,
-                            first_pc_second_block + 1,
-                            end_cond_pc - first_pc_second_block - 1,
-                        )
-                        .collect::<Vec<_>>();
-                    debug!("second {:#?}", second_branch);
-                    assert_eq!(end_cond_pc - first_pc_second_block - 1, second_branch.len());
 
                     let first_branch = self.build_next2(function, first_branch, block_resolver)?;
-                    let second_branch =
-                        self.build_next2(function, second_branch, block_resolver)?;
 
-                    main.push(SCFG::Conditional(
+                    main.push(SCFG::ConditionalSingle(
                         *pc,
                         inner_instruction.clone().clone(),
+                        *first_pc + 1,
                         first_branch,
-                        second_branch,
                     ));
 
-                    i = *end_cond_pc + 1; //skip all conditionals
+                    i = last_pc_first_block + 1; //skip all conditionals
                     debug!("Setting i to {}", i);
                 }
                 Instruction::Conditional(_, jumps) if jumps.len() == 1 => {

@@ -92,19 +92,22 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     )?;
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
-                    //panic!("Block or Jump as first instruction is not supported");
+                    panic!("Block or Jump as first instruction is not supported");
 
-                    log::warn!(
+                    /*log::warn!(
                         "Statement is a block or jump instruction. Therefore skipping to next one."
-                    );
-                    init_fact = defuse
-                        .get_facts_at(ctx, function, &init_fact.belongs_to_var, pc)?
+                    );*/
+
+                    /*let next_facts =
+                        defuse.get_facts_at(ctx, function, &init_fact.belongs_to_var, pc)?;
+
+                    init_fact = next_facts
                         .first()
                         .context("Cannot find next initial fact")?
                         .clone()
                         .clone();
 
-                    offset += 1;
+                    offset += 1;*/
                     continue;
                 }
                 _ => {}
