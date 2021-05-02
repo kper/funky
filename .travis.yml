@@ -1,4 +1,5 @@
 language: rust
+sudo: required
 rust:
   - stable
 before_install:
@@ -6,6 +7,18 @@ before_install:
   - sudo apt-get -y install cmake make build-essential
 env:
   - RUST_MIN_STACK=8388608
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - libiberty-dev
+
 install:
   - git clone --recursive https://github.com/WebAssembly/wabt && mkdir wabt/out && cd wabt/out && cmake .. && make && sudo make install
   - rustup component add clippy 
@@ -13,6 +26,7 @@ script:
   - echo $PWD
   - ls
   - cd ../.. && sh ./ci.sh
+
 
 after_success: |
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
