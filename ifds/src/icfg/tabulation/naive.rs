@@ -655,23 +655,40 @@ impl TabulationNaive {
                     }
                 }
             }
-            Instruction::Load(dest, _offset, src) => {
+            Instruction::Load(dest, offset, src) => {
                 let in_ = ctx.state.get_facts_at(&function.name, pc)?;
+
+                for from in in_ {
+                    let out_ = ctx
+                        .state
+                        .get_facts_at(&function.name, pc + 1)?
+                        .filter(|x| &x.belongs_to_var == &from.belongs_to_var);
+
+                    for after in out_ {
+                        ctx.graph.add_normal(from.clone(), after.clone())?;
+                    }
+                }
+
+                // Assigment
+                let in_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| &x.belongs_to_var == src);
                 let out_ = ctx
                     .state
                     .get_facts_at(&function.name, pc + 1)?
-                    .filter(|x| &x.belongs_to_var != dest);
+                    .filter(|x| &x.belongs_to_var == dest);
 
                 for (from, after) in in_.zip(out_) {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
 
-                // Assigment
-
+                let mem_var = ctx.state.calculate_mem_var_name(*offset as usize);
+                // Assignment from memory
                 let in_ = ctx
                     .state
                     .get_facts_at(&function.name, pc)?
-                    .filter(|x| &x.belongs_to_var == src);
+                    .filter(|x| x.var_is_memory && &x.belongs_to_var == &mem_var);
                 let out_ = ctx
                     .state
                     .get_facts_at(&function.name, pc + 1)?

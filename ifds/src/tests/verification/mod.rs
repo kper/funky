@@ -43,6 +43,7 @@ macro_rules! naive {
         let mut sinks = solver
             .all_sinks(&mut graph, &state, &$req)
             .into_iter()
+            .filter(|x| x.pc > $req.pc + 1)
             .map(|x| x.variable)
             .unique()
             .collect::<Vec<_>>();
@@ -233,4 +234,32 @@ fn test_early_return() {
     ";
 
     run!("verification_early_return", ir, &req);
+}
+
+#[test]
+fn test_memory_load_different_functions2() {
+    let req = Request {
+        variable: Some("%1".to_string()),
+        function: "0".to_string(),
+        pc: 2,
+    };
+    let ir = "
+       define 0 (result 0) (define %0 %1 %2 %3 %4 %5 %6 %7) {
+        BLOCK 0
+        %0 = 8
+        %1 = -12345
+        STORE FROM %1 OFFSET 0 + %0 ALIGN 2 32
+        %2 <- CALL 1 ()
+        STORE FROM %1 OFFSET 1 + %0 ALIGN 2 32
+        %3 <- CALL 1 ()
+        RETURN ;
+       }; 
+
+       define 1 (result 1) (define %0 %1) {
+        %1 = 8
+        %0 = LOAD OFFSET 0 + %1 ALIGN 0
+        RETURN %0;
+       };
+    ";
+    run!("memory_load_different_functions2", ir, &req);
 }
