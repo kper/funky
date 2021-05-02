@@ -115,7 +115,6 @@ fn test_ir_multiple_functions() {
 
 #[test]
 fn test_ir_functions_rename_reg() {
-    env_logger::init();
     let req = Request {
         variable: None,
         function: "test".to_string(),
