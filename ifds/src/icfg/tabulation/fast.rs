@@ -128,13 +128,12 @@ where
             let pos_in_param = params
                 .iter()
                 .position(|x| x == caller_var)
-                .map(|x| x + TAUT)
                 .unwrap_or(callee_globals); // because, globals are before the parameters
 
             let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
                 (true, _) => 0,
-                (false, false) => callee_globals + pos_in_param, // if not global, than start at normal beginning
-                (false, true) => pos_in_param,                   //look for the global
+                (false, false) => callee_globals + pos_in_param + 1, // if not global, than start at normal beginning
+                (false, true) => pos_in_param - TAUT,                //look for the global
             };
 
             let callee_fact = init_facts
@@ -770,7 +769,7 @@ where
         }
 
         //graph.edges.extend_from_slice(&path_edge);
-        //graph.edges.extend_from_slice(&normal_flows_debug);
+        //ctx.graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
 
         Ok(())

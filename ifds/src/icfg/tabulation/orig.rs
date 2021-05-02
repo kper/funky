@@ -89,6 +89,8 @@ impl TabulationOriginal {
             },
         )?;
 
+        self.init_flow(ctx, &mut path_edge, &mut worklist, &function, req.pc, facts)?;
+
         self.forward(
             &prog,
             &function,
@@ -99,6 +101,102 @@ impl TabulationOriginal {
             ctx,
             req,
         )?;
+
+        Ok(())
+    }
+
+    fn init_flow<'a>(
+        &self,
+        ctx: &mut Ctx<'a>,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
+        function: &AstFunction,
+        start_pc: usize,
+        facts: Vec<Fact>,
+    ) -> Result<()> {
+        let next_facts = ctx
+            .state
+            .get_facts_at(&function.name, start_pc + 1)?
+            .cloned()
+            .collect::<Vec<_>>();
+
+        if let Some(instruction) = function.instructions.get(start_pc) {
+            match instruction {
+                Instruction::BinOp(dest, ..)
+                | Instruction::Assign(dest, ..)
+                | Instruction::Phi(dest, ..)
+                | Instruction::Unknown(dest)
+                | Instruction::Unop(dest, ..)
+                | Instruction::Load(dest, ..) => {
+                    let x = facts
+                        .iter()
+                        .find(|x| x.var_is_taut)
+                        .context("Cannot find initial fact")?;
+
+                    let y = next_facts
+                        .iter()
+                        .find(|x| &x.belongs_to_var == dest)
+                        .context("Cannot find initial fact")?;
+
+                    self.propagate(
+                        &mut ctx.new_graph,
+                        path_edge,
+                        worklist,
+                        Edge::Path {
+                            from: x.clone(),
+                            to: y.clone(),
+                        },
+                    )?;
+                }
+                Instruction::Call(_, _, dests) => {
+                    for dest in dests {
+                        let x = facts
+                            .iter()
+                            .find(|x| x.var_is_taut)
+                            .context("Cannot find initial fact")?;
+
+                        let y = next_facts
+                            .iter()
+                            .find(|x| &x.belongs_to_var == dest)
+                            .context("Cannot find initial fact")?;
+
+                        self.propagate(
+                            &mut ctx.new_graph,
+                            path_edge,
+                            worklist,
+                            Edge::Path {
+                                from: x.clone(),
+                                to: y.clone(),
+                            },
+                        )?;
+                    }
+                }
+                Instruction::CallIndirect(_, _, dests) => {
+                    for dest in dests {
+                        let x = facts
+                            .iter()
+                            .find(|x| x.var_is_taut)
+                            .context("Cannot find initial fact")?;
+
+                        let y = next_facts
+                            .iter()
+                            .find(|x| &x.belongs_to_var == dest)
+                            .context("Cannot find initial fact")?;
+
+                        self.propagate(
+                            &mut ctx.new_graph,
+                            path_edge,
+                            worklist,
+                            Edge::Path {
+                                from: x.clone(),
+                                to: y.clone(),
+                            },
+                        )?;
+                    }
+                }
+                _ => {}
+            }
+        }
 
         Ok(())
     }
