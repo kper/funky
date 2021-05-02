@@ -10,7 +10,20 @@ In addition, I am working on static taint analysis for webassembly. This means y
 
 ## Taint Analysis
 
+In this video, you can see how variables are tainted (the first parameter of the tuple is the destination). What you cannot see is that the taints will be also propagated to the called functions. For example the register `%9` is a parameter of function `0`. The result register `%10`, however, was not propagated later. Therefore, the value in `%9` was overwritten with another value in the function `0`.
+
 [![asciicast](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6.svg)](https://asciinema.org/a/iRf8YzWUwip1GaVyNMSaSI3s6)
+
+### Tabulation
+
+Tabulation is the process of calculating the `same-level-realizable-paths`. The `ifds` supports multiple algorithms.
+
+![Tabulation](graph.png)
+
+- No tabulation (graph-reachability will be solved with breadth-first-search)
+- Original (Reps 1995 https://research.cs.wisc.edu/wpis/papers/popl95.pdf)
+- Fast (Naeem et. al https://plg.uwaterloo.ca/~olhotak/pubs/cc10.pdf) 
+- Sparse (He et. al) https://dl.acm.org/doi/abs/10.1109/ASE.2019.00034
 
 ## Building
 
