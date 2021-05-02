@@ -1,4 +1,4 @@
-# Funky [![Build Status](https://travis-ci.org/kper/funky.svg?branch=master)](https://travis-ci.org/kper/funky) [![codecov](https://codecov.io/gh/kper/funky/branch/master/graph/badge.svg?token=3WHCDLUV5I)](https://codecov.io/gh/kper/funky)
+# Funky [![Build Status](https://travis-ci.org/kper/funky.svg?branch=master)](https://travis-ci.org/kper/funky)
 
 Funky is a wasm interpreter. This project is an assignment for the Lehrveranstaltung Abstrakte Maschinen. It will not support module-loading and wat files.
 
