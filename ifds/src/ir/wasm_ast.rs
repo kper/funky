@@ -391,7 +391,9 @@ impl IR {
                     let mut param_regs = Vec::new();
 
                     for i in 0..ty.param_types.len() {
-                        param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
+                        let x = self.symbol_table.peek_offset(i)?;
+                        assert!(x.is_normal(), "Parameter must be a normal register");
+                        param_regs.push(format!("{}", x));
                     }
 
                     if ty.return_types.len() == 0 {
@@ -887,7 +889,9 @@ impl IR {
                     );
 
                     for i in 0..num_params {
-                        param_regs.push(format!("{}", self.symbol_table.peek_offset(i)?));
+                        let x = self.symbol_table.peek_offset(i)?;
+                        assert!(x.is_normal(), "Parameter must be a normal register");
+                        param_regs.push(format!("{}", x));
                     }
 
                     // Function returns no variables

@@ -132,8 +132,11 @@ where
 
             let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
                 (true, _) => 0,
-                (false, false) => callee_globals + pos_in_param + 1, // if not global, than start at normal beginning
-                (false, true) => pos_in_param - TAUT,                //look for the global
+                (false, false) => callee_globals + pos_in_param + TAUT, // if not global, than start at normal beginning
+                (false, true) => init_facts
+                    .iter()
+                    .position(|x| x.var_is_global && caller_var == &x.belongs_to_var)
+                    .context("Global was not found")?, //look for the global
             };
 
             let callee_fact = init_facts

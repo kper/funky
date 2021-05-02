@@ -355,13 +355,14 @@ fn test_pass_global_variable() {
     let caller_function = AstFunction {
         name: "main".to_string(),
         results_len: 0,
-        definitions: vec!["%-1".to_string(), "%0".to_string()],
+        definitions: vec!["%-1".to_string(), "%0".to_string(), "%1".to_string()],
         instructions: vec![
             Instruction::Const("%-1".to_string(), 0.0),
+            Instruction::Assign("%0".to_string(), "%-1".to_string()),
             Instruction::Call(
                 "test".to_string(),
-                vec!["%-1".to_string()],
                 vec!["%0".to_string()],
+                vec!["%1".to_string()],
             ),
         ],
         ..Default::default()
@@ -418,7 +419,6 @@ fn test_pass_global_variable() {
 
     assert_eq!(call_to_start_edges.len(), 1);
     assert_eq!(
-        call_to_start_edges,
         vec![Edge::Call {
             from: foo,
             to: Fact {
@@ -428,7 +428,8 @@ fn test_pass_global_variable() {
                 var_is_global: true,
                 ..Default::default()
             }
-        }]
+        }],
+        call_to_start_edges,
     );
 }
 
