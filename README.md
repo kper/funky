@@ -23,7 +23,7 @@ Tabulation is the process of calculating the `same-level-realizable-paths`. The 
 - No tabulation (graph-reachability will be solved with breadth-first-search)
 - Original (Reps 1995 https://research.cs.wisc.edu/wpis/papers/popl95.pdf)
 - Fast (Naeem et. al https://plg.uwaterloo.ca/~olhotak/pubs/cc10.pdf) 
-- Sparse (He et. al) https://dl.acm.org/doi/abs/10.1109/ASE.2019.00034
+- Sparse (He et. al https://dl.acm.org/doi/abs/10.1109/ASE.2019.00034)
 
 ## Building
 
