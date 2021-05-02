@@ -80,7 +80,7 @@ You will find a custom debugger in `debugger` and the taint analysis in the `ifd
 
 ## Current spec coverage
 
-Run `./spec_test.sh` to run the webassembly's specsuite. The current spec test coverage is $83%$.
+Run `./spec_test.sh` to run the webassembly's specsuite. The current spec test coverage is 83%.
 
 ~~~
 Statistic {
