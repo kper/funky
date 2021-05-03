@@ -257,7 +257,7 @@ fn test_ir_if_else_binop() {
     );
 
     let scfg = tabulation
-        .get_scfg_graph(&"test".to_string(), &"%1".to_string())
+        .get_scfg_graph(&"test".to_string(), &"%0".to_string())
         .unwrap();
 
     let output = scfg
@@ -930,7 +930,7 @@ fn test_global_call() {
     let req = Request {
         variable: None,
         function: "1".to_string(),
-        pc: 0,
+        pc: 1,
     };
     ir!(
         "test_ir_global_call",

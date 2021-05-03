@@ -1,5 +1,6 @@
 use crate::icfg::tabulation::sparse::defuse::DefUseChain;
 use crate::icfg::{flowfuncs::*, tabulation::sparse::Ctx};
+use anyhow::bail;
 
 pub struct SparseTaintInitialFlowFunction;
 
@@ -92,23 +93,7 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                     )?;
                 }
                 Instruction::Block(_) | Instruction::Jump(_) => {
-                    panic!("Block or Jump as first instruction is not supported");
-
-                    /*log::warn!(
-                        "Statement is a block or jump instruction. Therefore skipping to next one."
-                    );*/
-
-                    /*let next_facts =
-                        defuse.get_facts_at(ctx, function, &init_fact.belongs_to_var, pc)?;
-
-                    init_fact = next_facts
-                        .first()
-                        .context("Cannot find next initial fact")?
-                        .clone()
-                        .clone();
-
-                    offset += 1;*/
-                    continue;
+                    bail!("Block or Jump as first instruction is not supported");
                 }
                 _ => {}
             }
