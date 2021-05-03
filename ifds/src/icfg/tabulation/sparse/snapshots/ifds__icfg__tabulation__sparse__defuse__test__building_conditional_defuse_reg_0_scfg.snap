@@ -32,7 +32,7 @@ expression: facts
         var_is_taut: false,
         var_is_memory: false,
         pc: 2,
-        next_pc: 7,
+        next_pc: 6,
         track: 1,
         function: "main",
         memory_offset: None,

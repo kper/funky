@@ -978,3 +978,43 @@ fn test_global_writes() {
     "
     );
 }
+
+#[test]
+fn test_assignment_small() {
+    let req = Request {
+        variable: Some("%1".to_string()),
+        function: "0".to_string(),
+        pc: 4,
+    };
+    ir!(
+        "test_ir_assignment_small",
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+        BLOCK 0
+        BLOCK 1
+        BLOCK 3
+        BLOCK 4
+        %1 = %0
+        %3 = %2 op %1
+        IF %3 THEN GOTO 5 ELSE GOTO 6
+        BLOCK 5 
+        %4 = %0
+        %5 = 1
+        %6 = %5 op %4
+        IF %6 THEN GOTO 4
+        KILL %6
+        KILL %5
+        KILL %4
+        GOTO 6
+        BLOCK 6
+        %7 = %0
+        %8 = -1
+        %7 = %0
+        %8 = -1
+        GOTO 7
+        BLOCK 7
+        }; 
+    "
+    );
+}

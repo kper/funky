@@ -813,7 +813,7 @@ impl DefUseChain {
                         main.push(SCFG::ConditionalJump(
                             *pc,
                             inner_instruction.clone().clone(),
-                            *second_pc + 1,
+                            *second_pc,
                         ));
 
                         i += 1; // continue normal
