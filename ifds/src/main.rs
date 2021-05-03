@@ -399,8 +399,6 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     };
 
     let mut get_taints = |req: &Request| {
-        let mut solver = IfdsSolver;
-
         let res = convert.visit(&prog, &req);
         let (mut graph, state) = res.expect("Cannot create graph");
 
@@ -413,7 +411,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
             .unique()
             .map(|x| Taint {
                 function: x.function.clone(),
-                pc: x.pc,
+                pc: x.pc - 1,
                 variable: x.belongs_to_var.clone(),
             })
             .collect::<Vec<_>>();
