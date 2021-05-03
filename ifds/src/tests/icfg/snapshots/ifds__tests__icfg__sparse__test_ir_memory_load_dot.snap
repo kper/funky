@@ -28,7 +28,6 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%5$}] (9) at (3, 6) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%5$}] (10) at (3, 11) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%7$}] (11) at (2, 8) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%7$}] (12) at (2, 11) { };
 \node[font=\tiny] (note_0) at (-1.5, 2.5) {Const(1, -12345.0)};
 \node[font=\tiny] (note_1) at (-1.5, 3.5) {Store(1, 0.0, 0)};
 \node[font=\tiny] (note_2) at (-1.5, 4.5) {Const(4, 8.0)};
@@ -50,7 +49,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (9);
 		\path[->, blue] (0) [bend right] edge  node { } (10);
 		\path[->, blue] (0) [bend right] edge  node { } (11);
-		\path[->, blue] (0) [bend right] edge  node { } (12);
 
 
                 \end{tikzpicture}

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::fmt;
 
 use crate::counter::Counter;
@@ -23,11 +24,22 @@ pub enum Reg {
 }
 
 impl Reg {
+    /// Extracts the the name of the register
     pub fn val(&self) -> Result<isize> {
         Ok(match *self {
             Reg::Normal(x) => x as isize,
             Reg::Global(x) => x,
         })
+    }
+
+    /// Returns `true` if the register is a normal register.
+    pub fn is_normal(&self) -> bool {
+        matches!(self, Reg::Normal(_))
+    }
+
+    /// Returns `true` if the register is a global register.
+    pub fn is_global(&self) -> bool {
+        matches!(self, Reg::Global(_))
     }
 }
 
@@ -56,6 +68,7 @@ impl SymbolTable {
         self.counter = Counter::default();
     }
 
+    /// Get the last register which was not killed
     pub fn peek(&self) -> Result<Reg> {
         debug!("Peeking symbol");
         for var in self.vars.iter().rev() {
@@ -100,6 +113,7 @@ impl SymbolTable {
         bail!("No active variable in symbol table");
     }
 
+    /// Create a new normal register and advancing the `self.counter`.
     pub fn new_reg(&mut self) -> Result<Reg> {
         let val = self.counter.get();
         let val = Reg::Normal(val);

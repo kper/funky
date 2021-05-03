@@ -257,7 +257,7 @@ fn test_ir_if_else_binop() {
     );
 
     let scfg = tabulation
-        .get_scfg_graph(&"test".to_string(), &"%1".to_string())
+        .get_scfg_graph(&"test".to_string(), &"%0".to_string())
         .unwrap();
 
     let output = scfg
@@ -930,7 +930,7 @@ fn test_global_call() {
     let req = Request {
         variable: None,
         function: "1".to_string(),
-        pc: 0,
+        pc: 1,
     };
     ir!(
         "test_ir_global_call",
@@ -975,6 +975,109 @@ fn test_global_writes() {
             %1 = 3
             RETURN %-1;
         };
+    "
+    );
+}
+
+#[test]
+fn test_assignment_small() {
+    let req = Request {
+        variable: Some("%1".to_string()),
+        function: "0".to_string(),
+        pc: 4,
+    };
+    ir!(
+        "test_ir_assignment_small",
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+        BLOCK 0
+        BLOCK 1
+        BLOCK 3
+        BLOCK 4
+        %1 = %0
+        %3 = %2 op %1
+        IF %3 THEN GOTO 5 ELSE GOTO 6
+        BLOCK 5 
+        %4 = %0
+        %5 = 1
+        %6 = %5 op %4
+        IF %6 THEN GOTO 4
+        KILL %6
+        KILL %5
+        KILL %4
+        GOTO 6
+        BLOCK 6
+        %7 = %0
+        %8 = -1
+        %7 = %0
+        %8 = -1
+        GOTO 7
+        BLOCK 7
+        }; 
+    "
+    );
+}
+
+#[test]
+fn test_assignment_small2() {
+    let req = Request {
+        variable: Some("%8".to_string()),
+        function: "0".to_string(),
+        pc: 18,
+    };
+    ir!(
+        "test_ir_assignment_small2",
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+        BLOCK 0
+        BLOCK 1
+        BLOCK 3
+        BLOCK 4
+        %1 = %0
+        %3 = %2 op %1
+        IF %3 THEN GOTO 5 ELSE GOTO 6
+        BLOCK 5 
+        %4 = %0
+        %5 = 1
+        %6 = %5 op %4
+        IF %6 THEN GOTO 4
+        KILL %6
+        KILL %5
+        KILL %4
+        GOTO 6
+        BLOCK 6
+        %7 = %0
+        %8 = -1
+        %7 = %0
+        %8 = -1
+        GOTO 7
+        BLOCK 7
+        }; 
+    "
+    );
+}
+
+#[test]
+fn test_assignment_small3() {
+    let req = Request {
+        variable: Some("%7".to_string()),
+        function: "0".to_string(),
+        pc: 0,
+    };
+    ir!(
+        "test_ir_assignment_small3",
+        req,
+        "
+        define 0 (param %0) (result 1) (define %0 %1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17) {
+        %7 = %0
+        %8 = -1
+        %7 = %0
+        %8 = -1
+        GOTO 7
+        BLOCK 7
+        }; 
     "
     );
 }

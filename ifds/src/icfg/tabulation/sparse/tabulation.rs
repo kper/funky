@@ -749,7 +749,7 @@ where
         callee: &String,
         params: &Vec<String>,
         dests: &Vec<String>,
-        start_pc: usize,
+        _start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
         let caller_var = &d2.belongs_to_var;
@@ -940,7 +940,7 @@ where
             );
             let taut = self
                 .defuse
-                .get_facts_at(ctx, &caller_function, &"taut".to_string(), start_pc)
+                .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
                 .context("Cannot find facts")?
                 .first()
                 .context("Cannot find tautological start fact")?

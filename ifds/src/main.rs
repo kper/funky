@@ -2,18 +2,22 @@ use crate::ir::wasm_ast::IR;
 use anyhow::{Context, Result};
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
+use itertools::Itertools;
 use log::debug;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 
-use crate::icfg::tabulation::naive::TabulationNaive;
-use crate::icfg::tabulation::fast::TabulationFast;
-use crate::icfg::tabulation::orig::TabulationOriginal;
-use crate::{solver::bfs::*, solver::*};
+use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
+use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
 use crate::icfg::flowfuncs::taint::initial::TaintInitialFlowFunction;
+use crate::icfg::tabulation::fast::TabulationFast;
+use crate::icfg::tabulation::naive::TabulationNaive;
+use crate::icfg::tabulation::orig::TabulationOriginal;
+use crate::icfg::tabulation::sparse::TabulationSparse;
+use crate::{solver::bfs::*, solver::*};
 
 use std::fs::File;
 use std::io::{Read, Write};
@@ -88,7 +92,7 @@ enum Opt {
         #[structopt(short, parse(from_os_str))]
         export_graph: Option<PathBuf>,
     },
-    Run {
+    Fast {
         #[structopt(parse(from_os_str))]
         file: PathBuf,
         #[structopt(long)]
@@ -117,6 +121,20 @@ enum Opt {
         var: String,
     },
     Orig {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
+        #[structopt(short, parse(from_os_str))]
+        export_graph: Option<PathBuf>,
+        #[structopt(short)]
+        function: String,
+        #[structopt(short)]
+        pc: usize,
+        #[structopt(short)]
+        var: String,
+    },
+    Sparse {
         #[structopt(parse(from_os_str))]
         file: PathBuf,
         #[structopt(long)]
@@ -192,7 +210,7 @@ fn main() {
                 std::process::exit(1);
             }
         }
-        Opt::Run {
+        Opt::Fast {
             file,
             ir,
             export_graph,
@@ -200,7 +218,23 @@ fn main() {
             pc,
             var,
         } => {
-            if let Err(err) = run(file, ir, export_graph, function, pc, var) {
+            if let Err(err) = fast(file, ir, export_graph, function, pc, var) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Orig {
+            file,
+            ir,
+            export_graph,
+            function,
+            pc,
+            var,
+        } => {
+            if let Err(err) = orig(file, ir, export_graph, function, pc, var) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -224,7 +258,7 @@ fn main() {
                 std::process::exit(1);
             }
         }
-        Opt::Orig {
+        Opt::Sparse {
             file,
             ir,
             export_graph,
@@ -232,7 +266,7 @@ fn main() {
             pc,
             var,
         } => {
-            if let Err(err) = orig(file, ir, export_graph, function, pc, var) {
+            if let Err(err) = sparse(file, ir, export_graph, function, pc, var) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -314,7 +348,10 @@ struct InstructionList<'a> {
 }
 
 fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
-    let mut convert = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
+    let mut convert = TabulationSparse::new(
+        SparseTaintInitialFlowFunction,
+        SparseTaintNormalFlowFunction,
+    );
 
     let buffer = match is_ir {
         false => {
@@ -362,14 +399,24 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     };
 
     let mut get_taints = |req: &Request| {
-        let mut solver = IfdsSolver;
-
         let res = convert.visit(&prog, &req);
-        let (mut graph, state) = res.expect("Cannot create graph");
+        let (graph, state) = res.expect("Cannot create graph");
 
-        let taints = solver.all_sinks(&mut graph, &req);
+        //let taints = solver.all_sinks(&mut graph, &req);
+        let sinks = graph
+            .edges
+            .iter()
+            .map(|x| x.to())
+            .filter(|x| &x.function == &req.function)
+            .unique()
+            .map(|x| Taint {
+                function: x.function.clone(),
+                pc: x.pc - 1,
+                variable: x.belongs_to_var.clone(),
+            })
+            .collect::<Vec<_>>();
 
-        (graph, state, taints)
+        (graph, state, sinks)
     };
 
     let mut input = String::new();
@@ -394,17 +441,17 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
         if let Some(ref req) = req {
             if !already_computed {
                 let res = get_taints(req);
-                taints = res.2.context("Cannot get taints for ui")?;
+                taints = res.2;
                 already_computed = true;
                 let _ = udp_socket.send_to(format!("{:#?}", taints).as_bytes(), "127.0.0.1:4242");
                 //.context("Cannot send logging information")?;
 
                 if let Some(ref export_graph) = export_graph {
-                    let output = crate::icfg::tikz::render_to(&res.0, &res.1);
+                    let output = crate::icfg::tikz2::render_to(&res.0, &res.1);
 
                     let mut fs = File::create(export_graph).context("Cannot write export file")?;
                     fs.write_all(output.as_bytes())
-                        .context("Cannto write file")?;
+                        .context("Cannot write file")?;
                 }
             }
         }
@@ -614,12 +661,12 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
 
             let mut fs = File::create(export_graph).context("Cannot write export file")?;
             fs.write_all(output.as_bytes())
-                .context("Cannto write file")?;
+                .context("Cannot write file")?;
         }
     }
 }
 
-fn run(
+fn fast(
     file: PathBuf,
     is_ir: bool,
     export_graph: Option<PathBuf>,
@@ -677,7 +724,7 @@ fn run(
 
         let mut fs = File::create(export_graph).context("Cannot write export file")?;
         fs.write_all(output.as_bytes())
-            .context("Cannto write file")?;
+            .context("Cannot write file")?;
     }
 
     Ok(())
@@ -739,7 +786,7 @@ fn naive(
 
         let mut fs = File::create(export_graph).context("Cannot write export file")?;
         fs.write_all(output.as_bytes())
-            .context("Cannto write file")?;
+            .context("Cannot write file")?;
     }
 
     Ok(())
@@ -802,7 +849,7 @@ fn orig(
 
         let mut fs = File::create(export_graph).context("Cannot write export file")?;
         fs.write_all(output.as_bytes())
-            .context("Cannto write file")?;
+            .context("Cannot write file")?;
     }
 
     Ok(())
@@ -835,6 +882,73 @@ fn get_variable_by_index(
         }
         _ => None,
     }
+}
+
+fn sparse(
+    file: PathBuf,
+    is_ir: bool,
+    export_graph: Option<PathBuf>,
+    function: String,
+    pc: usize,
+    var: String,
+) -> Result<()> {
+    let mut convert = TabulationSparse::new(
+        SparseTaintInitialFlowFunction,
+        SparseTaintNormalFlowFunction,
+    );
+
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+
+    let mut get_taints = |req: &Request| {
+        let mut solver = IfdsSolver;
+
+        let res = convert.visit(&prog, &req);
+        let (mut graph, state) = res.expect("Cannot create graph");
+
+        let taints = solver.all_sinks(&mut graph, &req);
+
+        (graph, state, taints)
+    };
+
+    let req = Request {
+        function,
+        pc,
+        variable: Some(var),
+    };
+
+    let res = get_taints(&req);
+    let state = res.1;
+    let taints = res.2.context("Cannot get taints for ui")?;
+
+    println!("{:#?}", taints);
+
+    if let Some(ref export_graph) = export_graph {
+        let output = crate::icfg::tikz2::render_to(&res.0, &state);
+
+        let mut fs = File::create(export_graph).context("Cannot write export file")?;
+        fs.write_all(output.as_bytes())
+            .context("Cannot write file")?;
+    }
+
+    Ok(())
 }
 
 // check if the taint touches the instruction, then returns `true`.

@@ -1,0 +1,110 @@
+---
+source: src/tests/integration/mod.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 49) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (5) at (2, 4) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (6) at (2, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (7) at (2, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (8) at (2, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (9) at (2, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (10) at (2, 16) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (11) at (2, 49) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (12) at (0, 5) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (13) at (0, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (14) at (0, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (15) at (1, 6) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (16) at (1, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (17) at (1, 8) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (18) at (1, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (19) at (1, 16) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%3$}] (20) at (1, 49) { };
+\node[font=\tiny] (note_0) at (-1.5, 3.5) {Assign(1, 0)};
+\node[font=\tiny] (note_1) at (-1.5, 4.5) {Const(2, 1.0)};
+\node[font=\tiny] (note_2) at (-1.5, 5.5) {BinOp(3, 2, 1)};
+\node[font=\tiny] (note_3) at (-1.5, 6.5) {Conditional(3, [5, 6])};
+\node[font=\tiny] (note_4) at (-1.5, 7.5) {Block(5)};
+\node[font=\tiny] (note_5) at (-1.5, 8.5) {Assign(4, 0)};
+\node[font=\tiny] (note_6) at (-1.5, 9.5) {Const(5, 1.0)};
+\node[font=\tiny] (note_7) at (-1.5, 10.5) {BinOp(6, 5, 4)};
+\node[font=\tiny] (note_8) at (-1.5, 11.5) {Conditional(6, [4])};
+\node[font=\tiny] (note_9) at (-1.5, 12.5) {Kill(6)};
+\node[font=\tiny] (note_10) at (-1.5, 13.5) {Kill(5)};
+\node[font=\tiny] (note_11) at (-1.5, 14.5) {Kill(4)};
+\node[font=\tiny] (note_12) at (-1.5, 15.5) {Jump(2)};
+\node[font=\tiny] (note_13) at (-1.5, 16.5) {Jump(6)};
+\node[font=\tiny] (note_14) at (-1.5, 17.5) {Block(6)};
+\node[font=\tiny] (note_15) at (-1.5, 18.5) {Assign(7, 0)};
+\node[font=\tiny] (note_16) at (-1.5, 19.5) {Const(8, -1.0)};
+\node[font=\tiny] (note_17) at (-1.5, 20.5) {BinOp(9, 8, 7)};
+\node[font=\tiny] (note_18) at (-1.5, 21.5) {Call(0, [9], [10])};
+\node[font=\tiny] (note_19) at (-1.5, 22.5) {Assign(11, 0)};
+\node[font=\tiny] (note_20) at (-1.5, 23.5) {Const(12, -2.0)};
+\node[font=\tiny] (note_21) at (-1.5, 24.5) {BinOp(13, 12, 11)};
+\node[font=\tiny] (note_22) at (-1.5, 25.5) {Call(0, [13], [14])};
+\node[font=\tiny] (note_23) at (-1.5, 26.5) {BinOp(15, 14, 13)};
+\node[font=\tiny] (note_24) at (-1.5, 27.5) {Kill(15)};
+\node[font=\tiny] (note_25) at (-1.5, 28.5) {Kill(14)};
+\node[font=\tiny] (note_26) at (-1.5, 29.5) {Kill(13)};
+\node[font=\tiny] (note_27) at (-1.5, 30.5) {Kill(12)};
+\node[font=\tiny] (note_28) at (-1.5, 31.5) {Kill(11)};
+\node[font=\tiny] (note_29) at (-1.5, 32.5) {Kill(10)};
+\node[font=\tiny] (note_30) at (-1.5, 33.5) {Kill(9)};
+\node[font=\tiny] (note_31) at (-1.5, 34.5) {Kill(8)};
+\node[font=\tiny] (note_32) at (-1.5, 35.5) {Kill(7)};
+\node[font=\tiny] (note_33) at (-1.5, 36.5) {Kill(3)};
+\node[font=\tiny] (note_34) at (-1.5, 37.5) {Kill(2)};
+\node[font=\tiny] (note_35) at (-1.5, 38.5) {Kill(1)};
+\node[font=\tiny] (note_36) at (-1.5, 39.5) {Return([0])};
+\node[font=\tiny] (note_37) at (-1.5, 40.5) {Jump(4)};
+\node[font=\tiny] (note_38) at (-1.5, 41.5) {Block(4)};
+\node[font=\tiny] (note_39) at (-1.5, 42.5) {Const(16, 0.0)};
+\node[font=\tiny] (note_40) at (-1.5, 43.5) {Assign(0, 16)};
+\node[font=\tiny] (note_41) at (-1.5, 44.5) {Kill(16)};
+\node[font=\tiny] (note_42) at (-1.5, 45.5) {Jump(2)};
+\node[font=\tiny] (note_43) at (-1.5, 46.5) {Block(2)};
+\node[font=\tiny] (note_44) at (-1.5, 47.5) {Assign(17, 0)};
+\node[font=\tiny] (note_45) at (-1.5, 48.5) {Return([17])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->, blue] (0) [bend right] edge  node { } (1);
+		\path[->, blue] (0) [bend right] edge  node { } (2);
+		\path[->, blue] (0) [bend right] edge  node { } (3);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->, blue] (0) [bend right] edge  node { } (5);
+		\path[->, blue] (0) [bend right] edge  node { } (6);
+		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, blue] (0) [bend right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (10);
+		\path[->, blue] (0) [bend right] edge  node { } (11);
+		\path[->, blue] (0) [bend right] edge  node { } (12);
+		\path[->, blue] (0) [bend right] edge  node { } (13);
+		\path[->, blue] (0) [bend right] edge  node { } (14);
+		\path[->, blue] (0) [bend right] edge  node { } (15);
+		\path[->, blue] (0) [bend right] edge  node { } (16);
+		\path[->, blue] (0) [bend right] edge  node { } (17);
+		\path[->, blue] (0) [bend right] edge  node { } (18);
+		\path[->, blue] (0) [bend right] edge  node { } (19);
+		\path[->, blue] (0) [bend right] edge  node { } (20);
+
+
+                \end{tikzpicture}
+            \end{document}
