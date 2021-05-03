@@ -552,7 +552,7 @@ impl DefUseChain {
 
         //if is_top_level && (!overwritten || var.is_taut) {
         if is_top_level {
-            if (!was_called_as_param || var.is_taut) && !overwritten {
+            if (!was_called_as_param && !overwritten) || var.is_taut {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
             } else if relevant_instructions.len() > 0 && !overwritten {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
