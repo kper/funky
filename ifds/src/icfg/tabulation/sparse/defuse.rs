@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 
 use crate::icfg::tabulation::sparse::Ctx;
-use itertools::max;
 
 type Function = String;
 type Var = String;
@@ -1494,7 +1493,7 @@ mod test {
 
         assert_snapshot!("defuse_reg_0_scfg", facts);
 
-        assert_eq!(3, facts.len());
+        assert_eq!(1, facts.len());
         assert_eq!(0, facts.get(0).unwrap().next_pc);
 
         let before = chain
@@ -1506,7 +1505,7 @@ mod test {
         let after = chain
             .demand(&mut ctx, &function, &"%0".to_string(), 0)
             .unwrap();
-        assert_eq!(1, after.len());
+        assert_eq!(0, after.len());
     }
 
     #[test]
@@ -1551,19 +1550,19 @@ mod test {
 
         assert_snapshot!("defuse_reg_1_scfg", facts);
 
-        assert_eq!(3, facts.len());
-        assert_eq!(5, facts.get(1).unwrap().next_pc);
+        assert_eq!(2, facts.len());
+        assert_eq!(1, facts.get(1).unwrap().next_pc);
 
         let before = chain
             .points_to(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(1, before.len());
+        assert_eq!(2, before.len());
         assert_eq!(1, before.get(0).unwrap().next_pc);
 
         let after = chain
             .demand(&mut ctx, &function, &"%1".to_string(), 1)
             .unwrap();
-        assert_eq!(1, after.len());
+        assert_eq!(0, after.len());
     }
 
     #[test]
@@ -1612,6 +1611,6 @@ mod test {
             .unwrap()
             .flatten()
             .collect::<Vec<_>>();
-        assert_eq!(3, facts.len());
+        assert_eq!(1, facts.len());
     }
 }
