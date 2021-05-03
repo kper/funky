@@ -146,14 +146,14 @@ impl DefUseChain {
         function: &AstFunction,
         var: &String,
         pc: usize,
-    ) -> Result<Vec<&Fact>> {
+    ) -> Result<Vec<Fact>> {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
         let xx = graph.flatten().collect::<Vec<_>>();
         debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
 
-        let mut queue: VecDeque<&Fact> = VecDeque::new();
+        let mut queue: VecDeque<_> = VecDeque::new();
         let mut seen = Vec::new();
 
         // entry fact has a loop
@@ -169,17 +169,19 @@ impl DefUseChain {
             debug!("Adding start {:#?}", start);
             queue.push_back(start);
         } else {
-            log::warn!(
-                "No start fact found. Therefore skipping for {} at {}",
-                var,
-                pc
-            );
-            return Ok(Vec::new());
+            log::warn!("No start fact found. Therefore returning entry",);
+            return Ok(graph
+                .edges
+                .iter()
+                .map(|x| x.to())
+                .filter(|x| is_entry(x))
+                .map(|x| x.apply())
+                .collect());
         }
 
         while let Some(node) = queue.pop_front() {
             debug!("Popping node {:?}", node);
-            seen.push(node);
+            seen.push(node.clone());
             for child in graph
                 .edges
                 .iter()
@@ -188,7 +190,7 @@ impl DefUseChain {
             {
                 if !seen.contains(&child) {
                     debug!("queue child {:?}", child);
-                    queue.push_back(child);
+                    queue.push_back(&child);
                 }
             }
         }
@@ -443,6 +445,8 @@ impl DefUseChain {
         instructions.take(take)
     }
 
+    /// By given `instructions` extract only the relevant instructions.
+    /// This is the heartbeat of the defuse-chain building
     fn get_relevant_instructions<'a>(
         &self,
         var: &Variable,
@@ -453,6 +457,7 @@ impl DefUseChain {
         max_level: usize,
     ) -> (bool, Vec<SCFG>) {
         let mut relevant_instructions = Vec::new();
+        let mut overwritten = false;
 
         for instruction in instructions {
             match instruction {
@@ -491,6 +496,7 @@ impl DefUseChain {
                             debug!("Instruction is now defined.");
                         } else {
                             log::warn!("Instruction is overwritten. Therefore stopping.");
+                            overwritten = true;
                             break;
                         }
                     } else {
@@ -546,9 +552,9 @@ impl DefUseChain {
 
         //if is_top_level && (!overwritten || var.is_taut) {
         if is_top_level {
-            if !was_called_as_param || var.is_taut {
+            if (!was_called_as_param || var.is_taut) && !overwritten {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
-            } else if relevant_instructions.len() > 0 {
+            } else if relevant_instructions.len() > 0 && !overwritten {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
             }
         }
@@ -571,6 +577,9 @@ impl DefUseChain {
         graph: &mut Graph,
         was_called_as_param: bool,
     ) -> Result<Vec<Fact>> {
+        // The `instructions` contains all instructions
+        // however, we are only interested in the `defuse-chain`.
+        // Building the subgraph is `get_relevant_instructions`'s job.
         let (is_defined, relevant_instructions) = self.get_relevant_instructions(
             var,
             instructions.iter().skip(instruction_offset),
@@ -598,7 +607,7 @@ impl DefUseChain {
         let mut node = vec![first.clone()];
         let mut i = 0;
 
-        // Cannot simply add next instruction, we have to check to look
+        // Cannot simply add next instruction, we have to check
         // if it is a conditional
         // if yes, then look for the next inner instruction
         // if not, then ok
@@ -916,7 +925,7 @@ impl DefUseChain {
         let var = &variable.name;
 
         match instruction {
-            Instruction::Const(dest, ..) if dest == var => true,
+            Instruction::Const(dest, ..) if dest == var || var == &"taut".to_string() => true,
             Instruction::Assign(dest, ..) if dest == var => true,
             Instruction::BinOp(dest, ..) if dest == var => true,
             Instruction::Phi(dest, ..) if dest == var => true,

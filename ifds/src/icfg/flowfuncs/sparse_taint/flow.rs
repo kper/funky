@@ -51,13 +51,16 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         match instruction {
             Instruction::Unop(dest, ..)
             | Instruction::Phi(dest, ..)
-            | Instruction::BinOp(dest, ..)
-            | Instruction::Assign(dest, ..) => append_lhs(dest)?,
+            | Instruction::BinOp(dest, ..) => append_lhs(dest)?,
             Instruction::Load(dest, ..) => append_lhs(dest)?,
             Instruction::Call(_, _, dests) => {
                 for dest in dests {
                     append_lhs(dest)?;
                 }
+            }
+            Instruction::Assign(dest, src) if src == variable => append_lhs(dest)?,
+            Instruction::Const(..) => {
+                // kill
             }
             Instruction::Store(_src, offset, _i) => {
                 let y = ctx
