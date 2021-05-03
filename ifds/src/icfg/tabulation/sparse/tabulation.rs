@@ -749,7 +749,7 @@ where
         callee: &String,
         params: &Vec<String>,
         dests: &Vec<String>,
-        start_pc: usize,
+        _start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
         let caller_var = &d2.belongs_to_var;

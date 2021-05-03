@@ -17,88 +17,79 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
 
         let mut edges = Vec::new();
 
-        // We need the offset, because not every
-        // instruction is taintable. For example BLOCK and JUMP
-        // have no registers. That's why skip to the next one.
-        let mut offset = 0;
         let instructions = &function.instructions;
 
         let mut init_fact = init_facts.get(0).context("Cannot find taut")?.clone();
 
         debug!("init fact is {:#?}", init_fact);
 
-        loop {
-            let pc = pc + offset;
-            let instruction = instructions.get(pc).context("Cannot find instr")?;
-            debug!("Next instruction is {:?}", instruction);
+        let instruction = instructions.get(pc).context("Cannot find instr")?;
+        debug!("Next instruction is {:?}", instruction);
 
-            match instruction {
-                Instruction::Const(dest, _)
-                | Instruction::Unknown(dest)
-                | Instruction::Assign(dest, _)
-                | Instruction::Unop(dest, _)
-                | Instruction::BinOp(dest, _, _)
-                | Instruction::Phi(dest, _, _)
-                | Instruction::Conditional(dest, _)
-                | Instruction::Load(dest, _, _) => {
-                    self.generate_normal_flows(
-                        ctx,
-                        function,
-                        defuse,
-                        &mut edges,
-                        &mut init_fact,
-                        pc,
-                        &vec![dest.to_string()],
-                    )?;
-                }
-                Instruction::Call(_callee, _, dests) => {
-                    self.generate_normal_flows(
-                        ctx,
-                        function,
-                        defuse,
-                        &mut edges,
-                        &mut init_fact,
-                        pc,
-                        &dests,
-                    )?;
-                }
-                Instruction::Store(_src, offset, _) => {
-                    let mem = {
-                        let mem = ctx
-                            .state
-                            .add_memory_var(function.name.clone(), offset.clone() as usize);
-
-                        mem.name.clone()
-                    };
-
-                    self.generate_normal_flows(
-                        ctx,
-                        function,
-                        defuse,
-                        &mut edges,
-                        &mut init_fact,
-                        pc,
-                        &vec![mem],
-                    )?;
-                }
-                Instruction::Return(_dests) => {
-                    self.generate_normal_flows(
-                        ctx,
-                        function,
-                        defuse,
-                        &mut edges,
-                        &mut init_fact,
-                        pc,
-                        &vec![],
-                    )?;
-                }
-                Instruction::Block(_) | Instruction::Jump(_) => {
-                    bail!("Block or Jump as first instruction is not supported");
-                }
-                _ => {}
+        match instruction {
+            Instruction::Const(dest, _)
+            | Instruction::Unknown(dest)
+            | Instruction::Assign(dest, _)
+            | Instruction::Unop(dest, _)
+            | Instruction::BinOp(dest, _, _)
+            | Instruction::Phi(dest, _, _)
+            | Instruction::Conditional(dest, _)
+            | Instruction::Load(dest, _, _) => {
+                self.generate_normal_flows(
+                    ctx,
+                    function,
+                    defuse,
+                    &mut edges,
+                    &mut init_fact,
+                    pc,
+                    &vec![dest.to_string()],
+                )?;
             }
+            Instruction::Call(_callee, _, dests) => {
+                self.generate_normal_flows(
+                    ctx,
+                    function,
+                    defuse,
+                    &mut edges,
+                    &mut init_fact,
+                    pc,
+                    &dests,
+                )?;
+            }
+            Instruction::Store(_src, offset, _) => {
+                let mem = {
+                    let mem = ctx
+                        .state
+                        .add_memory_var(function.name.clone(), offset.clone() as usize);
 
-            break;
+                    mem.name.clone()
+                };
+
+                self.generate_normal_flows(
+                    ctx,
+                    function,
+                    defuse,
+                    &mut edges,
+                    &mut init_fact,
+                    pc,
+                    &vec![mem],
+                )?;
+            }
+            Instruction::Return(_dests) => {
+                self.generate_normal_flows(
+                    ctx,
+                    function,
+                    defuse,
+                    &mut edges,
+                    &mut init_fact,
+                    pc,
+                    &vec![],
+                )?;
+            }
+            Instruction::Block(_) | Instruction::Jump(_) => {
+                bail!("Block or Jump as first instruction is not supported");
+            }
+            _ => {}
         }
 
         Ok(edges)

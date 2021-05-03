@@ -775,12 +775,6 @@ impl DefUseChain {
             debug!("Instruction {:?}", inner_instruction);
             match inner_instruction {
                 Instruction::Conditional(_, jumps) if jumps.len() == 2 => {
-                    let first = jumps
-                        .first()
-                        .unwrap()
-                        .parse::<usize>()
-                        .context("Jump is not a number")?;
-
                     let second = jumps
                         .last()
                         .unwrap()

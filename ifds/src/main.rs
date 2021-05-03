@@ -400,7 +400,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
 
     let mut get_taints = |req: &Request| {
         let res = convert.visit(&prog, &req);
-        let (mut graph, state) = res.expect("Cannot create graph");
+        let (graph, state) = res.expect("Cannot create graph");
 
         //let taints = solver.all_sinks(&mut graph, &req);
         let sinks = graph
