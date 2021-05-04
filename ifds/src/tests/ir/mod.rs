@@ -1,2 +1,3 @@
-mod wat;
 mod parser;
+mod wasm;
+mod wat;
