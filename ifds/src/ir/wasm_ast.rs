@@ -251,7 +251,7 @@ impl IR {
             function_buffer,
             params_count,
         )
-        .with_context(|| format!("Visit of instruction wrapper failed for {}", function_index))?;
+        .with_context(|| format!("Visiting instruction wrapper failed for {}", function_index))?;
 
         {
             // Add last return
@@ -739,7 +739,9 @@ impl IR {
                         function_buffer,
                         "{} = {}",
                         self.symbol_table.new_reg()?,
-                        locals.get(&(*index as usize)).unwrap()
+                        locals
+                            .get(&(*index as usize))
+                            .with_context(|| format!("Cannot get local at {}", index))?
                     )
                     .unwrap();
                 }
@@ -893,6 +895,11 @@ impl IR {
                     debug!(
                         "Currently are {} variables alive",
                         self.symbol_table.count_alive_vars()
+                    );
+
+                    assert!(
+                        self.symbol_table.count_alive_vars() >= num_params,
+                        "Not enough live variables left"
                     );
 
                     for i in 0..num_params {

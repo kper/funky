@@ -118,7 +118,7 @@ impl SymbolTable {
         let val = self.counter.get();
         let val = Reg::Normal(val);
 
-        debug!("Getting new var {:?}", val);
+        debug!("Getting new var %{:?}", val);
 
         self.vars.push(Variable {
             reg: val.clone(),
