@@ -95,7 +95,7 @@ pub fn get_funcs(module: &Module) -> Vec<FuncIdx> {
                     .entries
                     .iter()
                     .filter_map(|entry| match &entry.desc {
-                        ImportDesc::Function { ty: k } => Some(k.clone()),
+                        ImportDesc::Function { ty: k } => Some(*k),
                         _ => None,
                     })
                     .collect::<Vec<_>>();
@@ -105,7 +105,6 @@ pub fn get_funcs(module: &Module) -> Vec<FuncIdx> {
             _ => None,
         })
         .flatten()
-        .map(|x| x.clone())
         .collect();
 
     ty

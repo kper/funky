@@ -4,7 +4,7 @@ use docopt::Docopt;
 use serde::Deserialize;
 use wasm_parser::{parse, read_wasm};
 
-const USAGE: &'static str = "
+const USAGE: &str = "
 WebAssembly parser for binary files.
 
 Usage:
