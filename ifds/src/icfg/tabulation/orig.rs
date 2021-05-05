@@ -5,6 +5,8 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
+use rayon::prelude::*;
+
 use crate::solver::Request;
 use anyhow::{Context, Result};
 use std::collections::VecDeque;
@@ -267,8 +269,8 @@ impl TabulationOriginal {
 
                         let caller_function = program
                             .functions
-                            .iter()
-                            .find(|x| x.name == d1.function)
+                            .par_iter()
+                            .find_first(|x| x.name == d1.function)
                             .unwrap();
 
                         let callee_function = program
@@ -277,13 +279,18 @@ impl TabulationOriginal {
                             .find(|x| &x.name == callee)
                             .unwrap();
 
-                        let flow_edges = ctx.graph.edges.iter().filter(|x| {
-                            x.get_from().function == caller_function.name
-                                && x.get_from().belongs_to_var == d2.belongs_to_var
-                                && x.get_from().next_pc == d2.next_pc
-                                && x.to().function == callee_function.name
-                                && x.to().next_pc == 0
-                        });
+                        let flow_edges = ctx
+                            .graph
+                            .edges
+                            .par_iter()
+                            .filter(|x| {
+                                x.get_from().function == caller_function.name
+                                    && x.get_from().belongs_to_var == d2.belongs_to_var
+                                    && x.get_from().next_pc == d2.next_pc
+                                    && x.to().function == callee_function.name
+                                    && x.to().next_pc == 0
+                            })
+                            .collect::<Vec<_>>();
 
                         for f in flow_edges.into_iter() {
                             let to = f.to();
@@ -302,7 +309,7 @@ impl TabulationOriginal {
                         let call_to_return = ctx
                             .graph
                             .edges
-                            .iter()
+                            .par_iter()
                             .filter(|x| {
                                 x.get_from().function == caller_function.name
                                     && x.get_from().belongs_to_var == d2.belongs_to_var
@@ -327,14 +334,22 @@ impl TabulationOriginal {
                             )?;
                         }
 
-                        let ret_edges = summary.iter().filter(|x| {
-                            x.get_from().function == caller_function.name
-                                && x.to().function == caller_function.name
-                                && x.to().next_pc == d2.next_pc + 1
-                                && x.get_from().next_pc == d2.next_pc
-                        });
+                        let ret_edges = summary
+                            .par_iter()
+                            .filter_map(|x| {
+                                if x.get_from().function == caller_function.name
+                                    && x.to().function == caller_function.name
+                                    && x.to().next_pc == d2.next_pc + 1
+                                    && x.get_from().next_pc == d2.next_pc
+                                {
+                                    Some(x.to())
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
 
-                        for to in ret_edges.map(|x| x.to()) {
+                        for to in ret_edges.into_iter() {
                             assert_eq!(d1.function, to.function);
 
                             self.propagate(
@@ -351,15 +366,15 @@ impl TabulationOriginal {
                     _ => {
                         let new_function = program
                             .functions
-                            .iter()
-                            .find(|x| x.name == d2.function)
+                            .par_iter()
+                            .find_first(|x| x.name == d2.function)
                             .unwrap();
 
                         let flow_edges = {
                             if pc > start_pc || d2.function != req.function {
                                 ctx.graph
                                     .edges
-                                    .iter()
+                                    .par_iter()
                                     .filter(|x| x.is_normal())
                                     .filter(|x| {
                                         x.get_from().function == new_function.name
@@ -371,7 +386,7 @@ impl TabulationOriginal {
                             } else {
                                 ctx.graph
                                     .edges
-                                    .iter()
+                                    .par_iter()
                                     .filter(|x| x.is_normal())
                                     .filter(|x| {
                                         x.get_from().function == new_function.name
@@ -411,11 +426,17 @@ impl TabulationOriginal {
                     for (caller, callee) in callers {
                         assert_eq!(callee, &d1.function);
 
-                        let d4 = ctx.graph.edges.iter().filter(|x| x.is_call()).filter(|x| {
-                            &x.get_from().function == caller
-                                && x.to().function == d2.function
-                                && x.to().next_pc == 0
-                        });
+                        let d4 = ctx
+                            .graph
+                            .edges
+                            .par_iter()
+                            .filter(|x| x.is_call())
+                            .filter(|x| {
+                                &x.get_from().function == caller
+                                    && x.to().function == d2.function
+                                    && x.to().next_pc == 0
+                            })
+                            .collect::<Vec<_>>();
 
                         for d4 in d4.into_iter() {
                             let caller_fact = d4.get_from();
@@ -424,7 +445,7 @@ impl TabulationOriginal {
                             let d5 = ctx
                                 .graph
                                 .edges
-                                .iter()
+                                .par_iter()
                                 .filter(|x| x.is_return())
                                 .filter(|x| {
                                     x.get_from().function == d2.function
@@ -433,16 +454,13 @@ impl TabulationOriginal {
                                     && x.to().next_pc == caller_fact.next_pc + 1
                                     //&& x.get_from().belongs_to_var == d2.belongs_to_var
                                     // && x.to().next_pc == pc + 1
-                                });
-
-                            let d5 = d5
-                                .into_iter()
+                                })
                                 .filter(|x| {
                                     // check if there is a path edge to the node
                                     ctx.new_graph
                                         .edges
-                                        .iter()
-                                        .find(|path_edge| {
+                                        .par_iter()
+                                        .find_first(|path_edge| {
                                             path_edge.is_path()
                                                 && path_edge.get_from().next_pc == 0
                                                 && path_edge.to().next_pc == x.get_from().next_pc
@@ -458,8 +476,8 @@ impl TabulationOriginal {
 
                             for d5 in d5 {
                                 if summary
-                                    .iter()
-                                    .find(|x| {
+                                    .par_iter()
+                                    .find_first(|x| {
                                         &x.get_from().function == caller
                                             && x.get_from().belongs_to_var
                                                 == caller_fact.belongs_to_var
@@ -478,7 +496,7 @@ impl TabulationOriginal {
                                     let edges = ctx
                                         .new_graph
                                         .edges
-                                        .iter()
+                                        .par_iter()
                                         .filter(|x| {
                                             x.is_path()
                                                 && &x.get_from().function == caller
