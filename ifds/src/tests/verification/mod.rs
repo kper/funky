@@ -8,8 +8,6 @@ use crate::icfg::tabulation::naive::TabulationNaive;
 use crate::icfg::tabulation::orig::TabulationOriginal;
 use crate::icfg::tabulation::sparse::TabulationSparse;
 
-use std::collections::HashSet;
-
 use crate::icfg::flowfuncs::sparse_taint::flow::SparseTaintNormalFlowFunction;
 use crate::icfg::flowfuncs::sparse_taint::initial::SparseTaintInitialFlowFunction;
 use crate::icfg::flowfuncs::taint::flow::TaintNormalFlowFunction;
@@ -43,7 +41,7 @@ macro_rules! naive {
         let mut sinks = solver
             .all_sinks(&mut graph, &state, &$req)
             .into_iter()
-            .filter(|x| x.pc > $req.pc + 1)
+            .filter(|x| x.function == $req.function)
             .map(|x| x.variable)
             .unique()
             .collect::<Vec<_>>();
@@ -58,7 +56,7 @@ macro_rules! orig {
     ($name:expr, $prog:expr, $req:expr) => {{
         let mut convert = TabulationOriginal::default();
 
-        let (graph, state) = convert.visit(&$prog, $req).unwrap();
+        let (graph, state) = convert.visit(&$prog, $req).expect("Orig failed");
 
         let output = render_to(&graph, &state);
 
@@ -82,7 +80,7 @@ macro_rules! fast {
     ($name:expr, $prog:expr, $req:expr) => {{
         let mut convert = TabulationFast::new(TaintInitialFlowFunction, TaintNormalFlowFunction);
 
-        let (graph, state) = convert.visit(&$prog, $req).unwrap();
+        let (graph, state) = convert.visit(&$prog, $req).expect("Fast failed");
 
         let output = render_to(&graph, &state);
 
@@ -109,7 +107,7 @@ macro_rules! sparse {
             SparseTaintNormalFlowFunction,
         );
 
-        let (graph, state) = convert.visit(&$prog, $req).unwrap();
+        let (graph, state) = convert.visit(&$prog, $req).expect("Sparse failed");
 
         let output = render_to2(&graph, &state);
 
@@ -146,17 +144,27 @@ macro_rules! run {
         debug!("fast {:#?}", s3);
         debug!("sparse {:#?}", s4);
 
-        let s1 = s1.into_iter().collect::<HashSet<_>>();
-        let s2 = s2.into_iter().collect::<HashSet<_>>();
-        let s3 = s3.into_iter().collect::<HashSet<_>>();
-        let s4 = s4.into_iter().collect::<HashSet<_>>();
+        let mut s1 = s1.into_iter().unique().collect::<Vec<_>>();
+        let mut s2 = s2.into_iter().unique().collect::<Vec<_>>();
+        let mut s3 = s3.into_iter().unique().collect::<Vec<_>>();
+        let mut s4 = s4.into_iter().unique().collect::<Vec<_>>();
 
-        assert!(s1.is_superset(&s2), "naive and orig failed");
+        s1.sort();
+        s2.sort();
+        s3.sort();
+        s4.sort();
+
+        debug!("naive {:#?}", s1);
+        debug!("orig {:#?}", s2);
+        debug!("fast {:#?}", s3);
+        debug!("sparse {:#?}", s4);
+
+        /*assert!(s1.is_superset(&s2), "naive and orig failed");
         assert!(s1.is_superset(&s3), "naive and fast failed");
         assert!(s1.is_superset(&s4), "naive and sparsed failed");
 
         assert!(s2.is_superset(&s3), "orig and fast failed");
-        assert!(s2.is_superset(&s4), "orig and sparse failed");
+        assert!(s2.is_superset(&s4), "orig and sparse failed");*/
 
         assert_eq!(s1, s2, "naive and orig failed");
         assert_eq!(s1, s3, "naive and fast failed");
@@ -362,4 +370,25 @@ fn test_return_branches() {
         ";
 
     run!("return_branches", ir, &req);
+}
+
+#[test]
+fn test_ir_call_as_first_instruction() {
+    env_logger::init();
+    let req = Request {
+        variable: Some("%1".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %1 <- CALL mytest()
+            %1 = 2
+        };
+        define mytest (param) (result 2) (define %0 %1) {
+            %0 = 1
+            %1 = 3
+            RETURN %0;
+        };
+        ";
+    run!("call_as_first_instruction", ir, &req);
 }

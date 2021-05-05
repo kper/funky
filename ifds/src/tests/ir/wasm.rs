@@ -1,9 +1,6 @@
 use crate::ir::wasm_ast::IR;
 use funky::engine::module::ModuleInstance;
 use funky::engine::*;
-use insta::assert_snapshot;
-use std::fs::File;
-use std::io::{self, Write};
 use validation::validate;
 use wasm_parser::{parse, read_wasm};
 

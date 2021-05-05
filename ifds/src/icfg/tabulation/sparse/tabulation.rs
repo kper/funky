@@ -687,7 +687,7 @@ where
 
             if let Some(n) = n {
                 match n {
-                    Instruction::Call(callee, params, dest) => {
+                    Instruction::Call(callee, params, dest) if start_pc != pc => {
                         self.handle_call(
                             ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
                         )?;
