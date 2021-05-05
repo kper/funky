@@ -374,7 +374,6 @@ fn test_return_branches() {
 
 #[test]
 fn test_ir_call_as_first_instruction() {
-    env_logger::init();
     let req = Request {
         variable: Some("%1".to_string()),
         function: "test".to_string(),
