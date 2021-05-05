@@ -7,6 +7,8 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
+use rayon::prelude::*;
+
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
 use std::collections::VecDeque;
@@ -602,7 +604,7 @@ where
         let from = e.get_from();
         let to = e.to();
 
-        let f = edge_ctx.path_edge.iter().find(|x| {
+        let found = edge_ctx.path_edge.par_iter().any(|x| {
             x.get_from().pc == from.pc
                 && x.to().pc == to.pc
                 && x.get_from().next_pc == from.next_pc
@@ -613,7 +615,7 @@ where
                 && x.to().function == to.function
         });
 
-        if f.is_none() {
+        if !found {
             debug!("Propagate {:#?}", e);
             graph.edges.push(e.clone());
             edge_ctx.path_edge.push(e.clone());

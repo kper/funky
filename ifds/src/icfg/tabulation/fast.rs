@@ -5,6 +5,8 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
+use rayon::prelude::*;
+
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
 use std::collections::VecDeque;
@@ -604,11 +606,11 @@ where
         let from = e.get_from();
         let to = e.to();
 
-        let f = path_edge
-            .iter()
-            .find(|x| x.get_from() == from && x.to() == to);
+        let found = path_edge
+            .par_iter()
+            .any(|x| x.get_from() == from && x.to() == to);
 
-        if f.is_none() {
+        if !found {
             debug!("Propagate {:#?}", e);
             graph.edges.push(e.clone());
             path_edge.push(e.clone());
@@ -825,8 +827,8 @@ where
             )
             .with_context(|| {
                 format!(
-                    "Error occured during `pass_args` for function {} at {}",
-                    callee, pc
+                    "Error occurred during `pass_args` for called function {}. The caller is {} at {}",
+                    callee, caller_function.name, pc
                 )
             })?;
         for d3 in call_edges.into_iter() {

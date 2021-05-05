@@ -213,11 +213,11 @@ impl TabulationOriginal {
         let from = e.get_from();
         let to = e.to();
 
-        let f = path_edge
-            .iter()
-            .find(|x| x.get_from() == from && x.to() == to);
+        let found = path_edge
+            .par_iter()
+            .any(|x| x.get_from() == from && x.to() == to);
 
-        if f.is_none() {
+        if !found {
             debug!("Propagate {:#?}", e);
             graph.edges.push(e.clone());
             path_edge.push(e.clone());
