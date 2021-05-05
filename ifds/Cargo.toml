@@ -19,6 +19,7 @@ dot = "0.1.4"
 tui = "0.14"
 termion = "1.5"
 itertools = "0.10"
+rayon = "1.5"
 
 [dev-dependencies]
 insta = "*"

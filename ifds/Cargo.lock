@@ -481,6 +481,7 @@ dependencies = [
  "lalrpop-util",
  "log",
  "pretty_assertions",
+ "rayon",
  "regex",
  "structopt",
  "tempfile",
