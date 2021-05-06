@@ -483,6 +483,8 @@ dependencies = [
  "pretty_assertions",
  "rayon",
  "regex",
+ "serde",
+ "serde_json",
  "structopt",
  "tempfile",
  "termion",

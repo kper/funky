@@ -75,6 +75,10 @@ where
         }
     }
 
+    pub fn get_defuse<'a>(&'a self) -> &'a DefUseChain {
+        &self.defuse
+    }
+
     /// Computes a graph by a given program and `req` ([`Request`]).
     /// The `variable` in `req` doesn't matter. It only matters the `function` and `pc`.
     pub fn visit(&mut self, prog: &Program, req: &Request) -> Result<(Graph, State)> {

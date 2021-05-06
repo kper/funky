@@ -19,6 +19,8 @@ use crate::icfg::tabulation::orig::TabulationOriginal;
 use crate::icfg::tabulation::sparse::TabulationSparse;
 use crate::{solver::bfs::*, solver::*};
 
+use meta::*;
+
 use std::fs::File;
 use std::io::{Read, Write};
 
@@ -51,6 +53,7 @@ mod counter;
 mod icfg;
 mod ir;
 mod keyboard;
+mod meta;
 mod solver;
 mod symbol_table;
 
@@ -147,6 +150,14 @@ enum Opt {
         pc: usize,
         #[structopt(short)]
         var: String,
+        #[structopt(short, parse(from_os_str))]
+        meta: Option<PathBuf>,
+    },
+    Meta {
+        #[structopt(parse(from_os_str))]
+        file: PathBuf,
+        #[structopt(long)]
+        ir: bool,
     },
 }
 
@@ -265,8 +276,18 @@ fn main() {
             function,
             pc,
             var,
+            meta,
         } => {
-            if let Err(err) = sparse(file, ir, export_graph, function, pc, var) {
+            if let Err(err) = sparse(file, ir, export_graph, function, pc, var, meta) {
+                eprintln!("ERROR: {}", err);
+                err.chain()
+                    .skip(1)
+                    .for_each(|cause| eprintln!("because: {}", cause));
+                std::process::exit(1);
+            }
+        }
+        Opt::Meta { file, ir } => {
+            if let Err(err) = meta(file, ir) {
                 eprintln!("ERROR: {}", err);
                 err.chain()
                     .skip(1)
@@ -891,6 +912,7 @@ fn sparse(
     function: String,
     pc: usize,
     var: String,
+    meta: Option<PathBuf>,
 ) -> Result<()> {
     let mut convert = TabulationSparse::new(
         SparseTaintInitialFlowFunction,
@@ -918,12 +940,20 @@ fn sparse(
     let prog = ProgramParser::new().parse(&buffer).unwrap();
 
     let mut get_taints = |req: &Request| {
-        let mut solver = IfdsSolver;
-
         let res = convert.visit(&prog, &req);
-        let (mut graph, state) = res.expect("Cannot create graph");
+        let (graph, state) = res.expect("Cannot create graph");
 
-        let taints = solver.all_sinks(&mut graph, &req);
+        let taints = graph
+            .edges
+            .iter()
+            .map(|x| x.to())
+            .filter(|x| &x.function == &req.function)
+            .map(|x| Taint {
+                variable: x.belongs_to_var.clone(),
+                pc: x.pc,
+                function: x.function.clone(),
+            })
+            .collect::<Vec<_>>();
 
         (graph, state, taints)
     };
@@ -936,7 +966,7 @@ fn sparse(
 
     let res = get_taints(&req);
     let state = res.1;
-    let taints = res.2.context("Cannot get taints for ui")?;
+    let taints = res.2;
 
     println!("{:#?}", taints);
 
@@ -947,6 +977,45 @@ fn sparse(
         fs.write_all(output.as_bytes())
             .context("Cannot write file")?;
     }
+
+    if let Some(ref meta) = meta {
+        let m = meta_sparse(&prog, &res.0, &state, convert.get_defuse());
+
+        let mut fs = File::create(meta).context("Cannot write meta file")?;
+        let output = serde_json::to_string_pretty(&m)?;
+        fs.write_all(output.as_bytes())
+            .context("Cannot write file")?;
+    }
+
+    Ok(())
+}
+
+fn meta(file: PathBuf, is_ir: bool) -> Result<()> {
+    let buffer = match is_ir {
+        false => {
+            let ir = ir(file).context("Cannot create intermediate representation of file")?;
+            let buffer = ir.buffer().clone();
+
+            buffer
+        }
+        true => {
+            let mut fs = File::open(file).context("Cannot open ir file")?;
+            let mut buffer = String::new();
+
+            fs.read_to_string(&mut buffer)
+                .context("Cannot read file to string")?;
+
+            buffer
+        }
+    };
+
+    let prog = ProgramParser::new().parse(&buffer).unwrap();
+    let meta = meta_naive(&prog);
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&meta).context("Cannot construct json")?
+    );
 
     Ok(())
 }

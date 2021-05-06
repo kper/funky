@@ -42,6 +42,14 @@ impl State {
             .find(|x| x.var_is_taut && x.next_pc == start_pc))
     }
 
+    #[allow(dead_code)]
+    /// Get the number of all facts
+    pub fn get_num_facts(&self) -> u128 {
+        self.facts
+            .values()
+            .fold(0, |a, b| a + b.values().count() as u128)
+    }
+
     /// Checks if the function by the given `name` was defined
     pub fn is_function_defined(&self, name: &String) -> bool {
         self.functions.get(name).is_some()
