@@ -95,29 +95,76 @@ fn allocate_functions(
     debug!("allocate function");
 
     // Gets all functions and imports
-    let (ty, imports) = validation::extract::get_funcs(&m);
+    let ty = validation::extract::get_funcs(&m);
+    let num_imports = validation::extract::get_imports(&m).len();
 
     debug!("functions extracted {:#?}", ty);
 
-    for (code_index, t) in ty.iter().chain(imports.iter()).enumerate() {
+    for (code_index, t) in ty.iter().enumerate() {
         debug!("Function {} with ty {:#?}", code_index, t);
         // Allocate function
 
         let borrow = &mod_instance;
-        let fn_sig = match borrow.fn_types.get(**t as usize) {
+        let fn_sig = match borrow.fn_types.get(*t as usize) {
             Some(sig) => sig,
             None => {
                 return Err(anyhow!("{} function type is not defined", t));
             }
         };
 
-        let fcode = match borrow.code.get(code_index as usize) {
+        let code_index = code_index as isize - num_imports as isize;
+
+        let code = {
+            if code_index < 0 {
+                None
+            } else {
+                borrow.code.get(code_index as usize)
+            }
+        };
+
+        let fcode = match code {
             Some(fcode) => fcode.clone(),
             None => {
-                // Return empty body for imports
+                // This was added for the `ifds` implementation,
+                // that it can handle partial defined module.
+                let mut params: Vec<_> = Vec::new();
+                let mut returns_const: Vec<_> = Vec::new();
+
+                for param_ty in fn_sig.param_types.iter() {
+                    params.push(match param_ty {
+                        ValueType::I32 => LocalEntry {
+                            count: 1,
+                            ty: ValueType::I32,
+                        },
+                        ValueType::I64 => LocalEntry {
+                            count: 1,
+                            ty: ValueType::I64,
+                        },
+                        ValueType::F32 => LocalEntry {
+                            count: 1,
+                            ty: ValueType::F32,
+                        },
+                        ValueType::F64 => LocalEntry {
+                            count: 1,
+                            ty: ValueType::F64,
+                        },
+                    });
+                }
+
+                for ret_ty in &fn_sig.return_types {
+                    returns_const.push(match ret_ty {
+                        ValueType::I32 => Instruction::OP_I32_CONST(0),
+                        ValueType::I64 => Instruction::OP_I64_CONST(0),
+                        ValueType::F32 => Instruction::OP_F32_CONST(0.0),
+                        ValueType::F64 => Instruction::OP_F64_CONST(0.0),
+                    });
+                }
+
+                let mut counter = Counter::default();
+
                 FunctionBody {
-                    locals: Vec::new(),
-                    code: Vec::new(),
+                    locals: params,
+                    code: InstructionWrapper::wrap_instructions(&mut counter, returns_const),
                 }
             }
         };

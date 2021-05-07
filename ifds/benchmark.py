@@ -2,41 +2,133 @@ import os
 import time
 
 b = "./target/release/ifds"
-run_times = 3
+run_times = 1
+timeout = 10 * 60
 
 result = open("benchmark_results.csv", "w")
 
-def report(name, times):
-    result.write("{},{}\n".format(name, ",".join([str(i) for i in times])))
+def report(alg,name, times, mem):
+    #result.write("{},{},{},{}\n".format(alg, name, ",".join([str(i) for i in times])), mem)
+    result.write("{},{},{},{}\n".format(alg, name, ",".join([str(i) for i in times]), mem))
 
-def run(name, fs, func, pc, var, ty):
+def run(alg, name, fs, func, pc, var, ty):
+    print("Running {} ({})".format(name, alg))
     times = []
 
-    cmd = "run"
+    cmd = "fast"
 
     if ty == 0:
         cmd = "naive"
     elif ty == 1:
         cmd = "orig"
+    elif ty == 2:
+        cmd = "sparse"
 
     # warmup
-    os.system("{} {} {} -f {} -p {} -v {} > /dev/null".format(b, cmd, fs, func, pc, var))
+    #os.system("timeout {} {} {} {} -f {} -p {} -v {} > /dev/null".format(timeout, b, cmd, fs, func, pc, var))
     for _ in range(run_times):
         start = time.time()
-        os.system("{} {} {} -f {} -p {} -v {} > /dev/null".format(b, cmd, fs, func, pc, var))
+        return_code = os.system("timeout {} /usr/bin/time -o /tmp/mem -f \"%M\" {} {} {} -f {} -p {} -v {} > /dev/null".format(timeout, b, cmd, fs, func, pc, var))
         end = time.time()
         delta = end - start
-        print("Time {}".format(delta))
-        times.append(delta)
-    report(name, times)
 
-run("fast blocks.wasm", "../tests/blocks.wasm", "0", 8, "%10", -1)
-run("fast sha256.wasm", "../tests/sha256.wasm", "3", 1, "%65", -1)
+        memFile = open("/tmp/mem", "r")
+        memUsage = memFile.read()
 
-run("orig sha256.wasm", "../tests/sha256.wasm", "3", 1, "%65", 1)
+        print("Mem usage {}".format(memUsage))
+        
+        if return_code == 0:
+            print("Time {}".format(delta))
+            times.append(delta)
+        else:
+            print("NA")
+            times.append("NA")
 
-#run("bfs blocks.wasm", "../tests/blocks.wasm", "0", 8, "%10", True)
-run("bfs sha256.wasm", "../tests/sha256.wasm", "3", 1, "%65", 0)
+        print("=> Run complete")
+
+    report(alg, name, times, memUsage)
+
+wasm = ["rg.wasm", "sqlite.wasm", "wasm3-wasi.wasm", "d3wasm.was", "sha256.wasm"]
+
+wasm = [
+    {
+        "name": "rg.wasm",
+        "function": "641",
+        "pc": 1,
+        "var": "%12"
+    },
+    {
+        "name": "sqlite.wasm",
+        "function": "87",
+        "pc": 1,
+        "var": "%7"
+    },
+    {
+        "name": "wasm3-wasi.wasm",
+        "function": "49",
+        "pc": 1,
+        "var": "%13"
+    },
+    {
+        "name": "d3wasm.wasm",
+        "function": "3151",
+        "pc": 1,
+        "var": "%3"
+    },
+    {
+        "name": "fd.wasm",
+        "function": "427",
+        "pc": 1,
+        "var": "%5"
+    },
+    {
+        "name": "sha256.wasm",
+        "function": "3",
+        "pc": 1,
+        "var": "%65"
+    },
+    {
+        "name": "fib.wasm",
+        "function": "0",
+        "pc": 3,
+        "var": "%1"
+    }
+]
+
+for x in wasm:
+    print(x)
+    run("sparse", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 2)
+    run("fast", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], -1)
+    run("orig", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 1)
+    run("bfs", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 0)
+
+#run("sparse", "rg.wasm", "benchmarks/rg.wasm", "641", 1, "%12", 2)
+#run("sparse", "sqlite.wasm", "benchmarks/sqlite.wasm", "87", 1, "%7", 2)
+#run("sparse", "wasm3-wasi.wasm", "benchmarks/wasm3-wasi.wasm", "49", 1, "%13", 2)
+#run("sparse", "fd.wasm", "benchmarks/fd.wasm", "427", 1, "%5", 2)
+#run("sparse", "d3wasm.wasm", "benchmarks/d3wasm.wasm", "3151", 1, "%3", 2)
+#run("sparse", "sha256.wasm", "benchmarks/sha256.wasm", "3", 1, "%65", 2)
+#
+#run("fast", "rg.wasm", "benchmarks/rg.wasm", "641", 1, "%12", -1)
+#run("fast", "fd.wasm", "benchmarks/fd.wasm", "427", 1, "%5", -1)
+#run("fast", "wasm3-wasi.wasm", "benchmarks/wasm3-wasi.wasm", "49", 1, "%13", -1)
+#run("fast", "d3wasm.wasm", "benchmarks/d3wasm.wasm", "3151", 1, "%3", -1)
+#run("fast", "sqlite.wasm", "benchmarks/sqlite.wasm", "87", 1, "%7", -1)
+#run("fast", "sha256.wasm", "benchmarks/sha256.wasm", "3", 1, "%65", -1)
+#
+#run("orig", "rg.wasm", "benchmarks/rg.wasm", "641", 1, "%12", 1)
+#run("orig", "fd.wasm", "benchmarks/fd.wasm", "427", 1, "%5", 1)
+#run("orig", "sqlite.wasm", "benchmarks/sqlite.wasm", "87", 1, "%7", 1)
+#run("orig", "wasm3-wasi.wasm", "benchmarks/wasm3-wasi.wasm", "49", 1, "%13", 1)
+#run("orig", "d3wasm.wasm", "benchmarks/d3wasm.wasm", "3151", 1, "%3", 1)
+#run("orig", "sha256.wasm", "benchmarks/sha256.wasm", "3", 1, "%65", 1)
+#
+#run("bfs", "rg.wasm", "benchmarks/rg.wasm", "641", 1, "%12", 0)
+#run("bfs", "fd.wasm", "benchmarks/fd.wasm", "427", 1, "%5", 0)
+#run("bfs", "sqlite.wasm", "benchmarks/sqlite.wasm", "87", 1, "%7", 0)
+#run("bfs", "wasm3-wasi.wasm", "benchmarks/wasm3-wasi.wasm", "49", 1, "%13", 0)
+#run("bfs", "d3wasm.wasm", "benchmarks/d3wasm.wasm", "3151", 1, "%3", 0)
+#run("bfs", "sha256.wasm", "benchmarks/sha256.wasm", "3", 1, "%65", 0)
 
 
 result.close()

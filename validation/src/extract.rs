@@ -29,7 +29,7 @@ pub fn get_exports(module: &Module) -> Vec<&ExportEntry> {
     ty
 }
 
-pub(crate) fn get_imports(module: &Module) -> Vec<&ImportEntry> {
+pub fn get_imports(module: &Module) -> Vec<&ImportEntry> {
     let ty: Vec<_> = module
         .sections
         .iter()
@@ -84,27 +84,18 @@ pub fn get_data(module: &Module) -> Vec<&DataSegment> {
     ty
 }
 
-pub fn get_funcs(module: &Module) -> (Vec<&FuncIdx>, Vec<&FuncIdx>) {
+pub fn get_funcs(module: &Module) -> Vec<FuncIdx> {
     let ty: Vec<_> = module
         .sections
         .iter()
         .filter_map(|ref w| match w {
-            Section::Function(t) => Some(&t.types),
-            _ => None,
-        })
-        .flatten()
-        .collect();
-
-    let imported: Vec<_> = module
-        .sections
-        .iter()
-        .filter_map(|ref w| match w {
+            Section::Function(t) => Some(t.types.clone()),
             Section::Import(section) => {
                 let entries = section
                     .entries
                     .iter()
                     .filter_map(|entry| match &entry.desc {
-                        ImportDesc::Function { ty: k } => Some(k),
+                        ImportDesc::Function { ty: k } => Some(*k),
                         _ => None,
                     })
                     .collect::<Vec<_>>();
@@ -116,11 +107,7 @@ pub fn get_funcs(module: &Module) -> (Vec<&FuncIdx>, Vec<&FuncIdx>) {
         .flatten()
         .collect();
 
-    //let mut all = Vec::with_capacity(ty.len() + imported.len());
-    //all.extend(ty);
-    //all.extend(imported);
-
-    (ty, imported)
+    ty
 }
 
 pub fn get_defined_tables(module: &Module) -> Vec<&TableType> {

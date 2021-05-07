@@ -5,6 +5,8 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
+use rayon::prelude::*;
+
 use crate::{counter::Counter, solver::Request};
 use anyhow::{bail, Context, Result};
 use std::collections::VecDeque;
@@ -120,29 +122,6 @@ where
             // Because we want to jump to them later.
             self.resolve_block_ids(&callee_function, start_pc)?;
 
-            // Filter by variable type
-            let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
-
-            // Get the position in the parameters. If it does not exist then
-            // it is `taut`.
-            let pos_in_param = params
-                .iter()
-                .position(|x| x == caller_var)
-                .unwrap_or(callee_globals); // because, globals are before the parameters
-
-            let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
-                (true, _) => 0,
-                (false, false) => callee_globals + pos_in_param + TAUT, // if not global, than start at normal beginning
-                (false, true) => init_facts
-                    .iter()
-                    .position(|x| x.var_is_global && caller_var == &x.belongs_to_var)
-                    .context("Global was not found")?, //look for the global
-            };
-
-            let callee_fact = init_facts
-                .get(callee_offset)
-                .context("Cannot find callee's fact")?;
-
             let mut edges = vec![];
 
             if caller_variable.is_memory {
@@ -159,36 +138,59 @@ where
                 edges.extend(memory_edges);
 
                 return Ok(edges);
+            } else {
+                // Filter by variable type
+                let callee_globals = init_facts.iter().filter(|x| x.var_is_global).count();
+
+                // Get the position in the parameters. If it does not exist then
+                // it is `taut`.
+                let pos_in_param = params
+                    .iter()
+                    .position(|x| x == caller_var)
+                    .unwrap_or(callee_globals); // because, globals are before the parameters
+
+                let callee_offset = match (caller_variable.is_taut, caller_variable.is_global) {
+                    (true, _) => 0,
+                    (false, false) => callee_globals + pos_in_param + TAUT, // if not global, than start at normal beginning
+                    (false, true) => init_facts
+                        .iter()
+                        .position(|x| x.var_is_global && caller_var == &x.belongs_to_var)
+                        .context("Global was not found")?, //look for the global
+                };
+
+                let callee_fact = init_facts
+                    .get(callee_offset)
+                    .context("Cannot find callee's fact")?;
+
+                // Last caller facts
+                debug!(
+                    "caller {} with current_pc {}",
+                    caller_function.name, current_pc
+                );
+
+                let mut caller_facts = ctx.state.get_facts_at(&caller_function.name, current_pc)?;
+
+                // Filter by variable
+                let caller_fact = caller_facts
+                    .find(|x| &x.belongs_to_var == caller_var)
+                    .with_context(|| {
+                        format!(
+                            "Cannot find caller's fact {} for \"{}\" at {}",
+                            caller_var, caller_function.name, current_pc
+                        )
+                    })?;
+
+                // The corresponding edges have to match now, but filter `dest`.
+                // taut -> taut
+                // %0   -> %0
+                // %1   -> %1
+
+                // Create an edge.
+                edges.push(Edge::Call {
+                    from: caller_fact.clone().clone(),
+                    to: callee_fact.clone(),
+                });
             }
-
-            // Last caller facts
-            debug!(
-                "caller {} with current_pc {}",
-                caller_function.name, current_pc
-            );
-
-            let mut caller_facts = ctx.state.get_facts_at(&caller_function.name, current_pc)?;
-
-            // Filter by variable
-            let caller_fact = caller_facts
-                .find(|x| &x.belongs_to_var == caller_var)
-                .with_context(|| {
-                    format!(
-                        "Cannot find caller's fact {} for \"{}\" at {}",
-                        caller_var, caller_function.name, current_pc
-                    )
-                })?;
-
-            // The corresponding edges have to match now, but filter `dest`.
-            // taut -> taut
-            // %0   -> %0
-            // %1   -> %1
-
-            // Create an edge.
-            edges.push(Edge::Call {
-                from: caller_fact.clone().clone(),
-                to: callee_fact.clone(),
-            });
 
             Ok(edges)
         } else {
@@ -604,11 +606,11 @@ where
         let from = e.get_from();
         let to = e.to();
 
-        let f = path_edge
-            .iter()
-            .find(|x| x.get_from() == from && x.to() == to);
+        let found = path_edge
+            .par_iter()
+            .any(|x| x.get_from() == from && x.to() == to);
 
-        if f.is_none() {
+        if !found {
             debug!("Propagate {:#?}", e);
             graph.edges.push(e.clone());
             path_edge.push(e.clone());
@@ -825,8 +827,8 @@ where
             )
             .with_context(|| {
                 format!(
-                    "Error occured during `pass_args` for function {} at {}",
-                    callee, pc
+                    "Error occurred during `pass_args` for called function {}. The caller is {} at {}",
+                    callee, caller_function.name, pc
                 )
             })?;
         for d3 in call_edges.into_iter() {

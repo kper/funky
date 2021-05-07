@@ -31,6 +31,11 @@ name = "testrunner2"
 path = "hustensaft/src/main.rs"
 name = "hustensaft"
 
+[[bin]]
+path = "wasm_parser/src/main.rs"
+name = "wasm_parser"
+
+
 [dependencies]
 validation = { path = "./validation" }
 wasm-parser = { path = "./wasm_parser" }

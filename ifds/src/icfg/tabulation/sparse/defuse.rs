@@ -51,6 +51,13 @@ impl DefUseChain {
             .map(|(_, x)| x)
     }
 
+    /// Count all nodes in the defuse chain.
+    pub fn count_all(&self) -> u128 {
+        self.inner
+            .values()
+            .fold(0, |a, (_, b)| a + b.flatten().count() as u128)
+    }
+
     /// Get the facts in the graph.
     pub fn get_facts_at<'a>(
         &mut self,

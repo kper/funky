@@ -251,7 +251,7 @@ impl IR {
             function_buffer,
             params_count,
         )
-        .with_context(|| format!("Visit of instruction wrapper failed for {}", function_index))?;
+        .with_context(|| format!("Visiting instruction wrapper failed for {}", function_index))?;
 
         {
             // Add last return
@@ -739,7 +739,9 @@ impl IR {
                         function_buffer,
                         "{} = {}",
                         self.symbol_table.new_reg()?,
-                        locals.get(&(*index as usize)).unwrap()
+                        locals
+                            .get(&(*index as usize))
+                            .with_context(|| format!("Cannot get local at {}", index))?
                     )
                     .unwrap();
                 }
@@ -895,6 +897,11 @@ impl IR {
                         self.symbol_table.count_alive_vars()
                     );
 
+                    assert!(
+                        self.symbol_table.count_alive_vars() >= num_params,
+                        "Not enough live variables left"
+                    );
+
                     for i in 0..num_params {
                         let x = self.symbol_table.peek_offset(i)?;
                         assert!(x.is_normal(), "Parameter must be a normal register");
@@ -945,10 +952,32 @@ impl IR {
                     writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
                 }
                 OP_F32_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
+                    if a.is_infinite() || a.is_nan() {
+                        writeln!(
+                            function_buffer,
+                            "{} = {}",
+                            self.symbol_table.new_reg()?,
+                            "UNKNOWN"
+                        )
+                        .unwrap();
+                    } else {
+                        writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a)
+                            .unwrap();
+                    }
                 }
                 OP_F64_CONST(a) => {
-                    writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a).unwrap();
+                    if a.is_infinite() || a.is_nan() {
+                        writeln!(
+                            function_buffer,
+                            "{} = {}",
+                            self.symbol_table.new_reg()?,
+                            "UNKNOWN"
+                        )
+                        .unwrap();
+                    } else {
+                        writeln!(function_buffer, "{} = {}", self.symbol_table.new_reg()?, a)
+                            .unwrap();
+                    }
                 }
                 OP_RETURN => {
                     let function_return_arity = self

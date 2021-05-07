@@ -7,6 +7,8 @@ use crate::icfg::state::State;
 use crate::ir::ast::Function as AstFunction;
 use crate::ir::ast::Instruction;
 
+use rayon::prelude::*;
+
 use anyhow::{bail, Context, Result};
 
 use std::collections::HashMap;
@@ -15,6 +17,7 @@ use crate::icfg::flowfuncs::BlockResolver;
 use crate::ir::ast::Program;
 
 use std::collections::hash_map::Entry;
+use std::sync::{Arc, Mutex};
 
 /// Central datastructure for the computation of the IFDS problem.
 #[derive(Debug, Default)]
@@ -46,55 +49,86 @@ impl TabulationNaive {
         let mut block_resolver: BlockResolver = HashMap::default();
         let mut call_resolver: CallResolver = HashMap::default();
 
-        for function in prog.functions.iter() {
-            let vars = &function.definitions;
+        {
+            let block_resolver = Arc::new(Mutex::new(&mut block_resolver));
+            let call_resolver = Arc::new(Mutex::new(&mut call_resolver));
+            let state = Arc::new(Mutex::new(&mut ctx.state));
 
-            let init = ctx.state.init_function(function, 0)?;
-            let _ = ctx.state.cache_facts(&function.name, init)?;
+            prog.functions.par_iter().for_each(|function| {
+                let vars = &function.definitions;
 
-            for (pc, instruction) in function.instructions.iter().enumerate() {
-                ctx.state.add_statement_with_note_naive(
-                    function,
-                    format!("{:?}", instruction),
-                    pc,
-                    &"taut".to_string(),
-                )?;
-
-                for var in vars.iter() {
-                    ctx.state
-                        .add_statement(function, format!("{:?}", instruction), pc + 1, var)?;
+                {
+                    let mut lock = state.lock().unwrap();
+                    let init = lock
+                        .init_function(function, 0)
+                        .expect("Cannot init function");
+                    let _ = lock
+                        .cache_facts(&function.name, init)
+                        .expect("Cannot cache facts");
                 }
 
-                if let Instruction::Block(num) = instruction {
-                    block_resolver.insert((function.name.clone(), num.clone()), pc);
-                }
+                function
+                    .instructions
+                    .par_iter()
+                    .enumerate()
+                    .for_each(|(pc, instruction)| {
+                        {
+                            let mut lock = state.lock().unwrap();
+                            let _ = lock.add_statement_with_note_naive(
+                                function,
+                                format!("{:?}", instruction),
+                                pc,
+                                &"taut".to_string(),
+                            );
 
-                if let Instruction::Call(callee, _, dest) = instruction {
-                    match call_resolver.entry(callee.clone()) {
-                        Entry::Occupied(mut entry) => {
-                            let entry = entry.get_mut();
-                            entry.push((function.name.clone(), pc, dest.clone()));
-                        }
-                        Entry::Vacant(entry) => {
-                            entry.insert(vec![(function.name.clone(), pc, dest.clone())]);
-                        }
-                    }
-                }
-
-                if let Instruction::CallIndirect(callees, _, dest) = instruction {
-                    for callee in callees {
-                        match call_resolver.entry(callee.clone()) {
-                            Entry::Occupied(mut entry) => {
-                                let entry = entry.get_mut();
-                                entry.push((function.name.clone(), pc, dest.clone()));
-                            }
-                            Entry::Vacant(entry) => {
-                                entry.insert(vec![(function.name.clone(), pc, dest.clone())]);
+                            for var in vars.iter() {
+                                let _ = lock.add_statement(
+                                    function,
+                                    format!("{:?}", instruction),
+                                    pc + 1,
+                                    var,
+                                );
                             }
                         }
-                    }
-                }
-            }
+
+                        if let Instruction::Block(num) = instruction {
+                            let mut lock = block_resolver.lock().unwrap();
+                            lock.insert((function.name.clone(), num.clone()), pc);
+                        }
+
+                        if let Instruction::Call(callee, _, dest) = instruction {
+                            let mut lock = call_resolver.lock().unwrap();
+                            match lock.entry(callee.clone()) {
+                                Entry::Occupied(mut entry) => {
+                                    let entry = entry.get_mut();
+                                    entry.push((function.name.clone(), pc, dest.clone()));
+                                }
+                                Entry::Vacant(entry) => {
+                                    entry.insert(vec![(function.name.clone(), pc, dest.clone())]);
+                                }
+                            }
+                        }
+
+                        if let Instruction::CallIndirect(callees, _, dest) = instruction {
+                            for callee in callees {
+                                let mut lock = call_resolver.lock().unwrap();
+                                match lock.entry(callee.clone()) {
+                                    Entry::Occupied(mut entry) => {
+                                        let entry = entry.get_mut();
+                                        entry.push((function.name.clone(), pc, dest.clone()));
+                                    }
+                                    Entry::Vacant(entry) => {
+                                        entry.insert(vec![(
+                                            function.name.clone(),
+                                            pc,
+                                            dest.clone(),
+                                        )]);
+                                    }
+                                }
+                            }
+                        }
+                    });
+            });
         }
 
         for function in prog.functions.iter() {
@@ -257,6 +291,25 @@ impl TabulationNaive {
                     .filter(|(from, to)| &from.belongs_to_var != dest && &to.belongs_to_var != dest)
                 {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
+                }
+            }
+            Instruction::Call(_, _, dests) if pc == 0 => {
+                //edge case when the analysis starts at pc 0
+
+                let in_ = ctx
+                    .state
+                    .get_facts_at(&function.name, pc)?
+                    .filter(|x| x.var_is_taut);
+
+                for from in in_ {
+                    let out_ = ctx
+                        .state
+                        .get_facts_at(&function.name, pc + 1)?
+                        .filter(|x| dests.contains(&x.belongs_to_var) || x.var_is_taut);
+
+                    for after in out_ {
+                        ctx.graph.add_normal(from.clone(), after.clone())?;
+                    }
                 }
             }
             Instruction::Call(callee, params, dests) => {
