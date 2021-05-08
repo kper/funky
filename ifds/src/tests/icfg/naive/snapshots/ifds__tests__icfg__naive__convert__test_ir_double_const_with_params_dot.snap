@@ -16,44 +16,36 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (1) at (3, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (2) at (1, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (5) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (6) at (2, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (7) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (8) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (9) at (3, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (10) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (11) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (12) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (13) at (1, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (14) at (2, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (15) at (0, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (16) at (3, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (17) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (18) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (19) at (0, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (20) at (3, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (21) at (2, 3) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (22) at (1, 3) { };
-\node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(1, 1.0)};
-\node[font=\tiny] (note_1) at (-1.5, 1.5) {Assign(2, 0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Assign(2, 1)};
-		\path[->] (0) edge (4);
-		\path[->] (1) edge (5);
-		\path[->] (2) edge (13);
-		\path[->] (0) edge (6);
-		\path[->] (4) edge (8);
-		\path[->] (5) edge (9);
-		\path[->] (6) edge (10);
-		\path[->] (5) edge (18);
-		\path[->] (8) edge (19);
-		\path[->] (9) edge (20);
-		\path[->] (10) edge (21);
-		\path[->] (10) edge (22);
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (0) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (1) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (2) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (3) at (3, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (4) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (5) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (6) at (2, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (7) at (1, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (8) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (9) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (10) at (1, 3) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (11) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (12) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (13) at (0, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (14) at (0, 3) { };
+\node[font=\tiny] at (-1.5, 0.5) {Const(1, 1.0)};
+\node[font=\tiny] at (-1.5, 1.5) {Assign(2, 0)};
+\node[font=\tiny] at (-1.5, 2.5) {Assign(2, 1)};
+		\path[->] (0) edge (1);
+		\path[->] (1) edge (2);
+		\path[->] (1) edge (9);
+		\path[->] (2) edge (3);
+		\path[->] (4) edge (5);
+		\path[->] (5) edge (6);
+		\path[->] (5) edge (10);
+		\path[->] (7) edge (8);
+		\path[->] (11) edge (4);
+		\path[->] (11) edge (12);
+		\path[->] (12) edge (13);
+		\path[->] (13) edge (14);
 
 
                 \end{tikzpicture}
