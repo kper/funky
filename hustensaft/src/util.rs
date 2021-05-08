@@ -19,12 +19,11 @@ impl Events {
         let (tx, rx) = mpsc::channel();
         thread::spawn(move || {
             let stdin = io::stdin();
-            for evt in stdin.keys() {
-                if let Ok(key) = evt {
-                    if let Err(err) = tx.send(key) {
-                        eprintln!("{}", err);
-                        return;
-                    }
+            let keys = stdin.keys().into_iter().filter_map(|x| x.ok());
+            for key in keys {
+                if let Err(err) = tx.send(key) {
+                    eprintln!("{}", err);
+                    return;
                 }
             }
         });
