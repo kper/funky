@@ -65,8 +65,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (46) at (2, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (47) at (1, 5) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Block(0)};
-\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {Conditional(1, [0])};
+\node[font=\tiny] (note_1) at (-1.5, 2.5) {Conditional(1, [0])};
+\node[font=\tiny] (note_2) at (-1.5, 1.5) {Const(0, 1.0)};
 \node[font=\tiny] (note_3) at (-1.5, 3.5) {Const(1, 2.0)};
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(2, 3.0)};
 		\path[->] (0) edge (4);

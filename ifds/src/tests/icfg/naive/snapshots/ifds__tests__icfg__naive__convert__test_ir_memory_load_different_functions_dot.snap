@@ -168,11 +168,11 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (134) at (11, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $@0$}] (143) at (5, 5) { };
 \node[font=\tiny] (note_0) at (2.5, 0.5) {Block(0)};
-\node[font=\tiny] (note_1) at (2.5, 1.5) {Const(0, 8.0)};
-\node[font=\tiny] (note_2) at (2.5, 2.5) {Const(1, -12345.0)};
-\node[font=\tiny] (note_3) at (2.5, 3.5) {Store(1, 0.0, 0)};
-\node[font=\tiny] (note_4) at (2.5, 4.5) {Call(1, [], [2])};
-\node[font=\tiny] (note_5) at (2.5, 5.5) {Return([])};
+\node[font=\tiny] (note_1) at (2.5, 3.5) {Store(1, 0.0, 0)};
+\node[font=\tiny] (note_2) at (2.5, 4.5) {Call(1, [], [2])};
+\node[font=\tiny] (note_3) at (2.5, 5.5) {Return([])};
+\node[font=\tiny] (note_4) at (2.5, 1.5) {Const(0, 8.0)};
+\node[font=\tiny] (note_5) at (2.5, 2.5) {Const(1, -12345.0)};
 		\path[->] (0) edge (9);
 		\path[->] (1) edge (76);
 		\path[->] (2) edge (10);

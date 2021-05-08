@@ -240,9 +240,9 @@ expression: output
 \node[font=\tiny] (note_4) at (-1.5, 4.5) {Const(4, 8.0)};
 \node[font=\tiny] (note_5) at (-1.5, 5.5) {Load(5, 0.0, 4)};
 \node[font=\tiny] (note_6) at (-1.5, 6.5) {Const(6, 8.0)};
-\node[font=\tiny] (note_7) at (-1.5, 7.5) {Load(7, 0.0, 6)};
-\node[font=\tiny] (note_8) at (-1.5, 8.5) {Kill(7)};
-\node[font=\tiny] (note_9) at (-1.5, 9.5) {Kill(6)};
+\node[font=\tiny] (note_7) at (-1.5, 8.5) {Kill(7)};
+\node[font=\tiny] (note_8) at (-1.5, 9.5) {Kill(6)};
+\node[font=\tiny] (note_9) at (-1.5, 7.5) {Load(7, 0.0, 6)};
 \node[font=\tiny] (note_10) at (-1.5, 10.5) {Return([])};
 		\path[->] (0) edge (9);
 		\path[->] (1) edge (111);

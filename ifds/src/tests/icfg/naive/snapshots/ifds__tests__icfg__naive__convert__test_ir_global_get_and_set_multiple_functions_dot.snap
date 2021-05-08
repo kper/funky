@@ -48,9 +48,9 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (115) at (0, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (116) at (1, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (117) at (2, 2) { };
+\node[font=\tiny] (note_4) at (-1.5, 1.5) {Const(-2, 1.0)};
+\node[font=\tiny] (note_5) at (-1.5, 2.5) {Return([0])};
 \node[font=\tiny] (note_7) at (-1.5, 0.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_8) at (-1.5, 1.5) {Const(-2, 1.0)};
-\node[font=\tiny] (note_9) at (-1.5, 2.5) {Return([0])};
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (31) at (4, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (32) at (6, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (33) at (7, 0) { };
@@ -74,8 +74,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (102) at (6, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (103) at (5, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (104) at (6, 2) { };
-\node[font=\tiny] (note_5) at (2.5, 0.5) {Assign(0, -2)};
-\node[font=\tiny] (note_6) at (2.5, 1.5) {Return([0])};
+\node[font=\tiny] (note_8) at (2.5, 0.5) {Assign(0, -2)};
+\node[font=\tiny] (note_9) at (2.5, 1.5) {Return([0])};
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (8, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (1) at (12, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (2) at (13, 0) { };
@@ -140,10 +140,10 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-2$}] (110) at (12, 5) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (113) at (13, 5) { };
 \node[font=\tiny] (note_0) at (6.5, 0.5) {Assign(1, -1)};
-\node[font=\tiny] (note_1) at (6.5, 1.5) {Assign(-2, 1)};
-\node[font=\tiny] (note_2) at (6.5, 2.5) {Const(2, 1.0)};
-\node[font=\tiny] (note_3) at (6.5, 3.5) {Call(1, [2], [0])};
-\node[font=\tiny] (note_4) at (6.5, 4.5) {Call(2, [], [1])};
+\node[font=\tiny] (note_1) at (6.5, 2.5) {Const(2, 1.0)};
+\node[font=\tiny] (note_2) at (6.5, 3.5) {Call(1, [2], [0])};
+\node[font=\tiny] (note_3) at (6.5, 4.5) {Call(2, [], [1])};
+\node[font=\tiny] (note_6) at (6.5, 1.5) {Assign(-2, 1)};
 		\path[->] (0) edge (6);
 		\path[->] (1) edge (61);
 		\path[->] (2) edge (7);

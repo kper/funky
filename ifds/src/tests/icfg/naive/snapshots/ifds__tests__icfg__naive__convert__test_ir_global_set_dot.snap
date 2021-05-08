@@ -32,8 +32,8 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (37) at (2, 2) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (39) at (0, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (40) at (1, 2) { };
-\node[font=\tiny] (note_3) at (-1.5, 0.5) {Assign(0, -1)};
-\node[font=\tiny] (note_4) at (-1.5, 1.5) {Return([0])};
+\node[font=\tiny] (note_0) at (-1.5, 0.5) {Assign(0, -1)};
+\node[font=\tiny] (note_1) at (-1.5, 1.5) {Return([0])};
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (4, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (1) at (7, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (2) at (5, 0) { };
@@ -59,9 +59,9 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (35) at (4, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (36) at (5, 3) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%-1$}] (38) at (7, 3) { };
-\node[font=\tiny] (note_0) at (2.5, 0.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_1) at (2.5, 1.5) {Assign(-1, 0)};
 \node[font=\tiny] (note_2) at (2.5, 2.5) {Call(1, [], [1])};
+\node[font=\tiny] (note_3) at (2.5, 0.5) {Const(0, 1.0)};
+\node[font=\tiny] (note_4) at (2.5, 1.5) {Assign(-1, 0)};
 		\path[->] (0) edge (4);
 		\path[->] (1) edge (21);
 		\path[->] (2) edge (6);

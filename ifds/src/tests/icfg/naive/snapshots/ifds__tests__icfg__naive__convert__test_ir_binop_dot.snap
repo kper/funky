@@ -50,9 +50,9 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (31) at (2, 4) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (32) at (1, 4) { };
 \node[font=\tiny] (note_0) at (-1.5, 0.5) {Const(0, 1.0)};
-\node[font=\tiny] (note_1) at (-1.5, 1.5) {Const(1, 1.0)};
-\node[font=\tiny] (note_2) at (-1.5, 2.5) {BinOp(2, 0, 1)};
-\node[font=\tiny] (note_3) at (-1.5, 3.5) {BinOp(2, 1, 0)};
+\node[font=\tiny] (note_1) at (-1.5, 2.5) {BinOp(2, 0, 1)};
+\node[font=\tiny] (note_2) at (-1.5, 3.5) {BinOp(2, 1, 0)};
+\node[font=\tiny] (note_3) at (-1.5, 1.5) {Const(1, 1.0)};
 		\path[->] (0) edge (4);
 		\path[->] (1) edge (18);
 		\path[->] (2) edge (6);
