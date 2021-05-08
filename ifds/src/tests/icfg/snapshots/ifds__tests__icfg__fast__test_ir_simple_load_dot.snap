@@ -16,13 +16,13 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (2) at (1, 1) { };
-\node[font=\tiny] (note_0) at (-1.5, 0.5) {Load(1, 0.0, 0)};
-		\path[->, blue] (0) [loop right] edge  node { } (0);
-		\path[->, blue] (0) [bend right] edge  node { } (1);
-		\path[->, blue] (0) [bend right] edge  node { } (2);
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (0) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 1) { };
+\node[font=\tiny] at (-1.5, 0.5) {Load(1, 0.0, 0)};
+		\path[->, blue] (1) [bend right] edge  node { } (0);
+		\path[->, blue] (1) [loop right] edge  node { } (1);
+		\path[->, blue] (1) [bend right] edge  node { } (2);
 
 
                 \end{tikzpicture}

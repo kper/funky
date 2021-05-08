@@ -2,7 +2,6 @@ use crate::counter::Counter;
 use crate::icfg::graph::{Edge, Fact, Graph};
 use crate::icfg::state::State;
 use log::debug;
-use std::cmp::Ordering;
 
 const TAU: usize = 1;
 
@@ -35,20 +34,13 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
         .chain(graph.edges.iter().map(|x| x.to()))
         .collect();
 
-    fn chain_ordering(o1: Ordering, o2: Ordering) -> Ordering {
-        match o1 {
-            Ordering::Equal => o1,
-            _ => o2,
-        }
-    }
-
     facts.sort_by(|a, b| {
-        chain_ordering(
-            chain_ordering(
-                b.function.cmp(&a.function),
-                b.belongs_to_var.cmp(&a.belongs_to_var),
-            ),
-            b.next_pc.cmp(&a.next_pc),
+        a.function.cmp(&b.function).then(
+            a.belongs_to_var
+                .cmp(&b.belongs_to_var)
+                .then(a.next_pc.cmp(&b.next_pc))
+                .then(a.track.cmp(&b.track))
+                .then(a.pc.cmp(&b.pc)),
         )
     });
     facts.dedup();
@@ -65,11 +57,18 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
         let function_name = &function.name;
         debug!("Drawing function {}", function_name);
 
-        let facts = facts.iter().filter(|x| &x.get().function == function_name);
+        let facts = facts
+            .iter()
+            .filter(|x| &x.get().function == function_name)
+            .collect::<Vec<_>>();
 
-        let notes = state.notes.iter().filter(|x| &x.function == function_name);
+        let mut notes = state
+            .notes
+            .iter()
+            .filter(|x| &x.function == function_name)
+            .collect::<Vec<_>>();
 
-        let mut vars: Vec<_> = facts.clone().map(|x| &x.get().belongs_to_var).collect();
+        let mut vars: Vec<_> = facts.iter().map(|x| &x.get().belongs_to_var).collect();
         vars.sort_by(|a, b| b.cmp(a));
         vars.dedup();
 
@@ -89,12 +88,13 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
             ));
         }
 
+        notes.sort_by(|a, b| a.pc.cmp(&b.pc));
+
         for note in notes {
             debug!("Drawing note");
 
             str_vars.push_str(&format!(
-                "\\node[font=\\tiny] (note_{}) at ({}, {}) {{{}}};\n",
-                note.id,
+                "\\node[font=\\tiny] at ({}, {}) {{{}}};\n",
                 index as f64 - 1.5,   //x
                 note.pc as f64 + 0.5, //y
                 note.note.replace("%", "").replace("\"", "").escape_debug(),
@@ -109,7 +109,11 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
         facts.get(pos).unwrap().id
     };
 
-    for edge in graph.edges.iter() {
+    let mut edges = graph.edges.clone();
+
+    edges.sort_by(|a, b| a.cmp(b));
+
+    for edge in edges.iter() {
         match edge {
             Edge::Normal { from, to, curved } => {
                 if *curved {

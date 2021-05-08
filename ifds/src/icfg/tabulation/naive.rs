@@ -72,14 +72,22 @@ impl TabulationNaive {
                     .par_iter()
                     .enumerate()
                     .for_each(|(pc, instruction)| {
+                        let mut lock = state.lock().unwrap();
+                        let _ = lock.add_statement_with_note_naive(
+                            function,
+                            format!("{:?}", instruction),
+                            pc,
+                            &"taut".to_string(),
+                        );
+                    });
+
+                function
+                    .instructions
+                    .par_iter()
+                    .enumerate()
+                    .for_each(|(pc, instruction)| {
                         {
                             let mut lock = state.lock().unwrap();
-                            let _ = lock.add_statement_with_note_naive(
-                                function,
-                                format!("{:?}", instruction),
-                                pc,
-                                &"taut".to_string(),
-                            );
 
                             for var in vars.iter() {
                                 let _ = lock.add_statement(
