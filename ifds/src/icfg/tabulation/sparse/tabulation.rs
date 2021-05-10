@@ -75,7 +75,7 @@ where
         }
     }
 
-    pub fn get_defuse<'a>(&'a self) -> &'a DefUseChain {
+    pub fn get_defuse(&self) -> &DefUseChain {
         &self.defuse
     }
 
@@ -98,7 +98,7 @@ where
     }
 
     /// Get a SCFG graph from the `def_use` chain
-    pub fn get_scfg_graph(&self, function: &String, var: &String) -> Option<&Graph> {
+    pub fn get_scfg_graph(&self, function: &str, var: &str) -> Option<&Graph> {
         self.defuse.get_graph(function, var)
     }
 
@@ -107,10 +107,10 @@ where
         &mut self,
         caller_function: &AstFunction,
         callee_function: &AstFunction,
-        params: &Vec<String>,
+        params: &[String],
         ctx: &mut Ctx<'a>,
         current_pc: usize,
-        caller_var: &String,
+        caller_var: &str,
     ) -> Result<Vec<Edge>> {
         let caller_variable = ctx
             .state
@@ -121,7 +121,7 @@ where
         // Why not dests? Because we don't care about
         // the destination for the function call in
         // `pass_args`
-        if params.contains(&caller_var)
+        if params.contains(&caller_var.to_string())
             || caller_variable.is_taut
             || caller_variable.is_global
             || caller_variable.is_memory
@@ -235,7 +235,7 @@ where
                 for callee_fact in callee_facts.into_iter() {
                     // Create an edge.
                     edges.push(Edge::Call {
-                        from: caller_fact.clone().clone(),
+                        from: (*caller_fact).clone(),
                         to: callee_fact,
                     });
                 }
@@ -255,7 +255,7 @@ where
         caller_function: &AstFunction,
         _callee_function: &AstFunction,
         caller_variable: &Variable,
-        init_facts: &Vec<Fact>,
+        init_facts: &[Fact],
     ) -> Result<Fact> {
         assert!(caller_variable.is_global);
 
@@ -298,7 +298,7 @@ where
     fn get_function_by_name<'a>(
         &self,
         ctx: &mut Ctx<'a>,
-        function: &String,
+        function: &str,
     ) -> Option<&'a AstFunction> {
         ctx.prog.functions.iter().find(|x| &x.name == function)
     }
@@ -307,11 +307,11 @@ where
     fn return_val<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
-        caller_function: &String, //d4
-        callee_function: &String, //d2
-        caller_pc: usize,         //d4
-        callee_pc: usize,         //d2
-        caller_instructions: &Vec<Instruction>,
+        caller_function: &str, //d4
+        callee_function: &str, //d2
+        caller_pc: usize,      //d4
+        callee_pc: usize,      //d2
+        caller_instructions: &[Instruction],
         callee_var: &String,
     ) -> Result<Vec<Edge>> {
         debug!("Trying to compute return_val");
@@ -339,7 +339,8 @@ where
                 .defuse
                 .get_facts_at(ctx, &callee_function, &"taut".to_string(), callee_pc)
                 .context("Cannot get the callee facts")?
-                .into_iter().cloned()
+                .into_iter()
+                .cloned()
                 .collect::<Vec<_>>();
 
             let caller_fact_var = self
@@ -391,7 +392,7 @@ where
             for (i, caller_fact) in caller_facts.into_iter().enumerate() {
                 if let Some(callee_fact) = callee_facts.get(i) {
                     edges.push(Edge::Return {
-                        from: callee_fact.clone().clone(),
+                        from: (*callee_fact).clone(),
                         to: caller_fact.clone(),
                     });
                 }
@@ -430,7 +431,7 @@ where
 
                             edges.push(Edge::Return {
                                 from: callee_fact.clone().apply(),
-                                to: caller_var,
+                                to: caller_var.clone(),
                             });
                         }
                     } else {
@@ -488,7 +489,7 @@ where
 
                             edges.push(Edge::Return {
                                 from: callee_fact.clone().apply(),
-                                to: caller_var,
+                                to: caller_var.clone(),
                             });
                         }
                     } else {
@@ -504,14 +505,14 @@ where
     /// Computes call-to-return
     fn call_flow<'a>(
         &mut self,
+        ctx: &mut Ctx<'a>,
         _program: &Program,
         caller_function: &AstFunction,
-        callee: &String,
-        _params: &Vec<String>,
-        dests: &Vec<String>,
-        ctx: &mut Ctx<'a>,
+        callee: &str,
+        _params: &[String],
+        dests: &[String],
         pc: usize,
-        caller: &String,
+        caller: &str,
     ) -> Result<Vec<Edge>> {
         debug!(
             "Generating call-to-return edges for {} ({}) at {}",
@@ -751,9 +752,9 @@ where
         program: &Program,
         d1: &Fact,
         d2: &Fact,
-        callee: &String,
-        params: &Vec<String>,
-        dests: &Vec<String>,
+        callee: &str,
+        params: &[String],
+        dests: &[String],
         _start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
@@ -790,9 +791,6 @@ where
                     callee, pc
                 )
             })?;
-
-        // Extract the goals of the edges.
-        let call_facts = call_edges.iter().map(|x| x.to()).collect::<Vec<_>>();
 
         for d3 in call_edges.iter() {
             debug!("d3 {:#?}", d3);
@@ -869,13 +867,13 @@ where
             &"taut".to_string(),
             first_statement_pc_callee,
         )?;
-        let taut = tauts
-            .first()
-            .context("Cannot get the taut fact")?
-            .clone()
-            .clone();
 
-        for d3 in call_facts.into_iter() {
+        let taut = (*tauts.first().context("Cannot get the taut fact")?).clone();
+
+        // Extract the goals of the edges.
+        let call_facts = call_edges.iter().map(|x| x.to());
+
+        for d3 in call_facts {
             // add all other usages of the variable
             debug!(
                 "Next usages of {} on {} at {}",
@@ -910,12 +908,12 @@ where
 
         let call_flow = self
             .call_flow(
+                ctx,
                 program,
                 caller_function,
                 callee,
                 params,
                 dests,
-                ctx,
                 pc,
                 &d2.belongs_to_var,
             )?
@@ -943,14 +941,13 @@ where
                 d1.function, d3.function,
                 "Call flow edges must be intraprocedural"
             );
-            let taut = self
+            let taut = (*self
                 .defuse
                 .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
                 .context("Cannot find facts")?
                 .first()
-                .context("Cannot find tautological start fact")?
-                .clone()
-                .clone();
+                .context("Cannot find tautological start fact")?)
+            .clone();
 
             self.propagate(
                 &mut ctx.graph,
@@ -1128,7 +1125,8 @@ where
                     debug!("summary_edge {:#?}", edge_ctx.summary_edge);
                     if !edge_ctx
                         .summary_edge
-                        .iter().any(|x| x.get_from() == d4 && x.to() == d5)
+                        .iter()
+                        .any(|x| x.get_from() == d4 && x.to() == d5)
                     {
                         edge_ctx.summary_edge.push(Edge::Normal {
                             from: d4.clone(),
@@ -1141,7 +1139,7 @@ where
                         let edges: Vec<_> = edge_ctx
                             .path_edge
                             .iter()
-                            .filter(|x| x.to() == d4 && &x.get_from().function == &d4.function)
+                            .filter(|x| x.to() == d4 && x.get_from().function == d4.function)
                             .cloned()
                             .collect();
 

@@ -112,11 +112,9 @@ impl State {
             }
         }
 
-        Ok(self.get_facts_at(function, pc)?.filter(move |x| {
-            facts
-                .iter()
-                .any(|y| x.belongs_to_var == y.belongs_to_var)
-        }))
+        Ok(self
+            .get_facts_at(function, pc)?
+            .filter(move |x| facts.iter().any(|y| x.belongs_to_var == y.belongs_to_var)))
     }
 
     /// Save the fact in the cache datastructure for the given function.
@@ -353,7 +351,7 @@ impl State {
     }
 
     /// Get a variable by given name and function.
-    pub fn get_var(&self, function: &String, variable: &String) -> Option<&Variable> {
+    pub fn get_var(&self, function: &str, variable: &str) -> Option<&Variable> {
         self.vars
             .get(function)?
             .iter()
@@ -366,7 +364,7 @@ impl State {
         function: &AstFunction,
         instruction: String,
         pc: usize,
-        variable: &String,
+        variable: &str,
     ) -> Result<()> {
         debug!(
             "Adding statement {} at {} for {} ({})",

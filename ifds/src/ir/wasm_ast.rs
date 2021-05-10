@@ -90,7 +90,6 @@ impl IR {
     pub fn new() -> Self {
         Self {
             buffer: String::new(),
-            //counter: Counter::default(),
             symbol_table: SymbolTable::default(),
             block_counter: Counter::default(),
             function_counter: Counter::default(),
@@ -912,10 +911,7 @@ impl IR {
                             function_buffer,
                             "CALL {}({})",
                             func,
-                            param_regs
-                                .into_iter()
-                                .collect::<Vec<_>>()
-                                .join(" ")
+                            param_regs.into_iter().collect::<Vec<_>>().join(" ")
                         )
                         .unwrap();
                     } else {
@@ -933,10 +929,7 @@ impl IR {
                             "{} <- CALL {}({})",
                             return_regs.join(" "),
                             func,
-                            param_regs
-                                .into_iter()
-                                .collect::<Vec<_>>()
-                                .join(" ")
+                            param_regs.into_iter().collect::<Vec<_>>().join(" ")
                         )
                         .unwrap();
                     }
