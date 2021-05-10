@@ -108,7 +108,7 @@ impl DefUseChain {
             .collect::<Vec<_>>();
 
         if let Some(fact) = facts.first() {
-            return Ok(fact.clone().clone());
+            Ok(fact.clone().clone())
         } else {
             let var = ctx
                 .state
@@ -121,7 +121,7 @@ impl DefUseChain {
 
             let first = Fact::from_var(var, start_pc, start_pc, track);
 
-            return Ok(first);
+            Ok(first)
         }
     }
 
@@ -138,8 +138,7 @@ impl DefUseChain {
         let x = graph
             .flatten()
             .into_iter()
-            .filter(|x| x.pc > pc)
-            .map(|x| x.clone())
+            .filter(|x| x.pc > pc).cloned()
             .collect::<Vec<_>>();
 
         Ok(x)
@@ -261,8 +260,7 @@ impl DefUseChain {
         // Get all next nodes, because there might be multiple
         let x: Vec<_> = facts
             .into_iter()
-            .filter(|x| x.next_pc == next_pc)
-            .map(|x| x.clone())
+            .filter(|x| x.next_pc == next_pc).cloned()
             .collect();
 
         Ok(x)
@@ -378,7 +376,7 @@ impl DefUseChain {
                 debug!("Cached.");
                 let x = self
                     .inner
-                    .get(&(function.name.clone(), var.name.clone()))
+                    .get(&(function.name.clone(), var.name))
                     .map(|(_, x)| x)
                     .context("Cannot get graph")?;
 
@@ -430,7 +428,7 @@ impl DefUseChain {
 
         let (_, ref graph) = self
             .inner
-            .get(&(function.name.clone(), var.name.clone()))
+            .get(&(function.name.clone(), var.name))
             .context("Cannot find chained facts")?;
 
         Ok(graph)
@@ -505,11 +503,9 @@ impl DefUseChain {
                             overwritten = true;
                             break;
                         }
-                    } else {
-                        if is_rhs {
-                            debug!("Instruction is used on the rhs.");
-                            relevant_instructions.push(instruction.clone());
-                        }
+                    } else if is_rhs {
+                        debug!("Instruction is used on the rhs.");
+                        relevant_instructions.push(instruction.clone());
                     }
                 }
                 SCFG::Conditional(_pc, _instruction, block1, block2) => {
@@ -560,7 +556,7 @@ impl DefUseChain {
         if is_top_level {
             if (!was_called_as_param && !overwritten) || var.is_taut {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
-            } else if relevant_instructions.len() > 0 && !overwritten {
+            } else if !relevant_instructions.is_empty() && !overwritten {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
             }
         }
@@ -598,7 +594,7 @@ impl DefUseChain {
         debug!("relevant scfg {} {:#?}", var.name, relevant_instructions);
 
         let next_pc = {
-            if relevant_instructions.len() == 0 && was_called_as_param {
+            if relevant_instructions.is_empty() && was_called_as_param {
                 start_pc
             } else {
                 relevant_instructions
@@ -610,7 +606,7 @@ impl DefUseChain {
         let first = Fact::from_var(var, start_pc, next_pc, track);
         debug!("first fact {:#?}", first);
         assert!(first.pc <= first.next_pc);
-        let mut node = vec![first.clone()];
+        let mut node = vec![first];
         let mut i = 0;
 
         // Cannot simply add next instruction, we have to check
@@ -1006,7 +1002,7 @@ mod test {
     fn test_building_mem_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec![
                 "%0".to_string(),
                 "%1".to_string(),
@@ -1056,7 +1052,7 @@ mod test {
     fn test_building_loop_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1102,7 +1098,7 @@ mod test {
     fn test_building_table_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1148,7 +1144,7 @@ mod test {
     fn test_building_conditional_if_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1194,7 +1190,7 @@ mod test {
     fn test_building_conditional_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1245,7 +1241,7 @@ mod test {
     fn test_building_conditional_if_else_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1312,7 +1308,7 @@ mod test {
         */
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1370,7 +1366,7 @@ mod test {
     fn test_building_scfg2() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1413,7 +1409,7 @@ mod test {
     fn test_building_scfg3() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1456,7 +1452,7 @@ mod test {
     fn testing_caching_first_var() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1513,7 +1509,7 @@ mod test {
     fn testing_caching_second_var() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1570,7 +1566,7 @@ mod test {
     fn testing_caching_recursion() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),

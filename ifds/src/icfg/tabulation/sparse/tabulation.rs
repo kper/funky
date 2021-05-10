@@ -245,7 +245,7 @@ where
         }
 
         // not a parameter, therefore skipping
-        return Ok(vec![]);
+        Ok(vec![])
     }
 
     /// Compute the call-to-start edge for the `caller_variable` when it is a global
@@ -339,8 +339,7 @@ where
                 .defuse
                 .get_facts_at(ctx, &callee_function, &"taut".to_string(), callee_pc)
                 .context("Cannot get the callee facts")?
-                .into_iter()
-                .map(|x| x.clone())
+                .into_iter().cloned()
                 .collect::<Vec<_>>();
 
             let caller_fact_var = self
@@ -577,7 +576,7 @@ where
             &mut edge_ctx,
             Edge::Path {
                 from: init.clone(),
-                to: init.clone(),
+                to: init,
             },
         )?;
 
@@ -1035,11 +1034,10 @@ where
                 .get_facts_at(ctx, &d2_function, &d2.belongs_to_var, d2.next_pc)
                 .context("Cannot get the facts when unionizing the end_summary edges. Key does already exist")?
                 .into_iter()
-                .filter(|x| x.pc == x.next_pc) // get only real end points
-                .map(|x| x.clone())
+                .filter(|x| x.pc == x.next_pc).cloned()
                 .collect::<Vec<_>>();
 
-            if facts.len() > 0 {
+            if !facts.is_empty() {
                 end_summary.extend(facts);
                 end_summary.dedup();
             }
@@ -1051,11 +1049,10 @@ where
                     "Cannot get the facts when unionizing the end_summary edges. Key does not exist",
                 )?
                 .into_iter()
-                .filter(|x| x.pc == x.next_pc) // get only real end points
-                .map(|x| x.clone())
+                .filter(|x| x.pc == x.next_pc).cloned()
                 .collect::<Vec<_>>();
 
-            if facts.len() > 0 {
+            if !facts.is_empty() {
                 edge_ctx.end_summary.insert(
                     (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
                     facts,
@@ -1129,11 +1126,9 @@ where
                     debug!("Handling var {:#?}", d5);
 
                     debug!("summary_edge {:#?}", edge_ctx.summary_edge);
-                    if edge_ctx
+                    if !edge_ctx
                         .summary_edge
-                        .iter()
-                        .find(|x| x.get_from() == d4 && x.to() == d5)
-                        .is_none()
+                        .iter().any(|x| x.get_from() == d4 && x.to() == d5)
                     {
                         edge_ctx.summary_edge.push(Edge::Normal {
                             from: d4.clone(),

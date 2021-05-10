@@ -59,7 +59,7 @@ impl State {
     pub fn get_min_pc(&self, function: &String) -> Result<usize> {
         if let Some(facts) = self.init_facts.get(function) {
             if let Some(fact) = facts.get(0) {
-                return Ok(fact.next_pc.checked_sub(1).unwrap_or(0));
+                return Ok(fact.next_pc.saturating_sub(1));
             } else {
                 bail!("Function has an empty set of initial facts.");
             }
@@ -76,7 +76,7 @@ impl State {
         function: &String,
         facts: Vec<Fact>,
     ) -> Result<impl Iterator<Item = &Fact>> {
-        if facts.len() == 0 {
+        if facts.is_empty() {
             bail!("Cannot have empty facts");
         }
 
@@ -115,15 +115,14 @@ impl State {
         Ok(self.get_facts_at(function, pc)?.filter(move |x| {
             facts
                 .iter()
-                .find(|y| x.belongs_to_var == y.belongs_to_var)
-                .is_some()
+                .any(|y| x.belongs_to_var == y.belongs_to_var)
         }))
     }
 
     /// Save the fact in the cache datastructure for the given function.
     /// Then return the reference to it.
     pub fn cache_fact(&mut self, function: &String, fact: Fact) -> Result<&Fact> {
-        let v = vec![fact.clone()];
+        let v = vec![fact];
         let res: Vec<_> = self.cache_facts(function, v)?.collect();
         Ok(res.get(0).context("Cannot get fact")?)
     }
@@ -199,7 +198,7 @@ impl State {
                 is_global: false,
                 is_taut: false,
                 is_memory: true,
-                memory_offset: from_caller.memory_offset.clone(),
+                memory_offset: from_caller.memory_offset,
             });
 
             let fact = Fact {
@@ -220,7 +219,7 @@ impl State {
                 .context("Cannot find init facts")?;
             init_facts.push(fact.clone());
 
-            return Ok(self.cache_fact(function, fact.clone())?);
+            return self.cache_fact(function, fact);
         }
 
         bail!("Cannot find variable. Function was probably not initialised")
@@ -315,7 +314,7 @@ impl State {
                 var_is_global: var.is_global,
                 var_is_taut: var.is_taut,
                 var_is_memory: var.is_memory,
-                pc: pc.checked_sub(1).unwrap_or(0),
+                pc: pc.saturating_sub(1),
                 next_pc: pc,
                 track: index,
                 function: function.name.clone(),
@@ -392,13 +391,13 @@ impl State {
                 var_is_memory: var.is_memory,
                 track,
                 function: function.name.clone(),
-                pc: pc.checked_sub(1).unwrap_or(0),
+                pc: pc.saturating_sub(1),
                 next_pc: pc,
                 memory_offset: var.memory_offset,
             });
         }
 
-        if facts.len() > 0 {
+        if !facts.is_empty() {
             let _ = self.cache_facts(&function.name, facts)?;
         }
 
@@ -433,7 +432,7 @@ impl State {
                     id: self.note_counter.get(),
                     function: function.name.clone(),
                     pc,
-                    note: instruction.clone(),
+                    note: instruction,
                 });
             }
         }
@@ -470,7 +469,7 @@ impl State {
                     id: self.note_counter.get(),
                     function: function.name.clone(),
                     pc,
-                    note: instruction.clone(),
+                    note: instruction,
                 });
             }
         }

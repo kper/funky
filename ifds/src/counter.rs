@@ -14,7 +14,7 @@ impl Counter {
     }
 
     pub fn get(&mut self) -> usize {
-        let counter = self.counter.clone();
+        let counter = self.counter;
         self.counter += 1;
         counter
     }

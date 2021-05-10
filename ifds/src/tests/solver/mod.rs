@@ -35,7 +35,7 @@ macro_rules! check_vars {
                     .into_iter()
                     .collect::<Vec<_>>();
 
-        vars.sort();
+        vars.sort_unstable();
 
         assert_snapshot!(
             format!("{}_vars", $name),

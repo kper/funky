@@ -104,7 +104,7 @@ impl Fact {
             pc,
             next_pc,
             track,
-            memory_offset: var.memory_offset.clone(),
+            memory_offset: var.memory_offset,
             var_is_global: var.is_global,
             var_is_taut: var.is_taut,
             var_is_memory: var.is_memory,

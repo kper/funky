@@ -187,7 +187,7 @@ where
 
                 // Create an edge.
                 edges.push(Edge::Call {
-                    from: caller_fact.clone().clone(),
+                    from: caller_fact.clone(),
                     to: callee_fact.clone(),
                 });
             }
@@ -199,7 +199,7 @@ where
                 caller_var, params, callee_function.name
             );
 
-            return Ok(vec![]);
+            Ok(vec![])
         }
     }
 
@@ -344,14 +344,14 @@ where
             .filter(|x| return_vals.contains(&x.belongs_to_var));
 
         for (from, to_reg) in callee_facts_without_globals
-            .clone()
+            
             .into_iter()
             .chain(callee_facts_globals_that_were_returned)
             .zip(dest.into_iter())
         {
             if let Some(to) = caller_facts.iter().find(|x| x.belongs_to_var == to_reg) {
                 edges.push(Edge::Return {
-                    from: from,
+                    from,
                     to: to.clone(),
                 });
             } else {
@@ -384,7 +384,7 @@ where
 
         // Edges only for globals
         // doesn't handle when you return into local from global
-        for from in callee_facts_with_globals.clone().into_iter() {
+        for from in callee_facts_with_globals.into_iter() {
             //Create the dest
             let track = ctx
                 .state
@@ -412,7 +412,7 @@ where
         }
 
         // Edges only for memory
-        for from in callee_facts_with_memory.clone().into_iter() {
+        for from in callee_facts_with_memory.into_iter() {
             if let Some(caller_fact) = caller_facts_memory
                 .iter()
                 .find(|x| x.belongs_to_var == from.belongs_to_var)
@@ -439,7 +439,7 @@ where
                     var_is_global: false,
                     var_is_taut: false,
                     var_is_memory: true,
-                    memory_offset: from.memory_offset.clone(),
+                    memory_offset: from.memory_offset,
                 };
 
                 let to = ctx.state.cache_fact(caller_function, fact)?;
@@ -476,8 +476,7 @@ where
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
             .filter(|x| &x.belongs_to_var == caller)
-            .filter(|x| !x.var_is_global)
-            .map(|x| x.clone())
+            .filter(|x| !x.var_is_global).cloned()
             .collect();
         debug!("Facts before statement {}", before.len());
 
@@ -556,7 +555,7 @@ where
             &mut worklist,
             Edge::Path {
                 from: init.clone(),
-                to: init.clone(),
+                to: init,
             },
         )?;
 
@@ -885,8 +884,7 @@ where
                         .map(|x| match x {
                             Instruction::Return(x) => x.clone(),
                             _ => Vec::new(),
-                        })
-                        .unwrap_or(Vec::new());
+                        }).unwrap_or_default();
 
                     for d5 in self.return_val(
                         &d2.function,
@@ -1007,16 +1005,14 @@ where
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .map(|x| x.clone());
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned();
             end_summary.extend(facts);
         } else {
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .map(|x| x.clone())
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned()
                 .collect();
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
@@ -1054,15 +1050,13 @@ where
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .map(|x| x.clone());
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned();
             end_summary.extend(facts);
         } else {
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .map(|x| x.clone())
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned()
                 .collect();
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
@@ -1098,8 +1092,7 @@ where
                     .map(|x| match x {
                         Instruction::Return(x) => x.clone(),
                         _ => Vec::new(),
-                    })
-                    .unwrap_or(Vec::new());
+                    }).unwrap_or_default();
 
                 // Use only `d4`'s var
                 let ret_vals = self.return_val(
@@ -1120,10 +1113,8 @@ where
                     debug!("Handling var {:#?}", d5);
 
                     debug!("summary_edge {:#?}", summary_edge);
-                    if summary_edge
-                        .iter()
-                        .find(|x| x.get_from() == d4 && x.to() == d5)
-                        .is_none()
+                    if !summary_edge
+                        .iter().any(|x| x.get_from() == d4 && x.to() == d5)
                     {
                         summary_edge.push(Edge::Normal {
                             from: d4.clone(),
@@ -1205,7 +1196,7 @@ where
             let facts = ctx
                 .state
                 .get_facts_at(&function.name, i)?
-                .filter(|x| x.belongs_to_var == "taut".to_string())
+                .filter(|x| x.belongs_to_var == *"taut")
                 .collect::<Vec<_>>();
             let taut = facts.get(0).context("Expected only taut")?.clone();
             debug_assert!(taut.var_is_taut);
@@ -1236,7 +1227,7 @@ where
         let facts = ctx
             .state
             .get_facts_at(&function.name, function.instructions.len())?
-            .filter(|x| x.belongs_to_var == "taut".to_string())
+            .filter(|x| x.belongs_to_var == *"taut")
             .collect::<Vec<_>>();
 
         let taut = facts.get(0).context("Expected only taut")?.clone();
@@ -1249,7 +1240,7 @@ where
                 curved: false,
             });
             normal_flows_debug.push(Edge::Normal {
-                from: last_taut.clone(),
+                from: last_taut,
                 to: taut.clone(),
                 curved: false,
             });

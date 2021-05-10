@@ -8,7 +8,7 @@ use crate::ir::ast::Function as AstFunction;
 
 use pretty_assertions::assert_eq;
 
-const MAIN_FUNCTION: &'static str = "main";
+const MAIN_FUNCTION: &str = "main";
 
 fn flow(
     start_pc: usize,
@@ -187,7 +187,7 @@ fn test_binop_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "taut".to_string(),
-                pc: (pc as usize).checked_sub(1).unwrap_or(0),
+                pc: (pc as usize).saturating_sub(1),
                 next_pc: pc,
                 track: 0,
                 var_is_taut: true,
@@ -200,7 +200,7 @@ fn test_binop_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "%0".to_string(),
-                pc: (pc as usize).checked_sub(1).unwrap_or(0),
+                pc: (pc as usize).saturating_sub(1),
                 next_pc: pc,
                 track: 1,
                 function: MAIN_FUNCTION.to_string(),
@@ -279,7 +279,7 @@ fn test_phi_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "taut".to_string(),
-                pc: (pc as usize).checked_sub(1).unwrap_or(0),
+                pc: (pc as usize).saturating_sub(1),
                 next_pc: pc,
                 track: 0,
                 var_is_taut: true,
@@ -292,7 +292,7 @@ fn test_phi_initial_flow() {
             &MAIN_FUNCTION.to_string(),
             Fact {
                 belongs_to_var: "%0".to_string(),
-                pc: (pc as usize).checked_sub(1).unwrap_or(0),
+                pc: (pc as usize).saturating_sub(1),
                 next_pc: pc,
                 track: 1,
                 function: MAIN_FUNCTION.to_string(),

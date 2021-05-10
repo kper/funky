@@ -131,7 +131,7 @@ fn test_normal_function_call() {
         end_summary.get(&(callee_function.name.clone(), 0, "taut".to_string())),
         Some(&vec![Fact {
             belongs_to_var: "%0".to_string(),
-            function: callee_function.name.clone(),
+            function: callee_function.name,
             ..Default::default()
         }])
     );
@@ -232,7 +232,7 @@ fn test_return_directly_global() {
         end_summary.get(&(callee_function.name.clone(), 0, "taut".to_string())),
         Some(&vec![Fact {
             belongs_to_var: "%-1".to_string(),
-            function: callee_function.name.clone(),
+            function: callee_function.name,
             ..Default::default()
         }])
     );
@@ -342,7 +342,7 @@ fn test_return_memory() {
         end_summary.get(&(callee_function.name.clone(), 0, "taut".to_string())),
         Some(&vec![Fact {
             belongs_to_var: "%1".to_string(),
-            function: callee_function.name.clone(),
+            function: callee_function.name,
             ..Default::default()
         }])
     );
