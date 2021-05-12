@@ -1,5 +1,5 @@
 ---
-source: src/tests/verification/mod.rs
+source: src/tests/icfg/sparse.rs
 expression: output
 
 ---

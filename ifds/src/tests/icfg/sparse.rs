@@ -1083,8 +1083,30 @@ fn test_assignment_small3() {
 }
 
 #[test]
-fn test_nested_calls_circuit_break() {
-    env_logger::init();
+fn test_nested_call() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "
+        define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 <- CALL mytesttwo(%0)
+            RETURN %1;
+        };
+        define mytesttwo (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };
+        ";
+    ir!("nested_call", &req, ir);
+}
+
+#[test]
+fn test_nested_call_circuit_break() {
     let req = Request {
         variable: Some("%0".to_string()),
         function: "test".to_string(),

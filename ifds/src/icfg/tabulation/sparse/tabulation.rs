@@ -1157,14 +1157,43 @@ where
                             .cloned()
                             .collect();
 
+                        let function = program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d5.function)
+                            .context("Cannot find function")?;
+
                         for d3 in edges.into_iter() {
                             // here d5 should be var of caller
                             let d3 = d3.get_from();
 
-                            path_edges.push(Edge::Path {
-                                from: d3.clone(),
-                                to: d5.clone(),
-                            });
+                            // The `d5` was created and it is the lhs of the CALL instruction.
+                            // However only `pc` is correct, but not `next_pc` because we didn't query it
+
+                            let next_d5 = self
+                                .defuse
+                                .get_next(ctx, &function, &d5.belongs_to_var, d5.pc)
+                                .context("Cannot query next facts")?;
+
+                            if next_d5.len() == 0 {
+                                // if last instruction, then there won't be a next one.
+                                // that's why this is an edge case
+                                let mut updated_d5 = d5.clone();
+                                updated_d5.next_pc = updated_d5.pc; //they equal
+                                path_edges.push(Edge::Path {
+                                    from: d3.clone(),
+                                    to: updated_d5,
+                                });
+                            } else {
+                                for next_d5 in next_d5 {
+                                    let mut updated_d5 = d5.clone();
+                                    updated_d5.next_pc = next_d5.pc;
+                                    path_edges.push(Edge::Path {
+                                        from: d3.clone(),
+                                        to: updated_d5,
+                                    });
+                                }
+                            }
                         }
                     }
                 }
