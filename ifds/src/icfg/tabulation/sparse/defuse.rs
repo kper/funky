@@ -45,9 +45,9 @@ impl SCFG {
 
 impl DefUseChain {
     /// Get the DefUseChain for function and variable
-    pub fn get_graph(&self, function: &String, var: &String) -> Option<&Graph> {
+    pub fn get_graph(&self, function: impl Into<String>, var: impl Into<String>) -> Option<&Graph> {
         self.inner
-            .get(&(function.clone(), var.clone()))
+            .get(&(function.into(), var.into()))
             .map(|(_, x)| x)
     }
 
@@ -63,7 +63,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<Vec<&Fact>> {
         debug!("Get facts for {} ({}) at {}", function.name, var, pc);
@@ -73,12 +73,8 @@ impl DefUseChain {
                 var, function.name, pc
             )
         })?;
-        let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
 
-        let facts = all_facts
-            .into_iter()
-            .filter(|x| x.pc == pc)
-            .collect::<Vec<_>>();
+        let facts = graph.flatten().filter(|x| x.pc == pc).collect::<Vec<_>>();
 
         Ok(facts)
     }
@@ -88,7 +84,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         start_pc: usize,
     ) -> Result<Fact> {
         let start = self.get_start_pc(function, var).unwrap_or(start_pc);
@@ -100,15 +96,15 @@ impl DefUseChain {
                 var, function.name, start
             )
         })?;
-        let all_facts = graph.flatten().into_iter().collect::<Vec<_>>();
 
-        let facts = all_facts
+        let facts = graph
+            .flatten()
             .into_iter()
             .filter(|x| x.pc == start && x.next_pc == start)
             .collect::<Vec<_>>();
 
         if let Some(fact) = facts.first() {
-            return Ok(fact.clone().clone());
+            Ok((*fact).clone())
         } else {
             let var = ctx
                 .state
@@ -121,7 +117,7 @@ impl DefUseChain {
 
             let first = Fact::from_var(var, start_pc, start_pc, track);
 
-            return Ok(first);
+            Ok(first)
         }
     }
 
@@ -130,7 +126,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, pc)?;
@@ -139,7 +135,7 @@ impl DefUseChain {
             .flatten()
             .into_iter()
             .filter(|x| x.pc > pc)
-            .map(|x| x.clone())
+            .cloned()
             .collect::<Vec<_>>();
 
         Ok(x)
@@ -150,7 +146,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<Vec<Fact>> {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
@@ -210,7 +206,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         old_pc: usize,
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, old_pc)?;
@@ -232,11 +228,11 @@ impl DefUseChain {
                 all_facts
                     .iter()
                     .filter(|x| x.pc == next_pc && !is_entry(x))
-                    .map(|x| x.clone().clone()),
+                    .cloned(),
             )
         }
 
-        Ok(facts)
+        Ok(facts.into_iter().cloned().collect())
     }
 
     // nodes which point to (var, pc)
@@ -244,17 +240,14 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<Vec<Fact>> {
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let all_facts = graph.flatten().collect::<Vec<_>>();
+        let all_facts = graph.flatten();
 
-        let facts = all_facts
-            .into_iter()
-            .filter(|x| x.next_pc <= pc)
-            .collect::<Vec<_>>();
+        let facts = all_facts.filter(|x| x.next_pc <= pc).collect::<Vec<_>>();
 
         let next_pc = facts.iter().map(|x| x.next_pc).max().unwrap_or(0);
 
@@ -262,19 +255,23 @@ impl DefUseChain {
         let x: Vec<_> = facts
             .into_iter()
             .filter(|x| x.next_pc == next_pc)
-            .map(|x| x.clone())
+            .cloned()
             .collect();
 
         Ok(x)
     }
 
-    pub fn get_start_pc(&self, function: &AstFunction, var: &String) -> Option<usize> {
+    pub fn get_start_pc(&self, function: &AstFunction, var: &str) -> Option<usize> {
         self.get_start_pc_by_name(&function.name, var)
     }
 
-    pub fn get_start_pc_by_name(&self, function: &String, var: &String) -> Option<usize> {
+    pub fn get_start_pc_by_name(
+        &self,
+        function: impl Into<String>,
+        var: impl Into<String>,
+    ) -> Option<usize> {
         self.inner
-            .get(&(function.clone(), var.clone()))
+            .get(&(function.into(), var.into()))
             .map(|(pc, _)| *pc)
     }
 
@@ -283,14 +280,15 @@ impl DefUseChain {
     pub fn force_remove_if_outdated(
         &mut self,
         function: &AstFunction,
-        var: &String,
+        var: impl Into<String>,
         pc: usize,
     ) -> Result<bool> {
+        let var = var.into();
         debug!(
             "Checking if `start_pc` is the same as {} for {} ({})",
             pc, var, function.name
         );
-        if let Some(start_pc) = self.get_start_pc(function, var) {
+        if let Some(start_pc) = self.get_start_pc(function, &var) {
             if start_pc != pc {
                 log::warn!(
                     "Force removal of outdated cache entry for {} ({}) at {}",
@@ -299,7 +297,7 @@ impl DefUseChain {
                     start_pc
                 );
 
-                self.inner.remove(&(function.name.clone(), var.clone()));
+                self.inner.remove(&(function.name.clone(), var));
 
                 return Ok(true);
             }
@@ -319,7 +317,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<&Graph> {
         self.inner_cache(ctx, function, var, pc, false, false)
@@ -335,7 +333,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
     ) -> Result<&Graph> {
         self.inner_cache(ctx, function, var, pc, true, true)
@@ -349,7 +347,7 @@ impl DefUseChain {
         &mut self,
         ctx: &mut Ctx<'a>,
         function: &AstFunction,
-        var: &String,
+        var: &str,
         pc: usize,
         is_defined: bool,
         was_called_in_param: bool, //handles an edge case when `var` was a parameter
@@ -378,7 +376,7 @@ impl DefUseChain {
                 debug!("Cached.");
                 let x = self
                     .inner
-                    .get(&(function.name.clone(), var.name.clone()))
+                    .get(&(function.name.clone(), var.name))
                     .map(|(_, x)| x)
                     .context("Cannot get graph")?;
 
@@ -430,7 +428,7 @@ impl DefUseChain {
 
         let (_, ref graph) = self
             .inner
-            .get(&(function.name.clone(), var.name.clone()))
+            .get(&(function.name.clone(), var.name))
             .context("Cannot find chained facts")?;
 
         Ok(graph)
@@ -505,11 +503,9 @@ impl DefUseChain {
                             overwritten = true;
                             break;
                         }
-                    } else {
-                        if is_rhs {
-                            debug!("Instruction is used on the rhs.");
-                            relevant_instructions.push(instruction.clone());
-                        }
+                    } else if is_rhs {
+                        debug!("Instruction is used on the rhs.");
+                        relevant_instructions.push(instruction.clone());
                     }
                 }
                 SCFG::Conditional(_pc, _instruction, block1, block2) => {
@@ -556,11 +552,10 @@ impl DefUseChain {
             }
         }
 
-        //if is_top_level && (!overwritten || var.is_taut) {
         if is_top_level {
             if (!was_called_as_param && !overwritten) || var.is_taut {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
-            } else if relevant_instructions.len() > 0 && !overwritten {
+            } else if !relevant_instructions.is_empty() && !overwritten {
                 relevant_instructions.push(SCFG::FunctionEnd(max_level));
             }
         }
@@ -571,7 +566,7 @@ impl DefUseChain {
     fn build_graph<'a>(
         &'a self,
         function: &AstFunction,
-        instructions: &Vec<SCFG>,
+        instructions: &[SCFG],
         block_resolver: &BlockResolver,
         max_len: usize,
         var: &Variable,
@@ -598,7 +593,7 @@ impl DefUseChain {
         debug!("relevant scfg {} {:#?}", var.name, relevant_instructions);
 
         let next_pc = {
-            if relevant_instructions.len() == 0 && was_called_as_param {
+            if relevant_instructions.is_empty() && was_called_as_param {
                 start_pc
             } else {
                 relevant_instructions
@@ -610,7 +605,7 @@ impl DefUseChain {
         let first = Fact::from_var(var, start_pc, next_pc, track);
         debug!("first fact {:#?}", first);
         assert!(first.pc <= first.next_pc);
-        let mut node = vec![first.clone()];
+        let mut node = vec![first];
         let mut i = 0;
 
         // Cannot simply add next instruction, we have to check
@@ -779,6 +774,7 @@ impl DefUseChain {
         while i < instructions.len() {
             let ref_instruction = instructions.get(i).context("Cannot find instruction")?;
             let (pc, inner_instruction) = ref_instruction;
+            let inner_instruction = &(*inner_instruction).clone();
             debug!("Instruction {:?}", inner_instruction);
             match inner_instruction {
                 Instruction::Conditional(_, jumps) if jumps.len() == 2 => {
@@ -821,7 +817,7 @@ impl DefUseChain {
                     if is_jumping_to_second {
                         main.push(SCFG::ConditionalJump(
                             *pc,
-                            inner_instruction.clone().clone(),
+                            inner_instruction.clone(),
                             *second_pc,
                         ));
 
@@ -854,7 +850,7 @@ impl DefUseChain {
 
                         main.push(SCFG::Conditional(
                             *pc,
-                            inner_instruction.clone().clone(),
+                            inner_instruction.clone(),
                             first_branch,
                             second_branch,
                         ));
@@ -871,7 +867,7 @@ impl DefUseChain {
 
                     main.push(SCFG::ConditionalJump(
                         *pc,
-                        inner_instruction.clone().clone(),
+                        inner_instruction.clone(),
                         *jump_to_pc,
                     ));
                     i += 1;
@@ -893,11 +889,7 @@ impl DefUseChain {
                         jumps_pc.push(*jump_to_pc);
                     }
 
-                    main.push(SCFG::Table(
-                        *pc,
-                        inner_instruction.clone().clone(),
-                        jumps_pc,
-                    ));
+                    main.push(SCFG::Table(*pc, inner_instruction.clone(), jumps_pc));
 
                     i += 1;
                     debug!("Setting i to {}", i);
@@ -911,7 +903,7 @@ impl DefUseChain {
                     debug!("Setting i to {}", i);
                 }
                 _ => {
-                    main.push(SCFG::Instruction(*pc, inner_instruction.clone().clone()));
+                    main.push(SCFG::Instruction(*pc, inner_instruction.clone()));
                     i += 1;
                     debug!("Setting i to {}", i);
                 }
@@ -938,6 +930,13 @@ impl DefUseChain {
             Instruction::Call(_, _, dest) if dest.contains(var) => true,
             Instruction::CallIndirect(_, _, dest) if dest.contains(var) => true,
             Instruction::Load(dest, ..) if dest == var => true,
+            Instruction::Return(_dest)
+                if variable.is_memory || variable.is_global || variable.is_taut =>
+            // exceptions
+            {
+                false
+            }
+            Instruction::Return(dest) if !dest.contains(var) => true, //not containing then stop
             _ => false,
         }
     }
@@ -1006,7 +1005,7 @@ mod test {
     fn test_building_mem_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec![
                 "%0".to_string(),
                 "%1".to_string(),
@@ -1056,7 +1055,7 @@ mod test {
     fn test_building_loop_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1102,7 +1101,7 @@ mod test {
     fn test_building_table_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1148,7 +1147,7 @@ mod test {
     fn test_building_conditional_if_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1194,7 +1193,7 @@ mod test {
     fn test_building_conditional_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1245,7 +1244,7 @@ mod test {
     fn test_building_conditional_if_else_scfg() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1312,7 +1311,7 @@ mod test {
         */
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1370,7 +1369,7 @@ mod test {
     fn test_building_scfg2() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1413,7 +1412,7 @@ mod test {
     fn test_building_scfg3() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1456,7 +1455,7 @@ mod test {
     fn testing_caching_first_var() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1513,7 +1512,7 @@ mod test {
     fn testing_caching_second_var() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),
@@ -1570,7 +1569,7 @@ mod test {
     fn testing_caching_recursion() {
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec!["%0".to_string(), "%1".to_string(), "%2".to_string()],
             instructions: vec![
                 Instruction::Const("%0".to_string(), 1.0),

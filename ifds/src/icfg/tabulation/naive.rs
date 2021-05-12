@@ -9,6 +9,8 @@ use crate::ir::ast::Instruction;
 
 use rayon::prelude::*;
 
+use log::debug;
+
 use anyhow::{bail, Context, Result};
 
 use std::collections::HashMap;
@@ -139,6 +141,8 @@ impl TabulationNaive {
             });
         }
 
+        debug!("call resolver {:#?}", call_resolver);
+
         for function in prog.functions.iter() {
             self.once_func(&mut ctx, function, &mut block_resolver, &mut call_resolver)?;
         }
@@ -180,7 +184,7 @@ impl TabulationNaive {
             .instructions
             .iter()
             .enumerate()
-            .skip(fact.next_pc.checked_sub(1).unwrap_or(0))
+            .skip(fact.next_pc.saturating_sub(1))
         {
             let mut new_fact = fact.clone();
             new_fact.next_pc = pc;
@@ -188,7 +192,7 @@ impl TabulationNaive {
             let _ = ctx.state.cache_fact(&function.name, new_fact)?;
         }
 
-        let mut new_fact = fact.clone();
+        let mut new_fact = fact;
         new_fact.next_pc = function.instructions.len();
         let _ = ctx.state.cache_fact(&function.name, new_fact)?;
 
@@ -301,25 +305,6 @@ impl TabulationNaive {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
-            Instruction::Call(_, _, dests) if pc == 0 => {
-                //edge case when the analysis starts at pc 0
-
-                let in_ = ctx
-                    .state
-                    .get_facts_at(&function.name, pc)?
-                    .filter(|x| x.var_is_taut);
-
-                for from in in_ {
-                    let out_ = ctx
-                        .state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| dests.contains(&x.belongs_to_var) || x.var_is_taut);
-
-                    for after in out_ {
-                        ctx.graph.add_normal(from.clone(), after.clone())?;
-                    }
-                }
-            }
             Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {
@@ -393,7 +378,7 @@ impl TabulationNaive {
                             .state
                             .get_track(&callee, &var.name)
                             .context("Cannot find track")?,
-                        memory_offset: var.memory_offset.clone(),
+                        memory_offset: var.memory_offset,
                         ..Default::default()
                     };
                     let to = ctx.state.cache_fact(callee, fact)?.clone();
@@ -469,7 +454,7 @@ impl TabulationNaive {
                                 .state
                                 .get_track(&callee, &var.name)
                                 .context("Cannot find track")?,
-                            memory_offset: var.memory_offset.clone(),
+                            memory_offset: var.memory_offset,
                             ..Default::default()
                         };
                         let to = ctx.state.cache_fact(callee, fact)?.clone();
@@ -588,7 +573,7 @@ impl TabulationNaive {
                                     belongs_to_var: from.belongs_to_var.clone(),
                                     function: incoming.0.clone(),
                                     var_is_memory: true,
-                                    memory_offset: var.memory_offset.clone(),
+                                    memory_offset: var.memory_offset,
                                     next_pc: incoming.1 + 1,
                                     track: ctx
                                         .state
@@ -691,7 +676,7 @@ impl TabulationNaive {
                 for from in in_ {
                     let var = ctx
                         .state
-                        .add_memory_var(function.name.clone(), offset.clone() as usize);
+                        .add_memory_var(function.name.clone(), *offset as usize);
 
                     let out_ = ctx
                         .state
@@ -706,7 +691,7 @@ impl TabulationNaive {
                             belongs_to_var: var.name.clone(),
                             function: function.name.clone(),
                             var_is_memory: true,
-                            memory_offset: var.memory_offset.clone(),
+                            memory_offset: var.memory_offset,
                             next_pc: pc + 1,
                             track: ctx
                                 .state

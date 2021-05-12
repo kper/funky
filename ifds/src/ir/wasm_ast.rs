@@ -55,7 +55,7 @@ impl Counter {
     }
 
     pub fn get(&mut self) -> usize {
-        let counter = self.counter.clone();
+        let counter = self.counter;
         self.counter += 1;
         counter
     }
@@ -76,7 +76,7 @@ impl ReverseCounter {
     }
 
     pub fn get(&mut self) -> isize {
-        let counter = self.counter.clone();
+        let counter = self.counter;
         self.counter -= 1;
         counter
     }
@@ -90,7 +90,6 @@ impl IR {
     pub fn new() -> Self {
         Self {
             buffer: String::new(),
-            //counter: Counter::default(),
             symbol_table: SymbolTable::default(),
             block_counter: Counter::default(),
             function_counter: Counter::default(),
@@ -159,19 +158,17 @@ impl IR {
         debug!("Adding additional locals");
         for local in inst.code.locals.iter() {
             for _ in 0..local.count {
-                match local.ty {
-                    _ => {
-                        let var = self.symbol_table.new_reg()?;
-                        debug!("Adding local {}", var);
-                        function.locals.insert(function.locals.len(), var);
-                    }
+                {
+                    let var = self.symbol_table.new_reg()?;
+                    debug!("Adding local {}", var);
+                    function.locals.insert(function.locals.len(), var);
                 }
             }
         }
 
         debug!("locals are {:?}", function.locals);
 
-        if inst.ty.param_types.len() > 0 {
+        if !inst.ty.param_types.is_empty() {
             let params = params
                 .into_iter()
                 .map(|x| format!("{}", x))
@@ -232,7 +229,7 @@ impl IR {
         //let then_name = self.block_counter.get();
 
         let block = Block {
-            name: name.clone(),
+            name,
             is_loop: false,
         };
 
@@ -396,7 +393,7 @@ impl IR {
                         param_regs.push(format!("{}", x));
                     }
 
-                    if ty.return_types.len() == 0 {
+                    if ty.return_types.is_empty() {
                         writeln!(
                             function_buffer,
                             "CALL INDIRECT {} ({})",
@@ -436,12 +433,12 @@ impl IR {
                     let then_name = self.block_counter.get();
 
                     let block = Block {
-                        name: name.clone(),
+                        name,
                         is_loop: false,
                     };
 
                     let _tblock = Block {
-                        name: then_name.clone(),
+                        name: then_name,
                         is_loop: false,
                     };
 
@@ -477,12 +474,12 @@ impl IR {
                     let then_name = self.block_counter.get();
 
                     let block = Block {
-                        name: name.clone(),
+                        name,
                         is_loop: true,
                     };
 
                     let _tblock = Block {
-                        name: then_name.clone(),
+                        name: then_name,
                         is_loop: false,
                     };
 
@@ -520,12 +517,12 @@ impl IR {
                     debug!("Second block is {}", then_name);
 
                     let block = Block {
-                        name: name.clone(),
+                        name,
                         is_loop: false,
                     };
 
                     let _tblock = Block {
-                        name: then_name.clone(),
+                        name: then_name,
                         is_loop: false,
                     };
 
@@ -573,17 +570,17 @@ impl IR {
                     debug!("Done block is {}", done_name);
 
                     let block = Block {
-                        name: name.clone(),
+                        name,
                         is_loop: false,
                     };
 
                     let tblock = Block {
-                        name: then_name.clone(),
+                        name: then_name,
                         is_loop: false,
                     };
 
                     let _done_block = Block {
-                        name: done_name.clone(),
+                        name: done_name,
                         is_loop: false,
                     };
 
@@ -914,11 +911,7 @@ impl IR {
                             function_buffer,
                             "CALL {}({})",
                             func,
-                            param_regs
-                                .into_iter()
-                                .map(|x| format!("{}", x))
-                                .collect::<Vec<_>>()
-                                .join(" ")
+                            param_regs.into_iter().collect::<Vec<_>>().join(" ")
                         )
                         .unwrap();
                     } else {
@@ -936,11 +929,7 @@ impl IR {
                             "{} <- CALL {}({})",
                             return_regs.join(" "),
                             func,
-                            param_regs
-                                .into_iter()
-                                .map(|x| format!("{}", x))
-                                .collect::<Vec<_>>()
-                                .join(" ")
+                            param_regs.into_iter().collect::<Vec<_>>().join(" ")
                         )
                         .unwrap();
                     }

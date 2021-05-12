@@ -16,15 +16,17 @@ expression: output
                         minimum size = 4mm
                     ]
 
-                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (11) at (3, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (12) at (3, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (13) at (2, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (14) at (2, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (15) at (1, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (16) at (1, 2) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (17) at (0, 0) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (18) at (0, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (19) at (0, 2) { };
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (11) at (3, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (12) at (3, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (13) at (3, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (14) at (2, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%1$}] (15) at (2, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (16) at (1, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (17) at (1, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%2$}] (18) at (1, 2) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (19) at (0, 0) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (20) at (0, 1) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (21) at (0, 2) { };
 \node[font=\tiny] at (-1.5, 0.5) {Call(mytest, [], [1])};
 \node[font=\tiny] at (-1.5, 1.5) {Const(1, 2.0)};
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (0) at (7, 1) { };
@@ -41,23 +43,25 @@ expression: output
 \node[font=\tiny] at (3.5, 0.5) {Const(0, 1.0)};
 \node[font=\tiny] at (3.5, 1.5) {Const(1, 3.0)};
 \node[font=\tiny] at (3.5, 2.5) {Return([0])};
-		\path[->] (0) edge (1);
 		\path[->] (11) edge (12);
+		\path[->] (0) edge (1);
+		\path[->] (12) edge (13);
 		\path[->] (1) edge (2);
 		\path[->] (3) edge (4);
 		\path[->] (5) edge (6);
-		\path[->] (15) edge (16);
+		\path[->] (16) edge (17);
+		\path[->] (17) edge (18);
 		\path[->] (7) edge (0);
 		\path[->] (7) edge (8);
-		\path[->] (17) edge (13);
-		\path[->] (17) edge (18);
+		\path[->] (19) edge (20);
 		\path[->] (8) edge (5);
 		\path[->] (8) edge (9);
-		\path[->] (18) edge (14);
-		\path[->] (18) edge (19);
+		\path[->] (20) edge (15);
+		\path[->] (20) edge (21);
 		\path[->] (9) edge (10);
-		\path[->, red] (1) [bend right] edge  node { } (13);
-		\path[->, red] (9) [bend right] edge  node { } (18);
+		\path[->, green] (19) [bend left] edge node { } (7);
+		\path[->, red] (1) [bend right] edge  node { } (14);
+		\path[->, red] (9) [bend right] edge  node { } (20);
 
 
                 \end{tikzpicture}

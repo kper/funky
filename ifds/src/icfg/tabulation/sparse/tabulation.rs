@@ -75,7 +75,7 @@ where
         }
     }
 
-    pub fn get_defuse<'a>(&'a self) -> &'a DefUseChain {
+    pub fn get_defuse(&self) -> &DefUseChain {
         &self.defuse
     }
 
@@ -98,7 +98,7 @@ where
     }
 
     /// Get a SCFG graph from the `def_use` chain
-    pub fn get_scfg_graph(&self, function: &String, var: &String) -> Option<&Graph> {
+    pub fn get_scfg_graph(&self, function: &str, var: &str) -> Option<&Graph> {
         self.defuse.get_graph(function, var)
     }
 
@@ -107,10 +107,10 @@ where
         &mut self,
         caller_function: &AstFunction,
         callee_function: &AstFunction,
-        params: &Vec<String>,
+        params: &[String],
         ctx: &mut Ctx<'a>,
         current_pc: usize,
-        caller_var: &String,
+        caller_var: &str,
     ) -> Result<Vec<Edge>> {
         let caller_variable = ctx
             .state
@@ -121,7 +121,7 @@ where
         // Why not dests? Because we don't care about
         // the destination for the function call in
         // `pass_args`
-        if params.contains(&caller_var)
+        if params.contains(&caller_var.to_string())
             || caller_variable.is_taut
             || caller_variable.is_global
             || caller_variable.is_memory
@@ -235,7 +235,7 @@ where
                 for callee_fact in callee_facts.into_iter() {
                     // Create an edge.
                     edges.push(Edge::Call {
-                        from: caller_fact.clone().clone(),
+                        from: (*caller_fact).clone(),
                         to: callee_fact,
                     });
                 }
@@ -245,7 +245,7 @@ where
         }
 
         // not a parameter, therefore skipping
-        return Ok(vec![]);
+        Ok(vec![])
     }
 
     /// Compute the call-to-start edge for the `caller_variable` when it is a global
@@ -255,7 +255,7 @@ where
         caller_function: &AstFunction,
         _callee_function: &AstFunction,
         caller_variable: &Variable,
-        init_facts: &Vec<Fact>,
+        init_facts: &[Fact],
     ) -> Result<Fact> {
         assert!(caller_variable.is_global);
 
@@ -298,7 +298,7 @@ where
     fn get_function_by_name<'a>(
         &self,
         ctx: &mut Ctx<'a>,
-        function: &String,
+        function: &str,
     ) -> Option<&'a AstFunction> {
         ctx.prog.functions.iter().find(|x| &x.name == function)
     }
@@ -307,16 +307,17 @@ where
     fn return_val<'a>(
         &mut self,
         ctx: &mut Ctx<'a>,
-        caller_function: &String, //d4
-        callee_function: &String, //d2
-        caller_pc: usize,         //d4
-        callee_pc: usize,         //d2
-        caller_instructions: &Vec<Instruction>,
+        caller_function: &str, //d4
+        callee_function: &str, //d2
+        caller_pc: usize,      //d4
+        callee_pc: usize,      //d2
+        caller_instructions: &[Instruction],
         callee_var: &String,
     ) -> Result<Vec<Edge>> {
         debug!("Trying to compute return_val");
         debug!("Caller: {} ({})", caller_function, caller_pc);
         debug!("Callee: {} ({})", callee_function, callee_pc);
+        debug!("Callee var: {} ({})", callee_var, callee_pc);
 
         let mut edges = Vec::new();
 
@@ -340,7 +341,7 @@ where
                 .get_facts_at(ctx, &callee_function, &"taut".to_string(), callee_pc)
                 .context("Cannot get the callee facts")?
                 .into_iter()
-                .map(|x| x.clone())
+                .cloned()
                 .collect::<Vec<_>>();
 
             let caller_fact_var = self
@@ -392,7 +393,7 @@ where
             for (i, caller_fact) in caller_facts.into_iter().enumerate() {
                 if let Some(callee_fact) = callee_facts.get(i) {
                     edges.push(Edge::Return {
-                        from: callee_fact.clone().clone(),
+                        from: (*callee_fact).clone(),
                         to: caller_fact.clone(),
                     });
                 }
@@ -431,7 +432,7 @@ where
 
                             edges.push(Edge::Return {
                                 from: callee_fact.clone().apply(),
-                                to: caller_var,
+                                to: caller_var.clone(),
                             });
                         }
                     } else {
@@ -489,7 +490,7 @@ where
 
                             edges.push(Edge::Return {
                                 from: callee_fact.clone().apply(),
-                                to: caller_var,
+                                to: caller_var.clone(),
                             });
                         }
                     } else {
@@ -505,14 +506,14 @@ where
     /// Computes call-to-return
     fn call_flow<'a>(
         &mut self,
+        ctx: &mut Ctx<'a>,
         _program: &Program,
         caller_function: &AstFunction,
-        callee: &String,
-        _params: &Vec<String>,
-        dests: &Vec<String>,
-        ctx: &mut Ctx<'a>,
+        callee: &str,
+        _params: &[String],
+        dests: &[String],
         pc: usize,
-        caller: &String,
+        caller: &str,
     ) -> Result<Vec<Edge>> {
         debug!(
             "Generating call-to-return edges for {} ({}) at {}",
@@ -577,7 +578,7 @@ where
             &mut edge_ctx,
             Edge::Path {
                 from: init.clone(),
-                to: init.clone(),
+                to: init,
             },
         )?;
 
@@ -668,6 +669,12 @@ where
         start_pc: usize,
         edge_ctx: &mut EdgeCtx,
     ) -> Result<()> {
+        // We need this variable, because we want to skip a possible
+        // CALL instruction if it starts at the first instruction for the first function.
+        // The reason is that we already taint it correctly in the initial flows.
+        // Handling, additionally, the call would be incorrect.
+        let mut is_first_instruction = true;
+
         while let Some(edge) = edge_ctx.worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
@@ -693,19 +700,23 @@ where
 
             if let Some(n) = n {
                 match n {
-                    Instruction::Call(callee, params, dest) if start_pc != pc => {
+                    Instruction::Call(callee, params, dest)
+                        if start_pc != pc || !is_first_instruction =>
+                    {
                         self.handle_call(
                             ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
                         )?;
                     }
+                    Instruction::Return(dest)
+                        if dest.contains(&d2.belongs_to_var)
+                            || d2.var_is_taut
+                            || d2.var_is_global
+                            || d2.var_is_memory =>
+                    {
+                        self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
+                    }
                     Instruction::Return(_dest) => {
-                        let to_function = program
-                            .functions
-                            .iter()
-                            .find(|x| x.name == d2.function)
-                            .context("Cannot find function")?;
-
-                        self.handle_return(to_function, d1, d2, ctx, edge_ctx)?;
+                        // kill
                     }
                     _ => {
                         let to_function = program
@@ -740,6 +751,8 @@ where
             } else {
                 self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
             }
+
+            is_first_instruction = false;
         }
 
         Ok(())
@@ -752,9 +765,9 @@ where
         program: &Program,
         d1: &Fact,
         d2: &Fact,
-        callee: &String,
-        params: &Vec<String>,
-        dests: &Vec<String>,
+        callee: &str,
+        params: &[String],
+        dests: &[String],
         _start_pc: usize,
     ) -> Result<(), anyhow::Error> {
         let pc = d2.pc;
@@ -791,9 +804,6 @@ where
                     callee, pc
                 )
             })?;
-
-        // Extract the goals of the edges.
-        let call_facts = call_edges.iter().map(|x| x.to()).collect::<Vec<_>>();
 
         for d3 in call_edges.iter() {
             debug!("d3 {:#?}", d3);
@@ -863,145 +873,109 @@ where
             debug!("end summary {:#?}", edge_ctx.end_summary);
         }
 
-        let first_statement_pc_callee = ctx.state.get_min_pc(&callee_function.name)?;
-        let tauts = self.defuse.get_facts_at(
-            ctx,
-            &callee_function,
-            &"taut".to_string(),
-            first_statement_pc_callee,
-        )?;
-        let taut = tauts
-            .first()
-            .context("Cannot get the taut fact")?
-            .clone()
-            .clone();
+        let first_statement_pc_callee = ctx.state.get_min_pc(&callee_function.name);
 
-        for d3 in call_facts.into_iter() {
-            // add all other usages of the variable
-            debug!(
-                "Next usages of {} on {} at {}",
-                callee_function.name, d3.belongs_to_var, d3.pc
-            );
+        if let Some(first_statement_pc_callee) = first_statement_pc_callee {
+            let tauts = self.defuse.get_facts_at(
+                ctx,
+                &callee_function,
+                &"taut".to_string(),
+                first_statement_pc_callee,
+            )?;
 
-            let usages = self
-                .normal_flow
-                .flow(
+            let taut = (*tauts.first().context("Cannot get the taut fact")?).clone();
+
+            // Extract the goals of the edges.
+            let call_facts = call_edges.iter().map(|x| x.to());
+
+            for d3 in call_facts {
+                // add all other usages of the variable
+                debug!(
+                    "Next usages of {} on {} at {}",
+                    callee_function.name, d3.belongs_to_var, d3.pc
+                );
+
+                let usages = self
+                    .normal_flow
+                    .flow(
+                        ctx,
+                        &callee_function,
+                        d3.next_pc,
+                        &d3.belongs_to_var,
+                        &mut self.defuse,
+                    )?
+                    .into_iter()
+                    .collect::<Vec<_>>();
+
+                debug!("usages {:#?}", usages);
+
+                for x in usages.into_iter() {
+                    self.propagate(
+                        &mut ctx.graph,
+                        edge_ctx,
+                        Edge::Path {
+                            from: taut.clone(),
+                            to: x.clone(),
+                        },
+                    )?;
+                }
+            }
+
+            let call_flow = self
+                .call_flow(
                     ctx,
-                    &callee_function,
-                    d3.next_pc,
-                    &d3.belongs_to_var,
-                    &mut self.defuse,
+                    program,
+                    caller_function,
+                    callee,
+                    params,
+                    dests,
+                    pc,
+                    &d2.belongs_to_var,
                 )?
                 .into_iter()
+                .map(|x| x.to().clone())
                 .collect::<Vec<_>>();
 
-            debug!("usages {:#?}", usages);
+            debug!("call flow {:#?}", call_flow);
+            let return_sites = edge_ctx
+                .summary_edge
+                .clone()
+                .into_iter()
+                .filter(|x| {
+                    x.get_from().belongs_to_var == d2.belongs_to_var
+                        && x.get_from().function == d2.function
+                        && x.get_from().next_pc == d2.next_pc
+                        && x.to().next_pc == d2.next_pc + 1
+                })
+                .map(|x| x.to().clone())
+                .collect::<Vec<_>>();
+            debug!("return_sites {:#?}", return_sites);
 
-            for x in usages.into_iter() {
+            for d3 in call_flow.into_iter().chain(return_sites) {
+                assert_eq!(
+                    d1.function, d3.function,
+                    "Call flow edges must be intraprocedural"
+                );
+                let taut = (*self
+                    .defuse
+                    .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
+                    .context("Cannot find facts")?
+                    .first()
+                    .context("Cannot find tautological start fact")?)
+                .clone();
+
                 self.propagate(
                     &mut ctx.graph,
                     edge_ctx,
                     Edge::Path {
-                        from: taut.clone(),
-                        to: x.clone(),
+                        from: taut,
+                        to: d3.clone(),
                     },
-                )?;
+                )?; // adding edges to return site of caller from d1
             }
+        } else {
+            log::warn!("No initial pc fact found. That's why cannot handle the call");
         }
-
-        let call_flow = self
-            .call_flow(
-                program,
-                caller_function,
-                callee,
-                params,
-                dests,
-                ctx,
-                pc,
-                &d2.belongs_to_var,
-            )?
-            .into_iter()
-            .map(|x| x.to().clone())
-            .collect::<Vec<_>>();
-
-        debug!("call flow {:#?}", call_flow);
-        let return_sites = edge_ctx
-            .summary_edge
-            .clone()
-            .into_iter()
-            .filter(|x| {
-                x.get_from().belongs_to_var == d2.belongs_to_var
-                    && x.get_from().function == d2.function
-                    && x.get_from().next_pc == d2.next_pc
-                    && x.to().next_pc == d2.next_pc + 1
-            })
-            .map(|x| x.to().clone())
-            .collect::<Vec<_>>();
-        debug!("return_sites {:#?}", return_sites);
-
-        for d3 in call_flow.into_iter().chain(return_sites) {
-            assert_eq!(
-                d1.function, d3.function,
-                "Call flow edges must be intraprocedural"
-            );
-            let taut = self
-                .defuse
-                .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
-                .context("Cannot find facts")?
-                .first()
-                .context("Cannot find tautological start fact")?
-                .clone()
-                .clone();
-
-            self.propagate(
-                &mut ctx.graph,
-                edge_ctx,
-                Edge::Path {
-                    from: taut,
-                    to: d3.clone(),
-                },
-            )?; // adding edges to return site of caller from d1
-        }
-
-        Ok(())
-    }
-
-    pub(crate) fn handle_return<'a>(
-        &mut self,
-        to_function: &AstFunction,
-        d1: &Fact,
-        d2: &Fact,
-        ctx: &mut Ctx<'a>,
-        edge_ctx: &mut EdgeCtx,
-    ) -> Result<()> {
-        assert_eq!(d1.function, d2.function);
-
-        for d3 in self
-            .normal_flow
-            .flow(
-                ctx,
-                &to_function,
-                d2.next_pc,
-                &d2.belongs_to_var,
-                &mut self.defuse,
-            )?
-            .iter()
-        {
-            debug!("d3 is  {:#?}", d3);
-
-            self.propagate(
-                &mut ctx.graph,
-                edge_ctx,
-                Edge::Path {
-                    from: d1.clone(),
-                    to: d3.clone(),
-                },
-            )?;
-        }
-
-        // first pc of the function, because it could be offsetted
-        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
-        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, first_statement_pc_callee)?;
 
         Ok(())
     }
@@ -1035,13 +1009,13 @@ where
                 .get_facts_at(ctx, &d2_function, &d2.belongs_to_var, d2.next_pc)
                 .context("Cannot get the facts when unionizing the end_summary edges. Key does already exist")?
                 .into_iter()
-                .filter(|x| x.pc == x.next_pc) // get only real end points
-                .map(|x| x.clone())
+                .filter(|x| x.pc == x.next_pc).cloned()
                 .collect::<Vec<_>>();
 
-            if facts.len() > 0 {
-                end_summary.extend(facts);
-                end_summary.dedup();
+            for fact in facts {
+                if !end_summary.contains(&fact) {
+                    end_summary.push(fact);
+                }
             }
         } else {
             let facts = self
@@ -1051,11 +1025,10 @@ where
                     "Cannot get the facts when unionizing the end_summary edges. Key does not exist",
                 )?
                 .into_iter()
-                .filter(|x| x.pc == x.next_pc) // get only real end points
-                .map(|x| x.clone())
+                .filter(|x| x.pc == x.next_pc).cloned()
                 .collect::<Vec<_>>();
 
-            if facts.len() > 0 {
+            if !facts.is_empty() {
                 edge_ctx.end_summary.insert(
                     (d1.function.clone(), d1.pc, d1.belongs_to_var.clone()),
                     facts,
@@ -1107,7 +1080,7 @@ where
                     .context("Cannot find function")?
                     .instructions;
 
-                // Computes all return-to-exit edges
+                // Computes the return-to-exit edges
                 // Use only `d4`'s var
                 let ret_vals = self
                     .return_val(
@@ -1129,15 +1102,14 @@ where
                     debug!("Handling var {:#?}", d5);
 
                     debug!("summary_edge {:#?}", edge_ctx.summary_edge);
-                    if edge_ctx
+                    if !edge_ctx
                         .summary_edge
                         .iter()
-                        .find(|x| x.get_from() == d4 && x.to() == d5)
-                        .is_none()
+                        .any(|x| x.get_from() == d4 && x.to() == d5)
                     {
                         edge_ctx.summary_edge.push(Edge::Normal {
                             from: d4.clone(),
-                            to: d5.clone().clone(),
+                            to: (*d5).clone(),
                             curved: false,
                         });
 
@@ -1146,18 +1118,47 @@ where
                         let edges: Vec<_> = edge_ctx
                             .path_edge
                             .iter()
-                            .filter(|x| x.to() == d4 && &x.get_from().function == &d4.function)
+                            .filter(|x| x.to() == d4 && x.get_from().function == d4.function)
                             .cloned()
                             .collect();
+
+                        let function = program
+                            .functions
+                            .iter()
+                            .find(|x| x.name == d5.function)
+                            .context("Cannot find function")?;
 
                         for d3 in edges.into_iter() {
                             // here d5 should be var of caller
                             let d3 = d3.get_from();
 
-                            path_edges.push(Edge::Path {
-                                from: d3.clone(),
-                                to: d5.clone(),
-                            });
+                            // The `d5` was created and it is the lhs of the CALL instruction.
+                            // However only `pc` is correct, but not `next_pc` because we didn't query it
+
+                            let next_d5 = self
+                                .defuse
+                                .get_next(ctx, &function, &d5.belongs_to_var, d5.pc)
+                                .context("Cannot query next facts")?;
+
+                            if next_d5.len() == 0 {
+                                // if last instruction, then there won't be a next one.
+                                // that's why this is an edge case
+                                let mut updated_d5 = d5.clone();
+                                updated_d5.next_pc = updated_d5.pc; //they equal
+                                path_edges.push(Edge::Path {
+                                    from: d3.clone(),
+                                    to: updated_d5,
+                                });
+                            } else {
+                                for next_d5 in next_d5 {
+                                    let mut updated_d5 = d5.clone();
+                                    updated_d5.next_pc = next_d5.pc;
+                                    path_edges.push(Edge::Path {
+                                        from: d3.clone(),
+                                        to: updated_d5,
+                                    });
+                                }
+                            }
                         }
                     }
                 }

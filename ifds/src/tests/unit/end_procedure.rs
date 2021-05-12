@@ -123,7 +123,7 @@ fn test_normal_return() {
         ..Default::default()
     };
     let caller_call_fact = ctx.state
-        .cache_fact(&caller_function.name, foo.clone())
+        .cache_fact(&caller_function.name, foo)
         .unwrap()
         .clone();
 
@@ -155,7 +155,7 @@ fn test_normal_return() {
         end_summary.get(&(callee_function.name.clone(), 0, "%0".to_string())),
         Some(&vec![Fact {
             belongs_to_var: "%0".to_string(),
-            function: callee_function.name.clone(),
+            function: callee_function.name,
             next_pc: 1,
             ..Default::default()
         }])

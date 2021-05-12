@@ -16,7 +16,7 @@ impl Events {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::channel();
         let input_handle = {
-            let tx = tx.clone();
+            let tx = tx;
             thread::spawn(move || {
                 let stdin = io::stdin();
                 for evt in stdin.keys() {

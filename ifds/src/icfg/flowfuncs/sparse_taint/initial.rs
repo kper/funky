@@ -60,9 +60,9 @@ impl SparseInitialFlowFunction for SparseTaintInitialFlowFunction {
                 let mem = {
                     let mem = ctx
                         .state
-                        .add_memory_var(function.name.clone(), offset.clone() as usize);
+                        .add_memory_var(function.name.clone(), *offset as usize);
 
-                    mem.name.clone()
+                    mem.name
                 };
 
                 self.generate_normal_flows(
@@ -129,7 +129,6 @@ impl SparseTaintInitialFlowFunction {
                 .demand_inclusive(ctx, &function, dest, pc)
                 .context("Cannot find var's fact")?
                 .into_iter()
-                .map(|x| x.clone())
                 .collect::<Vec<_>>();
 
             // append all left sides to the nodes
@@ -138,7 +137,7 @@ impl SparseTaintInitialFlowFunction {
             let mut append_lhs = |dest: &String| -> Result<()> {
                 defuse.force_remove_if_outdated(function, dest, pc)?;
                 let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
-                appended.extend(x.into_iter().map(|x| x.clone()));
+                appended.extend(x.into_iter());
 
                 Ok(())
             };

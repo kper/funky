@@ -87,7 +87,7 @@ impl TabulationOriginal {
             &mut worklist,
             Edge::Path {
                 from: init.clone(),
-                to: init.clone(),
+                to: init,
             },
         )?;
 
