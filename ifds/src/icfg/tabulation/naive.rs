@@ -9,6 +9,8 @@ use crate::ir::ast::Instruction;
 
 use rayon::prelude::*;
 
+use log::debug;
+
 use anyhow::{bail, Context, Result};
 
 use std::collections::HashMap;
@@ -138,6 +140,8 @@ impl TabulationNaive {
                     });
             });
         }
+
+        debug!("call resolver {:#?}", call_resolver);
 
         for function in prog.functions.iter() {
             self.once_func(&mut ctx, function, &mut block_resolver, &mut call_resolver)?;
@@ -301,7 +305,7 @@ impl TabulationNaive {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
-            Instruction::Call(_, _, dests) if pc == 0 => {
+            /*Instruction::Call(_, _, dests) if pc == 0 => {
                 //edge case when the analysis starts at pc 0
 
                 let in_ = ctx
@@ -319,7 +323,7 @@ impl TabulationNaive {
                         ctx.graph.add_normal(from.clone(), after.clone())?;
                     }
                 }
-            }
+            }*/
             Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {

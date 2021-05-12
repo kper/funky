@@ -46,6 +46,7 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (9, 2) { };
 \node[font=\tiny] at (7.5, 0.5) {Call(mytesttwo, [0], [1])};
 \node[font=\tiny] at (7.5, 1.5) {Return([1])};
+		\path[->] (0) edge (1);
 		\path[->] (8) edge (9);
 		\path[->] (1) edge (2);
 		\path[->] (14) edge (15);
@@ -54,14 +55,15 @@ expression: output
 		\path[->] (3) edge (4);
 		\path[->] (19) edge (20);
 		\path[->] (20) edge (21);
-		\path[->] (5) edge (3);
 		\path[->] (5) edge (6);
 		\path[->] (12) edge (13);
 		\path[->] (22) edge (14);
 		\path[->] (22) edge (23);
 		\path[->] (6) edge (7);
 		\path[->] (23) edge (24);
+		\path[->, green] (0) [bend left] edge node { } (8);
 		\path[->, green] (14) [bend left] edge node { } (0);
+		\path[->, green] (5) [bend left] edge node { } (12);
 		\path[->, green] (23) [bend left] edge node { } (5);
 		\path[->, red] (8) [bend right] edge  node { } (3);
 		\path[->, red] (3) [bend right] edge  node { } (18);
