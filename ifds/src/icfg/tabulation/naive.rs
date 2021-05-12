@@ -305,25 +305,6 @@ impl TabulationNaive {
                     ctx.graph.add_normal(from.clone(), after.clone())?;
                 }
             }
-            /*Instruction::Call(_, _, dests) if pc == 0 => {
-                //edge case when the analysis starts at pc 0
-
-                let in_ = ctx
-                    .state
-                    .get_facts_at(&function.name, pc)?
-                    .filter(|x| x.var_is_taut);
-
-                for from in in_ {
-                    let out_ = ctx
-                        .state
-                        .get_facts_at(&function.name, pc + 1)?
-                        .filter(|x| dests.contains(&x.belongs_to_var) || x.var_is_taut);
-
-                    for after in out_ {
-                        ctx.graph.add_normal(from.clone(), after.clone())?;
-                    }
-                }
-            }*/
             Instruction::Call(callee, params, dests) => {
                 // Call-to-return edges
                 let fi = |x: &&Fact| {

@@ -109,7 +109,6 @@ fn test_fib() {
 
 #[test]
 fn test_fib_sparse() {
-    env_logger::init();
     let req = Request {
         function: "0".to_string(),
         variable: None,

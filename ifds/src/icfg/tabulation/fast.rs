@@ -294,7 +294,7 @@ where
 
         let mut edges = Vec::new();
 
-        let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>();
+        let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>(); //TODO
         debug!("Caller facts {:#?}", caller_facts);
 
         let mut callee_facts_without_globals = ctx
@@ -705,23 +705,68 @@ where
                             start_pc,
                         )?;
                     }
-                    Instruction::Return(_dest) => {
+                    Instruction::Return(dest) if dest.contains(&d2.belongs_to_var) => {
                         let new_function = program
                             .functions
                             .iter()
                             .find(|x| x.name == d2.function)
-                            .context("Cannot find function")?;
+                            .unwrap();
+                        for f in self
+                            .normal_flow
+                            .flow(
+                                &new_function,
+                                d2.next_pc,
+                                &d2.belongs_to_var,
+                                &self.block_resolver,
+                                &mut ctx.state,
+                            )?
+                            .iter()
+                        {
+                            debug!("Normal flow {:#?}", f);
+                            let to = f.to();
 
-                        self.handle_return(
-                            new_function,
-                            d2,
+                            normal_flows_debug.push(f.clone());
+
+                            self.propagate(
+                                &mut ctx.graph,
+                                path_edge,
+                                worklist,
+                                Edge::Path {
+                                    from: d1.clone(),
+                                    to: to.clone(),
+                                },
+                            )?;
+                        }
+
+                        self.end_procedure(
+                            &program,
                             ctx,
-                            normal_flows_debug,
+                            summary_edge,
+                            &mut incoming,
+                            &mut end_summary,
+                            d1,
+                            d2,
                             path_edge,
                             worklist,
-                            d1,
-                            &mut end_summary,
                         )?;
+                    }
+                    Instruction::Return(_)
+                        if d2.var_is_memory || d2.var_is_global || d2.var_is_taut =>
+                    {
+                        self.end_procedure(
+                            &program,
+                            ctx,
+                            summary_edge,
+                            &mut incoming,
+                            &mut end_summary,
+                            d1,
+                            d2,
+                            path_edge,
+                            worklist,
+                        )?;
+                    }
+                    Instruction::Return(_) => {
+                        // kill
                     }
                     _ => {
                         let new_function = program
@@ -955,80 +1000,6 @@ where
         Ok(())
     }
 
-    pub(crate) fn handle_return<'a>(
-        &mut self,
-        new_function: &AstFunction,
-        d2: &Fact,
-        ctx: &mut Ctx<'a>,
-        normal_flows_debug: &mut Vec<Edge>,
-        path_edge: &mut Vec<Edge>,
-        worklist: &mut VecDeque<Edge>,
-        d1: &Fact,
-        end_summary: &mut HashMap<(String, usize, String), Vec<Fact>>,
-    ) -> Result<(), anyhow::Error> {
-        assert_eq!(d1.function, d2.function);
-
-        for f in self
-            .normal_flow
-            .flow(
-                &new_function,
-                d2.next_pc,
-                &d2.belongs_to_var,
-                &self.block_resolver,
-                &mut ctx.state,
-            )?
-            .iter()
-        {
-            debug!("Normal flow {:#?}", f);
-            let to = f.to();
-
-            normal_flows_debug.push(f.clone());
-
-            self.propagate(
-                &mut ctx.graph,
-                path_edge,
-                worklist,
-                Edge::Path {
-                    from: d1.clone(),
-                    to: to.clone(),
-                },
-            )?;
-        }
-
-        let first_statement_pc_callee = ctx
-            .state
-            .get_min_pc(&d1.function)
-            .context("Cannot find minimal pc")?;
-
-        if let Some(end_summary) = end_summary.get_mut(&(
-            d1.function.clone(),
-            first_statement_pc_callee,
-            d1.belongs_to_var.clone(),
-        )) {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .cloned();
-            end_summary.extend(facts);
-        } else {
-            let facts = ctx
-                .state
-                .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
-                .cloned()
-                .collect();
-            end_summary.insert(
-                (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
-                facts,
-            );
-        }
-        debug!("End Summary {:#?}", end_summary);
-        Ok(())
-    }
-
     pub(crate) fn end_procedure<'a>(
         &mut self,
         program: &Program,
@@ -1096,7 +1067,7 @@ where
                     .find(|x| x.name == d2.function)
                     .context("Cannot find function")?
                     .instructions
-                    .get(d2.next_pc - 1)
+                    .get(d2.next_pc.checked_sub(1).unwrap_or(0))
                     .map(|x| match x {
                         Instruction::Return(x) => x.clone(),
                         _ => Vec::new(),
