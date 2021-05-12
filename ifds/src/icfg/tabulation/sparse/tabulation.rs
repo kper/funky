@@ -980,47 +980,6 @@ where
         Ok(())
     }
 
-    /*
-    pub(crate) fn handle_return<'a>(
-        &mut self,
-        to_function: &AstFunction,
-        d1: &Fact,
-        d2: &Fact,
-        ctx: &mut Ctx<'a>,
-        edge_ctx: &mut EdgeCtx,
-    ) -> Result<()> {
-        assert_eq!(d1.function, d2.function);
-
-        for d3 in self
-            .normal_flow
-            .flow(
-                ctx,
-                &to_function,
-                d2.next_pc,
-                &d2.belongs_to_var,
-                &mut self.defuse,
-            )?
-            .iter()
-        {
-            debug!("d3 is  {:#?}", d3);
-
-            self.propagate(
-                &mut ctx.graph,
-                edge_ctx,
-                Edge::Path {
-                    from: d1.clone(),
-                    to: d3.clone(),
-                },
-            )?;
-        }
-
-        // first pc of the function, because it could be offsetted
-        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
-        self.union_end_summary_edge(ctx, edge_ctx, d1, d2, first_statement_pc_callee)?;
-
-        Ok(())
-    }*/
-
     /// Add a path edge between `d1` and `d2` to `edge_ctx.end_summary` if it does not already
     /// exists.
     fn union_end_summary_edge<'a>(
