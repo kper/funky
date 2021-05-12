@@ -317,6 +317,7 @@ where
         debug!("Trying to compute return_val");
         debug!("Caller: {} ({})", caller_function, caller_pc);
         debug!("Callee: {} ({})", callee_function, callee_pc);
+        debug!("Callee var: {} ({})", callee_var, callee_pc);
 
         let mut edges = Vec::new();
 
@@ -668,6 +669,12 @@ where
         start_pc: usize,
         edge_ctx: &mut EdgeCtx,
     ) -> Result<()> {
+        // We need this variable, because we want to skip a possible
+        // CALL instruction if it starts at the first instruction for the first function.
+        // The reason is that we already taint it correctly in the initial flows.
+        // Handling, additionally, the call would be incorrect.
+        let mut is_first_instruction = true;
+
         while let Some(edge) = edge_ctx.worklist.pop_front() {
             debug!("Popping edge from worklist {:#?}", edge);
 
@@ -693,19 +700,20 @@ where
 
             if let Some(n) = n {
                 match n {
-                    Instruction::Call(callee, params, dest) if start_pc != pc => {
+                    Instruction::Call(callee, params, dest)
+                        if start_pc != pc || !is_first_instruction =>
+                    {
                         self.handle_call(
                             ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
                         )?;
                     }
+                    Instruction::Return(dest)
+                        if dest.contains(&d2.belongs_to_var) || d2.var_is_taut =>
+                    {
+                        self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
+                    }
                     Instruction::Return(_dest) => {
-                        let to_function = program
-                            .functions
-                            .iter()
-                            .find(|x| x.name == d2.function)
-                            .context("Cannot find function")?;
-
-                        self.handle_return(to_function, d1, d2, ctx, edge_ctx)?;
+                        // kill
                     }
                     _ => {
                         let to_function = program
@@ -740,6 +748,8 @@ where
             } else {
                 self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
             }
+
+            is_first_instruction = false;
         }
 
         Ok(())
@@ -1034,9 +1044,10 @@ where
                 .filter(|x| x.pc == x.next_pc).cloned()
                 .collect::<Vec<_>>();
 
-            if !facts.is_empty() {
-                end_summary.extend(facts);
-                end_summary.dedup();
+            for fact in facts {
+                if !end_summary.contains(&fact) {
+                    end_summary.push(fact);
+                }
             }
         } else {
             let facts = self
@@ -1101,7 +1112,7 @@ where
                     .context("Cannot find function")?
                     .instructions;
 
-                // Computes all return-to-exit edges
+                // Computes the return-to-exit edges
                 // Use only `d4`'s var
                 let ret_vals = self
                     .return_val(
@@ -1130,7 +1141,7 @@ where
                     {
                         edge_ctx.summary_edge.push(Edge::Normal {
                             from: d4.clone(),
-                            to: d5.clone().clone(),
+                            to: (*d5).clone(),
                             curved: false,
                         });
 

@@ -52,11 +52,6 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             | Instruction::Phi(dest, ..)
             | Instruction::BinOp(dest, ..) => append_lhs(dest)?,
             Instruction::Load(dest, ..) => append_lhs(dest)?,
-            Instruction::Call(_, _, dests) => {
-                for dest in dests {
-                    append_lhs(dest)?;
-                }
-            }
             Instruction::Assign(dest, src) if src == variable => append_lhs(dest)?,
             Instruction::Const(..) => {
                 // kill

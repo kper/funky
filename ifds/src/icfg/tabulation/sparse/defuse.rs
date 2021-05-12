@@ -930,6 +930,7 @@ impl DefUseChain {
             Instruction::Call(_, _, dest) if dest.contains(var) => true,
             Instruction::CallIndirect(_, _, dest) if dest.contains(var) => true,
             Instruction::Load(dest, ..) if dest == var => true,
+            Instruction::Return(dest) if !dest.contains(var) => true, //not containing then stop
             _ => false,
         }
     }

@@ -159,16 +159,8 @@ macro_rules! run {
         debug!("fast {:#?}", s3);
         debug!("sparse {:#?}", s4);
 
-        /*assert!(s1.is_superset(&s2), "naive and orig failed");
-        assert!(s1.is_superset(&s3), "naive and fast failed");
-        assert!(s1.is_superset(&s4), "naive and sparsed failed");
-
-        assert!(s2.is_superset(&s3), "orig and fast failed");
-        assert!(s2.is_superset(&s4), "orig and sparse failed");*/
-
-        assert_eq!(s1, s2, "naive and orig failed");
-        assert_eq!(s1, s3, "naive and fast failed");
-        assert_eq!(s1, s4, "naive and sparse failed");
+        assert_eq!(s2, s3, "orig and fast failed");
+        assert_eq!(s2, s4, "orig and sparse failed");
     };
 }
 
@@ -427,4 +419,49 @@ fn test_assignment_small() {
         };
     ";
     run!("test_ir_assignment_small", ir, &req);
+}
+
+#[test]
+fn test_nested_calls() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 <- CALL mytesttwo(%0)
+            RETURN %1;
+        };
+        define mytesttwo (param %0) (result 1) (define %0 %1) {
+            RETURN %0;
+        };
+        ";
+    run!("nested_call", ir, &req);
+}
+
+#[test]
+fn test_nested_calls_circuit_break() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 <- CALL mytesttwo(%0)
+            RETURN %1;
+        };
+        define mytesttwo (param %0) (result 1) (define %0 %1) {
+            %0 = 1
+            RETURN %0;
+        };
+        ";
+    run!("nested_call_circuit_break", ir, &req);
 }
