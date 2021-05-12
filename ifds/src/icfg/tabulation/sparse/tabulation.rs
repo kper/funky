@@ -708,7 +708,10 @@ where
                         )?;
                     }
                     Instruction::Return(dest)
-                        if dest.contains(&d2.belongs_to_var) || d2.var_is_taut =>
+                        if dest.contains(&d2.belongs_to_var)
+                            || d2.var_is_taut
+                            || d2.var_is_global
+                            || d2.var_is_memory =>
                     {
                         self.end_procedure(ctx, &program, edge_ctx, d1, d2)?;
                     }
