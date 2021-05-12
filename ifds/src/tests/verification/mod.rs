@@ -465,3 +465,51 @@ fn test_nested_calls_circuit_break() {
         ";
     run!("nested_call_circuit_break", ir, &req);
 }
+
+#[test]
+fn test_nested_call_memory() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %0 %1 %2) {
+            %0 = 1
+            STORE FROM %0 OFFSET 0 + %0 ALIGN 2 32
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %0 %1) {
+            %1 <- CALL mytesttwo(%0)
+            RETURN %1;
+        };
+        define mytesttwo (param %0) (result 1) (define %0 %1) {
+            %0 = LOAD OFFSET 0 + %1 ALIGN 0
+            RETURN %0;
+        };
+        ";
+    run!("nested_call_memory", ir, &req);
+}
+
+#[test]
+fn test_nested_call_global() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %-1 %0 %1 %2) {
+            %0 = 1
+            %-1 = %0 
+            %1 <- CALL mytest(%0)
+        };
+        define mytest (param %0) (result 1) (define %-1 %0 %1) {
+            %1 <- CALL mytesttwo(%0)
+            RETURN %1;
+        };
+        define mytesttwo (param %0) (result 1) (define %-1 %0 %1) {
+            %0 = %-1
+            RETURN %0;
+        };
+        ";
+    run!("nested_call_global", ir, &req);
+}
