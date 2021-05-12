@@ -873,108 +873,114 @@ where
             debug!("end summary {:#?}", edge_ctx.end_summary);
         }
 
-        let first_statement_pc_callee = ctx.state.get_min_pc(&callee_function.name)?;
-        let tauts = self.defuse.get_facts_at(
-            ctx,
-            &callee_function,
-            &"taut".to_string(),
-            first_statement_pc_callee,
-        )?;
+        let first_statement_pc_callee = ctx.state.get_min_pc(&callee_function.name);
 
-        let taut = (*tauts.first().context("Cannot get the taut fact")?).clone();
+        if let Some(first_statement_pc_callee) = first_statement_pc_callee {
+            let tauts = self.defuse.get_facts_at(
+                ctx,
+                &callee_function,
+                &"taut".to_string(),
+                first_statement_pc_callee,
+            )?;
 
-        // Extract the goals of the edges.
-        let call_facts = call_edges.iter().map(|x| x.to());
+            let taut = (*tauts.first().context("Cannot get the taut fact")?).clone();
 
-        for d3 in call_facts {
-            // add all other usages of the variable
-            debug!(
-                "Next usages of {} on {} at {}",
-                callee_function.name, d3.belongs_to_var, d3.pc
-            );
+            // Extract the goals of the edges.
+            let call_facts = call_edges.iter().map(|x| x.to());
 
-            let usages = self
-                .normal_flow
-                .flow(
+            for d3 in call_facts {
+                // add all other usages of the variable
+                debug!(
+                    "Next usages of {} on {} at {}",
+                    callee_function.name, d3.belongs_to_var, d3.pc
+                );
+
+                let usages = self
+                    .normal_flow
+                    .flow(
+                        ctx,
+                        &callee_function,
+                        d3.next_pc,
+                        &d3.belongs_to_var,
+                        &mut self.defuse,
+                    )?
+                    .into_iter()
+                    .collect::<Vec<_>>();
+
+                debug!("usages {:#?}", usages);
+
+                for x in usages.into_iter() {
+                    self.propagate(
+                        &mut ctx.graph,
+                        edge_ctx,
+                        Edge::Path {
+                            from: taut.clone(),
+                            to: x.clone(),
+                        },
+                    )?;
+                }
+            }
+
+            let call_flow = self
+                .call_flow(
                     ctx,
-                    &callee_function,
-                    d3.next_pc,
-                    &d3.belongs_to_var,
-                    &mut self.defuse,
+                    program,
+                    caller_function,
+                    callee,
+                    params,
+                    dests,
+                    pc,
+                    &d2.belongs_to_var,
                 )?
                 .into_iter()
+                .map(|x| x.to().clone())
                 .collect::<Vec<_>>();
 
-            debug!("usages {:#?}", usages);
+            debug!("call flow {:#?}", call_flow);
+            let return_sites = edge_ctx
+                .summary_edge
+                .clone()
+                .into_iter()
+                .filter(|x| {
+                    x.get_from().belongs_to_var == d2.belongs_to_var
+                        && x.get_from().function == d2.function
+                        && x.get_from().next_pc == d2.next_pc
+                        && x.to().next_pc == d2.next_pc + 1
+                })
+                .map(|x| x.to().clone())
+                .collect::<Vec<_>>();
+            debug!("return_sites {:#?}", return_sites);
 
-            for x in usages.into_iter() {
+            for d3 in call_flow.into_iter().chain(return_sites) {
+                assert_eq!(
+                    d1.function, d3.function,
+                    "Call flow edges must be intraprocedural"
+                );
+                let taut = (*self
+                    .defuse
+                    .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
+                    .context("Cannot find facts")?
+                    .first()
+                    .context("Cannot find tautological start fact")?)
+                .clone();
+
                 self.propagate(
                     &mut ctx.graph,
                     edge_ctx,
                     Edge::Path {
-                        from: taut.clone(),
-                        to: x.clone(),
+                        from: taut,
+                        to: d3.clone(),
                     },
-                )?;
+                )?; // adding edges to return site of caller from d1
             }
-        }
-
-        let call_flow = self
-            .call_flow(
-                ctx,
-                program,
-                caller_function,
-                callee,
-                params,
-                dests,
-                pc,
-                &d2.belongs_to_var,
-            )?
-            .into_iter()
-            .map(|x| x.to().clone())
-            .collect::<Vec<_>>();
-
-        debug!("call flow {:#?}", call_flow);
-        let return_sites = edge_ctx
-            .summary_edge
-            .clone()
-            .into_iter()
-            .filter(|x| {
-                x.get_from().belongs_to_var == d2.belongs_to_var
-                    && x.get_from().function == d2.function
-                    && x.get_from().next_pc == d2.next_pc
-                    && x.to().next_pc == d2.next_pc + 1
-            })
-            .map(|x| x.to().clone())
-            .collect::<Vec<_>>();
-        debug!("return_sites {:#?}", return_sites);
-
-        for d3 in call_flow.into_iter().chain(return_sites) {
-            assert_eq!(
-                d1.function, d3.function,
-                "Call flow edges must be intraprocedural"
-            );
-            let taut = (*self
-                .defuse
-                .get_facts_at(ctx, &caller_function, &"taut".to_string(), 0)
-                .context("Cannot find facts")?
-                .first()
-                .context("Cannot find tautological start fact")?)
-            .clone();
-
-            self.propagate(
-                &mut ctx.graph,
-                edge_ctx,
-                Edge::Path {
-                    from: taut,
-                    to: d3.clone(),
-                },
-            )?; // adding edges to return site of caller from d1
+        } else {
+            log::warn!("No initial pc fact found. That's why cannot handle the call");
         }
 
         Ok(())
     }
 
+    /*
     pub(crate) fn handle_return<'a>(
         &mut self,
         to_function: &AstFunction,
@@ -1013,7 +1019,7 @@ where
         self.union_end_summary_edge(ctx, edge_ctx, d1, d2, first_statement_pc_callee)?;
 
         Ok(())
-    }
+    }*/
 
     /// Add a path edge between `d1` and `d2` to `edge_ctx.end_summary` if it does not already
     /// exists.

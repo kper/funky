@@ -5,7 +5,7 @@ use crate::counter::Counter;
 use anyhow::{bail, Context, Result};
 use std::collections::hash_map::Entry;
 
-use log::debug;
+use log::{debug, warn};
 
 use std::collections::HashMap;
 
@@ -56,16 +56,18 @@ impl State {
     }
 
     /// Finds the fact with lowest `next_pc` and returns it.
-    pub fn get_min_pc(&self, function: &String) -> Result<usize> {
+    pub fn get_min_pc(&self, function: &String) -> Option<usize> {
         if let Some(facts) = self.init_facts.get(function) {
             if let Some(fact) = facts.get(0) {
-                return Ok(fact.next_pc.saturating_sub(1));
+                return Some(fact.next_pc.saturating_sub(1));
             } else {
-                bail!("Function has an empty set of initial facts.");
+                warn!("Function has an empty set of initial facts.");
             }
         }
 
-        bail!("Cannot find function")
+        warn!("Cannot find function \"{}\"", function);
+
+        None
     }
 
     /// Saving facts into an internal structure for fast lookup.

@@ -344,7 +344,6 @@ where
             .filter(|x| return_vals.contains(&x.belongs_to_var));
 
         for (from, to_reg) in callee_facts_without_globals
-            
             .into_iter()
             .chain(callee_facts_globals_that_were_returned)
             .zip(dest.into_iter())
@@ -476,7 +475,8 @@ where
             .get_facts_at(&caller_function.name, pc)?
             .into_iter()
             .filter(|x| &x.belongs_to_var == caller)
-            .filter(|x| !x.var_is_global).cloned()
+            .filter(|x| !x.var_is_global)
+            .cloned()
             .collect();
         debug!("Facts before statement {}", before.len());
 
@@ -884,7 +884,8 @@ where
                         .map(|x| match x {
                             Instruction::Return(x) => x.clone(),
                             _ => Vec::new(),
-                        }).unwrap_or_default();
+                        })
+                        .unwrap_or_default();
 
                     for d5 in self.return_val(
                         &d2.function,
@@ -994,7 +995,10 @@ where
             )?;
         }
 
-        let first_statement_pc_callee = ctx.state.get_min_pc(&d1.function)?;
+        let first_statement_pc_callee = ctx
+            .state
+            .get_min_pc(&d1.function)
+            .context("Cannot find minimal pc")?;
 
         if let Some(end_summary) = end_summary.get_mut(&(
             d1.function.clone(),
@@ -1005,14 +1009,16 @@ where
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned();
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                .cloned();
             end_summary.extend(facts);
         } else {
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
                 .into_iter()
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned()
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                .cloned()
                 .collect();
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
@@ -1050,13 +1056,15 @@ where
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned();
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                .cloned();
             end_summary.extend(facts);
         } else {
             let facts = ctx
                 .state
                 .get_facts_at(&d2.function.clone(), d2.next_pc)?
-                .filter(|x| x.belongs_to_var == d2.belongs_to_var).cloned()
+                .filter(|x| x.belongs_to_var == d2.belongs_to_var)
+                .cloned()
                 .collect();
             end_summary.insert(
                 (d1.function.clone(), d1.next_pc, d1.belongs_to_var.clone()),
@@ -1092,7 +1100,8 @@ where
                     .map(|x| match x {
                         Instruction::Return(x) => x.clone(),
                         _ => Vec::new(),
-                    }).unwrap_or_default();
+                    })
+                    .unwrap_or_default();
 
                 // Use only `d4`'s var
                 let ret_vals = self.return_val(
@@ -1114,7 +1123,8 @@ where
 
                     debug!("summary_edge {:#?}", summary_edge);
                     if !summary_edge
-                        .iter().any(|x| x.get_from() == d4 && x.to() == d5)
+                        .iter()
+                        .any(|x| x.get_from() == d4 && x.to() == d5)
                     {
                         summary_edge.push(Edge::Normal {
                             from: d4.clone(),
