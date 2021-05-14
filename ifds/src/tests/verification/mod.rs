@@ -533,6 +533,7 @@ fn test_nested_call_global_circuit_breaker() {
         define mytesttwo (param %0) (result 1) (define %-1 %0 %1) {
             %-1 = 1
             %0 = %-1
+
             RETURN %0;
         };
         ";

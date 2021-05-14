@@ -1085,11 +1085,9 @@ where
                     return_vals,
                 )?;
 
-                let ret_vals = ret_vals.iter().map(|x| x.to()).collect::<Vec<_>>();
+                let ret_vals = ret_vals.iter().map(|x| x.to());
 
-                debug!("Exit-To-Return edges are {:#?}", ret_vals);
-
-                for d5 in ret_vals.into_iter() {
+                for d5 in ret_vals {
                     debug!("Handling var {:#?}", d5);
 
                     debug!("summary_edge {:#?}", summary_edge);

@@ -152,8 +152,8 @@ impl DefUseChain {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let xx = graph.flatten().collect::<Vec<_>>();
-        debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
+        //let xx = graph.flatten(); //.collect::<Vec<_>>();
+        //debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
 
         let mut queue: VecDeque<_> = VecDeque::new();
         let mut seen = Vec::new();
