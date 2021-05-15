@@ -106,8 +106,8 @@ expression: output
 		\path[->] (46) edge (47);
 		\path[->, green] (0) [bend left] edge node { } (11);
 		\path[->, green] (31) [bend left] edge node { } (0);
-		\path[->, green] (3) [bend left] edge node { } (11);
-		\path[->, green] (34) [bend left] edge node { } (0);
+		\path[->, green] (3) [bend left] edge node { } (17);
+		\path[->, green] (34) [bend left] edge node { } (3);
 		\path[->, green] (8) [bend left] edge node { } (25);
 		\path[->, green] (46) [bend left] edge node { } (8);
 		\path[->, red] (1) [bend right] edge  node { } (32);
