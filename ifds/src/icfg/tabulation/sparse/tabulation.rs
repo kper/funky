@@ -361,6 +361,7 @@ where
         } else {
             let dests = match caller_instructions.get(caller_pc).as_ref() {
                 Some(Instruction::Call(_, _params, dest)) => dest.clone(),
+                Some(Instruction::CallIndirect(_, _params, dest)) => dest.clone(),
                 Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
                 None => {
                     bail!("Cannot find instruction while trying to compute exit-to-return edges")
