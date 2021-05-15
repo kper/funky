@@ -83,9 +83,6 @@ expression: output
 		\path[->, blue] (20) [bend right] edge  node { } (14);
 		\path[->, blue] (20) [bend right] edge  node { } (15);
 		\path[->, blue] (20) [loop right] edge  node { } (20);
-		\path[->, blue] (20) [bend right] edge  node { } (22);
-		\path[->, blue] (20) [bend right] edge  node { } (23);
-		\path[->, blue] (20) [bend right] edge  node { } (24);
 
 
                 \end{tikzpicture}

@@ -149,7 +149,7 @@ expression: output
 		\path[->] (65) edge (66);
 		\path[->, green] (27) [bend left] edge node { } (0);
 		\path[->, green] (34) [bend left] edge node { } (5);
-		\path[->, green] (48) [bend left] edge node { } (5);
+		\path[->, green] (48) [bend left] edge node { } (15);
 		\path[->, green] (62) [bend left] edge node { } (20);
 		\path[->, red] (3) [bend right] edge  node { } (28);
 		\path[->, red] (8) [bend right] edge  node { } (35);
