@@ -281,7 +281,7 @@ impl TabulationOriginal {
                             .functions
                             .par_iter()
                             .find_first(|x| x.name == d2.function)
-                            .unwrap();
+                            .context("Cannot find function")?;
 
                         let flow_edges = {
                             if pc > start_pc || d2.function != req.function {
@@ -463,13 +463,13 @@ impl TabulationOriginal {
             .functions
             .par_iter()
             .find_first(|x| x.name == d1.function)
-            .unwrap();
+            .context("Cannot find function")?;
 
         let callee_function = program
             .functions
             .iter()
             .find(|x| &x.name == callee)
-            .unwrap();
+            .context("Cannot find function")?;
 
         let flow_edges = ctx
             .graph
