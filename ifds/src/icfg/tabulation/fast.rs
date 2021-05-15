@@ -276,6 +276,12 @@ where
                 dd.extend(dest.clone());
                 dd
             }
+            Some(Instruction::CallIndirect(_, _params, dest)) => {
+                let mut dd = Vec::with_capacity(dest.len());
+                dd.push("taut".to_string());
+                dd.extend(dest.clone());
+                dd
+            }
             Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
@@ -704,6 +710,27 @@ where
                             normal_flows_debug,
                             start_pc,
                         )?;
+                    }
+                    Instruction::CallIndirect(callees, params, dest) => {
+                        for callee in callees {
+                            self.handle_call(
+                                &program,
+                                d1,
+                                d2,
+                                callee,
+                                params,
+                                ctx,
+                                path_edge,
+                                worklist,
+                                &mut incoming,
+                                &end_summary,
+                                summary_edge,
+                                dest,
+                                pc,
+                                normal_flows_debug,
+                                start_pc,
+                            )?;
+                        }
                     }
                     Instruction::Return(dest) if dest.contains(&d2.belongs_to_var) => {
                         let new_function = program
