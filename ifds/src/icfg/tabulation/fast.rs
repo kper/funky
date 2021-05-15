@@ -264,172 +264,109 @@ where
         caller_instructions: &Vec<Instruction>,
         ctx: &mut Ctx<'a>,
         return_vals: &Vec<String>,
+        callee_var: &String,
     ) -> Result<Vec<Edge>> {
+        let mut edges = Vec::new();
+
         debug!("Trying to compute return_val");
         debug!("Caller: {} ({})", caller_function, caller_pc);
         debug!("Callee: {} ({})", callee_function, callee_pc);
 
         let dest = match caller_instructions.get(caller_pc).as_ref() {
-            Some(Instruction::Call(_, _params, dest)) => {
-                let mut dd = Vec::with_capacity(dest.len());
-                dd.push("taut".to_string());
-                dd.extend(dest.clone());
-                dd
-            }
-            Some(Instruction::CallIndirect(_, _params, dest)) => {
-                let mut dd = Vec::with_capacity(dest.len());
-                dd.push("taut".to_string());
-                dd.extend(dest.clone());
-                dd
-            }
+            Some(Instruction::Call(_, _params, dest)) => dest,
+            Some(Instruction::CallIndirect(_, _params, dest)) => dest,
             Some(x) => bail!("Wrong instruction passed to return val. Found {:?}", x),
             None => bail!("Cannot find instruction while trying to compute exit-to-return edges"),
         };
 
-        let caller_facts = ctx
+        let callee_variable = ctx
             .state
-            .get_facts_at(caller_function, caller_pc + 1)?
-            .filter(|x| !x.var_is_memory);
+            .get_var(callee_function, callee_var)
+            .context("Cannot lookup variable")?;
 
-        let caller_facts_memory: Vec<_> = ctx
-            .state
-            .get_facts_at(caller_function, caller_pc + 1)?
-            .filter(|x| x.var_is_memory)
-            .cloned()
-            .collect();
-
-        let mut edges = Vec::new();
-
-        let mut caller_facts = caller_facts.into_iter().cloned().collect::<Vec<_>>(); //TODO
-        debug!("Caller facts {:#?}", caller_facts);
-
-        let mut callee_facts_without_globals = ctx
-            .state
-            .get_facts_at(callee_function, callee_pc)?
-            .filter(|x| !x.var_is_global && !x.var_is_memory)
-            .cloned()
-            .collect::<Vec<_>>();
-
-        let mut callee_facts_with_globals = ctx
-            .state
-            .get_facts_at(callee_function, callee_pc)?
-            .filter(|x| x.var_is_global)
-            .cloned()
-            .collect::<Vec<_>>();
-
-        let callee_facts_with_memory = ctx
-            .state
-            .get_facts_at(callee_function, callee_pc)?
-            .filter(|x| x.var_is_memory)
-            .cloned()
-            .collect::<Vec<_>>();
-
-        caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
-        callee_facts_without_globals.sort_by(|a, b| a.track.cmp(&b.track));
-        callee_facts_with_globals.sort_by(|a, b| a.track.cmp(&b.track));
-
-        caller_facts.dedup();
-        callee_facts_without_globals.dedup();
-        callee_facts_with_globals.dedup();
-
-        debug!("caller_facts {:#?}", caller_facts);
-        debug!(
-            "callee_facts without globals {:#?}",
-            callee_facts_without_globals
-        );
-        debug!("callee_facts with globals {:#?}", callee_facts_with_globals);
-        debug!("callee_facts with memory {:#?}", callee_facts_with_memory);
-
-        // Generate edges for all dest + taut
-        debug!("=> dest {:?}", dest);
-
-        // we need to chain because we can also return globals
-        let callee_facts_globals_that_were_returned = callee_facts_with_globals
-            .clone()
-            .into_iter()
-            .filter(|x| return_vals.contains(&x.belongs_to_var));
-
-        for (from, to_reg) in callee_facts_without_globals
-            .into_iter()
-            .chain(callee_facts_globals_that_were_returned)
-            .zip(dest.into_iter())
-        {
-            if let Some(to) = caller_facts.iter().find(|x| x.belongs_to_var == to_reg) {
-                edges.push(Edge::Return {
-                    from,
-                    to: to.clone(),
-                });
-            } else {
-                //Create the dest
-                let track = ctx
-                    .state
-                    .get_track(caller_function, &to_reg)
-                    .with_context(|| format!("Cannot find track {}", to_reg))?;
-
-                let fact = Fact {
-                    belongs_to_var: to_reg.clone(),
-                    function: caller_function.clone(),
-                    pc: caller_pc,
-                    next_pc: caller_pc + 1,
-                    track,
-                    var_is_global: false,
-                    var_is_taut: from.var_is_taut,
-                    memory_offset: from.memory_offset,
-                    var_is_memory: from.var_is_memory,
-                };
-
-                let to = ctx.state.cache_fact(caller_function, fact)?;
-
-                edges.push(Edge::Return {
-                    from: from.clone().clone(),
-                    to: to.clone(),
-                });
-            }
-        }
-
-        // Edges only for globals
-        // doesn't handle when you return into local from global
-        for from in callee_facts_with_globals.into_iter() {
-            //Create the dest
-            let track = ctx
+        if callee_variable.is_taut {
+            let caller_fact = ctx
                 .state
-                .get_track(caller_function, &from.belongs_to_var) //name must match
-                .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
+                .get_facts_at(caller_function, caller_pc + 1)?
+                .find(|x| x.var_is_taut)
+                .context("Cannot find taut fact")?;
 
-            let fact = Fact {
-                belongs_to_var: from.belongs_to_var.clone(),
-                function: caller_function.clone(),
-                pc: caller_pc,
-                next_pc: caller_pc + 1,
-                track,
-                var_is_global: true,
-                var_is_taut: from.var_is_taut,
-                var_is_memory: false,
-                memory_offset: None,
-            };
-
-            let to = ctx.state.cache_fact(caller_function, fact)?;
+            let callee_fact = ctx
+                .state
+                .get_facts_at(callee_function, callee_pc)?
+                .find(|x| x.var_is_taut)
+                .context("Cannot find taut fact")?;
 
             edges.push(Edge::Return {
-                from: from.clone().clone(),
-                to: to.clone(),
+                from: caller_fact.clone(),
+                to: callee_fact.clone(),
             });
-        }
+        } else if callee_variable.is_memory {
+            let caller_facts_memory: Vec<_> = ctx
+                .state
+                .get_facts_at(caller_function, caller_pc + 1)?
+                .filter(|x| x.var_is_memory)
+                .cloned()
+                .collect();
 
-        // Edges only for memory
-        for from in callee_facts_with_memory.into_iter() {
-            if let Some(caller_fact) = caller_facts_memory
-                .iter()
-                .find(|x| x.belongs_to_var == from.belongs_to_var)
-            {
-                edges.push(Edge::Return {
-                    from: from.clone().clone(),
-                    to: caller_fact.clone(),
-                });
-            } else {
-                ctx.state
-                    .add_memory_var(caller_function.clone(), from.memory_offset.unwrap());
+            let callee_facts_with_memory = ctx
+                .state
+                .get_facts_at(callee_function, callee_pc)?
+                .filter(|x| x.var_is_memory)
+                .cloned()
+                .collect::<Vec<_>>();
 
+            // Edges only for memory
+            for from in callee_facts_with_memory.into_iter() {
+                if let Some(caller_fact) = caller_facts_memory
+                    .iter()
+                    .find(|x| x.belongs_to_var == from.belongs_to_var)
+                {
+                    edges.push(Edge::Return {
+                        from: from.clone().clone(),
+                        to: caller_fact.clone(),
+                    });
+                } else {
+                    ctx.state
+                        .add_memory_var(caller_function.clone(), from.memory_offset.unwrap());
+
+                    let track = ctx
+                        .state
+                        .get_track(caller_function, &from.belongs_to_var) //name must match
+                        .with_context(|| format!("Cannot find track {}", from.belongs_to_var))?;
+
+                    let fact = Fact {
+                        belongs_to_var: from.belongs_to_var.clone(),
+                        function: caller_function.clone(),
+                        pc: caller_pc,
+                        next_pc: caller_pc + 1,
+                        track,
+                        var_is_global: false,
+                        var_is_taut: false,
+                        var_is_memory: true,
+                        memory_offset: from.memory_offset,
+                    };
+
+                    let to = ctx.state.cache_fact(caller_function, fact)?;
+
+                    edges.push(Edge::Return {
+                        from: from.clone().clone(),
+                        to: to.clone(),
+                    });
+                }
+            }
+        } else if callee_variable.is_global {
+            let callee_facts_with_globals = ctx
+                .state
+                .get_facts_at(callee_function, callee_pc)?
+                .filter(|x| x.var_is_global)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // Edges only for globals
+            // doesn't handle when you return into local from global
+            for from in callee_facts_with_globals.into_iter() {
+                //Create the dest
                 let track = ctx
                     .state
                     .get_track(caller_function, &from.belongs_to_var) //name must match
@@ -441,10 +378,10 @@ where
                     pc: caller_pc,
                     next_pc: caller_pc + 1,
                     track,
-                    var_is_global: false,
-                    var_is_taut: false,
-                    var_is_memory: true,
-                    memory_offset: from.memory_offset,
+                    var_is_global: true,
+                    var_is_taut: from.var_is_taut,
+                    var_is_memory: false,
+                    memory_offset: None,
                 };
 
                 let to = ctx.state.cache_fact(caller_function, fact)?;
@@ -454,7 +391,79 @@ where
                     to: to.clone(),
                 });
             }
+        } else if return_vals.contains(callee_var) {
+            // handle the cases if the variable was returned normally
+            let caller_facts = ctx
+                .state
+                .get_facts_at(caller_function, caller_pc + 1)?
+                .filter(|x| !x.var_is_memory && !x.var_is_global)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            let callee_facts = ctx
+                .state
+                .get_facts_at(callee_function, callee_pc)?
+                .filter(|x| !x.var_is_global && !x.var_is_memory)
+                .filter(|x| &x.belongs_to_var == callee_var)
+                .cloned()
+                .collect::<Vec<_>>();
+
+            for (from, to_reg) in callee_facts.into_iter().zip(dest.into_iter()) {
+                if let Some(to) = caller_facts.iter().find(|x| &x.belongs_to_var == to_reg) {
+                    edges.push(Edge::Return {
+                        from,
+                        to: to.clone(),
+                    });
+                } else {
+                    //Create the dest
+                    let track = ctx
+                        .state
+                        .get_track(caller_function, &to_reg)
+                        .with_context(|| format!("Cannot find track {}", to_reg))?;
+
+                    let fact = Fact {
+                        belongs_to_var: to_reg.clone(),
+                        function: caller_function.clone(),
+                        pc: caller_pc,
+                        next_pc: caller_pc + 1,
+                        track,
+                        var_is_global: false,
+                        var_is_taut: from.var_is_taut,
+                        memory_offset: from.memory_offset,
+                        var_is_memory: from.var_is_memory,
+                    };
+
+                    let to = ctx.state.cache_fact(caller_function, fact)?;
+
+                    edges.push(Edge::Return {
+                        from: from.clone().clone(),
+                        to: to.clone(),
+                    });
+                }
+            }
         }
+
+        //caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
+        //callee_facts_without_globals.sort_by(|a, b| a.track.cmp(&b.track));
+        //callee_facts_with_globals.sort_by(|a, b| a.track.cmp(&b.track));
+
+        //caller_facts.dedup();
+        //callee_facts_without_globals.dedup();
+        //callee_facts_with_globals.dedup();
+
+        /*
+        debug!("caller_facts {:#?}", caller_facts);
+        debug!(
+            "callee_facts without globals {:#?}",
+            callee_facts_without_globals
+        );
+        debug!("callee_facts with globals {:#?}", callee_facts_with_globals);
+        debug!("callee_facts with memory {:#?}", callee_facts_with_memory);
+
+        // Generate edges for all dest + taut
+        debug!("=> dest {:?}", dest);*/
+
+        //HERE
 
         Ok(edges)
     }
@@ -967,6 +976,7 @@ where
                         caller_instructions,
                         ctx,
                         &return_vals,
+                        &d2.belongs_to_var, //not sure?
                     )? {
                         debug!("d5 {:#?}", d5);
                         assert_eq!(d2.function, d5.to().function);
@@ -1094,9 +1104,10 @@ where
                     .find(|x| x.name == d2.function)
                     .context("Cannot find function")?
                     .instructions
-                    .get(d2.next_pc.checked_sub(1).unwrap_or(0))
+                    //.get(d2.next_pc.checked_sub(1).unwrap_or(0))
+                    .get(d2.next_pc)
                     .map(|x| match x {
-                        Instruction::Return(x) => x.clone(),
+                        Instruction::Return(x) => x.clone(), 
                         _ => Vec::new(),
                     })
                     .unwrap_or_default();
@@ -1110,6 +1121,7 @@ where
                     &instructions,
                     ctx,
                     return_vals,
+                    &d2.belongs_to_var,
                 )?;
 
                 let ret_vals = ret_vals.iter().map(|x| x.to());
