@@ -109,7 +109,7 @@ where
         callee_function: &AstFunction,
         params: &[String],
         ctx: &mut Ctx<'a>,
-        current_pc: usize,
+        caller_pc: usize,
         caller_var: &str,
     ) -> Result<Vec<Edge>> {
         let caller_variable = ctx
@@ -229,7 +229,7 @@ where
 
             let caller_facts =
                 self.defuse
-                    .get_facts_at(ctx, &caller_function, caller_var, current_pc)?;
+                    .get_facts_at(ctx, &caller_function, caller_var, caller_pc)?;
 
             if let Some(caller_fact) = caller_facts.first() {
                 for callee_fact in callee_facts.into_iter() {
@@ -707,6 +707,15 @@ where
                             ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
                         )?;
                     }
+                    Instruction::CallIndirect(callees, params, dest)
+                        if start_pc != pc || !is_first_instruction =>
+                    {
+                        for callee in callees {
+                            self.handle_call(
+                                ctx, edge_ctx, &program, d1, d2, callee, params, dest, start_pc,
+                            )?;
+                        }
+                    }
                     Instruction::Return(dest)
                         if dest.contains(&d2.belongs_to_var)
                             || d2.var_is_taut
@@ -795,7 +804,7 @@ where
                 callee_function,
                 params,
                 ctx,
-                d2.next_pc,
+                d2.pc,
                 caller_var,
             )
             .with_context(|| {
