@@ -742,8 +742,6 @@ expression: output
 		\path[->, blue] (0) [bend right] edge  node { } (182);
 		\path[->, blue] (0) [bend right] edge  node { } (183);
 		\path[->, blue] (0) [bend right] edge  node { } (198);
-		\path[->, blue] (0) [bend right] edge  node { } (233);
-		\path[->, blue] (0) [bend right] edge  node { } (234);
 		\path[->, blue] (211) [bend right] edge  node { } (21);
 		\path[->, blue] (211) [bend right] edge  node { } (22);
 		\path[->, blue] (211) [bend right] edge  node { } (23);

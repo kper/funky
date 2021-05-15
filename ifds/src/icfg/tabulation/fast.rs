@@ -298,8 +298,8 @@ where
                 .context("Cannot find taut fact")?;
 
             edges.push(Edge::Return {
-                from: caller_fact.clone(),
-                to: callee_fact.clone(),
+                from: callee_fact.clone(),
+                to: caller_fact.clone(),
             });
         } else if callee_variable.is_memory {
             let caller_facts_memory: Vec<_> = ctx
@@ -442,28 +442,6 @@ where
                 }
             }
         }
-
-        //caller_facts.sort_by(|a, b| a.track.cmp(&b.track));
-        //callee_facts_without_globals.sort_by(|a, b| a.track.cmp(&b.track));
-        //callee_facts_with_globals.sort_by(|a, b| a.track.cmp(&b.track));
-
-        //caller_facts.dedup();
-        //callee_facts_without_globals.dedup();
-        //callee_facts_with_globals.dedup();
-
-        /*
-        debug!("caller_facts {:#?}", caller_facts);
-        debug!(
-            "callee_facts without globals {:#?}",
-            callee_facts_without_globals
-        );
-        debug!("callee_facts with globals {:#?}", callee_facts_with_globals);
-        debug!("callee_facts with memory {:#?}", callee_facts_with_memory);
-
-        // Generate edges for all dest + taut
-        debug!("=> dest {:?}", dest);*/
-
-        //HERE
 
         Ok(edges)
     }
@@ -958,10 +936,10 @@ where
                     let return_vals = &program
                         .functions
                         .iter()
-                        .find(|x| x.name == d2.function)
+                        .find(|x| x.name == d4.function)
                         .context("Cannot find function")?
                         .instructions
-                        .get(d2.next_pc - 1)
+                        .get(d4.next_pc)
                         .map(|x| match x {
                             Instruction::Return(x) => x.clone(),
                             _ => Vec::new(),
@@ -976,7 +954,7 @@ where
                         caller_instructions,
                         ctx,
                         &return_vals,
-                        &d2.belongs_to_var, //not sure?
+                        &d4.belongs_to_var,
                     )? {
                         debug!("d5 {:#?}", d5);
                         assert_eq!(d2.function, d5.to().function);

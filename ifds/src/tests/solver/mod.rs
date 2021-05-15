@@ -356,10 +356,11 @@ fn test_globals() {
             %-1 = %0 
             %2 <- CALL mytest()
         };
-        define mytest (param) (result 1) (define %-1 %0 %1)  {
+        define mytest (param) (result 1) (define %-1 %0 %1 %2)  {
             %0 = 2   
             %1 = 3
-            RETURN %-1;
+            %2 = %-1
+            RETURN %2;
         };
     "
     );

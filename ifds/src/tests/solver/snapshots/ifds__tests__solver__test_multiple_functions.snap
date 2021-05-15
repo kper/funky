@@ -20,12 +20,12 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 1,
     },
     Taint {
-        variable: "%2",
+        variable: "%0",
         function: "test",
         pc: 2,
     },
     Taint {
-        variable: "%0",
+        variable: "%2",
         function: "test",
         pc: 2,
     },
