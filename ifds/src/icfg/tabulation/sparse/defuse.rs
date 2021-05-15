@@ -152,8 +152,8 @@ impl DefUseChain {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
-        let xx = graph.flatten().collect::<Vec<_>>();
-        debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
+        //let xx = graph.flatten(); //.collect::<Vec<_>>();
+        //debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
 
         let mut queue: VecDeque<_> = VecDeque::new();
         let mut seen = Vec::new();
@@ -950,14 +950,16 @@ impl DefUseChain {
             Instruction::Phi(_, src1, src2) if src1 == var || src2 == var => true,
             Instruction::Unop(_dest, src) if src == var => true,
             Instruction::Call(..) if variable.is_taut => true,
-            Instruction::Call(_, params, _) if params.contains(var) => true,
+            Instruction::Call(_, _, _) if variable.is_global => true,
             Instruction::Call(..) if variable.is_memory => true,
+            Instruction::Call(_, params, _) if params.contains(var) => true,
             Instruction::Return(params) if params.contains(var) => true,
             Instruction::Return(..) if variable.is_global => true,
             Instruction::Return(..) if variable.is_memory => true,
-            Instruction::Call(_, _, _) if variable.is_global => true,
+            Instruction::CallIndirect(..) if variable.is_taut => true,
             Instruction::CallIndirect(_, _, _) if variable.is_global => true,
-            Instruction::CallIndirect(_, _, _) if variable.is_memory => true,
+            Instruction::CallIndirect(..) if variable.is_memory => true,
+            Instruction::CallIndirect(_, params, _) if params.contains(var) => true,
             Instruction::Store(src, _, _) if src == var => true,
             Instruction::Store(_src, ..) if variable.is_memory => true, //always true for all occurrences
             Instruction::Load(_dest, ..) if variable.is_memory => true, //always true for all occurrences

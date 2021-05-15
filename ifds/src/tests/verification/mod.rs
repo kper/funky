@@ -533,8 +533,37 @@ fn test_nested_call_global_circuit_breaker() {
         define mytesttwo (param %0) (result 1) (define %-1 %0 %1) {
             %-1 = 1
             %0 = %-1
+
             RETURN %0;
         };
         ";
     run!("nested_call_global_circuit_breaker", ir, &req);
+}
+
+#[test]
+fn test_call_indirect() {
+    let req = Request {
+        variable: Some("%0".to_string()),
+        function: "test".to_string(),
+        pc: 0,
+    };
+    let ir = "define test (result 0) (define %-1 %0 %1 %2) {
+            %0 = 1
+            %1 <- CALL INDIRECT 1 2 3 (%0)
+        };
+        define 1 (param %0) (result 1) (define %-1 %0 %1) {
+            %1 = %0
+            RETURN %1;
+        };
+        define 2 (param %0) (result 1) (define %-1 %0 %1) {
+            %-1 = 1
+            %0 = %-1
+
+            RETURN %0;
+        };
+        define 3 (param %0) (result 1) (define %-1 %0 %1) {
+            RETURN %0;
+        };
+        ";
+    run!("call_indirect", ir, &req);
 }
