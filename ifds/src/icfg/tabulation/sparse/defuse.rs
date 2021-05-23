@@ -152,7 +152,7 @@ impl DefUseChain {
         debug!("Querying demand_inclusive for {} at {}", var, pc);
         let graph = self.cache(ctx, function, var, pc)?;
 
-        //let xx = graph.flatten(); //.collect::<Vec<_>>();
+        //let xx = graph.flatten().collect::<Vec<_>>();
         //debug!("xx (all) for {} at {} {:#?}", var, pc, xx);
 
         let mut queue: VecDeque<_> = VecDeque::new();
@@ -393,9 +393,9 @@ impl DefUseChain {
             .get_track(&function.name, &var.name)
             .context("Cannot find track of var")?;
 
-        let instructions: Vec<_> = function.instructions.iter().enumerate().collect();
+        let max_len = function.instructions.iter().count();
+        let instructions: Vec<_> = function.instructions.iter().enumerate().skip(pc).collect();
 
-        let max_len = instructions.len();
         let scfg = self
             .build_next2(function, instructions, &ctx.block_resolver)
             .context("Building the controlflow graph failed")?;
@@ -411,7 +411,6 @@ impl DefUseChain {
             &var,
             track,
             pc,
-            pc,
             is_defined,
             true,
             &mut graph,
@@ -419,7 +418,7 @@ impl DefUseChain {
         )
         .context("Building the graph failed")?;
 
-        debug!("graph {:#?}", graph.flatten().collect::<Vec<_>>());
+        //debug!("graph {:#?}", graph.flatten().collect::<Vec<_>>());
 
         {
             self.inner
@@ -571,7 +570,6 @@ impl DefUseChain {
         max_len: usize,
         var: &Variable,
         track: usize,
-        instruction_offset: usize,
         start_pc: usize,
         is_defined: bool,
         is_top_level: bool,
@@ -583,7 +581,8 @@ impl DefUseChain {
         // Building the subgraph is `get_relevant_instructions`'s job.
         let (is_defined, relevant_instructions) = self.get_relevant_instructions(
             var,
-            instructions.iter().skip(instruction_offset),
+            //instructions.iter().skip(instruction_offset),
+            instructions.iter(),
             is_top_level,
             was_called_as_param,
             is_defined,
@@ -671,7 +670,6 @@ impl DefUseChain {
                                 *n,
                                 var,
                                 track,
-                                0,
                                 start_pc,
                                 is_defined,
                                 false,
@@ -686,7 +684,6 @@ impl DefUseChain {
                                 *n,
                                 var,
                                 track,
-                                0,
                                 start_pc,
                                 is_defined,
                                 false,
