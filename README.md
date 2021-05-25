@@ -71,7 +71,7 @@ cargo run --bin funky -- ./testsuite/block.0.wasm "break-bare"
 ## Run the debugger
 
 ```
-cargo run --bin hustensaft -- ./testsuite/block.0.wasm "break-bare"
+cargo run --bin debugger -- ./testsuite/block.0.wasm "break-bare"
 ```
 
 ## Wait, there is more
