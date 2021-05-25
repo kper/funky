@@ -70,16 +70,6 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 14,
     },
     Taint {
-        variable: "%13",
-        function: "0",
-        pc: 15,
-    },
-    Taint {
-        variable: "%11",
-        function: "0",
-        pc: 15,
-    },
-    Taint {
         variable: "%1",
         function: "0",
         pc: 7,
@@ -238,21 +228,6 @@ expression: "format!(\"{:#?}\", sinks)"
         variable: "%0",
         function: "0",
         pc: 14,
-    },
-    Taint {
-        variable: "%1",
-        function: "0",
-        pc: 15,
-    },
-    Taint {
-        variable: "%9",
-        function: "0",
-        pc: 15,
-    },
-    Taint {
-        variable: "%7",
-        function: "0",
-        pc: 15,
     },
     Taint {
         variable: "%0",

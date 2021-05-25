@@ -1,0 +1,110 @@
+---
+source: src/tests/icfg/sparse.rs
+expression: output
+
+---
+   \documentclass{standalone}
+            \usepackage{pgf, tikz}
+            \usetikzlibrary{arrows, automata}
+            \begin{document}
+                \begin{tikzpicture}
+                    [node distance=3cm]
+                    \tikzstyle{every state}=[
+                        draw = black,
+                        thick,
+                        fill = white,
+                        minimum size = 4mm
+                    ]
+
+                    \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (0) at (0, 12) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (1) at (0, 13) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (2) at (0, 20) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (3) at (0, 21) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (4) at (0, 24) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%8$}] (5) at (1, 13) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%8$}] (6) at (1, 14) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (7) at (0, 22) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%10$}] (8) at (3, 15) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%10$}] (9) at (3, 21) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%10$}] (10) at (3, 22) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%10$}] (11) at (3, 23) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%11$}] (12) at (2, 23) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%11$}] (13) at (2, 24) { };
+\node[font=\tiny] (note_0) at (-1.5, 12.5) {BinOp(8, 7, 6)};
+\node[font=\tiny] (note_1) at (-1.5, 13.5) {Call(0, [8], [9])};
+\node[font=\tiny] (note_2) at (-1.5, 14.5) {BinOp(10, 9, 8)};
+\node[font=\tiny] (note_3) at (-1.5, 15.5) {Kill(9)};
+\node[font=\tiny] (note_4) at (-1.5, 16.5) {Kill(8)};
+\node[font=\tiny] (note_5) at (-1.5, 17.5) {Kill(7)};
+\node[font=\tiny] (note_6) at (-1.5, 18.5) {Kill(6)};
+\node[font=\tiny] (note_7) at (-1.5, 19.5) {Kill(5)};
+\node[font=\tiny] (note_8) at (-1.5, 20.5) {Jump(3)};
+\node[font=\tiny] (note_9) at (-1.5, 21.5) {Block(3)};
+\node[font=\tiny] (note_10) at (-1.5, 22.5) {Phi(11, 4, 10)};
+\node[font=\tiny] (note_11) at (-1.5, 23.5) {Return([11])};
+\node[font=\tiny] (note_12) at (-1.5, 0.5) {Block(0)};
+\node[font=\tiny] (note_13) at (-1.5, 1.5) {Assign(1, 0)};
+\node[font=\tiny] (note_14) at (-1.5, 2.5) {Const(2, 0.0)};
+\node[font=\tiny] (note_15) at (-1.5, 3.5) {BinOp(3, 2, 1)};
+\node[font=\tiny] (note_16) at (-1.5, 4.5) {Conditional(3, [1, 2])};
+\node[font=\tiny] (note_17) at (-1.5, 5.5) {Block(1)};
+\node[font=\tiny] (note_18) at (-1.5, 6.5) {Const(4, 1.0)};
+\node[font=\tiny] (note_19) at (-1.5, 7.5) {Jump(3)};
+\node[font=\tiny] (note_20) at (-1.5, 8.5) {Block(2)};
+\node[font=\tiny] (note_21) at (-1.5, 9.5) {Assign(5, 0)};
+\node[font=\tiny] (note_22) at (-1.5, 10.5) {Assign(6, 0)};
+\node[font=\tiny] (note_23) at (-1.5, 11.5) {Const(7, 1.0)};
+\node[font=\tiny] (note_24) at (-1.5, 12.5) {BinOp(8, 7, 6)};
+\node[font=\tiny] (note_25) at (-1.5, 13.5) {Call(0, [8], [9])};
+\node[font=\tiny] (note_26) at (-1.5, 14.5) {BinOp(10, 9, 8)};
+\node[font=\tiny] (note_27) at (-1.5, 15.5) {Kill(9)};
+\node[font=\tiny] (note_28) at (-1.5, 16.5) {Kill(8)};
+\node[font=\tiny] (note_29) at (-1.5, 17.5) {Kill(7)};
+\node[font=\tiny] (note_30) at (-1.5, 18.5) {Kill(6)};
+\node[font=\tiny] (note_31) at (-1.5, 19.5) {Kill(5)};
+\node[font=\tiny] (note_32) at (-1.5, 20.5) {Jump(3)};
+\node[font=\tiny] (note_33) at (-1.5, 21.5) {Block(3)};
+\node[font=\tiny] (note_34) at (-1.5, 22.5) {Phi(11, 4, 10)};
+\node[font=\tiny] (note_35) at (-1.5, 23.5) {Return([11])};
+\node[font=\tiny] (note_36) at (-1.5, 0.5) {Block(0)};
+\node[font=\tiny] (note_37) at (-1.5, 1.5) {Assign(1, 0)};
+\node[font=\tiny] (note_38) at (-1.5, 2.5) {Const(2, 0.0)};
+\node[font=\tiny] (note_39) at (-1.5, 3.5) {BinOp(3, 2, 1)};
+\node[font=\tiny] (note_40) at (-1.5, 4.5) {Conditional(3, [1, 2])};
+\node[font=\tiny] (note_41) at (-1.5, 5.5) {Block(1)};
+\node[font=\tiny] (note_42) at (-1.5, 6.5) {Const(4, 1.0)};
+\node[font=\tiny] (note_43) at (-1.5, 7.5) {Jump(3)};
+\node[font=\tiny] (note_44) at (-1.5, 8.5) {Block(2)};
+\node[font=\tiny] (note_45) at (-1.5, 9.5) {Assign(5, 0)};
+\node[font=\tiny] (note_46) at (-1.5, 10.5) {Assign(6, 0)};
+\node[font=\tiny] (note_47) at (-1.5, 11.5) {Const(7, 1.0)};
+\node[font=\tiny] (note_48) at (-1.5, 12.5) {BinOp(8, 7, 6)};
+\node[font=\tiny] (note_49) at (-1.5, 13.5) {Call(0, [8], [9])};
+\node[font=\tiny] (note_50) at (-1.5, 14.5) {BinOp(10, 9, 8)};
+\node[font=\tiny] (note_51) at (-1.5, 15.5) {Kill(9)};
+\node[font=\tiny] (note_52) at (-1.5, 16.5) {Kill(8)};
+\node[font=\tiny] (note_53) at (-1.5, 17.5) {Kill(7)};
+\node[font=\tiny] (note_54) at (-1.5, 18.5) {Kill(6)};
+\node[font=\tiny] (note_55) at (-1.5, 19.5) {Kill(5)};
+\node[font=\tiny] (note_56) at (-1.5, 20.5) {Jump(3)};
+\node[font=\tiny] (note_57) at (-1.5, 21.5) {Block(3)};
+\node[font=\tiny] (note_58) at (-1.5, 22.5) {Phi(11, 4, 10)};
+\node[font=\tiny] (note_59) at (-1.5, 23.5) {Return([11])};
+		\path[->, blue] (0) [loop right] edge  node { } (0);
+		\path[->, blue] (0) [bend right] edge  node { } (1);
+		\path[->, blue] (0) [bend right] edge  node { } (2);
+		\path[->, blue] (0) [bend right] edge  node { } (3);
+		\path[->, blue] (0) [bend right] edge  node { } (4);
+		\path[->, blue] (0) [bend right] edge  node { } (5);
+		\path[->, blue] (0) [bend right] edge  node { } (6);
+		\path[->, blue] (0) [bend right] edge  node { } (7);
+		\path[->, blue] (0) [bend right] edge  node { } (8);
+		\path[->, blue] (0) [bend right] edge  node { } (9);
+		\path[->, blue] (0) [bend right] edge  node { } (10);
+		\path[->, blue] (0) [bend right] edge  node { } (11);
+		\path[->, blue] (0) [bend right] edge  node { } (12);
+		\path[->, blue] (0) [bend right] edge  node { } (13);
+
+
+                \end{tikzpicture}
+            \end{document}

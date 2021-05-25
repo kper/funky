@@ -111,7 +111,7 @@ pub fn render_to(graph: &Graph, state: &State) -> String {
 
     let mut edges = graph.edges.clone();
 
-    edges.sort_by(|a, b| a.cmp(b));
+    edges.sort();
 
     for edge in edges.iter() {
         match edge {

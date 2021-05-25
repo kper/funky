@@ -106,7 +106,7 @@ impl SymbolTable {
     pub fn peek_offset(&self, offset: usize) -> Result<&Reg> {
         debug!("Peeking symbol with offset {}", offset);
 
-        for var in self.vars.iter().filter(|x| !x.is_killed).rev().skip(offset) {
+        if let Some(var) = self.vars.iter().filter(|x| !x.is_killed).rev().nth(offset) {
             return Ok(&var.reg);
         }
 
@@ -149,6 +149,12 @@ impl SymbolTable {
     /// Returns how many variables are alive
     pub fn count_alive_vars(&self) -> usize {
         self.vars.iter().filter(|x| !x.is_killed).count()
+    }
+
+    /// Checks if the symbol has no variables (absolute).
+    /// It doesn't matter if they were killed or not.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

@@ -199,34 +199,4 @@ expression: "format!(\"{:#?}\", sinks)"
         function: "0",
         pc: 25,
     },
-    Taint {
-        variable: "%3",
-        function: "0",
-        pc: 26,
-    },
-    Taint {
-        variable: "%14",
-        function: "0",
-        pc: 26,
-    },
-    Taint {
-        variable: "%13",
-        function: "0",
-        pc: 26,
-    },
-    Taint {
-        variable: "%2",
-        function: "0",
-        pc: 26,
-    },
-    Taint {
-        variable: "%12",
-        function: "0",
-        pc: 26,
-    },
-    Taint {
-        variable: "%11",
-        function: "0",
-        pc: 26,
-    },
 ]

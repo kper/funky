@@ -156,7 +156,6 @@ expression: output
 		\path[->, green] (4) [bend left] edge node { } (54);
 		\path[->, green] (9) [bend left] edge node { } (41);
 		\path[->, green] (10) [bend left] edge node { } (60);
-		\path[->, green] (26) [bend left] edge node { } (41);
 		\path[->, green] (32) [bend left] edge node { } (50);
 		\path[->, green] (33) [bend left] edge node { } (69);
 		\path[->, red] (37) [bend right] edge  node { } (4);

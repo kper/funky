@@ -15,6 +15,11 @@ expression: "format!(\"{:#?}\", sinks)"
         pc: 1,
     },
     Taint {
+        variable: "%1",
+        function: "test",
+        pc: 1,
+    },
+    Taint {
         variable: "%0",
         function: "test",
         pc: 2,
@@ -23,11 +28,6 @@ expression: "format!(\"{:#?}\", sinks)"
         variable: "%2",
         function: "test",
         pc: 2,
-    },
-    Taint {
-        variable: "%1",
-        function: "test",
-        pc: 1,
     },
     Taint {
         variable: "%1",

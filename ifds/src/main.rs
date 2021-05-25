@@ -327,7 +327,7 @@ fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -345,8 +345,8 @@ fn tikz(file: PathBuf, is_ir: bool, function: String, pc: usize) -> Result<()> {
     let prog = ProgramParser::new().parse(&buffer).unwrap();
 
     let req = Request {
-        function: function,
-        pc: pc,
+        function,
+        pc,
         variable: None,
     };
     let (graph, state) = convert
@@ -377,7 +377,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -514,7 +514,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
                             }
                         } else {
                             Line {
-                                instruction: instruction.clone(),
+                                instruction: *instruction,
                                 pc: *pc,
                                 is_taint: false,
                                 is_function: true,
@@ -576,7 +576,7 @@ fn ui(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()> {
 
                 f.render_stateful_widget(list, chunks[0], &mut stateful.state);
 
-                let input = Paragraph::new(format!("{}", input,))
+                let input = Paragraph::new(input.to_string())
                     .style(Style::default())
                     .block(Block::default().title("Taints"));
 
@@ -629,7 +629,7 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -661,7 +661,7 @@ fn repl(file: PathBuf, is_ir: bool, export_graph: Option<PathBuf>) -> Result<()>
         let mut buffer = String::new();
         io::stdin().read_to_string(&mut buffer)?;
 
-        let splitted = buffer.trim().split(" ").collect::<Vec<_>>();
+        let splitted = buffer.trim().split(' ').collect::<Vec<_>>();
 
         let req = Request {
             function: splitted.get(0).unwrap().to_string(),
@@ -700,7 +700,7 @@ fn fast(
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -764,7 +764,7 @@ fn naive(
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -826,7 +826,7 @@ fn orig(
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -922,7 +922,7 @@ fn sparse(
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }
@@ -994,7 +994,7 @@ fn meta(file: PathBuf, is_ir: bool) -> Result<()> {
     let buffer = match is_ir {
         false => {
             let ir = ir(file).context("Cannot create intermediate representation of file")?;
-            let buffer = ir.buffer().clone();
+            let buffer = ir.buffer();
 
             buffer
         }

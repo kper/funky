@@ -45,7 +45,7 @@ pub trait Solver {
 impl Solver for IfdsSolver {
     fn all_sinks(&mut self, graph: &mut Graph, req: &Request) -> Result<Vec<Taint>> {
         assert!(req.variable.is_some());
-        assert!(req.variable.as_ref().unwrap().starts_with("%"));
+        assert!(req.variable.as_ref().unwrap().starts_with('%'));
 
         let function = &req.function;
 
@@ -62,7 +62,7 @@ impl Solver for IfdsSolver {
             .filter(|x| !x.var_is_taut)
             .map(|x| Taint {
                 function: x.function.clone(),
-                pc: x.next_pc.checked_sub(1).unwrap_or(0),
+                pc: x.next_pc.saturating_sub(1),
                 variable: x.belongs_to_var.clone(),
             })
             .collect();
@@ -72,7 +72,7 @@ impl Solver for IfdsSolver {
 
     fn sinks_var<'a>(&mut self, graph: &'a mut Graph, req: &Request) -> Result<HashSet<&'a str>> {
         assert!(req.variable.is_some());
-        assert!(req.variable.as_ref().unwrap().starts_with("%"));
+        assert!(req.variable.as_ref().unwrap().starts_with('%'));
 
         let function = &req.function;
 
@@ -104,8 +104,7 @@ impl Solver for IfdsSolver {
 
         Ok(all_sinks
             .into_iter()
-            .find(|x| x.function == resp.function && x.pc == resp.pc && &x.variable == var)
-            .is_some())
+            .any(|x| x.function == resp.function && x.pc == resp.pc && &x.variable == var))
     }
 }
 

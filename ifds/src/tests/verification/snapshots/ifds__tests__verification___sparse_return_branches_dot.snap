@@ -42,9 +42,9 @@ expression: output
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $taut$}] (18) at (4, 12) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (20) at (5, 0) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (21) at (5, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (22) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (22) at (5, 10) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (24) at (5, 1) { };
-\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (25) at (5, 7) { };
+\node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (25) at (5, 10) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (26) at (5, 11) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (27) at (5, 12) { };
 \node[circle,fill,inner sep=1pt,label=left:{\scriptsize $\%0$}] (28) at (5, 11) { };

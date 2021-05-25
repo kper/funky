@@ -87,7 +87,7 @@ impl TabulationOriginal {
             &mut worklist,
             Edge::Path {
                 from: init.clone(),
-                to: init.clone(),
+                to: init,
             },
         )?;
 
@@ -265,101 +265,14 @@ impl TabulationOriginal {
             if let Some(n) = n {
                 match n {
                     Instruction::Call(callee, _params, _dest) => {
-                        // handle_call
-
-                        let caller_function = program
-                            .functions
-                            .par_iter()
-                            .find_first(|x| x.name == d1.function)
-                            .unwrap();
-
-                        let callee_function = program
-                            .functions
-                            .iter()
-                            .find(|x| &x.name == callee)
-                            .unwrap();
-
-                        let flow_edges = ctx
-                            .graph
-                            .edges
-                            .par_iter()
-                            .filter(|x| {
-                                x.get_from().function == caller_function.name
-                                    && x.get_from().belongs_to_var == d2.belongs_to_var
-                                    && x.get_from().next_pc == d2.next_pc
-                                    && x.to().function == callee_function.name
-                                    && x.to().next_pc == 0
-                            })
-                            .collect::<Vec<_>>();
-
-                        for f in flow_edges.into_iter() {
-                            let to = f.to();
-                            self.propagate(
-                                &mut ctx.new_graph,
-                                path_edge,
-                                worklist,
-                                Edge::Path {
-                                    from: to.clone(),
-                                    to: to.clone(),
-                                },
-                            )?;
-                        }
-
-                        // call flow
-                        let call_to_return = ctx
-                            .graph
-                            .edges
-                            .par_iter()
-                            .filter(|x| {
-                                x.get_from().function == caller_function.name
-                                    && x.get_from().belongs_to_var == d2.belongs_to_var
-                                    && x.get_from().next_pc == d2.next_pc
-                                    && x.to().function == caller_function.name
-                                    //&& x.to().belongs_to_var == x.get_from().belongs_to_var
-                                    && x.to().next_pc == d2.next_pc + 1
-                            })
-                            .collect::<Vec<_>>();
-
-                        for to in call_to_return.into_iter().map(|x| x.to()) {
-                            assert_eq!(d1.function, to.function);
-
-                            self.propagate(
-                                &mut ctx.new_graph,
-                                path_edge,
-                                worklist,
-                                Edge::Path {
-                                    from: d1.clone(),
-                                    to: to.clone(),
-                                },
-                            )?;
-                        }
-
-                        let ret_edges = summary
-                            .par_iter()
-                            .filter_map(|x| {
-                                if x.get_from().function == caller_function.name
-                                    && x.to().function == caller_function.name
-                                    && x.to().next_pc == d2.next_pc + 1
-                                    && x.get_from().next_pc == d2.next_pc
-                                {
-                                    Some(x.to())
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<Vec<_>>();
-
-                        for to in ret_edges.into_iter() {
-                            assert_eq!(d1.function, to.function);
-
-                            self.propagate(
-                                &mut ctx.new_graph,
-                                path_edge,
-                                worklist,
-                                Edge::Path {
-                                    from: d1.clone(),
-                                    to: to.clone(),
-                                },
+                        self.handle_call(
+                            program, path_edge, worklist, summary, ctx, d1, d2, callee,
+                        )?;
+                    }
+                    Instruction::CallIndirect(callees, _params, _dest) => {
+                        for callee in callees {
+                            self.handle_call(
+                                program, path_edge, worklist, summary, ctx, d1, d2, callee,
                             )?;
                         }
                     }
@@ -368,7 +281,7 @@ impl TabulationOriginal {
                             .functions
                             .par_iter()
                             .find_first(|x| x.name == d2.function)
-                            .unwrap();
+                            .context("Cannot find function")?;
 
                         let flow_edges = {
                             if pc > start_pc || d2.function != req.function {
@@ -531,6 +444,116 @@ impl TabulationOriginal {
         //graph.edges.extend_from_slice(&path_edge);
         //ctx.graph.edges.extend_from_slice(&normal_flows_debug);
         //graph.edges.extend_from_slice(&summary_edge);
+
+        Ok(())
+    }
+
+    fn handle_call(
+        &mut self,
+        program: &Program,
+        path_edge: &mut Vec<Edge>,
+        worklist: &mut VecDeque<Edge>,
+        summary: &mut Vec<Edge>,
+        ctx: &mut Ctx,
+        d1: &Fact,
+        d2: &Fact,
+        callee: &String,
+    ) -> Result<()> {
+        let caller_function = program
+            .functions
+            .par_iter()
+            .find_first(|x| x.name == d1.function)
+            .context("Cannot find function")?;
+
+        let callee_function = program
+            .functions
+            .iter()
+            .find(|x| &x.name == callee)
+            .context("Cannot find function")?;
+
+        let flow_edges = ctx
+            .graph
+            .edges
+            .par_iter()
+            .filter(|x| {
+                x.get_from().function == caller_function.name
+                    && x.get_from().belongs_to_var == d2.belongs_to_var
+                    && x.get_from().next_pc == d2.next_pc
+                    && x.to().function == callee_function.name
+                    && x.to().next_pc == 0
+            })
+            .collect::<Vec<_>>();
+
+        for f in flow_edges.into_iter() {
+            let to = f.to();
+            self.propagate(
+                ctx.new_graph,
+                path_edge,
+                worklist,
+                Edge::Path {
+                    from: to.clone(),
+                    to: to.clone(),
+                },
+            )?;
+        }
+
+        // call flow
+        let call_to_return = ctx
+            .graph
+            .edges
+            .par_iter()
+            .filter(|x| {
+                x.get_from().function == caller_function.name
+                    && x.get_from().belongs_to_var == d2.belongs_to_var
+                    && x.get_from().next_pc == d2.next_pc
+                    && x.to().function == caller_function.name
+                    //&& x.to().belongs_to_var == x.get_from().belongs_to_var
+                    && x.to().next_pc == d2.next_pc + 1
+            })
+            .collect::<Vec<_>>();
+
+        for to in call_to_return.into_iter().map(|x| x.to()) {
+            assert_eq!(d1.function, to.function);
+
+            self.propagate(
+                ctx.new_graph,
+                path_edge,
+                worklist,
+                Edge::Path {
+                    from: d1.clone(),
+                    to: to.clone(),
+                },
+            )?;
+        }
+
+        let ret_edges = summary
+            .par_iter()
+            .filter_map(|x| {
+                if x.get_from().function == caller_function.name
+                    && x.to().function == caller_function.name
+                    && x.to().next_pc == d2.next_pc + 1
+                    && x.get_from().next_pc == d2.next_pc
+                {
+                    Some(x.to())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        for to in ret_edges.into_iter() {
+            assert_eq!(d1.function, to.function);
+
+            self.propagate(
+                ctx.new_graph,
+                path_edge,
+                worklist,
+                Edge::Path {
+                    from: d1.clone(),
+                    to: to.clone(),
+                },
+            )?;
+        }
 
         Ok(())
     }

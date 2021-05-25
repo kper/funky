@@ -34,7 +34,6 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
         let mut nodes = defuse
             .demand_inclusive(ctx, function, variable, pc)?
             .into_iter()
-            .map(|x| x.clone())
             .collect::<Vec<_>>();
 
         // append all left sides to the nodes
@@ -43,7 +42,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             defuse.force_remove_if_outdated(function, dest, pc)?;
             let x = defuse.demand_inclusive(ctx, function, dest, pc)?;
 
-            nodes.extend(x.into_iter().map(|x| x.clone()));
+            nodes.extend(x.into_iter());
 
             Ok(())
         };
@@ -53,11 +52,6 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
             | Instruction::Phi(dest, ..)
             | Instruction::BinOp(dest, ..) => append_lhs(dest)?,
             Instruction::Load(dest, ..) => append_lhs(dest)?,
-            Instruction::Call(_, _, dests) => {
-                for dest in dests {
-                    append_lhs(dest)?;
-                }
-            }
             Instruction::Assign(dest, src) if src == variable => append_lhs(dest)?,
             Instruction::Const(..) => {
                 // kill
@@ -68,7 +62,7 @@ impl SparseNormalFlowFunction for SparseTaintNormalFlowFunction {
                     .add_memory_var(function.name.clone(), *offset as usize);
 
                 let x = defuse.demand_inclusive(ctx, function, &y.name, pc)?;
-                nodes.extend(x.into_iter().map(|x| x.clone()));
+                nodes.extend(x.into_iter());
             }
             _ => {}
         }
@@ -109,7 +103,7 @@ mod test {
 
         let func_name = "main".to_string();
         let function = AstFunction {
-            name: func_name.clone(),
+            name: func_name,
             definitions: vec![
                 "%0".to_string(),
                 "%1".to_string(),
