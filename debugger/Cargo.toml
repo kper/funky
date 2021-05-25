@@ -1,5 +1,5 @@
 [package]
-name = "hustensaft"
+name = "debugger"
 version = "0.1.0"
 authors = ["kper <kevin.per@protonmail.com>"]
 edition = "2018"
