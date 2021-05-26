@@ -27,7 +27,7 @@ Tabulation is the process of calculating the `same-level-realizable-paths`. The 
 
 ## Building
 
-Due to a error in cargo, it is not possible to build the taint checker from the root directory. Please go the folder `idfs` and execute `cargo build` again.
+It is not possible to build the taint checker from the root directory due to an error in cargo. Please go the folder `idfs` and execute `cargo build` again.
 
 ## Usage
 
@@ -71,7 +71,7 @@ cargo run --bin funky -- ./testsuite/block.0.wasm "break-bare"
 ## Run the debugger
 
 ```
-cargo run --bin hustensaft -- ./testsuite/block.0.wasm "break-bare"
+cargo run --bin debugger -- ./testsuite/block.0.wasm "break-bare"
 ```
 
 ## Wait, there is more
