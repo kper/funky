@@ -1,15 +1,24 @@
 import os
 import time
+import json
 
 b = "./target/release/ifds"
 run_times = 1
-timeout = 10 * 60
+timeout = 60 * 60
 
 result = open("benchmark_results.csv", "w")
+result_size = open("benchmark_size1.csv", "w")
+result_meta_sparse = open("meta_sparse.csv", "w")
 
 def report(alg,name, times, mem):
-    #result.write("{},{},{},{}\n".format(alg, name, ",".join([str(i) for i in times])), mem)
     result.write("{},{},{},{}\n".format(alg, name, ",".join([str(i) for i in times]), mem))
+
+def report_size(name, size):
+    result_size.write("{},{}\n".format(name, size))
+
+def report_meta_sparse(name, graph, path, rel_instructions):
+    result_meta_sparse.write("{},{},{},{}\n".format(name, graph, path, rel_instructions))
+
 
 def run(alg, name, fs, func, pc, var, ty):
     print("Running {} ({})".format(name, alg))
@@ -28,34 +37,46 @@ def run(alg, name, fs, func, pc, var, ty):
     #os.system("timeout {} {} {} {} -f {} -p {} -v {} > /dev/null".format(timeout, b, cmd, fs, func, pc, var))
     for _ in range(run_times):
         start = time.time()
-        return_code = os.system("timeout {} /usr/bin/time -o /tmp/mem -f \"%M\" {} {} {} -f {} -p {} -v {} > /dev/null".format(timeout, b, cmd, fs, func, pc, var))
+        return_code = os.system("/usr/bin/time -q -o /tmp/mem -f \"%M\" timeout --preserve-status {} {} {} {} -f {} -p {} -v {} > /dev/null 2> /dev/null".format(timeout, b, cmd, fs, func, pc, var))
         end = time.time()
         delta = end - start
 
         memFile = open("/tmp/mem", "r")
         memUsage = memFile.read()
 
-        print("Mem usage {}".format(memUsage))
+        #print("Mem usage {}".format(memUsage))
         
         if return_code == 0:
             print("Time {}".format(delta))
             times.append(delta)
         else:
-            print("NA")
+            #print("NA")
             times.append("NA")
 
         print("=> Run complete")
 
     report(alg, name, times, memUsage)
 
-wasm = ["rg.wasm", "sqlite.wasm", "wasm3-wasi.wasm", "d3wasm.was", "sha256.wasm"]
+def meta_sparse(name, fs, func, pc, var):
+    cmd = "sparse"
+    return_code = os.system("{} {} {} -f {} -p {} -v {} -m /tmp/meta.out > /dev/null".format(b, cmd, fs, func, pc, var))
+    metaFile = open("/tmp/meta.out", "r")
+    meta = json.load(metaFile)
+    report_meta_sparse(name, meta["estimated_exploded_graph_size"], meta["number_path_edges"], meta["sparse_relevant_instructions"])
 
-wasm = [
-    {
-        "name": "rg.wasm",
-        "function": "641",
-        "pc": 1,
-        "var": "%12"
+def sizes(name, fs):
+    cmd = "meta" 
+    return_code = os.system("{} {} {} > /tmp/size".format(b, cmd, fs))
+
+    sizeFile = open("/tmp/size", "r")
+    size = json.load(sizeFile)
+    report_size(name, size["estimated_exploded_graph_size"])
+
+wasm = [{
+    "name": "rg.wasm",
+    "function": "641",
+    "pc": 1,
+    "var": "%12"
     },
     {
         "name": "sqlite.wasm",
@@ -92,12 +113,34 @@ wasm = [
         "function": "0",
         "pc": 3,
         "var": "%1"
-    }
-]
+    },
+    {
+        "name": "gcd.wasm",
+        "function": "0",
+        "pc": 2,
+        "var": "%4"
+    },
+    {
+        "name": "fac.wasm",
+        "function": "0",
+        "pc": 1,
+        "var": "%1"
+    },
+    {
+        "name": "blocks.wasm",
+        "function": "0",
+        "pc": 6,
+        "var": "%10" 
+    }]
+
+for y in wasm:
+    print(y)
+    sizes(y["name"], "benchmarks/{}".format(y["name"]))
 
 for x in wasm:
     print(x)
     run("sparse", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 2)
+    meta_sparse(x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"])
     run("fast", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], -1)
     run("orig", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 1)
     run("bfs", x["name"], "benchmarks/{}".format(x["name"]), x["function"], x["pc"], x["var"], 0)
@@ -132,3 +175,5 @@ for x in wasm:
 
 
 result.close()
+result_size.close()
+result_meta_sparse.close()
