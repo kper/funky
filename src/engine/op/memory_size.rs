@@ -1,6 +1,6 @@
 use crate::engine::Engine;
 use crate::value::Value::I32;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, Context};
 use crate::PAGE_SIZE;
 use crate::engine::StackContent;
 
@@ -8,10 +8,9 @@ impl Engine {
     pub(crate) fn memory_size(&mut self) -> Result<()> {
         let module = &self.module;
         let addr = module
-            .memaddrs
-            .get(0)
-            .ok_or_else(|| anyhow!("No memory address found"))?;
-        let instance = &self.store.memory[*addr as usize];
+            .lookup_memory_addr(&0)
+            .context("No memory address found")?;
+        let instance = &self.store.memory[addr.get()];
 
         let sz = instance.data.len() / PAGE_SIZE;
 

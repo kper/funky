@@ -5,13 +5,12 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module: ModuleInstance {
-        start: 0,
         code: [],
         fn_types: [],
-        funcaddrs: [],
-        tableaddrs: [],
-        memaddrs: [],
-        globaladdrs: [
+        func_addrs: [],
+        table_addrs: [],
+        mem_addrs: [],
+        global_addrs: [
             GlobalAddr(
                 0,
             ),

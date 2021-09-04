@@ -1,38 +1,37 @@
 use crate::engine::Engine;
 use crate::fetch_unop;
 use crate::value::Value::I32;
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Result, bail};
 use wasm_parser::core::FuncAddr;
 
 impl Engine {
-    pub(crate) fn call_indirect_function(&mut self, function_addr: &FuncAddr) -> Result<()> {
+    pub(crate) fn call_indirect_function(&mut self, function_addr: FuncAddr) -> Result<()> {
         debug!("OP_CALL_INDIRECT {:?}", function_addr);
 
         debug!("before ta");
         let ta = self
             .module
-            .tableaddrs
-            .get(0)
-            .context("Cannot find first table addr")?;
+            .lookup_table_addr(&0)
+            .ok_or_else(|| anyhow!("Cannot find first table addr"))?;
 
         debug!("before tab");
 
         let tab = &self
             .store
             .tables
-            .get(*ta as usize)
-            .with_context(|| format!("Cannot access {:?}", ta))?;
+            .get(ta.get())
+            .with_context(|| anyhow!("Cannot access {:?}", ta))?;
 
         debug!("before i");
 
         let i = match fetch_unop!(self.store.stack) {
             I32(x) => x,
-            x => return Err(anyhow!("invalid index type: {:?}", x)),
+            x => bail!("invalid index type: {:?}", x),
         };
         if (i as usize) >= tab.elem.len() {
-            return Err(anyhow!(
+            bail!(
                 "Attempt to perform indirect call to index larger than the table"
-            ));
+            );
         }
 
         debug!("after i");
@@ -65,7 +64,7 @@ impl Engine {
 
         debug!("=> Invoking {:?} with {:?}", indirected_func_addr, args);
 
-        self.invoke_function(&indirected_func_addr, args.to_vec())?;
+        self.invoke_function(indirected_func_addr, args.to_vec())?;
 
         Ok(())
     }

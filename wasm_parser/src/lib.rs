@@ -549,7 +549,7 @@ fn take_blocktype(i: &[u8]) -> IResult<&[u8], BlockType> {
             // Weird, Page 96 spec
             let (i, k) = take_leb_i33(i)?;
 
-            (i, BlockType::FuncTy(k))
+            (i, BlockType::FuncTy(k as u32))
         }
     };
 

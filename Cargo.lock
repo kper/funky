@@ -92,23 +92,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "debugger"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "docopt",
- "env_logger",
- "funky",
- "log",
- "serde",
- "serde_json",
- "termion",
- "tui",
- "validation",
- "wasm-parser",
-]
-
-[[package]]
 name = "docopt"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

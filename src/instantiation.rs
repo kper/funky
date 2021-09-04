@@ -88,13 +88,12 @@ fn instantiate_elements(
             let borrow = &mod_instance;
 
             let table_addr = borrow
-                .tableaddrs
-                .get(table_index as usize)
+                .lookup_table_addr(&(table_index as u32))
                 .ok_or_else(|| anyhow!("Table index {} does not exists", table_index))?;
 
             let table_inst = store
                 .tables
-                .get_mut(*table_addr as usize)
+                .get_mut(table_addr.get())
                 .ok_or_else(|| anyhow!("Table addr {:?} does not exists", table_addr))?;
 
             let eend = table_index + e.init.len() as i32;
@@ -111,8 +110,7 @@ fn instantiate_elements(
                 debug!("Updating function's addr in table");
 
                 let funcaddr = borrow
-                    .funcaddrs
-                    .get(*funcindex as usize)
+                    .lookup_function_addr(funcindex)
                     .ok_or_else(|| anyhow!("No function with funcindex"))?;
 
                 debug!("=> Updating for function {:?}", funcaddr);
@@ -149,15 +147,14 @@ fn instantiate_data(m: &Module, mod_instance: &ModuleInstance, store: &mut Store
             //mem_idx = do_i
             let borrow = &mod_instance;
             let mem_addr = borrow
-                .memaddrs
-                .get(0)
+                .lookup_memory_addr(&0)
                 .ok_or_else(|| anyhow!("Memory index does not exists"))?;
 
-            debug!("Memory addr is {}", mem_addr);
+            debug!("Memory addr is {:?}", mem_addr);
 
             let mem_inst = store
                 .memory
-                .get_mut(*mem_addr as usize)
+                .get_mut(mem_addr.get())
                 .ok_or_else(|| anyhow!("Memory addr does not exists"))?;
 
             let dend = mem_idx + data.init.len() as i32;
@@ -190,8 +187,7 @@ fn instantiate_start(
 
         let borrow = &mod_instance;
         let func_addr = borrow
-            .funcaddrs
-            .get(start_section.index as usize)
+            .lookup_function_addr(&start_section.index)
             .ok_or_else(|| anyhow!("Start function addr was not found"))?;
 
         // Check if the functions really exists

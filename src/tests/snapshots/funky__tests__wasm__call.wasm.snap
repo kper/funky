@@ -5,7 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module: ModuleInstance {
-        start: 0,
         code: [
             FunctionBody {
                 locals: [],
@@ -48,7 +47,7 @@ Engine {
                 ],
             },
         ],
-        funcaddrs: [
+        func_addrs: [
             FuncAddr(
                 0,
             ),
@@ -56,9 +55,9 @@ Engine {
                 1,
             ),
         ],
-        tableaddrs: [],
-        memaddrs: [],
-        globaladdrs: [],
+        table_addrs: [],
+        mem_addrs: [],
+        global_addrs: [],
         exports: [
             ExportInstance {
                 name: "getAnswerPlus1",

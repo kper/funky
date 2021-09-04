@@ -35,7 +35,8 @@ pub use wasm_parser::Module;
 
 #[derive(Debug)]
 pub struct Engine {
-    pub module: ModuleInstance, //TODO rename to `module_instance`
+    pub module: ModuleInstance,
+    //TODO rename to `module_instance`
     pub started: bool,
     pub store: Store,
     debugger: Box<dyn ProgramCounter>,
@@ -50,16 +51,7 @@ pub enum InstructionOutcome {
 
 #[allow(dead_code)]
 pub(crate) fn empty_engine() -> Engine {
-    let mi = ModuleInstance {
-        start: 0,
-        code: Vec::new(),
-        fn_types: Vec::new(),
-        funcaddrs: Vec::new(),
-        tableaddrs: Vec::new(),
-        memaddrs: Vec::new(),
-        globaladdrs: Vec::new(),
-        exports: Vec::new(),
-    };
+    let mi = ModuleInstance::default();
 
     Engine {
         started: true,
@@ -71,7 +63,8 @@ pub(crate) fn empty_engine() -> Engine {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
-    pub mutable: bool, //Actually, there is a `Mut` enum. TODO check if makes sense to use it
+    pub mutable: bool,
+    //Actually, there is a `Mut` enum. TODO check if makes sense to use it
     pub val: Value,
 }
 
@@ -118,9 +111,10 @@ macro_rules! load_memory {
 
             let module = &$self.module;
 
-            let addr = module.memaddrs.get(0).expect("No memory address found");
+            let addr = module.lookup_memory_addr(&0)
+                .context("No memory address found")?;
 
-            let instance = &$self.store.memory[*addr as usize];
+            let instance = &$self.store.memory[addr.get()];
 
             debug!("instance {:?}", instance);
             debug!("Range {:?}", ea..ea + $size);
@@ -154,13 +148,13 @@ macro_rules! load_memorySX {
 
             let module = &$self.module;
 
-            let addr = module.memaddrs.get(0).context("No memory address found")?;
+            let addr = module.lookup_memory_addr(&0).context("No memory address found")?;
 
             let instance = &$self
                 .store
                 .memory
-                .get(*addr as usize)
-                .with_context(|| format!("Cannot access memory addr {}", addr))?;
+                .get(addr.get())
+                .with_context(|| format!("Cannot access memory addr {:?}", addr))?;
 
             debug!("instance {:?}", instance);
             debug!("Range {:?}", ea..ea + $size);
@@ -216,9 +210,9 @@ macro_rules! store_memory {
 
                 let module = &$self.module;
 
-                let addr = module.memaddrs.get(0).expect("No memory address found");
+                let addr = module.lookup_memory_addr(&0).context("No memory address found")?;
 
-                let instance = &mut $self.store.memory[*addr as usize];
+                let instance = &mut $self.store.memory[addr.get()];
 
                 let mut bytes = t.to_le_bytes();
 
@@ -243,9 +237,9 @@ macro_rules! store_memoryN {
 
                 let module = &$self.module;
 
-                let addr = module.memaddrs.get(0).expect("No memory address found");
+                let addr = module.lookup_memory_addr(&0).context("No memory address found")?;
 
-                let instance = &mut $self.store.memory[*addr as usize];
+                let instance = &mut $self.store.memory[addr.get()];
 
                 if instance.data.len() < ea + ($N / 8) {
                     panic!("Offset is corrupt");
@@ -289,11 +283,12 @@ impl Engine {
         let res = self
             .store
             .init_memory(n)
-            .context("Trying to initializean empty memory instance");
+            .context("Trying to initialize an empty memory instance");
 
         // only one memory module is allowed
-        assert!(self.module.memaddrs.is_empty());
-        self.module.memaddrs.push(self.module.memaddrs.len() as u32);
+        assert!(self.module.get_mem_addrs().is_empty());
+        let addr = MemoryAddr::new(self.module.get_mem_addrs().len());
+        self.module.store_memory_addr(addr)?;
 
         res
     }
@@ -313,7 +308,7 @@ impl Engine {
 
         if let Some(func_addr) = start_function {
             debug!("Invoking start function with {:?}", func_addr);
-            self.invoke_function(&func_addr, vec![])
+            self.invoke_function(func_addr, vec![])
                 .context("Invoking function failed")?;
         }
 
@@ -324,23 +319,16 @@ impl Engine {
     pub fn get(&mut self, name: &str) -> Result<Value> {
         debug!("get global for {:?}", name);
 
-        let module = &self.module.exports;
-
-        let filtered: Vec<_> = module.iter().filter(|x| x.name == name).take(1).collect();
-
-        let export_instance = filtered
-            .get(0)
-            .context("Exported function not found or found something else")?;
-
-        debug!("Exports {:#?}", export_instance);
+        let export_instance = self.module.get_export_instance_by_name(name)
+            .ok_or_else(|| anyhow!("Export instance was not found by name: {}", name))?;
+        debug!("Export {:#?}", export_instance);
 
         match export_instance.value {
             ExternalKindType::Global { ty } => {
-                let global_addr = self
-                    .module
-                    .globaladdrs
-                    .get(ty as usize)
-                    .ok_or_else(|| anyhow!("Global not found"))?;
+                // The external type of the export is a global.
+
+                let global_addr = self.module.lookup_global_addr(&ty)
+                    .context("Global not found")?;
 
                 Ok(self
                     .store
@@ -354,20 +342,23 @@ impl Engine {
 
     /// Adding new function to the engine
     /// It will allocate the function in store and add it to the module's code.
-    pub(crate) fn add_function(&mut self, signature: FunctionSignature, body: FunctionBody) {
-        self.module.code.push(body.clone());
+    pub(crate) fn add_function(&mut self, signature: FunctionSignature, body: FunctionBody) -> Result<()> {
+        self.module.add_code(body.clone())?;
         self.store.allocate_func_instance(signature, body);
+
+        Ok(())
     }
 
+    /*
     /// Get function's address by index.
     pub fn get_function_addr_by_index(&self, ty: u32) -> Result<FuncAddr> {
         Ok(self
             .module
-            .funcaddrs
+            .func_addrs
             .get(ty as usize)
             .ok_or_else(|| anyhow!("Function not found"))?
             .clone())
-    }
+    }*/
 
     /// Get function's instance by addr
     pub fn get_function_instance(&self, addr: &FuncAddr) -> Result<&FuncInstance> {
@@ -381,12 +372,11 @@ impl Engine {
         let k = {
             let x = &self.module;
 
-            debug!("the export instance is {:?}", x.exports.get(idx as usize));
+            debug!("the export instance is {:?}", x.get_export_instance(idx as usize));
 
             let w = x
-                .exports
-                .get(idx as usize)
-                .context("Exported function not found or found something else")?;
+                .get_export_instance(idx as usize)
+                .ok_or_else(|| anyhow!("Exported function not found or found something else"))?;
 
             w.value
         };
@@ -395,9 +385,11 @@ impl Engine {
 
         match k {
             ExternalKindType::Function { ty } => {
-                let func_addr = self.get_function_addr_by_index(ty)?;
+                let func_addr = self.module.lookup_function_addr(&ty)
+                    .ok_or_else(|| anyhow!("Cannot find function's addr"))?
+                    .clone();
 
-                self.invoke_function(&func_addr, args)
+                self.invoke_function(func_addr, args)
                     .context("Invoking the function failed")?;
             }
             _ => {
@@ -413,15 +405,14 @@ impl Engine {
             "Invoking exporting function by name {} with args {:?}",
             name, args
         );
+
         let idx = self
             .module
-            .exports
-            .iter()
-            .position(|e| e.name == name)
-            .context("Cannot find function in exports")?;
+            .position_export_instance_by_name(name)
+            .ok_or_else(|| anyhow!("Cannot find export instance by name: {}", name))?;
 
         debug!("=> Export instance found");
-        debug!("The function addr is {}", idx);
+        debug!("The function addr is {:?}", idx);
 
         self.invoke_exported_function(idx as u32, args)
             .context("Invoking the exported function failed")?;
@@ -429,14 +420,14 @@ impl Engine {
         Ok(())
     }
 
-    pub(crate) fn invoke_function(&mut self, func_addr: &FuncAddr, args: Vec<Value>) -> Result<()> {
-        self.check_parameters_of_function(func_addr, &args)
+    pub(crate) fn invoke_function(&mut self, func_addr: FuncAddr, args: Vec<Value>) -> Result<()> {
+        self.check_parameters_of_function(&func_addr, &args)
             .with_context(|| format!("Checking parameter for function {:?} failed", func_addr))?;
 
         let count_return_types =
-            self.get_function_instance(func_addr)?.ty.return_types.len() as u32;
+            self.get_function_instance(&func_addr)?.ty.return_types.len() as u32;
 
-        let typed_locals = &self.store.get_func_instance(func_addr)?.code.locals;
+        let typed_locals = &self.store.get_func_instance(&func_addr)?.code.locals;
 
         debug!("defined locals are {:#?}", typed_locals);
 
@@ -606,7 +597,7 @@ impl Engine {
     fn run_instructions<'a>(
         &mut self,
         fr: &mut Frame,
-        instruction_wrapper: &'a mut impl std::iter::Iterator<Item = &'a InstructionWrapper>,
+        instruction_wrapper: &'a mut impl std::iter::Iterator<Item=&'a InstructionWrapper>,
     ) -> Result<InstructionOutcome> {
         //let mut ip = 0;
         for wrapped_instruction in instruction_wrapper {
@@ -1370,20 +1361,24 @@ impl Engine {
                     }
                 }
                 OP_CALL(function_module_addr) => {
-                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
-                    self.call_function(&func_addr).with_context(|| {
+                    let func_addr = self.module.lookup_function_addr(function_module_addr)
+                        .ok_or_else(|| anyhow!("Cannot find function's addr"))?.clone();
+                    let func_addr_inner = func_addr.get();
+                    self.call_function(func_addr).with_context(|| {
                         format!(
                             "OP_CALL for function {:?} and module addr ({}) failed",
-                            func_addr, function_module_addr
+                            func_addr_inner, function_module_addr
                         )
                     })?;
                 }
                 OP_CALL_INDIRECT(function_module_addr) => {
-                    let func_addr = self.module.lookup_function_addr(*function_module_addr)?;
-                    self.call_indirect_function(&func_addr).with_context(|| {
+                    let func_addr = self.module.lookup_function_addr(function_module_addr)
+                        .ok_or_else(|| anyhow!("Cannot find function's addr"))?.clone();
+                    let func_addr_inner = func_addr.get();
+                    self.call_indirect_function(func_addr).with_context(|| {
                         format!(
                             "OP_CALL_INDIRECT for function {:?} failed and module addr ({}) failed",
-                            func_addr, function_module_addr
+                            func_addr_inner, function_module_addr
                         )
                     })?;
                 }

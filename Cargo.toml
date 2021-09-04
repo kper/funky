@@ -9,7 +9,7 @@ members = [
 	"wasm_parser",
 	"validation",
 	"testrunner2",
-	"debugger",
+	#"debugger",
 	"custom_display"
 ]
 exclude = [
@@ -27,9 +27,9 @@ name = "funky"
 path = "testrunner2/src/main.rs"
 name = "testrunner2"
 
-[[bin]]
-path = "debugger/src/main.rs"
-name = "debugger"
+#[[bin]]
+#path = "debugger/src/main.rs"
+#name = "debugger"
 
 [[bin]]
 path = "wasm_parser/src/main.rs"

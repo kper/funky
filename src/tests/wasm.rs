@@ -135,12 +135,12 @@ fn test_allocation_funcs() {
     // Module instance has an entry for funcaddrs
 
     let mi = &engine.module;
-    assert_eq!(1, mi.fn_types.len());
-    assert_eq!(sig, mi.fn_types[0]);
-    assert_eq!(1, mi.code.len());
-    assert_eq!(body, mi.code[0]);
-    assert_eq!(1, mi.funcaddrs.len());
-    assert_eq!(0, mi.funcaddrs.get(0).unwrap().get());
+    assert_eq!(1, mi.get_fn_types().len());
+    assert_eq!(sig, mi.get_fn_types()[0]);
+    assert_eq!(1, mi.get_code().len());
+    assert_eq!(body, mi.get_code()[0]);
+    assert_eq!(1, mi.get_func_addrs().len());
+    assert_eq!(0, mi.get_func_addrs().get(0).unwrap().get());
 
     // Store has an entry for func instance
 
@@ -161,8 +161,8 @@ fn test_allocation_tables_zero() {
     // Module instance has an entry in tableaddrs with 0
     // Store has a table instance
 
-    assert_eq!(1, engine.module.tableaddrs.len());
-    assert_eq!(Some(&0), engine.module.tableaddrs.get(0));
+    assert_eq!(1, engine.module.get_table_addrs().len());
+    assert_eq!(0, engine.module.get_table_addrs().get(0).unwrap().get());
 
     assert_eq!(1, engine.store.tables.len());
     assert_eq!(10, engine.store.tables[0].elem.len());
@@ -182,8 +182,8 @@ fn test_allocation_tables_one() {
     // Module instance has an entry in tableaddrs with 0
     // Store has a table instance
 
-    assert_eq!(1, engine.module.tableaddrs.len());
-    assert_eq!(Some(&0), engine.module.tableaddrs.get(0));
+    assert_eq!(1, engine.module.get_table_addrs().len());
+    assert_eq!(0, engine.module.get_table_addrs().get(0).unwrap().get());
 
     assert_eq!(1, engine.store.tables.len());
     assert_eq!(10, engine.store.tables[0].elem.len());
@@ -202,8 +202,8 @@ fn test_allocation_memories_zero() {
     // Module instance has an entry in memaddrs with 0
     // Store has a memory instance
 
-    assert_eq!(1, engine.module.memaddrs.len());
-    assert_eq!(Some(&0), engine.module.memaddrs.get(0));
+    assert_eq!(1, engine.module.get_mem_addrs().len());
+    assert_eq!(0, engine.module.get_mem_addrs().get(0).unwrap().get());
 
     assert_eq!(1, engine.store.memory.len());
     assert_eq!(10 * 1024 * 64, engine.store.memory[0].data.len());
@@ -219,11 +219,11 @@ fn test_allocation_memories_one() {
         }]
     })]);
 
-    // Module instance has an entry in memaddrs with 0
+    // Module instance has an entry in mem_addrs with 0
     // Store has a memory instance
 
-    assert_eq!(1, engine.module.memaddrs.len());
-    assert_eq!(Some(&0), engine.module.memaddrs.get(0));
+    assert_eq!(1, engine.module.get_mem_addrs().len());
+    assert_eq!(0, engine.module.get_mem_addrs().get(0).unwrap().get());
 
     assert_eq!(1, engine.store.memory.len());
     assert_eq!(10 * 1024 * 64, engine.store.memory[0].data.len());
@@ -246,14 +246,14 @@ fn test_allocation_globals() {
     // Module instance has an entry in globaladdrs with 0
     // Store has a global instance
 
-    assert_eq!(1, engine.module.globaladdrs.len());
-    assert_eq!(Some(&GlobalAddr::new(0)), engine.module.globaladdrs.get(0));
+    assert_eq!(1, engine.module.get_global_addrs().len());
+    assert_eq!(Some(&GlobalAddr::new(0)), engine.module.get_global_addrs().get(0));
 
     assert_eq!(1, engine.store.globals.len());
     assert_eq!(
         Variable {
             mutable: false,
-            val: Value::I32(10)
+            val: Value::I32(10),
         },
         engine.store.globals[0]
     );
@@ -277,13 +277,13 @@ fn test_allocation_exports() {
 
     // Module instance has an entry for exporsts
 
-    assert_eq!(1, engine.module.exports.len());
+    assert_eq!(1, engine.module.get_exports().len());
     assert_eq!(
         ExportInstance {
             name: "memory".to_string(),
-            value: ExternalKindType::Memory { ty: 0 }
+            value: ExternalKindType::Memory { ty: 0 },
         },
-        engine.module.exports[0]
+        engine.module.get_exports()[0]
     );
 }
 

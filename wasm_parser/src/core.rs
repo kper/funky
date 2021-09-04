@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 pub type FuncIdx = u32;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FuncAddr(usize);
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TableAddr(usize);
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MemoryAddr(usize);
+
 pub type TableIdx = u32;
 pub type MemoryIdx = u32;
 pub type GlobalIdx = u32;
@@ -17,8 +22,8 @@ pub type LocalIdx = u32;
 macro_rules! implAddr {
     ($name:ident) => {
         impl $name {
-            pub fn new(value: u32) -> Self {
-                Self(value as usize)
+            pub fn new(value: usize) -> Self {
+                Self(value)
             }
 
             pub fn get(&self) -> usize {
@@ -29,6 +34,8 @@ macro_rules! implAddr {
 }
 
 implAddr!(FuncAddr);
+implAddr!(TableAddr);
+implAddr!(MemoryAddr);
 implAddr!(GlobalAddr);
 
 pub type Expr = Vec<InstructionWrapper>;
@@ -66,7 +73,7 @@ pub enum BlockType {
     ValueType(ValueType),
     /// The signature of the block
     /// is defined as function definition
-    FuncTy(i64), // this is actually a FuncIdx, but it is required to have s33
+    FuncTy(u32), // this is actually a FuncIdx, but it is required to have s33
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -86,10 +93,10 @@ pub enum ImportDesc {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Copy)]
 pub enum ExternalKindType {
-    Function { ty: u32 },
-    Table { ty: u32 },
-    Memory { ty: u32 },
-    Global { ty: u32 },
+    Function { ty: FuncIdx },
+    Table { ty: TableIdx },
+    Memory { ty: MemoryIdx },
+    Global { ty: GlobalIdx },
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -396,8 +403,8 @@ pub enum Instruction {
     OP_LOCAL_GET(LocalIdx),
     OP_LOCAL_SET(LocalIdx),
     OP_LOCAL_TEE(LocalIdx),
-    OP_GLOBAL_GET(LocalIdx),
-    OP_GLOBAL_SET(LocalIdx),
+    OP_GLOBAL_GET(GlobalIdx),
+    OP_GLOBAL_SET(GlobalIdx),
 
     // Mem
     OP_I32_LOAD(MemArg),

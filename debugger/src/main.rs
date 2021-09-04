@@ -81,7 +81,8 @@ fn main() -> Result<()> {
 
     let args_function_cpy = args.arg_function;
 
-    let copy = e.lock().unwrap().module.code.clone();
+    let lock = e.lock().unwrap();
+    let copy = lock.module.get_code().clone();
 
     let engine = e;
 
@@ -117,7 +118,7 @@ fn main() -> Result<()> {
 
     let mut state = None;
 
-    let functions: Vec<_> = copy.into_iter().map(|w| w.code).flatten().collect();
+    let functions: Vec<_> = copy.into_iter().map(|w| w.code.clone()).flatten().collect();
     let instructions = get_instructions(&functions); //expands the blocks
 
     let mut stateful = StatefulList::with_items(instructions);

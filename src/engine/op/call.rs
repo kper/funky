@@ -5,12 +5,12 @@ use anyhow::{bail, Context, Result};
 use wasm_parser::core::FuncAddr;
 
 impl Engine {
-    pub(crate) fn call_function(&mut self, func_addr: &FuncAddr) -> Result<()> {
+    pub(crate) fn call_function(&mut self, func_addr: FuncAddr) -> Result<()> {
         debug!("OP_CALL {:?}", func_addr);
 
         let param_count = &self
             .store
-            .get_func_instance(func_addr)?
+            .get_func_instance(&func_addr)?
             .ty
             .param_types
             .len();
@@ -28,8 +28,9 @@ impl Engine {
         //debug!("=> Resetting stack");
         //let mut stack: Vec<_> = self.store.stack.drain(0..).collect();
 
+        let func_addr_inner = func_addr.get();
         self.invoke_function(func_addr, args)
-            .with_context(|| format!("Invoking function {:?} failed", func_addr))?;
+            .with_context(|| format!("Invoking function {:?} failed", func_addr_inner))?;
 
         //debug!("=> Restoring stack");
         // Insert `stack` before the values of `self.store.stack`

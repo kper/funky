@@ -68,15 +68,9 @@ SUBCOMMANDS:
 cargo run --bin funky -- ./testsuite/block.0.wasm "break-bare"
 ```
 
-## Run the debugger
-
-```
-cargo run --bin debugger -- ./testsuite/block.0.wasm "break-bare"
-```
-
 ## Wait, there is more
 
-You will find a custom debugger in `debugger` and the taint analysis in the `ifds` folder.
+You will find a taint analysis in the `ifds` folder.
 
 ## Current spec coverage
 

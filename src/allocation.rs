@@ -32,7 +32,7 @@ pub fn allocate(
         .context("Allocating table instances failed")?;
 
     // Step 4a and 8
-    allocate_memories(m, mod_instance, store);
+    allocate_memories(m, mod_instance, store)?;
 
     // Step 5a and 9
     allocate_globals(m, mod_instance, store, &imports)
@@ -42,7 +42,7 @@ pub fn allocate(
 
     // Step 14.
 
-    allocate_exports(m, mod_instance, store);
+    allocate_exports(m, mod_instance, store)?;
 
     // Step 15.
 
@@ -105,7 +105,7 @@ fn allocate_functions(
         // Allocate function
 
         let borrow = &mod_instance;
-        let fn_sig = match borrow.fn_types.get(*t as usize) {
+        let fn_sig = match borrow.lookup_func_types(t) {
             Some(sig) => sig,
             None => {
                 return Err(anyhow!("{} function type is not defined", t));
@@ -118,7 +118,7 @@ fn allocate_functions(
             if code_index < 0 {
                 None
             } else {
-                borrow.code.get(code_index as usize)
+                borrow.lookup_code(code_index as usize)
             }
         };
 
@@ -171,15 +171,9 @@ fn allocate_functions(
 
         store.allocate_func_instance(fn_sig.clone(), fcode);
 
-        mod_instance
-            .funcaddrs
-            .push(FuncAddr::new(store.count_functions() as u32 - 1));
+        let addr = FuncAddr::new(store.count_functions() - 1);
+        mod_instance.store_func_addr(addr)?;
     }
-
-    /*
-    for func in imports {
-       mod_instance.funcaddrs.push(FuncAddr::new(*func));
-    }*/
 
     Ok(())
 }
@@ -204,7 +198,8 @@ fn allocate_tables(
             Limits::One(n, m) => TableInstance::new(n, Some(m)),
         };
 
-        mod_instance.tableaddrs.push(store.tables.len() as u32);
+        let addr = TableAddr::new(store.tables.len());
+        mod_instance.store_table_addr(addr)?;
         store.tables.push(instance);
     }
 
@@ -213,25 +208,25 @@ fn allocate_tables(
             let instance = import_resolver.resolve_table(&entry.module_name, &entry.name)?;
             debug!("table {:#?}", instance);
 
-            mod_instance.tableaddrs.push(store.tables.len() as u32);
+            let addr = TableAddr::new(store.tables.len());
+            mod_instance.store_table_addr(addr)?;
             store.tables.push(instance.clone());
         }
     }
 
-    debug!("Tables in mod_i {:?}", mod_instance.tableaddrs);
     debug!("Tables in store {:#?}", store.tables);
 
     Ok(())
 }
 
-fn allocate_memories(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) {
+fn allocate_memories(m: &Module, mod_instance: &mut ModuleInstance, store: &mut Store) -> Result<()> {
     debug!("allocate memories");
     // Gets all memories and imports
     let ty = validation::extract::get_mems(&m);
 
-    for memtype in ty.iter() {
-        debug!("memtype {:#?}", memtype);
-        let instance = match memtype.limits {
+    for mem_type in ty.iter() {
+        debug!("mem_type {:#?}", mem_type);
+        let instance = match mem_type.limits {
             Limits::Zero(n) => MemoryInstance {
                 data: vec![0u8; (n * 1024 * 64) as usize],
                 max: None,
@@ -242,12 +237,13 @@ fn allocate_memories(m: &Module, mod_instance: &mut ModuleInstance, store: &mut 
             },
         };
 
-        mod_instance.memaddrs.push(store.memory.len() as u32);
+        let addr = MemoryAddr::new(store.memory.len());
+        mod_instance.store_memory_addr(addr)?;
         store.memory.push(instance);
     }
 
-    debug!("Memories in mod_i {:?}", mod_instance.memaddrs);
     debug!("Memories in store {:#?}", store.memory);
+    Ok(())
 }
 
 fn allocate_globals(
@@ -274,30 +270,27 @@ fn allocate_globals(
             val: get_expr_const_ty_global(&gl.init, &mod_instance, store)?,
         };
 
-        mod_instance
-            .globaladdrs
-            .push(GlobalAddr::new(store.globals.len() as u32));
+        let addr = GlobalAddr::new(store.globals.len());
+        mod_instance.store_global_addr(addr)?;
         store.globals.push(instance);
     }
 
     for gl in imported_globals.iter() {
         debug!("global {:#?}", gl);
 
-        mod_instance
-            .globaladdrs
-            .push(GlobalAddr::new(store.globals.len() as u32));
+        let addr = GlobalAddr::new(store.globals.len());
+        mod_instance.store_global_addr(addr)?;
         store
             .globals
             .push(imports.resolve_global(&gl.module_name, &gl.name)?);
     }
 
-    debug!("Globals in mod_i {:?}", mod_instance.globaladdrs);
     debug!("Globals in store {:#?}", store.globals);
 
     Ok(())
 }
 
-fn allocate_exports(m: &Module, mod_instance: &mut ModuleInstance, _store: &mut Store) {
+fn allocate_exports(m: &Module, mod_instance: &mut ModuleInstance, _store: &mut Store) -> Result<()> {
     debug!("allocate exports");
 
     // Gets all exports
@@ -306,10 +299,10 @@ fn allocate_exports(m: &Module, mod_instance: &mut ModuleInstance, _store: &mut 
     for export in ty.into_iter() {
         debug!("Export {:?}", export);
 
-        mod_instance.exports.push(export.into());
+        mod_instance.store_export(export.into())?;
     }
 
-    debug!("Exports in mod_i {:?}", mod_instance.exports);
+    Ok(())
 }
 
 pub(crate) fn get_expr_const_ty_global(
@@ -334,10 +327,8 @@ pub(crate) fn get_expr_const_ty_global(
         OP_F32_CONST(v) => Ok(Value::F32(*v)),
         OP_F64_CONST(v) => Ok(Value::F64(*v)),
         OP_GLOBAL_GET(idx) => {
-            let addr = mod_instance
-                .globaladdrs
-                .get(*idx as usize)
-                .ok_or_else(|| anyhow!("Cannot find global addr by index"))?;
+            let addr = mod_instance.lookup_global_addr(idx)
+                .context("Cannot find global addr by index")?;
             let global_instance = store.get_global_instance(addr)?;
 
             Ok(global_instance.val)

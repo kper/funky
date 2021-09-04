@@ -5,7 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module: ModuleInstance {
-        start: 0,
         code: [
             FunctionBody {
                 locals: [],
@@ -96,7 +95,7 @@ Engine {
                 ],
             },
         ],
-        funcaddrs: [
+        func_addrs: [
             FuncAddr(
                 0,
             ),
@@ -104,11 +103,13 @@ Engine {
                 1,
             ),
         ],
-        tableaddrs: [
-            0,
+        table_addrs: [
+            TableAddr(
+                0,
+            ),
         ],
-        memaddrs: [],
-        globaladdrs: [],
+        mem_addrs: [],
+        global_addrs: [],
         exports: [
             ExportInstance {
                 name: "as-call_indirect-mid",
