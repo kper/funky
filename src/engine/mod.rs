@@ -139,7 +139,7 @@ macro_rules! load_memory {
     };
 }
 
-macro_rules! load_memorySX {
+macro_rules! load_memory_sx {
     ($self:expr, $arg:expr, $size:expr, $ty:ty, $variant:expr, $cast_ty:ty) => {
         let v1 = fetch_unop!($self.store.stack);
 
@@ -226,7 +226,7 @@ macro_rules! store_memory {
     };
 }
 
-macro_rules! store_memoryN {
+macro_rules! store_memory_n {
     ($self:expr, $arg:expr, $size:expr, $ty:ty, $variant:ident, $new_ty:ty, $N:expr) => {
         let k = fetch_unop!($self.store.stack);
         let v1 = fetch_unop!($self.store.stack);
@@ -1085,16 +1085,16 @@ impl Engine {
                     self.select()?;
                 }
                 OP_I32_LOAD_8_u(arg) => {
-                    load_memorySX!(self, arg, 4, i32, I32, u8);
+                    load_memory_sx!(self, arg, 4, i32, I32, u8);
                 }
                 OP_I32_LOAD_16_u(arg) => {
-                    load_memorySX!(self, arg, 4, i32, I32, u16);
+                    load_memory_sx!(self, arg, 4, i32, I32, u16);
                 }
                 OP_I32_LOAD_8_s(arg) => {
-                    load_memorySX!(self, arg, 4, i32, I32, i8);
+                    load_memory_sx!(self, arg, 4, i32, I32, i8);
                 }
                 OP_I32_LOAD_16_s(arg) => {
-                    load_memorySX!(self, arg, 4, i32, I32, i16);
+                    load_memory_sx!(self, arg, 4, i32, I32, i16);
                 }
                 OP_I32_LOAD(arg) => {
                     load_memory!(self, arg, 4, i32, I32);
@@ -1103,22 +1103,22 @@ impl Engine {
                     load_memory!(self, arg, 8, i64, I64);
                 }
                 OP_I64_LOAD_8_u(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, u8);
+                    load_memory_sx!(self, arg, 8, i64, I64, u8);
                 }
                 OP_I64_LOAD_16_u(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, u16);
+                    load_memory_sx!(self, arg, 8, i64, I64, u16);
                 }
                 OP_I64_LOAD_32_u(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, u32);
+                    load_memory_sx!(self, arg, 8, i64, I64, u32);
                 }
                 OP_I64_LOAD_8_s(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, i8);
+                    load_memory_sx!(self, arg, 8, i64, I64, i8);
                 }
                 OP_I64_LOAD_16_s(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, i16);
+                    load_memory_sx!(self, arg, 8, i64, I64, i16);
                 }
                 OP_I64_LOAD_32_s(arg) => {
-                    load_memorySX!(self, arg, 8, i64, I64, i32);
+                    load_memory_sx!(self, arg, 8, i64, I64, i32);
                 }
                 OP_F32_LOAD(arg) => {
                     load_memory!(self, arg, 4, f32, F32);
@@ -1139,19 +1139,19 @@ impl Engine {
                     store_memory!(self, arg, 8, f64, F64);
                 }
                 OP_I32_STORE_8(arg) => {
-                    store_memoryN!(self, arg, 1, i32, I32, i8, 8);
+                    store_memory_n!(self, arg, 1, i32, I32, i8, 8);
                 }
                 OP_I32_STORE_16(arg) => {
-                    store_memoryN!(self, arg, 2, i32, I32, i16, 16);
+                    store_memory_n!(self, arg, 2, i32, I32, i16, 16);
                 }
                 OP_I64_STORE_8(arg) => {
-                    store_memoryN!(self, arg, 1, i64, I64, i8, 8);
+                    store_memory_n!(self, arg, 1, i64, I64, i8, 8);
                 }
                 OP_I64_STORE_16(arg) => {
-                    store_memoryN!(self, arg, 2, i64, I64, i16, 16);
+                    store_memory_n!(self, arg, 2, i64, I64, i16, 16);
                 }
                 OP_I64_STORE_32(arg) => {
-                    store_memoryN!(self, arg, 4, i64, I64, i32, 32);
+                    store_memory_n!(self, arg, 4, i64, I64, i32, 32);
                 }
                 OP_MEMORY_SIZE => {
                     self.memory_size().context("Memory size failed")?;
@@ -1186,7 +1186,7 @@ impl Engine {
                 OP_LOOP(ty, block_instructions) => {
                     debug!("OP_LOOP {:?}, {:?}", ty, block_instructions);
 
-                    let param_count = self.get_param_count_block(&ty)?;
+                    let param_count = self.get_mut_param_count_block(&ty)?;
                     loop {
                         self.setup_stack_for_entering_block(ty, block_instructions, param_count)?;
 
@@ -1397,13 +1397,13 @@ impl Engine {
     }
 
     /// Get the frame at the top of the stack
-    fn get_frame(&mut self) -> Result<&Frame> {
+    fn get_mut_frame(&mut self) -> Result<&Frame> {
         debug!("get_frame");
         // -2 because label
         match self.store.stack.get(self.store.stack.len() - 2) {
             Some(Frame(fr)) => Ok(fr),
-            Some(x) => Err(anyhow!("Expected frame but found {:?}", x)),
-            None => Err(anyhow!("Empty stack on function call")),
+            Some(x) => bail!("Expected frame but found {:?}", x),
+            None => bail!("Empty stack on function call"),
         }
     }
 

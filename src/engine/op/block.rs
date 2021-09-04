@@ -29,7 +29,7 @@ impl Engine {
         block: &CodeBlock,
         arity: u32,
     ) -> Result<()> {
-        let param_count = self.get_param_count_block(&ty)?;
+        let param_count = self.get_mut_param_count_block(&ty)?;
         let return_count = self.get_return_count_block(&ty)?;
 
         debug!("Arity for block ({:?}) is {}", ty, return_count);
@@ -40,7 +40,7 @@ impl Engine {
         debug!("=> stack {:#?}", self.store.stack);
 
         // Extracting the parameters of the stack
-        let mut block_args = self.get_stack_elements_entering_block(param_count);
+        let mut block_args = self.get_mut_stack_elements_entering_block(param_count);
 
         // Pushing the label
         self.store.stack.push(StackContent::Label(label));
@@ -53,7 +53,7 @@ impl Engine {
 
     /// We need to enter block which expects parameters.
     /// We extract `arity` of stack.
-    fn get_stack_elements_entering_block(&mut self, param_count: u32) -> Vec<StackContent> {
+    fn get_mut_stack_elements_entering_block(&mut self, param_count: u32) -> Vec<StackContent> {
         debug!(
             "For entering a block, popping off parameters {}",
             param_count
@@ -66,7 +66,7 @@ impl Engine {
     }
 
     /// By given block_ty, return the param count of the block
-    pub fn get_param_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
+    pub fn get_mut_param_count_block(&mut self, block_ty: &BlockType) -> Result<Arity> {
         let arity = match block_ty {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 0,

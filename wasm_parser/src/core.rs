@@ -19,7 +19,7 @@ pub struct GlobalAddr(usize);
 pub type LabelIdx = u32;
 pub type LocalIdx = u32;
 
-macro_rules! implAddr {
+macro_rules! impl_addr {
     ($name:ident) => {
         impl $name {
             pub fn new(value: usize) -> Self {
@@ -33,10 +33,10 @@ macro_rules! implAddr {
     };
 }
 
-implAddr!(FuncAddr);
-implAddr!(TableAddr);
-implAddr!(MemoryAddr);
-implAddr!(GlobalAddr);
+impl_addr!(FuncAddr);
+impl_addr!(TableAddr);
+impl_addr!(MemoryAddr);
+impl_addr!(GlobalAddr);
 
 pub type Expr = Vec<InstructionWrapper>;
 
@@ -270,7 +270,7 @@ impl Counter {
     }
 
     /// Increases the last value and get's the current `value` for codeblocks.
-    pub fn get_value(&mut self) -> usize {
+    pub fn get_mut_value(&mut self) -> usize {
         self.inc();
         self.value
     }
@@ -306,7 +306,7 @@ impl CodeBlock {
     /// Creates a new `CodeBlock`.
     pub fn new(counter: &mut Counter, instructions: Vec<Instruction>) -> Self {
         Self {
-            id: counter.get_value(),
+            id: counter.get_mut_value(),
             instructions: InstructionWrapper::wrap_instructions(counter, instructions),
         }
     }
