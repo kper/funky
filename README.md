@@ -80,7 +80,14 @@ You will find a custom debugger in `debugger` and the taint analysis in the `ifd
 
 ## Current spec coverage
 
-Run `./spec_test.sh` to run the webassembly's specsuite. The current spec test coverage is 83%.
+Run `./spec_test.sh` to run the webassembly's specsuite. The current spec test coverage is 83%. The `failed`, `succeeded`, `skipped` might not add up to the `total` number. The reason is that not all assertion types are implemented. The first three numbers consider only the implemeneted assertions (including `skipped`) while the `total` counts all assertion types. 
+
+For example a test spec asserts that a memory entry was malformed. This kind of assertion is not implemented and will not be added to `failed`, `succeedeed` or `skipped`. However, it will be counted by `total`.
+
+So why does it not add to `skippped`?
+
+The reason is that `skipped` has a different meaning. The spec coverage tests are not unit tests. Multiple tests are grouped by modules and must be executed in order. If one test has failed then the remaining tests of the module might fail too because they relied on the correct state. To account for this case, all the remaining tests will be added to `skipped`.
+
 
 ~~~
 Statistic {
