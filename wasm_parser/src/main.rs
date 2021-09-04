@@ -45,13 +45,4 @@ fn main() {
             println!("{:#?}", module);
         }
     }
-
-    /*
-    //let reader = read_wasm!("./test_files/if_loop.wasm");
-    let reader = read_wasm!("./test_files/arithmetic_i32.wasm");
-    //let reader = read_wasm!("./test_files/empty.wasm");
-
-    let _module = parse(reader);
-    println!("{:#?}", module);
-    */
 }
