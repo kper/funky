@@ -2,6 +2,7 @@ use crate::engine::import_resolver::{Import, ImportResolver};
 use crate::engine::memory::MemoryInstance;
 use crate::engine::store::Store;
 use crate::engine::*;
+use crate::engine::module::Functions;
 use crate::value::Value;
 use wasm_parser::core::*;
 use wasm_parser::Module;
@@ -13,6 +14,7 @@ use anyhow::{anyhow, Context, Result};
 pub fn allocate(
     m: &Module,
     mod_instance: &mut ModuleInstance,
+    functions: &Functions,
     store: &mut Store,
     imports: &[Import],
 ) -> Result<()> {
@@ -24,7 +26,7 @@ pub fn allocate(
     let imports = create_import_resolver(&imports_entries, imports)?;
 
     // Step 2a and 6
-    allocate_functions(m, mod_instance, store).context("Allocating function instances failed")?;
+    allocate_functions(m, mod_instance, functions, store).context("Allocating function instances failed")?;
     //TODO host functions
 
     // Step 3a and 7
@@ -90,6 +92,7 @@ fn create_import_resolver(_entries: &[&ImportEntry], imports: &[Import]) -> Resu
 fn allocate_functions(
     m: &Module,
     mod_instance: &mut ModuleInstance,
+    functions: &Functions,
     store: &mut Store,
 ) -> Result<()> {
     debug!("allocate function");
@@ -118,7 +121,7 @@ fn allocate_functions(
             if code_index < 0 {
                 None
             } else {
-                borrow.lookup_code(code_index as usize)
+                functions.get(code_index as usize)
             }
         };
 

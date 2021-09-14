@@ -44,9 +44,10 @@ macro_rules! wat {
 
         let imports = Vec::new();
 
-        let instance = ModuleInstance::new(&module);
+        let (instance, functions) = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
+            &functions,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
             &imports,

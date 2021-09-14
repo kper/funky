@@ -18,9 +18,10 @@ macro_rules! test_file_engine {
 
         let imports = Vec::new();
 
-        let instance = ModuleInstance::new(&module);
+        let (instance, functions) = ModuleInstance::new(&module);
         let engine = Engine::new(
             instance,
+            &functions,
             &module,
             Box::new(RelativeProgramCounter::default()),
             &imports
@@ -38,9 +39,10 @@ macro_rules! test_run_engine {
 
         let imports = Vec::new();
 
-        let instance = ModuleInstance::new(&module);
+        let (instance, functions) = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
+            &functions,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
             &imports,
@@ -69,9 +71,10 @@ macro_rules! test_get_exported_global {
 
         let imports = Vec::new();
 
-        let instance = ModuleInstance::new(&module);
+        let (instance, functions) = ModuleInstance::new(&module);
         let mut engine = Engine::new(
             instance,
+            &functions,
             &module,
             Box::new(crate::debugger::RelativeProgramCounter::default()),
             &imports
@@ -91,9 +94,10 @@ macro_rules! allocation {
 
         let imports = Vec::new();
 
-        let instance = ModuleInstance::new(&module);
+        let (instance, functions) = ModuleInstance::new(&module);
         let engine = Engine::new(
             instance,
+            &functions,
             &module,
             Box::new(RelativeProgramCounter::default()),
             &imports
@@ -131,14 +135,11 @@ fn test_allocation_funcs() {
     ]);
 
     // Module instance has an entry for type
-    // Module instance has an entry for code
     // Module instance has an entry for funcaddrs
 
     let mi = &engine.module_instance;
     assert_eq!(1, mi.get_fn_types().len());
     assert_eq!(sig, mi.get_fn_types()[0]);
-    assert_eq!(1, mi.get_code().len());
-    assert_eq!(body, mi.get_code()[0]);
     assert_eq!(1, mi.get_func_addrs().len());
     assert_eq!(0, mi.get_func_addrs().get(0).unwrap().get());
 

@@ -5,19 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module_instance: ModuleInstance {
-        code: [
-            FunctionBody {
-                locals: [],
-                code: [
-                    InstructionWrapper {
-                        instruction_id: 1,
-                        instruction: OP_I32_CONST(
-                            6,
-                        ),
-                    },
-                ],
-            },
-        ],
         fn_types: [
             FunctionSignature {
                 param_types: [],

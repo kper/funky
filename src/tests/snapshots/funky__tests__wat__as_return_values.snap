@@ -5,54 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module_instance: ModuleInstance {
-        code: [
-            FunctionBody {
-                locals: [],
-                code: [
-                    InstructionWrapper {
-                        instruction_id: 5,
-                        instruction: OP_I32_CONST(
-                            2,
-                        ),
-                    },
-                    InstructionWrapper {
-                        instruction_id: 6,
-                        instruction: OP_BLOCK(
-                            ValueType(
-                                I64,
-                            ),
-                            CodeBlock {
-                                id: 1,
-                                instructions: [
-                                    InstructionWrapper {
-                                        instruction_id: 1,
-                                        instruction: OP_I32_CONST(
-                                            1,
-                                        ),
-                                    },
-                                    InstructionWrapper {
-                                        instruction_id: 2,
-                                        instruction: OP_I64_CONST(
-                                            7,
-                                        ),
-                                    },
-                                    InstructionWrapper {
-                                        instruction_id: 3,
-                                        instruction: OP_BR(
-                                            0,
-                                        ),
-                                    },
-                                    InstructionWrapper {
-                                        instruction_id: 4,
-                                        instruction: OP_RETURN,
-                                    },
-                                ],
-                            },
-                        ),
-                    },
-                ],
-            },
-        ],
         fn_types: [
             FunctionSignature {
                 param_types: [],

@@ -78,7 +78,7 @@ impl TestFile {
             .count()
     }
 
-    pub fn get_cases(&self) -> impl Iterator<Item = &Command> {
+    pub fn get_cases(&self) -> impl Iterator<Item=&Command> {
         self.commands.iter().filter(
             |x| matches!(x, Command::Module(_) | Command::AssertReturn(_) | Command::Action(_)),
         )
@@ -98,12 +98,13 @@ impl TestFile {
         let reader = self.read_wasm(&format!("testsuite/{}", name))?;
         let module = parse(reader).context(format!("Parsing failed for {}", name))?;
         let validation = validate(&module); //TODO check validation
-        let mi = ModuleInstance::new(&module);
+        let (mi, functions) = ModuleInstance::new(&module);
 
         let spectest_import = self.get_spectest_import();
 
         Engine::new(
             mi,
+            &functions,
             &module,
             Box::new(RelativeProgramCounter::default()),
             &spectest_import,
@@ -189,7 +190,7 @@ impl TestFile {
                 );
 
                 if let Err(err) =
-                    engine.invoke_exported_function_by_name(&case.action.field, args)
+                engine.invoke_exported_function_by_name(&case.action.field, args)
                 {
                     debug!("failed for lineno {}", case.line);
                     return false;

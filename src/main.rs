@@ -66,11 +66,12 @@ fn main() {
         return;
     }
 
-    let mi = ModuleInstance::new(&module);
+    let (mi, functions) = ModuleInstance::new(&module);
     info!("Constructing engine");
 
     let e = Engine::new(
         mi,
+        &functions,
         &module,
         Box::new(RelativeProgramCounter::default()),
         &Imports::new(),

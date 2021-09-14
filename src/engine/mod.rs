@@ -22,6 +22,7 @@ pub use crate::debugger::{ProgramCounter, RelativeProgramCounter};
 use crate::engine::func::FuncInstance;
 use crate::engine::import_resolver::Import;
 use crate::engine::module::ModuleInstance;
+use crate::engine::module::Functions;
 pub use crate::engine::store::GlobalInstance;
 pub use crate::engine::table::TableInstance;
 use crate::operations::*;
@@ -36,6 +37,7 @@ pub use wasm_parser::Module;
 #[derive(Debug)]
 pub struct Engine {
     pub module_instance: ModuleInstance,
+    /// `started` declares if the engine was already run.
     pub started: bool,
     pub store: Store,
     debugger: Box<dyn ProgramCounter>,
@@ -259,6 +261,7 @@ macro_rules! store_memory_n {
 impl Engine {
     pub fn new(
         mi: ModuleInstance,
+        functions: &Functions,
         module: &Module,
         debugger: Box<dyn ProgramCounter>,
         imports: &[Import],
@@ -270,7 +273,7 @@ impl Engine {
             debugger,
         };
 
-        e.allocate(module, &imports)
+        e.allocate(module, functions, &imports)
             .context("Allocation instance failed")?;
         e.instantiation(module).context("Instantiation failed")?;
 
@@ -292,9 +295,9 @@ impl Engine {
         res
     }
 
-    fn allocate(&mut self, m: &Module, imports: &[Import]) -> Result<()> {
+    fn allocate(&mut self, m: &Module, functions: &Functions, imports: &[Import]) -> Result<()> {
         info!("Allocation");
-        crate::allocation::allocate(m, &mut self.module_instance, &mut self.store, imports)
+        crate::allocation::allocate(m, &mut self.module_instance, functions, &mut self.store, imports)
             .context("Allocation failed")?;
 
         Ok(())
@@ -342,7 +345,7 @@ impl Engine {
     /// Adding new function to the engine
     /// It will allocate the function in store and add it to the module's code.
     pub(crate) fn add_function(&mut self, signature: FunctionSignature, body: FunctionBody) -> Result<()> {
-        self.module_instance.add_code(body.clone())?;
+        //self.module_instance.add_code(body.clone())?;
         self.store.allocate_func_instance(signature, body);
 
         Ok(())
@@ -433,7 +436,7 @@ impl Engine {
         let mut locals = args;
 
         // All parameters are `locals`, but
-        // we can additionaly define more of them.
+        // we can additionally define more of them.
         // This is done in the function definition of locals
         // It is very important to use the correct type
         debug!("Adding additional locals");

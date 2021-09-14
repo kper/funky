@@ -5,52 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module_instance: ModuleInstance {
-        code: [
-            FunctionBody {
-                locals: [],
-                code: [
-                    InstructionWrapper {
-                        instruction_id: 1,
-                        instruction: OP_LOCAL_GET(
-                            0,
-                        ),
-                    },
-                    InstructionWrapper {
-                        instruction_id: 2,
-                        instruction: OP_LOCAL_GET(
-                            1,
-                        ),
-                    },
-                    InstructionWrapper {
-                        instruction_id: 3,
-                        instruction: OP_I32_ADD,
-                    },
-                ],
-            },
-            FunctionBody {
-                locals: [],
-                code: [
-                    InstructionWrapper {
-                        instruction_id: 4,
-                        instruction: OP_LOCAL_GET(
-                            0,
-                        ),
-                    },
-                    InstructionWrapper {
-                        instruction_id: 5,
-                        instruction: OP_LOCAL_GET(
-                            0,
-                        ),
-                    },
-                    InstructionWrapper {
-                        instruction_id: 6,
-                        instruction: OP_CALL(
-                            0,
-                        ),
-                    },
-                ],
-            },
-        ],
         fn_types: [
             FunctionSignature {
                 param_types: [

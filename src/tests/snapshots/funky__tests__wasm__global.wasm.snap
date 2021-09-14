@@ -5,7 +5,6 @@ expression: "format!(\"{:#?}\", engine)"
 ---
 Engine {
     module_instance: ModuleInstance {
-        code: [],
         fn_types: [],
         func_addrs: [],
         table_addrs: [],

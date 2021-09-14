@@ -7,7 +7,7 @@ use wasm_parser::Module;
 #[derive(Debug, Default, Clone)]
 pub struct ModuleInstance {
     /// Contains all functions of a module
-    code: Vec<FunctionBody>,
+    //code: Vec<FunctionBody>,
     /// Declares the function signatures of the functions
     fn_types: Vec<FunctionSignature>,
     /// Keeps the indexes of the function
@@ -21,21 +21,31 @@ pub struct ModuleInstance {
     exports: Vec<ExportInstance>,
 }
 
+pub type Functions = Vec<FunctionBody>;
+
 impl ModuleInstance {
-    pub fn new(m: &Module) -> Self {
-        let mut mi = ModuleInstance {
-            code: Vec::new(),
-            fn_types: Vec::new(),
-            func_addrs: Vec::new(),
-            table_addrs: Vec::new(),
-            mem_addrs: Vec::new(),
-            global_addrs: Vec::new(),
-            exports: Vec::new(),
-        };
+    pub fn new(m: &Module) -> (Self, Functions) {
+        let mut mi = ModuleInstance::default();
+
+        let mut functions = Vec::new();
+
+        let code_sections = m.sections.iter().filter(|x| match x {
+            Section::Code(..) => true,
+            _ => false
+        }).count();
+
+        let type_sections = m.sections.iter().filter(|x| match x {
+            Section::Type(..) => true,
+            _ => false
+        }).count();
+
+        assert!(!(code_sections > 1), "A module cannot have multiple code sections.");
+        assert!(!(type_sections > 1), "A module cannot have multiple type sections.");
+
         for section in m.sections.iter() {
             match section {
                 Section::Code(CodeSection { entries: x }) => {
-                    mi.code = x.clone();
+                    functions = x.clone();
                 }
                 Section::Type(TypeSection { entries: x }) => {
                     mi.fn_types = x.clone();
@@ -44,7 +54,7 @@ impl ModuleInstance {
             }
         }
 
-        mi
+        (mi, functions)
     }
 
     /// Adding a new function type.
@@ -91,10 +101,10 @@ impl ModuleInstance {
         self.fn_types.get(*index as usize)
     }
 
-    /// Looking up the code with given index.
-    pub fn lookup_code(&self, index: usize) -> Option<&FunctionBody> {
+    // /// Looking up the code with given index.
+    /*pub fn lookup_code(&self, index: usize) -> Option<&FunctionBody> {
         self.code.get(index)
-    }
+    }*/
 
     /// Storing a new function addr.
     pub fn store_func_addr(&mut self, new_addr: FuncAddr) -> Result<()> {
@@ -153,6 +163,7 @@ impl ModuleInstance {
         self.exports.get(idx)
     }
 
+    /*
     /// Add a code.
     pub fn add_code(&mut self, body: FunctionBody) -> Result<()> {
         self.code.push(body);
@@ -164,6 +175,7 @@ impl ModuleInstance {
     pub fn get_code(&self) -> &[FunctionBody] {
         &self.code
     }
+     */
 
     pub fn get_fn_types(&self) -> &[FunctionSignature] {
         &self.fn_types
