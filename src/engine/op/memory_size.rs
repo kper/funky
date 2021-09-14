@@ -6,7 +6,7 @@ use crate::engine::StackContent;
 
 impl Engine {
     pub(crate) fn memory_size(&mut self) -> Result<()> {
-        let module = &self.module;
+        let module = &self.module_instance;
         let addr = module
             .lookup_memory_addr(&0)
             .context("No memory address found")?;

@@ -238,12 +238,12 @@ pub struct FunctionBody {
     pub code: Expr,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// All parameters are locals. However, we
 /// can define more of them with `LocalEntry`
 /// A `LocalEntry` does **not** correspond to one local.
 /// We have a `count` property here, therefore we need
 /// to add as many as `count`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LocalEntry {
     pub count: u32,
     pub ty: ValueType,
@@ -255,7 +255,7 @@ pub enum Limits {
     One(u32, u32),
 }
 
-/// A helper struct to count codeblocks (`OP_CODE`)
+/// A helper struct to count codeblocks
 /// and instruction ids.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Counter {
@@ -296,6 +296,8 @@ impl Default for Counter {
     }
 }
 
+/// A wrapper time for a series of instructions.
+/// `CodeBlocks` are used in in operation codes which wrap instructions.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct CodeBlock {
     pub id: usize,

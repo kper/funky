@@ -71,7 +71,7 @@ impl Engine {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 0,
             BlockType::FuncTy(ty) => self
-                .module
+                .module_instance
                 .lookup_func_types(ty)
                 .ok_or_else(|| anyhow!("Cannot find func type"))?
                 .param_types
@@ -89,7 +89,7 @@ impl Engine {
             BlockType::Empty => 0,
             BlockType::ValueType(_) => 1,
             BlockType::FuncTy(ty) => self
-                .module
+                .module_instance
                 .lookup_func_types(ty)
                 .ok_or_else(|| anyhow!("Cannot find func type"))?
                 .return_types

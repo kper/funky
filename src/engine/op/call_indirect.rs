@@ -10,7 +10,7 @@ impl Engine {
 
         debug!("before ta");
         let ta = self
-            .module
+            .module_instance
             .lookup_table_addr(&0)
             .ok_or_else(|| anyhow!("Cannot find first table addr"))?;
 
